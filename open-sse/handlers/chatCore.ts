@@ -9,10 +9,11 @@ import { buildFailureUsageRecord } from "./chatCore/failureUsage.ts";
 import { estimateFinalInputTokens } from "./chatCore/contextEstimation.ts";
 import {
   extractSystemRoleMessages,
-  relocateDirectiveOnlyMessages,
+  normalizeLeadingSystemMessages,
 } from "./chatCore/claudeSystemRole.ts";
 export {
   extractSystemRoleMessages,
+  normalizeLeadingSystemMessages,
   relocateDirectiveOnlyMessages,
 } from "./chatCore/claudeSystemRole.ts";
 import { checkIdempotencyCache } from "./chatCore/idempotency.ts";
@@ -2347,10 +2348,15 @@ export async function handleChatCore({
           extractSystemRoleMessages(translatedBody);
         } else {
           // The mid-conversation-system path keeps system-role messages inside
-          // messages[], but a directive-only message (content: [] +
-          // output_config) at messages[0] is rejected by Anthropic. Move it past
-          // the first real turn; Anthropic accepts the form at any other position.
-          relocateDirectiveOnlyMessages(translatedBody);
+          // messages[], but Anthropic rejects *any* system-role message at
+          // messages[0] — the initial-system-prompt position — including the
+          // textual leading system that applyOutputStyles() unshifts onto the
+          // front of the array once tools are present (#10547).
+          // normalizeLeadingSystemMessages hoists the textual leading systems
+          // into the top-level `system` parameter, re-relocates the
+          // directive-only shape (#10457) past the first real turn, and drops
+          // bare content:[] placeholders.
+          normalizeLeadingSystemMessages(translatedBody);
         }
         if (Array.isArray(translatedBody.messages)) {
           translatedBody.messages = splitMisplacedToolResults(

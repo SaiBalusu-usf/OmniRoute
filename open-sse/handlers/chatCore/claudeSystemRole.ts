@@ -216,11 +216,7 @@ export function relocateDirectiveOnlyMessages(payload: Record<string, unknown>):
   let insertAfter = -1;
   for (let i = runEnd; i < messages.length; i++) {
     const candidate = messages[i];
-    if (
-      candidate != null &&
-      typeof candidate === "object" &&
-      !isSystemRole(candidate.role)
-    ) {
+    if (candidate != null && typeof candidate === "object" && !isSystemRole(candidate.role)) {
       insertAfter = i;
       break;
     }
@@ -239,6 +235,140 @@ export function relocateDirectiveOnlyMessages(payload: Record<string, unknown>):
 
   // Move the directives (in order) past the first real turn; plain empty
   // system messages carry nothing and are dropped.
+  payload.messages = [
+    ...messages.slice(runEnd, insertAfter + 1),
+    ...directives,
+    ...messages.slice(insertAfter + 1),
+  ];
+}
+
+/**
+ * Leading-system normalisation for the mid-conversation-system passthrough
+ * (provider `claude` + 1M-context beta models).
+ *
+ * Anthropic rejects *any* `role:"system"` at `messages[0]` — the initial
+ * system-prompt position — including the textual form, with the same 400 as
+ * the directive-only shape (#10547). OmniRoute itself creates textual leading
+ * systems: `applyOutputStyles()` unshifts
+ * `{ role: "system", content: "[OmniRoute Output Styles]..." }` onto
+ * `messages[0]`, and the moment a request carries tools (e.g. after a skill or
+ * an attached document), `shouldUseMidConversationSystem()` turns on, this
+ * leading text system goes upstream unchanged, and Anthropic 400s.
+ * `relocateDirectiveOnlyMessages` (#10457) only covered the empty-directive
+ * shape, leaving the textual form broken.
+ *
+ * The leading run of system/developer messages is classified:
+ *   - textual (non-empty string, or text blocks) → hoist into the top-level
+ *     `system` parameter, appended after any existing blocks so the prompt-cache
+ *     prefix it anchors is not disturbed; `output_config` folds up first-wins
+ *   - directive-only (`content: []` with `output_config`) → keep the #10457
+ *     relocation: move past the first real turn, folding `output_config` to the
+ *     top level only when there is no real turn at all
+ *   - plain `content: []` (no `output_config`) → dropped
+ *
+ * Messages after the first real user/assistant turn — genuine mid-conversation
+ * system blocks — are left untouched so they keep their beta-negotiated
+ * position and prompt-cache layout.
+ */
+export function normalizeLeadingSystemMessages(payload: Record<string, unknown>): void {
+  if (!Array.isArray(payload.messages) || payload.messages.length === 0) return;
+  const messages = payload.messages as Array<Record<string, unknown>>;
+  const isSystemRole = (role: unknown): boolean =>
+    typeof role === "string" &&
+    (role.toLowerCase() === "system" || role.toLowerCase() === "developer");
+
+  if (messages[0] == null || !isSystemRole(messages[0].role)) return;
+
+  let runEnd = 0;
+  while (
+    runEnd < messages.length &&
+    messages[runEnd] != null &&
+    isSystemRole(messages[runEnd].role)
+  ) {
+    runEnd++;
+  }
+  const lead = messages.slice(0, runEnd);
+
+  const isEmptySystem = (m: Record<string, unknown>): boolean =>
+    m != null &&
+    typeof m === "object" &&
+    isSystemRole(m.role) &&
+    Array.isArray(m.content) &&
+    m.content.length === 0;
+  const isDirectiveOnly = (m: Record<string, unknown>): boolean =>
+    isEmptySystem(m) &&
+    m.output_config != null &&
+    typeof m.output_config === "object" &&
+    !Array.isArray(m.output_config);
+  const hoistBlocks = (m: Record<string, unknown>): Array<Record<string, unknown>> => {
+    if (typeof m.content !== "string" && !Array.isArray(m.content)) return [];
+    const blocks: Array<Record<string, unknown>> = [];
+    if (typeof m.content === "string") {
+      if (m.content.length > 0) blocks.push({ type: "text", text: m.content });
+    } else {
+      for (const block of m.content as Array<Record<string, unknown>>) {
+        if (block?.type === "text" && typeof block.text === "string" && block.text.length > 0) {
+          // Text blocks are emitted as content bytes, not as cache breakpoints:
+          // carrying the marker into the top-level system would shift every
+          // client-anchored breakpoint downstream.
+          const copy: Record<string, unknown> = { ...block };
+          delete copy.cache_control;
+          blocks.push(copy);
+        }
+      }
+    }
+    return blocks;
+  };
+
+  // Hoist every textual leading system into the top-level `system` parameter.
+  const extraBlocks: Array<Record<string, unknown>> = [];
+  for (const tm of lead) {
+    if (!isEmptySystem(tm)) {
+      extraBlocks.push(...hoistBlocks(tm));
+      const oc = tm.output_config;
+      if (
+        oc != null &&
+        typeof oc === "object" &&
+        !Array.isArray(oc) &&
+        payload.output_config == null
+      ) {
+        payload.output_config = oc;
+      }
+    }
+  }
+  if (extraBlocks.length > 0) {
+    const system = payload.system;
+    if (typeof system === "string" && system.length > 0) {
+      payload.system = [{ type: "text", text: system }, ...extraBlocks];
+    } else if (Array.isArray(system)) {
+      payload.system = [...(system as Array<Record<string, unknown>>), ...extraBlocks];
+    } else {
+      payload.system = extraBlocks;
+    }
+  }
+
+  const directives = lead.filter(isDirectiveOnly);
+
+  // First real (user/assistant) turn after the run becomes the insertion anchor
+  // for relocated directives; textual/directive gaps between the run and the
+  // anchor keep their mid-conversation positions untouched.
+  let insertAfter = -1;
+  for (let i = runEnd; i < messages.length; i++) {
+    const candidate = messages[i];
+    if (candidate != null && typeof candidate === "object" && !isSystemRole(candidate.role)) {
+      insertAfter = i;
+      break;
+    }
+  }
+
+  if (insertAfter === -1) {
+    if (payload.output_config == null && directives.length > 0) {
+      payload.output_config = directives[0].output_config;
+    }
+    payload.messages = messages.slice(runEnd);
+    return;
+  }
+
   payload.messages = [
     ...messages.slice(runEnd, insertAfter + 1),
     ...directives,
