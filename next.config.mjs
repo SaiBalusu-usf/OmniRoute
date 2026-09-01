@@ -286,6 +286,11 @@ const nextConfig = {
       // (better-sqlite3 → node:sqlite → sql.js). Next traces sql-wasm.js but can
       // omit the runtime sql-wasm.wasm asset from the standalone bundle.
       "./node_modules/sql.js/dist/sql-wasm.wasm",
+      // tiktoken's node build reads tiktoken_bg.wasm from disk at runtime
+      // (fs.readFileSync in tiktoken.cjs), so tracing cannot see it. Same
+      // shape as the sql.js WASM above — ship it explicitly (#12181 vendor
+      // refresh made this load path hot for the codex-chatgpt-web connector).
+      "./node_modules/tiktoken/tiktoken_bg.wasm",
     ],
   },
   outputFileTracingExcludes: {
@@ -339,6 +344,13 @@ const nextConfig = {
     "tough-cookie",
     "@ngrok/ngrok",
     "@huggingface/transformers",
+    // tiktoken's node build (tiktoken.cjs) reads tiktoken_bg.wasm from disk via
+    // __dirname at module-evaluation time. Bundling it makes the search run
+    // against build-machine paths and every page-data collection that reaches
+    // the codex-chatgpt-web vendor dies with "Missing tiktoken_bg.wasm"
+    // (vendor refresh #12181 added the import). Externalizing keeps the
+    // require at runtime where node_modules/tiktoken ships the .wasm.
+    "tiktoken",
     // copilot-m365-web.ts imports 'ws' as a client-side WebSocket. When bundled,
     // ws cannot resolve its 'bufferutil' native addon (frame masking) and throws
     // TypeError: b.mask is not a function on the first outgoing frame, causing
