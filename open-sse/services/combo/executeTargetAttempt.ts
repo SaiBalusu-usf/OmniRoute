@@ -320,7 +320,8 @@ export async function executeTargetAttempt(opts: {
           modelStr,
           `Model routing: ${lastModel} → ${modelStr}`,
           existingHandoff,
-          universalHandoffConfig.relayMode
+          universalHandoffConfig.relayMode,
+          deps.sourceFormat
         );
       }
     }
