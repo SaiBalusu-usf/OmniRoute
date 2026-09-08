@@ -1,4 +1,5 @@
 import { HTTP_STATUS, FETCH_TIMEOUT_MS } from "../config/constants.ts";
+import { applyProviderRequestDefaults } from "../services/providerRequestDefaults.ts";
 import { getRegistryEntry } from "../config/providerRegistry.ts";
 import { resolveFetchStartTimeout } from "../utils/fetchStartTimeoutPolicy.ts";
 import {
@@ -30,7 +31,11 @@ import {
   addParamToBlocklist,
   isAutoLearnGloballyEnabled,
 } from "@/lib/db/paramFilters";
-import { applyFingerprint, isCliCompatEnabled, stripInternalBodyFields } from "../config/cliFingerprints.ts";
+import {
+  applyFingerprint,
+  isCliCompatEnabled,
+  stripInternalBodyFields,
+} from "../config/cliFingerprints.ts";
 import { supportsClaudeMaxEffort, supportsXHighEffort } from "../config/providerModels.ts";
 import { getThinkingBudgetConfig, ThinkingMode } from "../services/thinkingBudget.ts";
 import {
@@ -162,6 +167,7 @@ export type ProviderConfig = {
   headers?: Record<string, string>;
   requestDefaults?: ProviderRequestDefaults;
   timeoutMs?: number;
+  fetchStartTimeoutCapMs?: number;
   format?: string;
 };
 
@@ -584,10 +590,14 @@ export class BaseExecutor {
 
       stripInternalBodyFields(cloned);
 
-      return cloned;
+      // Registry requestDefaults (e.g. maxTokens for reasoning-heavy models like
+      // GLM-5.3-flash) fill fields the client left unset. No-op for providers
+      // without requestDefaults and idempotent for DefaultExecutor, which
+      // re-applies the same helper downstream.
+      return applyProviderRequestDefaults(cloned, this.config?.requestDefaults ?? null);
     }
 
-    return body;
+    return applyProviderRequestDefaults(body, this.config?.requestDefaults ?? null);
   }
 
   shouldRetry(status: number, urlIndex: number) {
@@ -913,6 +923,10 @@ export class BaseExecutor {
       const fetchStartTimeoutPolicy = resolveFetchStartTimeout({
         baseTimeoutMs: this.getTimeoutMs(),
         stream,
+        // Providers with non-incremental upstreams (whole generation buffered
+        // behind the gateway, e.g. opencode-go's Console Go GLM tier) can take
+        // minutes before first bytes; the registry overrides the 110s cap.
+        capMs: this.config?.fetchStartTimeoutCapMs,
       });
       const fetchStartTimeoutMs = fetchStartTimeoutPolicy.timeoutMs;
       if (fetchStartTimeoutPolicy.capped) {
