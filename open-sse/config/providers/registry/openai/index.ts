@@ -19,6 +19,10 @@ export const openaiProvider: RegistryEntry = {
     { id: "gpt-5.6-sol", name: "GPT-5.6 Sol", ...GPT_5_6_API_CAPABILITIES },
     { id: "gpt-5.6-terra", name: "GPT-5.6 Terra", ...GPT_5_6_API_CAPABILITIES },
     { id: "gpt-5.6-luna", name: "GPT-5.6 Luna", ...GPT_5_6_API_CAPABILITIES },
+    // GPT-6 Astra (released 2026-09-03): identical API limits to the GPT-5.6
+    // family — 1.05M context, 922K input, 128K output, xhigh effort, vision.
+    // See https://developers.openai.com/api/docs/models/gpt-6-astra
+    { id: "gpt-6-astra", name: "GPT-6 Astra", ...GPT_5_6_API_CAPABILITIES },
     { id: "gpt-5.5", name: "GPT-5.5", contextLength: 1050000 },
     // #5842: *-pro reasoning models are responses-only upstream — /v1/chat/completions
     // 404s ("only supported in v1/responses"). targetFormat routes them natively.
