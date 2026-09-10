@@ -609,7 +609,10 @@ export async function removeSyncedAvailableModel(
   });
 
   removeModel();
-  if (removedAny) finishSyncedAvailableModelsWrite();
+  if (removedAny) {
+    finishSyncedAvailableModelsWrite();
+    notifyQuotaCombosForProvider(providerId);
+  }
   return removedAny;
 }
 
@@ -626,7 +629,10 @@ export async function deleteSyncedAvailableModelsForConnection(
   const result = db
     .prepare("DELETE FROM key_value WHERE namespace = 'syncedAvailableModels' AND key = ?")
     .run(key);
-  if (result.changes > 0) finishSyncedAvailableModelsWrite();
+  if (result.changes > 0) {
+    finishSyncedAvailableModelsWrite();
+    notifyQuotaCombosForProvider(providerId);
+  }
   return getSyncedAvailableModels(providerId);
 }
 
@@ -684,7 +690,10 @@ export async function pruneStaleSyncedAvailableModelsForProvider(
     )
     .run(`${keyPrefix}%`, ...allowedKeys);
   const changes = Number(result.changes || 0);
-  if (changes > 0) finishSyncedAvailableModelsWrite();
+  if (changes > 0) {
+    finishSyncedAvailableModelsWrite();
+    notifyQuotaCombosForProvider(providerId);
+  }
   return changes;
 }
 
