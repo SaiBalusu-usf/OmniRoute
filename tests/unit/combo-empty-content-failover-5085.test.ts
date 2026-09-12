@@ -180,9 +180,9 @@ test("#8397 empty-response 502 (no usable choices/output) must NOT mark provider
   );
 });
 
-test("#5085 a real connection-level 502 (gateway error) STILL marks the provider exhausted", () => {
+test("#5085 a real connection-level 502 (gateway error) with a connectionId STILL marks that connection exhausted", () => {
   const sets = freshSets();
-  applyComboTargetExhaustion(makeTarget("nvidia", "nvidia/minimaxai/minimax-m3"), {
+  applyComboTargetExhaustion(makeTarget("nvidia", "nvidia/minimaxai/minimax-m3", "conn-1"), {
     result: { status: 502, headers: new Headers() },
     fallbackResult: { reason: "server_error" },
     errorText: "Bad gateway: upstream connection reset",
@@ -196,8 +196,12 @@ test("#5085 a real connection-level 502 (gateway error) STILL marks the provider
   });
 
   assert.equal(
-    sets.exhaustedProviders.has("nvidia"),
+    sets.exhaustedConnections.has("nvidia:conn-1"),
     true,
-    "a genuine gateway 502 must still mark the provider connection-exhausted (#1731v2 preserved)"
+    "a genuine gateway 502 must still mark the connection exhausted"
   );
+  // Without a connectionId there is no connection scope to mark and the cause is not
+  // proven quota, so the provider itself is never marked — only the connection-scoped case
+  // above survives.
+  assert.equal(sets.exhaustedProviders.has("nvidia"), false);
 });

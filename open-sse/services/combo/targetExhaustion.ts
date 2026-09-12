@@ -220,8 +220,7 @@ export function applyComboTargetExhaustion(
     ) {
       return false;
     }
-    markAuthLevelExhaustion(target, { result, sets, log, tag });
-    return true;
+    return markAuthLevelExhaustion(target, { result, sets, log, tag });
   }
 
   // #1731: full provider quota exhausted → skip remaining same-provider targets this request.
@@ -324,13 +323,14 @@ function markTransientOrConnectionLevel(
  * #8133/#8137: mark an auth-level (401/403) failure. When the target carries a connectionId,
  * only that connection's credentials are bad — sibling connections on the same provider may
  * still be healthy, so mark connection-level exhaustion (mirrors markConnectionLevelExhaustion).
- * Falls back to whole-provider exhaustion only when no connectionId is available, since every
- * model behind an unscoped provider will fail identically.
+ * Without a connectionId there is no connection scope to mark and the failure is not proven
+ * quota (quota bodies never reach this branch — see quotaMisclassifiedAsAuth above), so mark
+ * nothing and return false, keeping the provider eligible for the remaining targets.
  */
 function markAuthLevelExhaustion(
   target: ResolvedComboTarget,
   opts: Pick<ApplyComboTargetExhaustionOptions, "result" | "sets" | "log" | "tag">
-): void {
+): boolean {
   const { result, sets, log, tag } = opts;
   const provider = target.provider;
   const connId = target.connectionId ?? undefined;
@@ -340,12 +340,13 @@ function markAuthLevelExhaustion(
       tag,
       `Provider ${provider} connection ${connId} auth failure (${result.status}) — marking for skip on remaining targets (#8133)`
     );
+    return true;
   } else {
-    sets.exhaustedProviders.add(provider);
     log.info(
       tag,
-      `Provider ${provider} auth failure (${result.status}) — marking for skip on remaining targets (#8133)`
+      `Provider ${provider} auth failure (${result.status}) without connection scope and without proven quota — not marking for skip on remaining targets`
     );
+    return false;
   }
 }
 
@@ -403,9 +404,10 @@ function markAgentrouterConnectionQuotaExhaustion(
 
 /**
  * #1731v2: connection-level errors (408/5xx, excluding the OmniRoute circuit-open signal) suggest
- * the provider connection itself is bad → skip remaining same-connection (or same-provider, when
- * no connectionId) targets this request. Only runs when the provider was NOT already marked fully
- * exhausted above. Split out to keep applyComboTargetExhaustion under the complexity ceiling.
+ * the provider connection itself is bad → skip remaining same-connection targets this request.
+ * Only runs when the provider was NOT already marked fully exhausted above, so this path never
+ * sees proven quota. Without a connectionId there is no connection scope to mark, so mark
+ * nothing and keep the provider eligible for the remaining targets.
  */
 function markConnectionLevelExhaustion(
   target: ResolvedComboTarget,
@@ -452,10 +454,9 @@ function markConnectionLevelExhaustion(
       `Provider ${provider} connection ${connId} error (${result.status}) — marking for skip on remaining targets (#1731v2)`
     );
   } else {
-    sets.exhaustedProviders.add(provider);
     log.info(
       tag,
-      `Provider ${provider} connection error (${result.status}) — marking for skip on remaining targets (#1731)`
+      `Provider ${provider} connection error (${result.status}) without connection scope and without proven quota — not marking for skip on remaining targets`
     );
   }
 }

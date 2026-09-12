@@ -113,15 +113,16 @@ test("request-scoped failed-response 502 does not exhaust the connection", () =>
   assert.equal(s.exhaustedConnections.size, 0);
 });
 
-test("connection-level 5xx without a connectionId poisons exhaustedProviders (#1731)", () => {
+test("connection-level 5xx without a connectionId no longer poisons exhaustedProviders (only proven quota marks the provider)", () => {
   const s = sets();
-  applyComboTargetExhaustion(target({ connectionId: null }), {
+  const exhausted = applyComboTargetExhaustion(target({ connectionId: null }), {
     ...baseOpts,
     result: { status: 503, headers: null },
     fallbackResult: {},
     sets: s,
   });
-  assert.ok(s.exhaustedProviders.has("test-dedup-provider"));
+  assert.equal(exhausted, false);
+  assert.equal(s.exhaustedProviders.size, 0);
   assert.equal(s.exhaustedConnections.size, 0);
 });
 
@@ -465,7 +466,7 @@ test("403 forbidden marks only that connection exhausted, not the whole provider
   assert.ok(s.exhaustedConnections.has("test-dedup-provider:conn-1"));
 });
 
-test("401 without a connectionId falls back to whole-provider exhaustion (#8133)", () => {
+test("401 without a connectionId and without proven quota marks nothing (only proven quota marks the provider)", () => {
   const s = sets();
   const exhausted = applyComboTargetExhaustion(target({ connectionId: null }), {
     ...baseOpts,
@@ -474,11 +475,8 @@ test("401 without a connectionId falls back to whole-provider exhaustion (#8133)
     errorText: "Missing API key.",
     sets: s,
   });
-  assert.equal(exhausted, true);
-  assert.ok(
-    s.exhaustedProviders.has("test-dedup-provider"),
-    "no connectionId to scope to — must fall back to whole-provider"
-  );
+  assert.equal(exhausted, false);
+  assert.equal(s.exhaustedProviders.size, 0);
   assert.equal(s.exhaustedConnections.size, 0);
 });
 

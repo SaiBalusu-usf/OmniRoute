@@ -1,0 +1,1 @@
+- **fix(combo):** non-quota combo stops and failures surface as quota exhaustion no longer — protected-priority stops return 502 instead of 503, and scopeless non-quota failures stop marking the provider exhausted ([#13439](https://github.com/diegosouzapw/OmniRoute/pull/13439)) — thanks @maxmad64bis
