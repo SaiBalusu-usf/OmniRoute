@@ -1,3 +1,7 @@
+// #13376: the UA constant now lives in a dependency-free sibling module so this
+// registry entry no longer pulls `@/lib/oauth/constants/oauth` (whose import graph
+// owns the server-only chain). The entry therefore stays client-bundle-safe.
+import { CODEBUDDY_CN_USER_AGENT } from "./userAgent.ts";
 import type { RegistryEntry } from "../../shared.ts";
 
 /**
@@ -20,7 +24,7 @@ export const codebuddy_cnProvider: RegistryEntry = {
   authType: "oauth",
   authHeader: "bearer",
   headers: {
-    "User-Agent": "CLI/2.108.1 CodeBuddy/2.108.1",
+    "User-Agent": CODEBUDDY_CN_USER_AGENT,
     "X-Product": "SaaS",
     "X-IDE-Type": "CLI",
     "X-IDE-Name": "CLI",

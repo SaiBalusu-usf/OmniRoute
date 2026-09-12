@@ -106,12 +106,25 @@ export const QODER_CONFIG = {
 // CodeBuddy CN (Tencent — copilot.tencent.com) OAuth Configuration
 // (Custom Device-Auth Flow: POST stateUrl → open authUrl → GET pollUrl?state=).
 // No client_id/secret — the upstream CLI ships none.
+//
+// CODEBUDDY_CN_USER_AGENT is the single source of truth for the CLI/CodeBuddy version
+// string. It MUST stay identical across OAuth (this file), chat completions
+// (open-sse/config/providers/registry/codebuddy-cn/index.ts) and usage/quota
+// (open-sse/services/usage/codebuddy-cn.ts) — a mismatched version string across a
+// single account's auth vs. chat calls is exactly the kind of internally-inconsistent
+// client fingerprint Tencent's WAF flags as anomalous (#12702).
+//
+// The literal lives in the codebuddy-cn registry's own leaf module so that entry
+// does not import this file (whose graph owns server-only edges, #13376).
+import { CODEBUDDY_CN_USER_AGENT } from "../../../../open-sse/config/providers/registry/codebuddy-cn/userAgent";
+export { CODEBUDDY_CN_USER_AGENT };
+
 export const CODEBUDDY_CN_CONFIG = {
   baseUrl: "https://copilot.tencent.com",
   stateUrl: "https://copilot.tencent.com/v2/plugin/auth/state",
   tokenUrl: "https://copilot.tencent.com/v2/plugin/auth/token",
   refreshUrl: "https://copilot.tencent.com/v2/plugin/auth/token/refresh",
-  userAgent: "CLI/2.63.2 CodeBuddy/2.63.2",
+  userAgent: CODEBUDDY_CN_USER_AGENT,
   platform: "CLI",
   pollInterval: 5000,
 };

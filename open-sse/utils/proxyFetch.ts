@@ -13,7 +13,7 @@ import {
   proxyConfigToUrl,
   proxyUrlForLogs,
 } from "./proxyDispatcher.ts";
-import tlsClient, { type TlsFetchOptions } from "./tlsClient.ts";
+import tlsClient, { type TlsFetchOptions, guardTlsFirstByte } from "./tlsClient.ts";
 import { isProxyReachable } from "@/lib/proxyHealth";
 import {
   isControlPlaneProxyDirectFallbackEnabled,
@@ -109,9 +109,10 @@ const TLS_PROVIDER_PROFILE: Record<string, { browser: string; os: string }> = {
   maxai: { browser: "firefox_150", os: "windows" },
 };
 
-function tlsProfileForProvider(
-  provider: string | null | undefined
-): { browserProfile?: string; os?: string } {
+function tlsProfileForProvider(provider: string | null | undefined): {
+  browserProfile?: string;
+  os?: string;
+} {
   if (!provider) return {};
   const p = TLS_PROVIDER_PROFILE[provider.trim().toLowerCase()];
   return p ? { browserProfile: p.browser, os: p.os } : {};
@@ -148,11 +149,6 @@ export function setTlsClientForTest(client: TlsClientLike | null): void {
 const FINGERPRINT_ARM_TTL_MS = 60 * 60 * 1000;
 const fingerprintArmedUntil = new Map<string, number>();
 
-function tlsFirstByteWatchdogMs(): number {
-  const parsed = Number(process.env.TLS_FINGERPRINT_FIRST_BYTE_WATCHDOG_MS || "10000");
-  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 10_000;
-}
-
 function providerFingerprintArmed(provider: string | null | undefined): boolean {
   if (!provider) return false;
   const key = provider.trim().toLowerCase();
@@ -183,72 +179,6 @@ async function looksLikeFingerprintRejection(response: Response): Promise<boolea
   }
 }
 
-/**
- * Guard a wreq-js response against the buffering stall: the first body byte
- * must arrive within the watchdog window or the body is cancelled and a
- * transport error thrown (callers fall back to the direct dispatcher).
- * The returned Response yields the first chunk before continuing the original
- * stream, so no bytes are lost when the watchdog does not fire.
- */
-async function withTlsFirstByteWatchdog(response: Response): Promise<Response> {
-  if (!response.body) return response;
-  const reader = response.body.getReader();
-  let first: ReadableStreamReadResult<Uint8Array>;
-  try {
-    first = await Promise.race([
-      reader.read(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => {
-          const err = new Error("TLS fingerprint first-byte watchdog fired") as Error & {
-            code?: string;
-          };
-          err.code = "TLS_FIRST_BYTE_TIMEOUT";
-          reject(err);
-        }, tlsFirstByteWatchdogMs())
-      ),
-    ]);
-  } catch (err) {
-    try {
-      await reader.cancel(err);
-    } catch {
-      // reader already closed
-    }
-    throw err;
-  }
-  // The first chunk was already consumed by the watchdog race — re-emit it
-  // before continuing the original stream so no bytes are lost.
-  const rest = new ReadableStream<Uint8Array>({
-    async pull(controller) {
-      if (first && !first.done) {
-        controller.enqueue(first.value);
-        first = null;
-        return;
-      }
-      try {
-        const chunk = await reader.read();
-        if (chunk.done) {
-          controller.close();
-        } else {
-          controller.enqueue(chunk.value);
-        }
-      } catch (error) {
-        controller.error(error);
-      }
-    },
-    async cancel(reason) {
-      try {
-        await reader.cancel(reason);
-      } catch {
-        // upstream already gone
-      }
-    },
-  });
-  return new Response(rest, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: response.headers,
-  });
-}
 // #8376: transport-level connect-failure codes that mean "the configured upstream
 // proxy (or the target itself, for direct egress) is unreachable" — as opposed to an
 // ordinary upstream HTTP error. Read `.code` first (stable across undici/node
@@ -933,9 +863,8 @@ async function patchedFetch(
           ...tlsProfileForProvider(tlsStore?.provider),
         });
         if (tlsStore) tlsStore.used = true;
-        // Buffering-stall guard: if the gateway never sends a first byte, fall
-        // back to the direct dispatcher instead of hanging the caller.
-        return await withTlsFirstByteWatchdog(response);
+        return await guardTlsFirstByte(response);
+        return await guardTlsFirstByte(response);
       } catch (error) {
         if (isCallerAbort(error, getEffectiveSignal(input, options))) throw error;
         const sessionHadCookies =
@@ -993,7 +922,7 @@ async function patchedFetch(
             ...tlsProfileForProvider(tlsStore?.provider),
           });
           if (tlsStore) tlsStore.used = true;
-          return await withTlsFirstByteWatchdog(wreqResponse);
+          return await guardTlsFirstByte(wreqResponse);
         } catch (error) {
           if (isCallerAbort(error, getEffectiveSignal(input, options))) throw error;
           console.warn("[ProxyFetch] TLS-impersonation retry failed; returning the original 403");
@@ -1262,7 +1191,7 @@ async function patchedFetch(
         ...tlsProfileForProvider(tlsStore?.provider),
       });
       if (tlsStore) tlsStore.used = true;
-      return await withTlsFirstByteWatchdog(response);
+      return await guardTlsFirstByte(response);
     } catch (error) {
       if (isCallerAbort(error, getEffectiveSignal(input, options))) throw error;
       const sessionHadCookies =

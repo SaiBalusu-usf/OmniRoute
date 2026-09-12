@@ -13,7 +13,7 @@ const {
   startComboTrace,
   recordComboDecision,
   getComboTrace,
-  summarizeSkippedTargets,
+  summarizeSkippedTargetsWithRetry,
 } = await import("../../open-sse/services/combo/decisionTrace.ts");
 
 test("#12294: persisted_cooldown is a recognized skip reason", () => {
@@ -48,7 +48,7 @@ test("#12294: summarizeSkippedTargets aggregates skip decisions with reason and 
     decision: "dispatched",
   });
 
-  const { skippedTargets, nextRetryAt } = summarizeSkippedTargets(getComboTrace(id));
+  const { skippedTargets, nextRetryAt } = summarizeSkippedTargetsWithRetry(getComboTrace(id));
 
   assert.equal(skippedTargets.length, 2, "only skipped targets are summarized");
   assert.equal(skippedTargets[0].reason, "persisted_cooldown");
@@ -85,7 +85,7 @@ test("#12294: nextRetryAt picks the earliest FUTURE cooldown reset", () => {
     detail: "cooldown until 2031-01-01T00:00:00.000Z", // later
   });
 
-  const { nextRetryAt } = summarizeSkippedTargets(getComboTrace(id));
+  const { nextRetryAt } = summarizeSkippedTargetsWithRetry(getComboTrace(id));
   assert.equal(nextRetryAt, "2030-06-01T12:00:00.000Z");
 });
 
@@ -100,15 +100,15 @@ test("#12294: non-cooldown skips and absent traces yield no nextRetryAt", () => 
     reason: "quota_cutoff",
   });
 
-  const fromTrace = summarizeSkippedTargets(getComboTrace(id));
+  const fromTrace = summarizeSkippedTargetsWithRetry(getComboTrace(id));
   assert.equal(fromTrace.skippedTargets.length, 1);
   assert.equal(fromTrace.nextRetryAt, null, "quota_cutoff carries no cooldown timestamp");
 
-  assert.deepEqual(summarizeSkippedTargets(null), {
+  assert.deepEqual(summarizeSkippedTargetsWithRetry(null), {
     skippedTargets: [],
     nextRetryAt: null,
   });
-  assert.deepEqual(summarizeSkippedTargets(getComboTrace("missing-id")), {
+  assert.deepEqual(summarizeSkippedTargetsWithRetry(getComboTrace("missing-id")), {
     skippedTargets: [],
     nextRetryAt: null,
   });

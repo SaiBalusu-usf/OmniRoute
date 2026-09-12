@@ -21,6 +21,7 @@ import { randomUUID } from "node:crypto";
 export const COMBO_SKIP_REASONS = [
   "circuit_open",
   "provider_cooldown",
+  "persisted_cooldown",
   "request_exhaustion",
   "model_lockout",
   "quota_cutoff",
@@ -45,6 +46,12 @@ export interface ComboTraceEntry {
   /** Optional human-readable detail (e.g. cooldown reset timestamp). Never contains credentials. */
   detail?: string;
   ts: number;
+  /**
+   * Safe, non-secret elaboration on `reason` (e.g. a cooldown reset ISO
+   * timestamp). SAFETY CONTRACT above still applies: never a credential
+   * fragment, header, or raw upstream error string.
+   */
+  detail?: string;
 }
 
 export interface ComboTrace {
@@ -124,7 +131,41 @@ export function recordComboDecision(
     reason: entry.reason as ComboSkipReason | undefined,
     detail: entry.detail,
     ts: Date.now(),
+    detail: entry.detail,
   });
+}
+
+/** One skip reason's targets, for the ALL_TARGETS_SKIPPED diagnostics body. */
+export interface SkippedTargetGroup {
+  reason: ComboSkipReason;
+  targets: string[];
+  detail?: string;
+}
+
+/**
+ * #12659: group a trace's skipped-before-dispatch decisions by reason so an
+ * ALL_TARGETS_SKIPPED 503 body can report WHY every target was skipped
+ * instead of an opaque `excluded: []`. Pure — takes a trace, returns groups;
+ * does not read or mutate the in-memory store.
+ */
+export function summarizeSkippedTargets(trace: ComboTrace | null): SkippedTargetGroup[] {
+  if (!trace) return [];
+  const byReason = new Map<ComboSkipReason, SkippedTargetGroup>();
+  for (const entry of trace.decisions) {
+    if (entry.decision !== "skipped_before_dispatch" || !entry.reason) continue;
+    const group = byReason.get(entry.reason);
+    if (group) {
+      group.targets.push(entry.target);
+      if (!group.detail && entry.detail) group.detail = entry.detail;
+    } else {
+      byReason.set(entry.reason, {
+        reason: entry.reason,
+        targets: [entry.target],
+        detail: entry.detail,
+      });
+    }
+  }
+  return Array.from(byReason.values());
 }
 
 export function finishComboTrace(
@@ -185,7 +226,7 @@ function pruneExpired(): void {
  * hammering a fully-quota-walled combo.
  * Pure function over the trace — no DB, no clock dependency beyond Date parsing.
  */
-export function summarizeSkippedTargets(trace: ComboTrace | null): {
+export function summarizeSkippedTargetsWithRetry(trace: ComboTrace | null): {
   skippedTargets: Array<{ target: string; reason: ComboSkipReason; detail?: string }>;
   nextRetryAt: string | null;
 } {

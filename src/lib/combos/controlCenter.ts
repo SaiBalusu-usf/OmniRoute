@@ -1,4 +1,13 @@
 import { normalizeComboModels, type ComboStep } from "./steps";
+import { resolveComboTargetModelStr } from "../../../open-sse/services/combo/opencodeTargetAlias.ts";
+// NOTE: intentionally NOT importing `resolveProviderAlias` from
+// `open-sse/services/model.ts` here — `controlCenter.ts` is bundled into the
+// `ComboControlCenterClient.tsx` ("use client") route, and `services/model.ts`
+// transitively pulls server-only DB modules (`lib/db/models.ts`,
+// `lib/db/providers.ts`) through the combo / quota / usage chain
+// (services/usage.ts → qoderCli.ts → child_process). The `resolveProviderAlias`
+// lookup is a 3-line pure function over the alias map; inlining it here keeps
+// the client bundle free of the server-only graph (#11912 follow-up).
 
 type JsonRecord = Record<string, unknown>;
 
@@ -31,10 +40,10 @@ export interface ComboControlCenterHealth {
     totalRequests?: number;
   };
   quotaHealth?: {
-    worstRemainingPct?: number;
+    worstRemainingPct?: number | null;
     providers?: Array<{
       provider: string;
-      remainingPct: number;
+      remainingPct: number | null;
       isExhausted: boolean;
       trend: "improving" | "stable" | "declining";
     }>;
@@ -108,10 +117,22 @@ function toString(value: unknown): string | null {
 
 function providerFromModel(model: string | null | undefined): string | null {
   if (!model) return null;
-  const slashIndex = model.indexOf("/");
+  // Mirror the server-side `resolveProviderAlias` for the prefix display in
+  // combo control-center cards: server routing still uses
+  // open-sse/services/model.ts's full alias map; this only affects the UI
+  // label shown on the combo card.
+  const normalized = resolveComboTargetModelStr(model);
+  const slashIndex = normalized.indexOf("/");
   if (slashIndex <= 0) return null;
-  return model.slice(0, slashIndex);
+  // `resolveComboTargetModelStr` already rewrites `opencode/` → `oc/`, so
+  // the only meaningful manual alias here is `oc` → `opencode-zen` (#11912).
+  const prefix = normalized.slice(0, slashIndex);
+  return CLIENT_SAFE_ALIAS_OVERRIDES[prefix] ?? prefix;
 }
+
+const CLIENT_SAFE_ALIAS_OVERRIDES: Readonly<Record<string, string>> = {
+  oc: "opencode-zen",
+};
 
 function normalizeSuccessRate(value: unknown): number {
   const rate = toNumber(value, 0);
