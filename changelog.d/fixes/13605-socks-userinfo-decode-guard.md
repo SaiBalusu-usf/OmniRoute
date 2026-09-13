@@ -1,0 +1,1 @@
+- **fix(proxy):** keep proxy credentials holding a literal `%` instead of dropping the sign-in on SOCKS and stored proxy URLs, while correctly encoded values still decode as before ([#13605](https://github.com/diegosouzapw/OmniRoute/pull/13605)) — thanks @maxmad64bis

@@ -1,5 +1,6 @@
 import "./setupPolyfill.ts";
 import { Agent, ProxyAgent, type Dispatcher } from "undici";
+import { decodeUserinfo } from "@/shared/utils/decodeUserinfo";
 import { getUpstreamTimeoutConfig } from "@/shared/utils/runtimeTimeouts";
 import { stripIpv6Brackets, detectIpLiteralFamily, parseProxyFamily } from "./proxyFamily.ts";
 import { createSocksDispatcherWithFamily } from "./socksConnectorWithFamily.ts";
@@ -458,8 +459,8 @@ function buildProxyDispatcher(
       host: stripIpv6Brackets(parsed.hostname),
       port: Number(port),
     };
-    if (parsed.username) socksOptions.userId = decodeURIComponent(parsed.username);
-    if (parsed.password) socksOptions.password = decodeURIComponent(parsed.password);
+    if (parsed.username) socksOptions.userId = decodeUserinfo(parsed.username);
+    if (parsed.password) socksOptions.password = decodeUserinfo(parsed.password);
     return createSocksDispatcherWithFamily(
       socksOptions as unknown as Parameters<typeof createSocksDispatcherWithFamily>[0],
       family,
@@ -553,7 +554,7 @@ export function __getSocksOptionsForTest(proxyUrl: string): SocksDispatcherOptio
     host: stripIpv6Brackets(parsed.hostname),
     port: Number(port),
   };
-  if (parsed.username) socksOptions.userId = decodeURIComponent(parsed.username);
-  if (parsed.password) socksOptions.password = decodeURIComponent(parsed.password);
+  if (parsed.username) socksOptions.userId = decodeUserinfo(parsed.username);
+  if (parsed.password) socksOptions.password = decodeUserinfo(parsed.password);
   return socksOptions;
 }
