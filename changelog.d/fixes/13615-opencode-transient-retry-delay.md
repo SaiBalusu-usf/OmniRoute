@@ -1,0 +1,1 @@
+- **fix(opencode):** pause failover dispatch briefly once transient backend errors repeat, so the next account retries against a recovered upstream instead of hammering it ([#13615](https://github.com/diegosouzapw/OmniRoute/pull/13615)) — thanks @maxmad64bis
