@@ -13,13 +13,19 @@ let nodeOs: typeof import("os") | null = null;
 let nodePath: typeof import("path") | null = null;
 
 try {
-  if (typeof window === "undefined") {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    nodeFs = require("fs");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    nodeOs = require("os");
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    nodePath = require("path");
+  // ESM-safe synchronous builtin access: a bare `require("fs")` is undefined in
+  // ESM scope ("type": "module"), which silently disabled FS detection and disk
+  // cache reads on the server. `process.getBuiltinModule` (Node 22.3+/24) works
+  // in both CJS and ESM and is never statically resolved by bundlers, so the
+  // browser bundle keeps its `fs: false` fallback untouched.
+  if (
+    typeof window === "undefined" &&
+    typeof process !== "undefined" &&
+    typeof process.getBuiltinModule === "function"
+  ) {
+    nodeFs = process.getBuiltinModule("fs") as typeof import("fs");
+    nodeOs = process.getBuiltinModule("os") as typeof import("os");
+    nodePath = process.getBuiltinModule("path") as typeof import("path");
   }
 } catch {
   /* Browser environment */

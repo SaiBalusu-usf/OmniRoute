@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Button from "@/shared/components/Button";
 import Input from "@/shared/components/Input";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,16 @@ export default function LoginPage() {
   const [nodeVersion, setNodeVersion] = useState(null);
   const [nodeCompatible, setNodeCompatible] = useState(true);
   const router = useRouter();
+  // Component-level mounted guard shared by checkAuth and handleLogin so
+  // async completions after HMR/navigation unmount never call setState.
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 0);
@@ -43,6 +53,7 @@ export default function LoginPage() {
 
         if (res.ok) {
           const data = await res.json();
+          if (!isMounted || !isMountedRef.current) return;
           if (data.nodeVersion) setNodeVersion(data.nodeVersion);
           if (data.nodeCompatible === false) setNodeCompatible(false);
           if (data.authenticated === true || data.requireLogin === false) {
@@ -91,6 +102,7 @@ export default function LoginPage() {
         window.location.href = "/dashboard";
       } else {
         const data = await res.json();
+        if (!isMountedRef.current) return;
         // (#521) If no password is set, redirect to onboarding instead of showing an error
         if (data.needsSetup) {
           window.location.href = "/dashboard/onboarding";
@@ -99,9 +111,9 @@ export default function LoginPage() {
         setError(data.error || t("invalidPassword"));
       }
     } catch (_err) {
-      setError(t("errorOccurredRetry"));
+      if (isMountedRef.current) setError(t("errorOccurredRetry"));
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) setLoading(false);
     }
   };
 

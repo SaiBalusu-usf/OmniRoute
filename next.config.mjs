@@ -407,11 +407,17 @@ const nextConfig = {
         net: false,
         tls: false,
       };
-      config.plugins.push(
-        new webpack.NormalModuleReplacementPlugin(/^node:(.*)$/, (resource) => {
-          resource.request = resource.request.replace(/^node:/, "");
-        })
-      );
+      // Strip the `node:` scheme so browser bundles fall back to the stubs
+      // above. Guarded: the webpack-config unit-test fixture invokes this
+      // function with a partial mock (no `plugins` array / no webpack impl),
+      // so only push when both exist.
+      if (Array.isArray(config.plugins) && typeof webpack?.NormalModuleReplacementPlugin === "function") {
+        config.plugins.push(
+          new webpack.NormalModuleReplacementPlugin(/^node:(.*)$/, (resource) => {
+            resource.request = resource.request.replace(/^node:/, "");
+          })
+        );
+      }
     }
     config.ignoreWarnings = [
       ...(config.ignoreWarnings || []),
