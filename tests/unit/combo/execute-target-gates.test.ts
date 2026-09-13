@@ -68,7 +68,7 @@ function baseDeps(overrides: Partial<AttemptLoopDeps> = {}): AttemptLoopDeps {
     body: { messages: [{ role: "user", content: "hi" }] },
     startTime: Date.now(),
     releaseStickyPinOnFailure() {},
-    clearStaleLKGP() {},
+    async clearStaleLKGP() {},
     ...overrides,
   };
 }

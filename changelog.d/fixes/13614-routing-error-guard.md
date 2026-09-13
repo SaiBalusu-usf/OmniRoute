@@ -1,0 +1,1 @@
+- **fix(routing):** await stale provider-pin clears on routing paths and gate swallowed errors plus fire-and-forget async ([#13614](https://github.com/diegosouzapw/OmniRoute/pull/13614)) — thanks @maxmad64bis

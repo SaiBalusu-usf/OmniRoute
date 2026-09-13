@@ -114,9 +114,15 @@ export async function executeTargetAttempt(opts: {
   const fallbackDelayMs = resolveDelayMs(deps.config.fallbackDelayMs, 0);
   const universalHandoffConfig = deps.universalHandoffConfig ?? DEFAULT_UNIVERSAL_HANDOFF_CONFIG;
 
-  const stopProtectedPriorityTarget = (message: string) => {
+  const stopProtectedPriorityTarget = async (message: string) => {
     state.observeFailure(false, target.executionKey);
-    deps.clearStaleLKGP(deps.combo.name, target.executionKey, deps.combo.id, deps.log, "COMBO");
+    await deps.clearStaleLKGP(
+      deps.combo.name,
+      target.executionKey,
+      deps.combo.id,
+      deps.log,
+      "COMBO"
+    );
     return protectedPriorityTarget
       ? { ok: false as const, response: errorResponse(503, message) }
       : null;
@@ -649,6 +655,7 @@ export async function executeTargetAttempt(opts: {
               setLKGP(deps.combo.name, deps.combo.id || deps.combo.name, provider, connId),
             ]);
           } catch (err) {
+            // no-effect: logged best-effort success-path persist
             deps.log.warn(
               "COMBO",
               "Failed to record Last Known Good Provider. This is non-fatal.",
@@ -892,7 +899,13 @@ export async function executeTargetAttempt(opts: {
       state.exhaustedConnections.has(`${provider}:${targetWithConnection.connectionId}`) ||
       (provider && state.exhaustedProviders.has(provider))
     ) {
-      deps.clearStaleLKGP(deps.combo.name, target.executionKey, deps.combo.id, deps.log, "COMBO");
+      await deps.clearStaleLKGP(
+        deps.combo.name,
+        target.executionKey,
+        deps.combo.id,
+        deps.log,
+        "COMBO"
+      );
     }
 
     // #2101: Prevent infinite fallback loops with 400 Bad Request errors that are genuinely
@@ -934,7 +947,13 @@ export async function executeTargetAttempt(opts: {
       state.lastStatus = result.status;
       if (i > 0) state.fallbackCount++;
       deps.log.warn("COMBO", `Model ${modelStr} failed with body-specific error, stopping combo`);
-      deps.clearStaleLKGP(deps.combo.name, target.executionKey, deps.combo.id, deps.log, "COMBO");
+      await deps.clearStaleLKGP(
+        deps.combo.name,
+        target.executionKey,
+        deps.combo.id,
+        deps.log,
+        "COMBO"
+      );
       // #4279: surface the 400 via the {ok,response} contract so the OUTER
       // target loop resolves the combo and stops. A bare `break` here only
       // exits the inner retry loop; executeTarget then returns null, which
@@ -1123,7 +1142,13 @@ export async function executeTargetAttempt(opts: {
     // *next* separate request. Circuit breaker / model lockout deliberately
     // don't react to request-scoped failure classes (see scopedFailure below),
     // so nothing else clears this stale pin.
-    deps.clearStaleLKGP(deps.combo.name, target.executionKey, deps.combo.id, deps.log, "COMBO");
+    await deps.clearStaleLKGP(
+      deps.combo.name,
+      target.executionKey,
+      deps.combo.id,
+      deps.log,
+      "COMBO"
+    );
     state.recordedAttempts++;
     state.lastError = errorText || String(result.status);
     state.comboErrors.push({

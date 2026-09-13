@@ -58,9 +58,15 @@ export async function evaluateExecuteTargetGates(opts: {
   const protectedPriorityTarget =
     deps.strategy === "priority" && target.fallbackOnlyOnQuotaExhaustion === true;
 
-  const stopProtectedPriorityTarget = (message: string) => {
+  const stopProtectedPriorityTarget = async (message: string) => {
     state.observeFailure(false, target.executionKey);
-    deps.clearStaleLKGP(deps.combo.name, target.executionKey, deps.combo.id, deps.log, "COMBO");
+    await deps.clearStaleLKGP(
+      deps.combo.name,
+      target.executionKey,
+      deps.combo.id,
+      deps.log,
+      "COMBO"
+    );
     return protectedPriorityTarget
       ? { ok: false as const, response: errorResponse(503, message) }
       : null;
@@ -93,7 +99,7 @@ export async function evaluateExecuteTargetGates(opts: {
     bumpFallback();
     return {
       kind: "skip",
-      result: stopProtectedPriorityTarget(`Provider ${provider} circuit breaker is open`),
+      result: await stopProtectedPriorityTarget(`Provider ${provider} circuit breaker is open`),
     };
   }
 
@@ -113,7 +119,7 @@ export async function evaluateExecuteTargetGates(opts: {
     bumpFallback();
     return {
       kind: "skip",
-      result: stopProtectedPriorityTarget(`Provider ${provider} is in cooldown`),
+      result: await stopProtectedPriorityTarget(`Provider ${provider} is in cooldown`),
     };
   }
 
@@ -151,7 +157,13 @@ export async function evaluateExecuteTargetGates(opts: {
         decision: "skipped_before_dispatch",
         reason: "persisted_cooldown",
       });
-      deps.clearStaleLKGP(deps.combo.name, target.executionKey, deps.combo.id, deps.log, "COMBO");
+      await deps.clearStaleLKGP(
+        deps.combo.name,
+        target.executionKey,
+        deps.combo.id,
+        deps.log,
+        "COMBO"
+      );
       bumpFallback();
       return { kind: "skip", result: null };
     }
@@ -173,7 +185,7 @@ export async function evaluateExecuteTargetGates(opts: {
     bumpFallback();
     return {
       kind: "skip",
-      result: stopProtectedPriorityTarget(`Target ${modelStr} is unavailable`),
+      result: await stopProtectedPriorityTarget(`Target ${modelStr} is unavailable`),
     };
   }
 
@@ -188,7 +200,7 @@ export async function evaluateExecuteTargetGates(opts: {
     bumpFallback();
     return {
       kind: "skip",
-      result: stopProtectedPriorityTarget(`Model ${modelStr} is locked`),
+      result: await stopProtectedPriorityTarget(`Model ${modelStr} is locked`),
     };
   }
 
@@ -207,7 +219,13 @@ export async function evaluateExecuteTargetGates(opts: {
         "COMBO",
         `Skipping ${modelStr} — quota exhaustion cutoff (${quotaCutoff.reason || "quota_exhausted"})`
       );
-      deps.clearStaleLKGP(deps.combo.name, target.executionKey, deps.combo.id, deps.log, "COMBO");
+      await deps.clearStaleLKGP(
+        deps.combo.name,
+        target.executionKey,
+        deps.combo.id,
+        deps.log,
+        "COMBO"
+      );
       recordComboDecision(deps.traceInvocationId, {
         step: target.executionKey,
         target: modelStr,
@@ -244,7 +262,13 @@ export async function evaluateExecuteTargetGates(opts: {
         "COMBO",
         `Skipping ${modelStr} — quota budget ${quotaDecision.reason} (remaining ${quotaDecision.tokensRemaining ?? 0}, cost ${quotaDecision.estimatedCost ?? 0})`
       );
-      deps.clearStaleLKGP(deps.combo.name, target.executionKey, deps.combo.id, deps.log, "COMBO");
+      await deps.clearStaleLKGP(
+        deps.combo.name,
+        target.executionKey,
+        deps.combo.id,
+        deps.log,
+        "COMBO"
+      );
       bumpFallback();
       return { kind: "skip", result: null };
     }
@@ -257,7 +281,13 @@ export async function evaluateExecuteTargetGates(opts: {
         "COMBO",
         `Skipping ${modelStr} — no credentials available or model excluded`
       );
-      deps.clearStaleLKGP(deps.combo.name, target.executionKey, deps.combo.id, deps.log, "COMBO");
+      await deps.clearStaleLKGP(
+        deps.combo.name,
+        target.executionKey,
+        deps.combo.id,
+        deps.log,
+        "COMBO"
+      );
       recordComboDecision(deps.traceInvocationId, {
         step: target.executionKey,
         target: modelStr,
@@ -267,7 +297,7 @@ export async function evaluateExecuteTargetGates(opts: {
       bumpFallback();
       return {
         kind: "skip",
-        result: stopProtectedPriorityTarget(`Model ${modelStr} is unavailable`),
+        result: await stopProtectedPriorityTarget(`Model ${modelStr} is unavailable`),
       };
     }
   }
@@ -287,7 +317,7 @@ export async function evaluateExecuteTargetGates(opts: {
       bumpFallback();
       return {
         kind: "skip",
-        result: stopProtectedPriorityTarget(`Credential gate blocked ${modelStr}`),
+        result: await stopProtectedPriorityTarget(`Credential gate blocked ${modelStr}`),
       };
     }
 
@@ -306,7 +336,7 @@ export async function evaluateExecuteTargetGates(opts: {
       bumpFallback();
       return {
         kind: "skip",
-        result: stopProtectedPriorityTarget(`Connection capacity reached for ${modelStr}`),
+        result: await stopProtectedPriorityTarget(`Connection capacity reached for ${modelStr}`),
       };
     }
   }

@@ -93,7 +93,7 @@ export type AttemptLoopDeps = {
     comboId: string | undefined,
     log: ComboLogger,
     tag: string
-  ) => void;
+  ) => Promise<void>;
   /**
    * Closed-over setup values from handleComboChatInner. Optional so Task 2
    * gate tests keep compiling; attempt uses defaults when absent.
