@@ -273,7 +273,7 @@ async function sweep(): Promise<void> {
   }
 
   console.log(
-    `${LOG_PREFIX} Sweep complete: ${tested} tested, ${alive} alive, ${blocked} blocked by target, ` +
+    `${LOG_PREFIX} Sweep complete: ${tested} tested, ${alive} alive, ${blocked} refused by target, ` +
       `${inconclusive} inconclusive, ${removed} auto-removed, ${disabled} auto-disabled`
   );
 }

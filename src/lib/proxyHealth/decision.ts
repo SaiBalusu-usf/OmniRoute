@@ -27,11 +27,11 @@
  *       is free once autoDisable participates in `managesStatus` below. If
  *       both flags are set, auto-remove (destructive) wins: a proxy that is
  *       about to be deleted has no use for a soft-disable in between.
- *   E — a `blocked` probe (the TARGET refused this egress IP: 401/403/429) is
- *       neutral like `inconclusive`. The proxy relayed correctly, so it is not
- *       failing; but it is not serving that destination either, which `ok` hid.
- *       Kept out of the failure count on purpose: one target refusing an IP
- *       does not make the proxy dead, and the operator owns the removal policy.
+ *   E — a `blocked` probe (the TARGET refused this egress IP: 401/403/429)
+ *       resets the consecutive-failure streak: any relayed HTTP response
+ *       proves the proxy relayed, so it is not failing. The refusal itself
+ *       stays out of the count (one target refusing an IP does not make the
+ *       proxy dead), and the refusal tally stays visible separately.
  */
 
 export type ProxyProbeOutcome = "ok" | "fail" | "inconclusive" | "blocked";
@@ -86,9 +86,16 @@ export function decideProxyHealthAction(input: ProxyHealthDecisionInput): ProxyH
   // Either opt-in flag hands status control from the operator to the sweep.
   const managesStatus = autoRemove || autoDisable;
 
-  // B/E: inconclusive and blocked probes are neutral — no count, no status.
-  if (outcome === "inconclusive" || outcome === "blocked") {
+  // B: inconclusive probes are neutral — no count, no status.
+  if (outcome === "inconclusive") {
     return { failures: priorFailures, clearFailures: false, setStatus: null, remove: false };
+  }
+
+  // E: a refused relay still proves the proxy relayed, so the streak resets.
+  // Status and removal stay untouched: forgetting failures is not declaring
+  // the proxy healthy, and one target refusing an IP never removes a proxy.
+  if (outcome === "blocked") {
+    return { failures: 0, clearFailures: true, setStatus: null, remove: false };
   }
 
   // Success: reset the streak. Only (re)assert "active" when the operator has

@@ -1,0 +1,1 @@
+- **fix(proxy-health):** target-refused probe responses no longer accumulate toward auto-removal: any relayed HTTP response resets the consecutive-failure streak ([#13608](https://github.com/diegosouzapw/OmniRoute/pull/13608)) — thanks @maxmad64bis
