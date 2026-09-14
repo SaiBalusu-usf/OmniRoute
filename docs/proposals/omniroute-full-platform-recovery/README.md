@@ -26,6 +26,7 @@ Any artifact offered to dashboard users must be built with the dashboard intact.
 - [Release and rollback runbook](./RELEASE-AND-ROLLBACK.md)
 - [Requirement-to-evidence traceability](./TRACEABILITY.md)
 - [Risks and decisions](./RISKS-AND-DECISIONS.md)
+- [Execution goal prompt](./GOAL-PROMPT.md)
 
 ## Evidence baseline
 
