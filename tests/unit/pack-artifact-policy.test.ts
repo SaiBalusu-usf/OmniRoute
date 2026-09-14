@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 import {
   APP_STAGING_ALLOWED_EXACT_PATHS,
@@ -105,6 +105,21 @@ test("findUnexpectedArtifactPaths flags app pack files outside the allowlist", (
   );
 
   assert.deepEqual(unexpectedPaths, ["dist/scripts/build/prepublish.mjs", "docs/extra.md"]);
+});
+
+test("every @omniroute subpackage is covered by the package allowlist", () => {
+  const subpackages = readdirSync(new URL("../../@omniroute/", import.meta.url), {
+    withFileTypes: true,
+  })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => `@omniroute/${entry.name}/`);
+
+  for (const prefix of subpackages) {
+    assert.ok(
+      PACK_ARTIFACT_ALLOWED_PATH_PREFIXES.includes(prefix),
+      `${prefix} is packed by package.json but missing from the artifact allowlist`
+    );
+  }
 });
 
 test("findUnexpectedArtifactPaths flags node_modules even inside an allowed prefix", () => {
@@ -268,6 +283,7 @@ test("config/i18n.json ships in the tarball: allowed, required, and in package.j
 test("findMissingArtifactPaths flags missing root runtime files in the tarball", () => {
   const missingPaths = findMissingArtifactPaths(
     [
+      "dist/BUILD_PROFILE",
       "dist/server.js",
       "bin/omniroute.mjs",
       "package.json",

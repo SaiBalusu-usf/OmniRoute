@@ -311,6 +311,12 @@ export async function main() {
     const result = await runNextBuild();
     const standaloneDir = path.join(distDir, "standalone");
     if (result.code === 0 && (await exists(standaloneDir)) && !isContributorBuild()) {
+      await fs.writeFile(
+        path.join(standaloneDir, "BUILD_PROFILE"),
+        isBackendOnlyBuild() ? "backend\n" : "full\n",
+        "utf8"
+      );
+
       try {
         await fs.cp(path.join(projectRoot, "docs"), path.join(standaloneDir, "docs"), {
           recursive: true,

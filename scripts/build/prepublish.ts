@@ -27,6 +27,7 @@ import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { assembleStandalone } from "./assembleStandalone.mjs";
+import { isBackendOnlyBuild } from "./backendOnlyPages.mjs";
 import { isNativeExecutable, resolveLocalBinEntry } from "./buildToolRunner.mjs";
 import { resolveBundledNpmEntry } from "./resolveNpmEntry.ts";
 import {
@@ -70,7 +71,8 @@ function runBuildTool(
   args: readonly string[],
   options: Parameters<typeof execFileSync>[2]
 ): void {
-  const localEntry = resolveLocalBinEntry(packageName, binName);
+  const buildToolRoot = typeof options?.cwd === "string" ? options.cwd : ROOT;
+  const localEntry = resolveLocalBinEntry(packageName, binName, buildToolRoot);
   if (localEntry) {
     if (isNativeExecutable(localEntry)) {
       execFileSync(localEntry, [...args], options);
@@ -175,17 +177,30 @@ if (existsSync(DIST_DIR)) {
 // .build/next/standalone artifact produced by `npm run build` (build-next-isolated.mjs).
 // If the artifact is absent we invoke it exactly once.
 const NEXT_DIST = process.env.NEXT_DIST_DIR || ".build/next";
-const standaloneServerJs = join(ROOT, NEXT_DIST, "standalone", "server.js");
-if (!existsSync(standaloneServerJs)) {
-  console.log("  🏗️  .build/next/standalone not found — running `npm run build` once...");
+const standaloneDir = join(ROOT, NEXT_DIST, "standalone");
+const standaloneServerJs = join(standaloneDir, "server.js");
+const standaloneBuildProfile = join(standaloneDir, "BUILD_PROFILE");
+const requiredBuildProfile = isBackendOnlyBuild() ? "backend" : "full";
+const hasMatchingStandalone =
+  existsSync(standaloneServerJs) &&
+  existsSync(standaloneBuildProfile) &&
+  readFileSync(standaloneBuildProfile, "utf8").trim() === requiredBuildProfile;
+if (!hasMatchingStandalone) {
+  console.log(
+    `  🏗️  ${requiredBuildProfile} standalone artifact not found — running \`npm run build\` once...`
+  );
   execFileSync(process.execPath, ["scripts/build/build-next-isolated.mjs"], {
     cwd: ROOT,
     stdio: "inherit",
   });
-  if (!existsSync(standaloneServerJs)) {
+  if (
+    !existsSync(standaloneServerJs) ||
+    !existsSync(standaloneBuildProfile) ||
+    readFileSync(standaloneBuildProfile, "utf8").trim() !== requiredBuildProfile
+  ) {
     console.error(
-      "\n  ❌ Standalone build not found after `npm run build` at:",
-      standaloneServerJs
+      `\n  ❌ ${requiredBuildProfile} standalone build not found after \`npm run build\` at:`,
+      standaloneDir
     );
     console.error("     Make sure next.config.mjs has: output: 'standalone'");
     process.exit(1);
@@ -495,7 +510,10 @@ if (existsSync(opencodePluginSrc) && existsSync(join(opencodePluginSrc, "package
       // install never populates its node_modules — and tsup with `dts: true`
       // needs the plugin's own devDependencies (typescript, @opencode-ai/plugin
       // types). Without this install a fresh CI publish fails at this step.
-      if (!existsSync(join(opencodePluginSrc, "node_modules"))) {
+      const pluginDependenciesReady =
+        existsSync(join(opencodePluginSrc, "node_modules", "typescript", "package.json")) &&
+        resolveLocalBinEntry("tsup", "tsup", opencodePluginSrc) !== null;
+      if (!pluginDependenciesReady) {
         // The plugin's node_modules is gitignored, so a fresh CI checkout
         // ALWAYS installs here. The registry CDN is intermittently flaky
         // (onnxruntime-class ETIMEDOUTs to the Microsoft CDN have repeatedly
@@ -506,6 +524,7 @@ if (existsSync(opencodePluginSrc) && existsSync(join(opencodePluginSrc, "package
         const npmEntry = resolveBundledNpmEntry("npm-cli.js");
         const installArgs = [
           "install",
+          "--include=dev",
           "--no-audit",
           "--no-fund",
           "--fetch-retries=2",

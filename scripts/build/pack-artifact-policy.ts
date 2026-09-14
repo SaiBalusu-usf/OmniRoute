@@ -33,6 +33,7 @@ export const APP_STAGING_REMOVAL_PATHS: string[] = [
 
 export const APP_STAGING_ALLOWED_EXACT_PATHS: string[] = [
   ".env.example",
+  "BUILD_PROFILE",
   "BUILD_SHA",
   "docs/openapi.yaml",
   // #7065: imported by dist/server-ws.mjs; assembleStandalone copies it but without
@@ -169,6 +170,7 @@ export const PACK_ARTIFACT_ROOT_ALLOWED_EXACT_PATHS: string[] = [
 
 export const PACK_ARTIFACT_ROOT_ALLOWED_PATH_PREFIXES: string[] = [
   "@omniroute/opencode-plugin/",
+  "@omniroute/opencode-plugin-v2/",
   "@omniroute/opencode-provider/",
   "bin/cli/",
   // Broad open-sse + src source dirs added to package.json "files" in v3.8.21
@@ -189,6 +191,7 @@ export const PACK_ARTIFACT_REQUIRED_PATHS: string[] = [
   "dist/src/lib/usage/callLogArtifactWorker.js",
   "dist/open-sse/vendor/codex-chatgpt-web/adapters/chatgpt-web/mcp-server.js",
   "dist/open-sse/services/compression/rules/en/filler.json",
+  "dist/BUILD_PROFILE",
   "dist/server.js",
   "dist/server-ws.mjs",
   "dist/responses-ws-proxy.mjs",
@@ -360,6 +363,44 @@ export function findUnexpectedArtifactPaths(
           !normalizedPrefixes.some((prefix) => filePath.startsWith(prefix)))
     )
     .sort();
+}
+
+export const REQUIRED_DASHBOARD_ROUTE_PATHS = [
+  "dist/.build/next/server/app/login/page.js",
+  "dist/.build/next/server/app/(dashboard)/home/page.js",
+  "dist/.build/next/server/app/(dashboard)/dashboard/logs/page.js",
+  "dist/.build/next/server/app/(dashboard)/dashboard/conversations/page.js",
+];
+
+export const REQUIRED_DASHBOARD_CLIENT_MANIFEST_PATHS = REQUIRED_DASHBOARD_ROUTE_PATHS.map(
+  (routePath) => routePath.replace(/page\.js$/, "page_client-reference-manifest.js")
+);
+
+export function findDashboardArtifactProblems(
+  artifactPaths: string[],
+  buildProfile: string
+): string[] {
+  const requiredDashboardPaths = [
+    ...REQUIRED_DASHBOARD_ROUTE_PATHS,
+    ...REQUIRED_DASHBOARD_CLIENT_MANIFEST_PATHS,
+  ];
+  const problems = requiredDashboardPaths
+    .filter((requiredPath) => !artifactPaths.includes(requiredPath))
+    .map((requiredPath) => `missing ${requiredPath}`);
+
+  if (
+    !artifactPaths.some((artifactPath) =>
+      /^dist\/\.build\/next\/static\/chunks\/.+\.js$/.test(artifactPath)
+    )
+  ) {
+    problems.push("missing dashboard JavaScript assets under dist/.build/next/static/");
+  }
+
+  if (buildProfile.trim() !== "full") {
+    problems.push(`dist/BUILD_PROFILE must be full, got ${JSON.stringify(buildProfile.trim())}`);
+  }
+
+  return problems;
 }
 
 export function findMissingArtifactPaths(
