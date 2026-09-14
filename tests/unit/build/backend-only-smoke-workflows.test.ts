@@ -9,6 +9,7 @@
 // step legitimately ships the full dashboard UI in the published npm package.
 import test from "node:test";
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import * as yaml from "js-yaml";
@@ -32,6 +33,12 @@ interface WorkflowDoc {
 }
 
 const WORKFLOWS_DIR = path.join(process.cwd(), ".github", "workflows");
+const RELEASE_PROFILE_GUARD = path.join(
+  process.cwd(),
+  "scripts",
+  "build",
+  "assert-full-release-profile.mjs"
+);
 
 function loadWorkflow(fileName: string): WorkflowDoc {
   const raw = fs.readFileSync(path.join(WORKFLOWS_DIR, fileName), "utf8");
@@ -50,6 +57,49 @@ test("contributor build profile enables backend-only mode", () => {
 test("full build remains the default when no backend-only profile is set", () => {
   assert.equal(isBackendOnlyBuild({}), false);
 });
+
+function runReleaseProfileGuard(overrides: Record<string, string> = {}) {
+  const env = { ...process.env };
+  delete env.OMNIROUTE_BUILD_BACKEND_ONLY;
+  delete env.OMNIROUTE_BUILD_PROFILE;
+  Object.assign(env, overrides);
+  return spawnSync(process.execPath, [RELEASE_PROFILE_GUARD], {
+    cwd: process.cwd(),
+    env,
+    encoding: "utf8",
+  });
+}
+
+test("build:release checks the full-dashboard profile before deleting prior artifacts", () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(process.cwd(), "package.json"), "utf8")) as {
+    scripts?: Record<string, string>;
+  };
+  const releaseScript = pkg.scripts?.["build:release"] || "";
+  assert.match(
+    releaseScript,
+    /^node scripts\/build\/assert-full-release-profile\.mjs && rm -rf \.build dist &&/,
+    "build:release must reject backend-only profiles before deleting the prior build"
+  );
+});
+
+for (const env of [
+  { OMNIROUTE_BUILD_BACKEND_ONLY: "1" },
+  { OMNIROUTE_BUILD_PROFILE: "backend" },
+  { OMNIROUTE_BUILD_PROFILE: "contributor" },
+]) {
+  test(`full release rejects the dashboard-stubbing profile ${JSON.stringify(env)}`, () => {
+    const result = runReleaseProfileGuard(env);
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Refusing full release: .*stub the dashboard/);
+  });
+}
+
+for (const env of [{}, { OMNIROUTE_BUILD_PROFILE: "minimal" }, { UNRELATED_SETTING: "1" }]) {
+  test(`full release accepts a non-stubbing profile ${JSON.stringify(env)}`, () => {
+    const result = runReleaseProfileGuard(env);
+    assert.equal(result.status, 0, result.stderr);
+  });
+}
 
 // jobName: null selector means "any job" — used when a file has exactly one
 // "Build CLI bundle" step but we don't want to hardcode/duplicate the job key.
@@ -87,7 +137,10 @@ test("npm-publish.yml 'Build CLI bundle (standalone app)' step must NOT be backe
   const publishJob = Object.values(doc.jobs).find((job) =>
     job.steps.some((s) => s.name === "Build CLI bundle (standalone app)")
   );
-  assert.ok(publishJob, "npm-publish.yml must have a job with a 'Build CLI bundle (standalone app)' step");
+  assert.ok(
+    publishJob,
+    "npm-publish.yml must have a job with a 'Build CLI bundle (standalone app)' step"
+  );
   const step = publishJob!.steps.find((s) => s.name === "Build CLI bundle (standalone app)")!;
   assert.equal(
     isBackendOnly(step),

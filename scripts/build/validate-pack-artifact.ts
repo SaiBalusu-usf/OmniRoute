@@ -1,14 +1,10 @@
 #!/usr/bin/env node
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  makeGitAncestryProbe,
-  readBuildSha,
-  resolveBuildProvenance,
-} from "./buildProvenance.ts";
+import { makeGitAncestryProbe, readBuildSha, resolveBuildProvenance } from "./buildProvenance.ts";
 
 import {
   MCP_CLOSURE_SPOT_CHECK_PATH,
@@ -20,6 +16,7 @@ import {
   PACK_ARTIFACT_ALLOWED_EXACT_PATHS,
   PACK_ARTIFACT_ALLOWED_PATH_PREFIXES,
   PACK_ARTIFACT_REQUIRED_PATHS,
+  findDashboardArtifactProblems,
   findMissingArtifactPaths,
   findUnexpectedArtifactPaths,
   parseJsonValuesOutput,
@@ -149,6 +146,13 @@ try {
   const missingRequiredPaths: string[] = POLICY_ONLY
     ? []
     : findMissingArtifactPaths(artifactPaths, PACK_ARTIFACT_REQUIRED_PATHS);
+  const buildProfilePath = join(ROOT, "dist", "BUILD_PROFILE");
+  const dashboardProblems: string[] = POLICY_ONLY
+    ? []
+    : findDashboardArtifactProblems(
+        artifactPaths,
+        existsSync(buildProfilePath) ? readFileSync(buildProfilePath, "utf8") : ""
+      );
 
   // #3821 — broad `files` prefixes (open-sse/, src/lib/, ...) would otherwise allow
   // co-located *.test.* / __tests__ leaks; ban them explicitly on the real pack list.
@@ -179,6 +183,13 @@ try {
     }
   }
 
+  if (dashboardProblems.length > 0) {
+    console.error("\n❌ The npm publish artifact does not contain a full dashboard:");
+    for (const problem of dashboardProblems) {
+      console.error(`   - ${problem}`);
+    }
+  }
+
   if (leakedTestPaths.length > 0) {
     console.error(
       "\n❌ Test/spec files leaked into the npm publish artifact (tighten package.json files negations):"
@@ -203,6 +214,7 @@ try {
   if (
     unexpectedPaths.length > 0 ||
     missingRequiredPaths.length > 0 ||
+    dashboardProblems.length > 0 ||
     leakedTestPaths.length > 0 ||
     missingMcpPaths.length > 0
   ) {

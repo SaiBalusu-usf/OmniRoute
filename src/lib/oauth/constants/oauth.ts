@@ -18,6 +18,7 @@ import {
   GROK_BUILD_OAUTH_SCOPES,
   GROK_BUILD_TOKEN_URL,
 } from "@omniroute/open-sse/config/grokBuild.ts";
+import { CODEBUDDY_CN_USER_AGENT } from "@omniroute/open-sse/config/codebuddyCn.ts";
 import { resolvePublicCred } from "@omniroute/open-sse/utils/publicCreds.ts";
 import { CURSOR_AGENT_CLI_VERSION } from "@omniroute/open-sse/utils/cursorAgentCliVersion.ts";
 import { buildGitLabOAuthEndpoints, GITLAB_DUO_DEFAULT_BASE_URL } from "../gitlab";
@@ -113,7 +114,7 @@ export const QODER_CONFIG = {
 // (open-sse/services/usage/codebuddy-cn.ts) — a mismatched version string across a
 // single account's auth vs. chat calls is exactly the kind of internally-inconsistent
 // client fingerprint Tencent's WAF flags as anomalous (#12702).
-export const CODEBUDDY_CN_USER_AGENT = "CLI/2.108.1 CodeBuddy/2.108.1";
+export { CODEBUDDY_CN_USER_AGENT };
 
 export const CODEBUDDY_CN_CONFIG = {
   baseUrl: "https://copilot.tencent.com",

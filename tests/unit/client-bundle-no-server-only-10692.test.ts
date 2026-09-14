@@ -31,6 +31,7 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..
 
 /** Modules that pull in Node builtins (fs/net/tls) and must never be statically reachable. */
 const SERVER_ONLY = new Set([
+  "open-sse/services/model.ts",
   "src/lib/db/core.ts",
   "src/lib/db/adapters/driverFactory.ts",
   "src/lib/db/adapters/sqljsAdapter.ts",
@@ -55,7 +56,9 @@ const SKIP_DIRS = new Set(["node_modules", ".git", ".build", "dist", ".next", ".
 /** Resolve an import specifier to a repo-relative file, or null when it leaves the repo. */
 function resolveSpecifier(fromFile: string, specifier: string): string | null {
   let base: string;
-  if (specifier.startsWith(".")) {
+  if (specifier.startsWith("node:")) {
+    return specifier;
+  } else if (specifier.startsWith(".")) {
     base = path.resolve(path.dirname(path.join(REPO_ROOT, fromFile)), specifier);
   } else if (specifier.startsWith("@omniroute/open-sse")) {
     const rest = specifier.slice("@omniroute/open-sse".length).replace(/^\//, "");
@@ -140,7 +143,9 @@ function findServerOnlyPath(entry: string): string[] | null {
     const trail = queue.shift()!;
     for (const resolved of edgesOf(trail[trail.length - 1])) {
       if (seen.has(resolved)) continue;
-      if (SERVER_ONLY.has(resolved)) return [...trail, resolved];
+      if (resolved.startsWith("node:") || SERVER_ONLY.has(resolved)) {
+        return [...trail, resolved];
+      }
       seen.add(resolved);
       queue.push([...trail, resolved]);
     }
@@ -163,7 +168,9 @@ function walk(dir: string, acc: string[] = []): string[] {
 
 function clientEntryPoints(): string[] {
   return walk(path.join(REPO_ROOT, "src")).filter((file) =>
-    /^\s*["']use client["']/m.test(fs.readFileSync(path.join(REPO_ROOT, file), "utf8").slice(0, 200))
+    /^\s*["']use client["']/m.test(
+      fs.readFileSync(path.join(REPO_ROOT, file), "utf8").slice(0, 200)
+    )
   );
 }
 

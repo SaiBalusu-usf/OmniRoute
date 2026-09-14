@@ -14,7 +14,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, rmSync } from "node:fs";
+import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { resolveLocalBinEntry, isNativeExecutable } from "../../scripts/build/buildToolRunner.mjs";
@@ -25,6 +25,29 @@ const ROOT = join(__dirname, "..", "..");
 const opencodePluginSrc = join(ROOT, "@omniroute", "opencode-plugin");
 const opencodePluginDist = join(opencodePluginSrc, "dist", "index.js");
 const opencodePluginCjs = join(opencodePluginSrc, "dist", "index.cjs");
+const prepublishSource = readFileSync(join(ROOT, "scripts", "build", "prepublish.ts"), "utf8");
+
+test("prepublish preserves backend smoke builds and rejects stale standalone artifacts", () => {
+  assert.match(
+    prepublishSource,
+    /const requiredBuildProfile = isBackendOnlyBuild\(\) \? "backend" : "full"/
+  );
+  assert.match(
+    prepublishSource,
+    /const hasMatchingStandalone\s*=\s*[\s\S]*?existsSync\(standaloneServerJs\)[\s\S]*?existsSync\(standaloneBuildProfile\)[\s\S]*?=== requiredBuildProfile/
+  );
+  assert.match(prepublishSource, /if \(!hasMatchingStandalone\)/);
+});
+
+test("prepublish repairs partial production-only plugin installs before the release build", () => {
+  assert.match(
+    prepublishSource,
+    /const pluginDependenciesReady\s*=\s*[\s\S]*?node_modules[\s\S]*?typescript[\s\S]*?resolveLocalBinEntry\("tsup", "tsup", opencodePluginSrc\)/
+  );
+  assert.match(prepublishSource, /if \(!pluginDependenciesReady\)/);
+  assert.match(prepublishSource, /const installArgs = \[\s*"install",\s*"--include=dev",/);
+  assert.match(prepublishSource, /resolveLocalBinEntry\(packageName, binName, buildToolRoot\)/);
+});
 
 test("prepublish pluginAlreadyBuilt predicate recognizes a real ESM-only tsup build (#11787)", () => {
   rmSync(join(opencodePluginSrc, "dist"), { recursive: true, force: true });
@@ -34,9 +57,12 @@ test("prepublish pluginAlreadyBuilt predicate recognizes a real ESM-only tsup bu
   // devbox that hasn't built the plugin before) needs its own install first. Mirror
   // prepublish.ts's own install step instead of hardcoding a `.bin/tsup` path that
   // only exists on a devbox someone happened to `npm install` in already.
-  if (!existsSync(join(opencodePluginSrc, "node_modules"))) {
+  if (
+    !existsSync(join(opencodePluginSrc, "node_modules", "typescript", "package.json")) ||
+    !resolveLocalBinEntry("tsup", "tsup", opencodePluginSrc)
+  ) {
     const npmEntry = resolveBundledNpmEntry("npm-cli.js");
-    const installArgs = ["install", "--no-audit", "--no-fund"];
+    const installArgs = ["install", "--include=dev", "--no-audit", "--no-fund"];
     if (npmEntry) {
       execFileSync(process.execPath, [npmEntry, ...installArgs], {
         cwd: opencodePluginSrc,
