@@ -12,6 +12,8 @@ import {
   errorResponse,
   unavailableResponse,
   errorResponseWithComboDiagnostics,
+  proseRetryAfterIso,
+  warnRetryHintUnreadable,
 } from "../../utils/error.ts";
 import { buildRecoveryHint } from "./pinRecovery.ts";
 import { formatExhaustedConnectionKey } from "./comboDiagFormat.ts";
@@ -824,13 +826,13 @@ export async function handleRoundRobinCombo({
                   (typeof parsedError === "string" ? parsedError : null) ||
                   errorBody?.message ||
                   errorText;
-                retryAfter = errorBody?.retryAfter || null;
+                retryAfter = errorBody?.retryAfter || proseRetryAfterIso(text);
               }
             } catch {
-              /* Clone parse failed */
+              warnRetryHintUnreadable(log, "COMBO-RR", modelStr, result.status, "parse failed");
             }
           } catch {
-            /* Clone failed */
+            warnRetryHintUnreadable(log, "COMBO-RR", modelStr, result.status, "clone failed");
           }
 
           if (result.status === 499) {

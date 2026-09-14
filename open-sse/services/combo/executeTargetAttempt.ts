@@ -18,7 +18,13 @@ import {
   retryHintBypassesMaxCooldownMs,
   selectLockoutCooldownMs,
 } from "../accountFallback.ts";
-import { errorResponse, errorResponseWithComboDiagnostics } from "../../utils/error.ts";
+import {
+  errorResponse,
+  errorResponseWithComboDiagnostics,
+  proseRetryAfterIso,
+  warnRetryHintUnreadable,
+  type ComboDiagnostics,
+} from "../../utils/error.ts";
 import { recordComboFailure, clearComboFailureTracking } from "./failureTracker.ts";
 import { buildRecoveryHint } from "./pinRecovery.ts";
 import { formatExhaustedConnectionKey } from "./comboDiagFormat.ts";
@@ -88,7 +94,6 @@ import {
 } from "./executeTargetClassify.ts";
 import type { CompressionMode } from "../compression/types.ts";
 import type { AttemptLoopDeps, AttemptLoopState, ExecuteTargetResult } from "./attemptLoopTypes.ts";
-import type { ComboDiagnostics } from "../../utils/error.ts";
 import type { ComboErrorBody, ComboRetryAfter, ResolvedComboTarget } from "./types.ts";
 import type { ResponseValidationConfig } from "./responseValidation.ts";
 
@@ -694,18 +699,20 @@ export async function executeTargetAttempt(opts: {
             typeof parsedError === "object" ? (parsedError?.retry_after ?? null) : null;
           const nestedResetSeconds =
             typeof parsedError === "object" ? (parsedError?.reset_seconds ?? null) : null;
+          // Reuse the already-read text for prose retry signals.
           retryAfter =
             errorBody?.retryAfter ||
             nestedRetryAfter ||
+            proseRetryAfterIso(text) ||
             (typeof nestedResetSeconds === "number" && nestedResetSeconds > 0
               ? new Date(Date.now() + nestedResetSeconds * 1000).toISOString()
               : null);
         }
       } catch {
-        /* Clone parse failed */
+        warnRetryHintUnreadable(deps.log, "COMBO", modelStr, result.status, "parse failed");
       }
     } catch {
-      /* Clone failed */
+      warnRetryHintUnreadable(deps.log, "COMBO", modelStr, result.status, "clone failed");
     }
 
     // Track earliest retryAfter

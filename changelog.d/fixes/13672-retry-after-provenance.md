@@ -1,0 +1,1 @@
+- **fix(sse):** omit the `Retry-After` header when no upstream retry signal exists instead of emitting a synthetic 1s delay, and mark every 429/503 response so clients can tell a real wait from the default ([#13672](https://github.com/diegosouzapw/OmniRoute/pull/13672)) — thanks @maxmad64bis
