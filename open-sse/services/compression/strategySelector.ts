@@ -541,8 +541,30 @@ async function runCompressionAsync(
     try {
       const { runCompressionInWorker } = await import("./compressionWorkerPool.ts");
       return await runCompressionInWorker(body, mode, workerOptions, options?.onEngineStep);
-    } catch {
-      return { body, compressed: false, stats: null };
+    } catch (workerError) {
+      // #13145: a worker failure must NOT silently disable compression. Returning the
+      // uncompressed body here made every eligible request bypass the pipeline while the
+      // response header still announced the selected plan ("stacked"), and
+      // compression_analytics stayed empty because nothing ever reported a compressed
+      // result — the failure was invisible at every log level. Fall through to the
+      // in-process path instead, which produces an identical result (the worker is a
+      // throughput optimisation, not a behavioural variant), and surface the cause.
+      //
+      // The logger is imported lazily and defensively: compressionWorker.ts imports this
+      // module, so a static import would pull the logger into the worker bundle, and a
+      // logging failure must never be able to break compression itself.
+      void (async () => {
+        try {
+          const { log } = await import("../../utils/logger.ts");
+          log.warn(
+            "COMPRESSION",
+            "Compression worker failed; falling back to in-process compression: " +
+              (workerError instanceof Error ? workerError.message : String(workerError))
+          );
+        } catch {
+          /* logging is best-effort — never let it affect the compression path */
+        }
+      })();
     }
   }
   if (
