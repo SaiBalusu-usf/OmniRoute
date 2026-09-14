@@ -184,10 +184,12 @@ async function unionCustomModels(
  */
 async function loadConnectionCatalog(storedProviderId: string): Promise<SyncedAvailableModel[]> {
   const [connections, modelsByConnection] = await Promise.all([
-    getRawProviderConnections({ provider: storedProviderId, isActive: true }, undefined, undefined, [
-      "id",
-      "provider",
-    ]),
+    getRawProviderConnections(
+      { provider: storedProviderId, isActive: true },
+      undefined,
+      undefined,
+      ["id", "provider"]
+    ),
     getSyncedAvailableModelsByConnection(storedProviderId),
   ]);
 
@@ -277,10 +279,7 @@ export async function getAllActiveSyncedModels(): Promise<Record<string, SyncedA
 
         const models = enrichCursorCatalog(
           providerId,
-          await unionCustomModels(
-            providerId,
-            collectModelsForConnections(modelsByConnection, connectionIds)
-          )
+          collectModelsForConnections(modelsByConnection, connectionIds)
         );
 
         if (models.length > 0) {
