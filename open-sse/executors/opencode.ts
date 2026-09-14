@@ -570,6 +570,10 @@ export class OpencodeExecutor extends BaseExecutor {
       let lastResult: HttpExecuteResult | null = null;
       let upstreamRetryAfterSecs: number | null = null;
       let stoppedOnClassified = false;
+      // One wave deadline (client ~120s minus abort/drain margin 30s):
+      // refuses new retry dispatches past it. Wave-1 attempts bound it.
+      const deadline = Date.now() + 90_000;
+      let retriedOnce = false;
       let lastSharedEgressError: unknown = null;
       const sharedEgressGuardEnabled = isNetworkRotationSharedEgressGuardEnabled();
       // Set once a proxy-less account's network throw reveals the shared
@@ -730,6 +734,12 @@ export class OpencodeExecutor extends BaseExecutor {
             upstreamRetryAfterSecs = parseRetryAfterSeconds(retryAfterHeader);
           }
           stoppedOnClassified = true;
+          // The wave-stop account is proven unusable for this request, so
+          // the single retry must skip it even if the cooldown write above
+          // has not landed yet on this object.
+          const stopKey = proxyKeyOf(account.proxy);
+          if (stopKey !== null) geoTriedProxyKeys.add(stopKey);
+          else directTried = true;
           log?.warn?.(
             "OPENCODE",
             `${cid}rate-limited 429 on account ${masked}${proxySuffix}, stopping wave…`
@@ -819,9 +829,52 @@ export class OpencodeExecutor extends BaseExecutor {
         throw lastSharedEgressError;
       }
 
-      // Wave stopped on a classified 429 (break above): drain 429 once with
-      // the relayed Retry-After. Any other exhaustion (all-burst wave,
-      // 5xx, geo) surfaces the last response untouched.
+
+      // Wave stopped on a classified 429 (break above): a single retry
+      // pass runs over untried cooldown-ready proxies only (empty set drains
+      // directly, never a no-op), bounded by one 90s wave deadline (retry
+      // slice capped at 60s). Retry re-parses Retry-After headers alone
+      // (no body read); the drain relays the latest upstream value.
+      // Any other exhaustion surfaces the last response untouched.
+      if (
+        stoppedOnClassified &&
+        lastResult !== null &&
+        lastResult.response.status === 429 &&
+        !retriedOnce
+      ) {
+        retriedOnce = true;
+        const retryStart = Date.now();
+        for (const account of this.accounts) {
+          if (Date.now() >= deadline || Date.now() - retryStart > 60_000) break;
+          if (account.cooldownUntil > Date.now()) continue;
+          const key = proxyKeyOf(account.proxy);
+          if (key !== null && geoTriedProxyKeys.has(key)) continue;
+          if (account.proxy === null && directTried) continue;
+          if (key !== null) geoTriedProxyKeys.add(key);
+          else directTried = true;
+          log?.info?.(
+            "OPENCODE",
+            `${cid}single retry via account ${maskAccountId(account.fingerprint)} (${key ?? "direct"})`
+          );
+          let retry: Awaited<ReturnType<BaseExecutor["execute"]>>;
+          try {
+            retry = (await runWithProxyContext(account.proxy, () =>
+              super.execute({ ...input, skipUpstreamRetry: true })
+            )) as HttpExecuteResult;
+          } catch {
+            continue;
+          }
+          if (!("response" in retry)) continue;
+          if (retry.response.status === 429) {
+            lastResult = retry as HttpExecuteResult;
+            const later = parseRetryAfterSeconds(retry.response.headers.get("retry-after"));
+            if (later !== null) upstreamRetryAfterSecs = later;
+            continue;
+          }
+          this.markSuccess(account);
+          return this.normalizeMuseSparkResponse(input, retry);
+        }
+      }
       if (stoppedOnClassified && lastResult !== null && lastResult.response.status === 429) {
         const drained = unavailableResponse(
           429,

@@ -70,8 +70,8 @@ function credentialsFor3(px: number, py: number, pz: number): ProviderCredential
   };
 }
 
-describe("rate-limited 429 stops the wave", () => {
-  it("429 with Retry-After: 1 dispatch, drain 429 with relayed headers", async () => {
+describe("rate-limited 429 stops the wave, single retry drains", () => {
+  it("429 with Retry-After: stop plus one pass over untried proxies, drain 429", async () => {
     const servers = [
       net.createServer((s) => s.destroy()),
       net.createServer((s) => s.destroy()),
@@ -108,7 +108,11 @@ describe("rate-limited 429 stops the wave", () => {
           credentials: credentialsFor3(ports[0], ports[1], ports[2]),
           log: rlog,
         })) as { response: Response };
-        assert.strictEqual(observed.length, 1, "wave stops after the classified 429");
+        assert.strictEqual(
+          observed.length,
+          3,
+          "wave stops on the classified 429, single retry visits the 2 untried proxies"
+        );
         assert.strictEqual(result.response.status, 429);
         assert.strictEqual(result.response.headers.get("retry-after"), "30");
         assert.strictEqual(result.response.headers.get("x-opencode-retry-state"), "rate-limited");
@@ -233,6 +237,81 @@ describe("all-burst wave carries no state header (M1)", () => {
         assert.strictEqual(result.response.status, 429);
         assert.strictEqual(observed.length, 2, "both proxies tried, no wave stop");
         assert.strictEqual(result.response.headers.get("x-opencode-retry-state"), null);
+      } finally {
+        globalThis.fetch = originalFetch;
+      }
+    } finally {
+      for (const s of servers) s.close();
+    }
+  });
+});
+describe("single retry toward fresh candidates", () => {
+  it("classified wave stop then one pass over untried proxies, drain 429", async () => {
+    const servers = [
+      net.createServer((s) => s.destroy()),
+      net.createServer((s) => s.destroy()),
+      net.createServer((s) => s.destroy()),
+    ];
+    try {
+      const ports: number[] = [];
+      for (const s of servers) {
+        ports.push(
+          await new Promise<number>((resolve) =>
+            s.listen(0, "127.0.0.1", () => resolve((s.address() as net.AddressInfo).port))
+          )
+        );
+      }
+      const fps = [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "cccccccccccccccccccccccccccccccc",
+      ];
+      const observed: string[] = [];
+      const originalFetch = globalThis.fetch;
+      try {
+        let call = 0;
+        globalThis.fetch = (async (input: RequestInfo | URL) => {
+          const url =
+            typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+          const resolved = resolveProxyForRequest(url);
+          observed.push(resolved.proxyUrl ? new URL(resolved.proxyUrl).port : "direct");
+          call++;
+          if (call === 1) {
+            return new Response(JSON.stringify({ error: { message: "slow down" } }), {
+              status: 429,
+              headers: { "Content-Type": "application/json", "Retry-After": "30" },
+            });
+          }
+          return new Response(JSON.stringify({ error: { message: "slow down" } }), {
+            status: 429,
+            headers: { "Content-Type": "application/json", "Retry-After": "30" },
+          });
+        }) as typeof globalThis.fetch;
+        const exec = new OpencodeExecutor("opencode-zen");
+        const creds: ProviderCredentials = {
+          apiKey: null,
+          accessToken: null,
+          connectionId: "noauth",
+          providerSpecificData: {
+            fingerprints: fps,
+            accountProxies: fps.map((fp, i) => ({
+              fingerprint: fp,
+              proxy: { type: "http", host: "127.0.0.1", port: ports[i] },
+            })),
+          },
+        };
+        const result = (await exec.execute({
+          model: "muse-spark-1.3-contributor-free",
+          body: { messages: [{ role: "user", content: "hi" }], stream: false },
+          stream: false,
+          signal: null,
+          credentials: creds,
+          log: rlog,
+        })) as { response: Response };
+        assert.strictEqual(observed.length, 3, "stop + single retry over the 2 untried proxies");
+        assert.strictEqual(result.response.status, 429);
+        assert.strictEqual(result.response.headers.get("retry-after"), "30");
+        assert.strictEqual(result.response.headers.get("x-opencode-retry-state"), "rate-limited");
       } finally {
         globalThis.fetch = originalFetch;
       }
