@@ -1,20 +1,11 @@
 import { CORS_HEADERS, handleCorsOptions } from "@/shared/utils/cors";
 import { getBatch, deleteBatch } from "@/lib/db/batches";
 import { NextResponse } from "next/server";
-import { getApiKeyRequestScope } from "@/app/api/v1/_helpers/apiKeyScope";
+import { getApiKeyRequestScope, scopeCheck } from "@/app/api/v1/_helpers/apiKeyScope";
 import { formatBatchResponse } from "../formatBatchResponse";
 
 export async function OPTIONS() {
   return handleCorsOptions();
-}
-
-function scopeCheck(
-  scope: { isSessionAuth: boolean; apiKeyId: string | null },
-  recordApiKeyId: string | null | undefined
-): boolean {
-  if (scope.isSessionAuth) return true;
-  if (recordApiKeyId === null || recordApiKeyId === undefined) return true;
-  return recordApiKeyId === scope.apiKeyId;
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
