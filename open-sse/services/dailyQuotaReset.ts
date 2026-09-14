@@ -86,7 +86,46 @@ function zonedLocalToUtc(
     if (delta === 0) return guess;
     guess -= delta;
   }
+  // Gap (nonexistent wall-clock hour): walk the wall clock forward minute by
+  // minute to the first wall time that actually exists. Bounded well above
+  // any civil gap width; never a fixed offset (gaps vary: 30m, 1h, dateline).
+  let d = { year, month, day };
+  let wallMin = hour * 60 + minute;
+  for (let step = 0; step < 24 * 60; step++) {
+    wallMin += 1;
+    let dd = d;
+    let h = Math.floor(wallMin / 60);
+    let m = wallMin % 60;
+    while (h >= 24) {
+      h -= 24;
+      dd = addCalendarDay(dd.year, dd.month, dd.day);
+    }
+    const candidate = tryConverge(dd.year, dd.month, dd.day, h, m, second, timeZone);
+    if (candidate !== null) return candidate;
+  }
   return guess;
+}
+
+/** 4-pass wall→utc iteration; null when the wall time does not exist (gap). */
+function tryConverge(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number,
+  timeZone: string,
+): number | null {
+  const wanted = Date.UTC(year, month - 1, day, hour, minute, second);
+  let guess = wanted;
+  for (let i = 0; i < 4; i++) {
+    const p = zonedParts(guess, timeZone);
+    const asIfUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+    const delta = asIfUtc - wanted;
+    if (delta === 0) return guess;
+    guess -= delta;
+  }
+  return null;
 }
 
 /**

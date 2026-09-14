@@ -1,0 +1,1 @@
+- **fix(sse):** daily quota cooldowns stay within a day around daylight-saving transitions instead of locking past the real reset ([#13671](https://github.com/diegosouzapw/OmniRoute/pull/13671)) — thanks @maxmad64bis

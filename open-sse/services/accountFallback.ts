@@ -1609,9 +1609,13 @@ export function getMsUntilTomorrow(): number {
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(0, 0, 0, 0);
   const ms = tomorrow.getTime() - nowMs;
-  // Guard against DST edge cases: if ms is negative (shouldn't happen) or
-  // unreasonably large (>25h due to spring-forward), cap at 24 hours.
-  return ms > 0 && ms <= 25 * 60 * 60 * 1000 ? ms : 24 * 60 * 60 * 1000;
+  // Bound the daily magnitude on both sides: a 25h civil day (fall-back)
+  // must not produce a >24h lock, and a non-positive result (clock moved
+  // backwards) falls back to the backoff floor instead of a 24h lock.
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  if (ms <= 0) return BACKOFF_CONFIG.base;
+  if (ms > DAY_MS) return DAY_MS;
+  return ms;
 }
 
 /**
