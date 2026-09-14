@@ -12,6 +12,7 @@ const {
   CHAT_ADMISSION_MAX_QUEUED_BYTES,
   CHAT_LARGE_BODY_BYTES,
 } = admissionModule;
+const { DEFAULT_REQUEST_QUEUE_MAX_WAIT_MS } = await import("../../src/lib/resilience/settings.ts");
 
 function chatRequest(body: string, contentLength: string | null = String(body.length)): Request {
   const headers: Record<string, string> = { "content-type": "application/json" };
@@ -418,9 +419,17 @@ test("structural admission enforces the queued-bytes cap end-to-end", async () =
   assert.equal(controller.activeHeavy, 0);
 });
 
-test("queue-wait defaults are bounded (2s wait, 4MB queued-bytes budget)", () => {
+test("queue-wait defaults are bounded, and the wait tracks the turn it must bridge", () => {
   if (process.env.OMNIROUTE_CHAT_ADMISSION_QUEUE_MS === undefined) {
-    assert.equal(CHAT_ADMISSION_QUEUE_MAX_MS, 2_000);
+    // Was a fixed 2_000. A wait shorter than the occupancy it bridges cannot
+    // serialize a burst — it just 503s the holder's own next request (#13648).
+    // Asserted against the constant rather than 15_000 so the two cannot drift:
+    // an operator who raises RATE_LIMIT_MAX_WAIT_MS moves both together.
+    assert.equal(CHAT_ADMISSION_QUEUE_MAX_MS, DEFAULT_REQUEST_QUEUE_MAX_WAIT_MS);
+    assert.ok(
+      CHAT_ADMISSION_QUEUE_MAX_MS >= 15_000,
+      "the shipped default must be able to bridge a default heavyweight turn"
+    );
   }
   if (process.env.OMNIROUTE_CHAT_ADMISSION_MAX_QUEUED_BYTES === undefined) {
     assert.equal(CHAT_ADMISSION_MAX_QUEUED_BYTES, 4 * 1024 * 1024);
