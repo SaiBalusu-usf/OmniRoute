@@ -32,7 +32,7 @@ import {
   type CompatByProtocolMap,
 } from "../providerPageHelpers";
 import { ModelVisibilityToolbar } from "./ModelRow";
-import { sortModelsFreeFirst, isFreeModel } from "@/shared/utils/freeModels";
+import { sortModelsFreeFirst, isFreeForProvider } from "@/shared/utils/freeModels";
 import PassthroughModelRow from "./PassthroughModelRow";
 
 // ---------------------------------------------------------------------------
@@ -254,11 +254,12 @@ export default function PassthroughModelsSection({
         alias: aliasByModelId.get(model.id) || defaultAlias,
         displayName: model.name || model.id,
         source,
-        isFree:
-          Boolean((model as any).free) ||
-          model.id.endsWith(":free") ||
-          /\bgr[aá]tis\b|\bfree\b/i.test(model.name || "") ||
-          isFreeModel(providerId, { id: model.id, isFree: (model as any).isFree }),
+        isFree: isFreeForProvider(providerId, {
+          id: model.id,
+          isFree:
+            model.isFree === true ||
+            (model as { free?: unknown }).free === true,
+        }),
         isHidden: isModelHidden(model.id),
       });
       seenModelIds.add(model.id);
@@ -292,11 +293,12 @@ export default function PassthroughModelsSection({
         alias: displayAlias,
         displayName: displayAlias,
         source: customModel ? customModel.source || "custom" : "alias",
-        isFree:
-          modelId.endsWith(":free") ||
-          Boolean((customModel as any)?.free) ||
-          /\bgr[aá]tis\b|\bfree\b/i.test(customModel?.name || alias || "") ||
-          isFreeModel(providerId, { id: modelId, isFree: (customModel as any)?.isFree }),
+        isFree: isFreeForProvider(providerId, {
+          id: modelId,
+          isFree:
+            customModel?.isFree === true ||
+            (customModel as { free?: unknown } | undefined)?.free === true,
+        }),
         isHidden: isModelHidden(modelId),
       });
       seenModelIds.add(modelId);

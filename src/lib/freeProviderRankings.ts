@@ -59,7 +59,7 @@ export interface FreeProviderRanking {
 /**
  * Get all free providers from all categories.
  */
-function getFreeProviders() {
+export function getFreeProviders() {
   const providers: Array<{
     id: string;
     name: string;
