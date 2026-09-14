@@ -505,6 +505,7 @@ function isAntigravityGeminiChatModel(upstreamModel: string): boolean {
 export const __test_stripTrailingAntigravityAssistantTurn = stripTrailingAntigravityAssistantTurn;
 
 type AntigravityCreditsRetryState = { attempted: boolean };
+type AntigravityPhysicalSendCounter = { value: number };
 
 /** Base per-url-index attempt context, before the request has been sent. */
 type AntigravityAttemptContext = {
@@ -524,6 +525,7 @@ type AntigravityAttemptContext = {
   urlIndex: number;
   retryAttemptsByUrl: Record<number, number>;
   fallbackCount: number;
+  physicalSendCounter: AntigravityPhysicalSendCounter;
 };
 
 /** Context threaded through the 429/503 handling helpers — adds the sent response. */
@@ -1166,6 +1168,7 @@ export class AntigravityExecutor extends BaseExecutor {
    * exactly the same single call as before (zero extra upstream requests).
    */
   async execute(input: ExecuteInput) {
+    const physicalSendCounter: AntigravityPhysicalSendCounter = { value: 0 };
     await resolveAntigravityClientVersion(getAntigravityClientProfile(input.credentials));
 
     // Look up the chain by the NORMALLY-resolved upstream id (honours MITM/static aliases).
@@ -1175,7 +1178,7 @@ export class AntigravityExecutor extends BaseExecutor {
 
     if (chain.length <= 1) {
       // No fallback chain (flash, claude, plain pro, unknown) → single attempt, unchanged.
-      return this.executeOnce(input);
+      return this.executeOnce(input, undefined, physicalSendCounter);
     }
 
     let firstResult: Awaited<ReturnType<AntigravityExecutor["executeOnce"]>> | null = null;
@@ -1183,7 +1186,7 @@ export class AntigravityExecutor extends BaseExecutor {
       const candidate = chain[i];
       let result: Awaited<ReturnType<AntigravityExecutor["executeOnce"]>>;
       try {
-        result = await this.executeOnce(input, candidate);
+        result = await this.executeOnce(input, candidate, physicalSendCounter);
       } catch (error) {
         const outcome = handleAntigravityFallbackChainError(
           input,
@@ -1225,7 +1228,7 @@ export class AntigravityExecutor extends BaseExecutor {
     }
 
     // Unreachable (loop always returns), but keeps the type checker happy.
-    return firstResult ?? this.executeOnce(input);
+    return firstResult ?? this.executeOnce(input, undefined, physicalSendCounter);
   }
 
   /**
@@ -1237,7 +1240,8 @@ export class AntigravityExecutor extends BaseExecutor {
    */
   private async executeOnce(
     { model, body, stream, credentials, signal, log, upstreamExtraHeaders }: ExecuteInput,
-    modelIdOverride?: string
+    modelIdOverride?: string,
+    physicalSendCounter: AntigravityPhysicalSendCounter = { value: 0 }
   ) {
     await resolveAntigravityClientVersion(getAntigravityClientProfile(credentials));
     const fallbackCount = this.getFallbackCount();
@@ -1304,6 +1308,7 @@ export class AntigravityExecutor extends BaseExecutor {
           urlIndex,
           retryAttemptsByUrl,
           fallbackCount,
+          physicalSendCounter,
         });
 
         if (outcome.action === "return") return outcome.result;
@@ -1353,6 +1358,7 @@ export class AntigravityExecutor extends BaseExecutor {
       urlIndex,
       retryAttemptsByUrl,
       fallbackCount,
+      physicalSendCounter,
     } = ctx;
 
     const { response, finalHeaders } = await sendAntigravityRequest(
@@ -1365,7 +1371,8 @@ export class AntigravityExecutor extends BaseExecutor {
       stream,
       signal,
       log,
-      retryAttemptsByUrl[urlIndex]
+      retryAttemptsByUrl[urlIndex],
+      physicalSendCounter
     );
 
     let retryMs: number | null = null;
@@ -1616,7 +1623,8 @@ export class AntigravityExecutor extends BaseExecutor {
           signal,
           log,
           accountId,
-          updateAntigravityRemainingCredits
+          updateAntigravityRemainingCredits,
+          ctx.physicalSendCounter
         );
         if (creditsResult) return { kind: "return", result: creditsResult };
         if (retryMs) markConnectionQuotaExhausted(accountId, retryMs, ctx.model);
