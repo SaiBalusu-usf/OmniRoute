@@ -235,6 +235,18 @@ describe("featureFlagDefinitions", () => {
     assert.strictEqual(def.requiresRestart, false);
   });
 
+  it("defines blocked-resets-streak as a health boolean flag disabled by default", () => {
+    // Guards the #10654 default: a target-refused probe stays neutral unless opted in.
+    const def = FEATURE_FLAG_DEFINITIONS.find(
+      (d) => d.key === "PROXY_HEALTH_BLOCKED_RESETS_STREAK"
+    );
+    assert.ok(def, "PROXY_HEALTH_BLOCKED_RESETS_STREAK should exist");
+    assert.strictEqual(def.category, "health");
+    assert.strictEqual(def.type, "boolean");
+    assert.strictEqual(def.defaultValue, "false");
+    assert.strictEqual(def.requiresRestart, false);
+  });
+
   it("defines remote audio provider nodes as a network boolean flag disabled by default", () => {
     // Guards the egress default: with this on, /v1/audio/* may reach a provider node
     // hosted outside localhost. It must never become an implicit default (cf. #3963).
