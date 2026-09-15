@@ -61,7 +61,16 @@ interface QualityState {
   lastTs: number;
 }
 
-const states = boundedMap<QualityState>("routing-quality", 2000, "lru", 0, {
+/**
+ * Cap on tracked (provider, model) pairs. Only pairs that actually carry traffic
+ * are tracked, so normal deployments stay far below it; past it the
+ * least-recently-used pair without an evaluator score is dropped (it restarts
+ * cold/neutral). Pairs holding a semantic score are never evicted — that score
+ * only comes from an evaluator run and cannot be re-learned from traffic.
+ */
+export const QUALITY_STATES_CAP = 4096;
+
+const states = boundedMap<QualityState>("routing-quality", QUALITY_STATES_CAP, "lru", 0, {
   shouldEvict: (s) => s.semantic === null,
 });
 

@@ -40,12 +40,14 @@ interface DimensionSpec {
 }
 
 // ---------------------------------------------------------------------------
-// In-memory cache (boundedMap<cacheKey, saturation 0..1>, refetch-lazy 30s)
+// In-memory cache (boundedMap<cacheKey, saturation 0..1>, 30s TTL). Caps are
+// generous (one entry per connection/provider/dimension or provider/connection):
+// an evicted entry only costs one extra read, and normal deployments never hit them.
 // ---------------------------------------------------------------------------
 
 const CACHE_TTL_MS = 30_000; // 30 seconds
 
-const _cache = boundedMap<number>("saturation-cache", 512, "refetch-lazy", CACHE_TTL_MS);
+const _cache = boundedMap<number>("saturation-cache", 4096, "ttl", CACHE_TTL_MS);
 
 // Pending miss fetches, keyed like _cache. Concurrent getSaturation calls for
 // the same key share the promise instead of firing one upstream read each.
@@ -76,8 +78,18 @@ interface TokenHeaderEntry {
 }
 
 const RL_HEADER_TTL_MS = 5 * 60 * 1000; // 5 minutes
-const _rateLimitHeaders = boundedMap<RateLimitHeaderEntry>("saturation-rl-headers", 256, "hard-expire", RL_HEADER_TTL_MS);
-const _tokenHeaders = boundedMap<TokenHeaderEntry>("saturation-token-headers", 256, "hard-expire", RL_HEADER_TTL_MS);
+const _rateLimitHeaders = boundedMap<RateLimitHeaderEntry>(
+  "saturation-rl-headers",
+  4096,
+  "ttl",
+  RL_HEADER_TTL_MS
+);
+const _tokenHeaders = boundedMap<TokenHeaderEntry>(
+  "saturation-token-headers",
+  4096,
+  "ttl",
+  RL_HEADER_TTL_MS
+);
 
 /** Test-only: clear the rate-limit + token header caches between asserts. */
 export function _clearRateLimitHeaders(): void {

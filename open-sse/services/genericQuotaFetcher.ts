@@ -24,10 +24,7 @@ import {
   type QuotaFetcher,
   type QuotaInfo,
 } from "./quotaPreflight.ts";
-import {
-  getAntigravityQuotaFamily,
-  getQuotaFetchScope,
-} from "./antigravityQuotaFamily.ts";
+import { getAntigravityQuotaFamily, getQuotaFetchScope } from "./antigravityQuotaFamily.ts";
 import { boundedMap } from "../../src/lib/quota/boundedMap.ts";
 
 type UsageFetcher = (
@@ -78,24 +75,19 @@ export function __resetGenericQuotaFetcherForTests(): void {
   pendingForceRefreshMiss.clear();
 }
 
-const cache = boundedMap<QuotaInfo>("quota-fetcher-cache", 512, "refetch-lazy", CACHE_TTL_MS);
+// One entry per (provider, connection); 4096 keeps even very large account pools
+// from ever evicting. An evicted entry only costs one extra upstream quota read.
+const cache = boundedMap<QuotaInfo>("quota-fetcher-cache", 4096, "ttl", CACHE_TTL_MS);
 
 function connectionKey(provider: string, connectionId: string): string {
   return `${provider.trim()}::${connectionId.trim()}`;
 }
 
-function quotaCacheScope(
-  provider: string,
-  requestedModel?: string | null
-): string {
+function quotaCacheScope(provider: string, requestedModel?: string | null): string {
   return getQuotaFetchScope(provider, requestedModel);
 }
 
-function cacheKey(
-  provider: string,
-  connectionId: string,
-  requestedModel?: string | null
-): string {
+function cacheKey(provider: string, connectionId: string, requestedModel?: string | null): string {
   return `${connectionKey(provider, connectionId)}::${quotaCacheScope(provider, requestedModel)}`;
 }
 
@@ -121,22 +113,14 @@ function markPendingForceRefreshMiss(key: string): void {
   if (isPendingForceRefresh(key)) pendingForceRefreshMiss.set(key, Date.now());
 }
 
-function cachedQuotaIfFresh(
-  key: string,
-  forceRefresh: boolean,
-  _now: number
-): QuotaInfo | null {
+function cachedQuotaIfFresh(key: string, forceRefresh: boolean, now: number): QuotaInfo | null {
   if (forceRefresh) return null;
-  const cached = cache.get(key);
+  const cached = cache.get(key, now);
   if (cached !== undefined) return cached;
   return null;
 }
 
-function isForceRefreshMissCooling(
-  key: string,
-  forceRefresh: boolean,
-  now: number
-): boolean {
+function isForceRefreshMissCooling(key: string, forceRefresh: boolean, now: number): boolean {
   if (!forceRefresh) return false;
   const missedAt = pendingForceRefreshMiss.get(key);
   return missedAt !== undefined && now - missedAt < CACHE_TTL_MS;
@@ -146,14 +130,11 @@ function isForceRefreshMissCooling(
 function isConcurrentForceRefresh(key: string, refreshStamp: number | undefined): boolean {
   const currentStamp = pendingForceRefresh.get(key);
   if (currentStamp === refreshStamp) return false;
-  return (
-    currentStamp !== undefined &&
-    Date.now() - currentStamp <= PENDING_FORCE_REFRESH_TTL_MS
-  );
+  return currentStamp !== undefined && Date.now() - currentStamp <= PENDING_FORCE_REFRESH_TTL_MS;
 }
 
 // 5min — same TTL as the original reap (CACHE_TTL_MS * 5). Expiry lazy on read
-// (boundedMap refetch-lazy); this timer only keeps the sweep of
+// (boundedMap ttl policy); this timer only keeps the sweep of
 // pendingForceRefresh (5-min TTL, no systematic lazy read) + an opportunistic purge
 // of stale cache entries along the way (get auto-purges).
 const _cacheCleanup = setInterval(() => {
@@ -287,10 +268,7 @@ export function convertUsageToQuotaInfo(
 
   const normalized = normalizeQuotaWindows(providerScopedWindows, context);
   const scopedEntries = Object.values(providerScopedWindows);
-  const percentUsed = scopedEntries.reduce(
-    (worst, entry) => Math.max(worst, entry.percentUsed),
-    0
-  );
+  const percentUsed = scopedEntries.reduce((worst, entry) => Math.max(worst, entry.percentUsed), 0);
   const resetAt =
     scopedEntries.reduce<{ percentUsed: number; resetAt: string | null } | null>(
       (worst, entry) => (!worst || entry.percentUsed > worst.percentUsed ? entry : worst),
@@ -320,10 +298,7 @@ function isAntigravityProvider(provider: string | null | undefined): boolean {
   return provider === "antigravity" || provider === "agy";
 }
 
-function antigravityWeeklyWindowMatchesFamily(
-  key: string,
-  family: "gemini" | "claude"
-): boolean {
+function antigravityWeeklyWindowMatchesFamily(key: string, family: "gemini" | "claude"): boolean {
   if (!key.endsWith("_weekly")) return false;
   return family === "gemini" ? key === "gemini_weekly" : key === "claude_gpt_weekly";
 }

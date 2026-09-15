@@ -91,7 +91,11 @@ const enabledConnections = new Set<string>();
 const connectionRateLimitOverrides = new Map<string, Record<string, number>>();
 
 // Store learned limits for persistence (debounced)
-const MAX_LEARNED_LIMITS = 200;
+// One learned entry per limiter key (provider:connection[:model]). The previous
+// `MAX_LEARNED_LIMITS = 200` was declared but never enforced; enforcing 200 would
+// start evicting (dropping persisted limits) on deployments with many
+// connection×model limiters, so the enforced cap is set well above that.
+export const MAX_LEARNED_LIMITS = 2048;
 const learnedLimits = boundedMap<LearnedLimitEntry>("learned-limits", MAX_LEARNED_LIMITS, "lru");
 const limiterLastUsed = new Map<string, number>();
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
@@ -979,9 +983,7 @@ async function persistLearnedLimitsNow() {
   try {
     const { updateSettings } = await import("@/lib/db/settings");
     await updateSettings({ learnedRateLimits: JSON.stringify(Object.fromEntries(learnedLimits)) });
-    logRateLimit(
-      `💾 [RATE-LIMIT] Persisted learned limits for ${learnedLimits.size} provider(s)`
-    );
+    logRateLimit(`💾 [RATE-LIMIT] Persisted learned limits for ${learnedLimits.size} provider(s)`);
   } catch (err) {
     errorRateLimit("[RATE-LIMIT] Failed to persist learned limits:", err.message);
   }
