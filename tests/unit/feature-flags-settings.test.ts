@@ -202,6 +202,15 @@ describe("featureFlagDefinitions", () => {
     assert.strictEqual(def.warningLevel, "danger");
   });
 
+  it("defines OPENCODE_RESPONSES_STALL_ROTATION as an opt-in network boolean flag disabled by default", () => {
+    const def = FEATURE_FLAG_DEFINITIONS.find((d) => d.key === "OPENCODE_RESPONSES_STALL_ROTATION");
+    assert.ok(def, "OPENCODE_RESPONSES_STALL_ROTATION should exist");
+    assert.strictEqual(def.category, "network");
+    assert.strictEqual(def.type, "boolean");
+    assert.strictEqual(def.defaultValue, "false");
+    assert.strictEqual(def.requiresRestart, false);
+  });
+
   it("defines network rotation shared-egress guard as a network boolean flag enabled by default", () => {
     const def = FEATURE_FLAG_DEFINITIONS.find(
       (d) => d.key === "NETWORK_ROTATION_SHARED_EGRESS_GUARD"
