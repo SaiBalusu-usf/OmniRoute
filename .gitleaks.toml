@@ -97,4 +97,10 @@
       # credential; the generic-api-key rule flags the long hyphenated string.
       '''omniroute-cheaperinference-sponsor-banner-dismissed-v\d+''',
       '''SunbreakWebUI1''',
+      # Test labels of the batches delete-completed authz suite (#13684 / #13374). The strings
+      # "wvxc-route-401"/"wvxc-route-500" are API-key NAMES passed to createApiKey() in
+      # tests/unit/batches-delete-completed-route-scope.test.ts, never a credential; the
+      # generic-api-key rule flags them because they sit on a `createApiKey(...)` call.
+      # Added: 2026-09-15 | Review: v3.9.0 | Found by /omni-code-sec proof run (LEDGER-2/3).
+      '''wvxc-route-\d{3}''',
     ]
