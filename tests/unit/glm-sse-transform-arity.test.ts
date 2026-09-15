@@ -27,18 +27,21 @@ function extractParens(src: string, openAt: number): string {
   return src.slice(openAt, i);
 }
 
-test("createSSETransformStreamWithLogger has no highWaterMark slot", () => {
+test("createSSETransformStreamWithLogger declares the buffer-size slot last", () => {
   const src = readFileSync(join(root, "open-sse", "utils", "stream.ts"), "utf8");
   const needle = "export function createSSETransformStreamWithLogger(";
   const start = src.indexOf(needle);
   assert.ok(start >= 0);
   const header = extractParens(src, start + needle.length - 1);
-  assert.equal(/highWaterMark/.test(header), false, header);
   assert.match(header, /requestToolIdentityMap/);
   assert.match(header, /suppressThinkClose/);
+  // #12925: the slot GLM had been filling since #12179 is now declared, so the
+  // value reaches TransformStream instead of being dropped as an extra arg.
+  assert.match(header, /streamBufferBytes\s*:\s*number/);
+  assert.match(header, /streamBufferBytes[^,)]*\)\s*$/, `buffer size must stay last:\n${header}`);
 });
 
-test("GLM translateSseResponse does not pass a 16th positional to the stream helper", () => {
+test("GLM translateSseResponse fills the buffer-size slot with the named constant", () => {
   const src = readFileSync(join(root, "open-sse", "executors", "glm.ts"), "utf8");
   const fnStart = src.indexOf("export function translateSseResponse(");
   assert.ok(fnStart >= 0);

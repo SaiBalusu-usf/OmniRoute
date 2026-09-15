@@ -9,8 +9,14 @@ import assert from "node:assert/strict";
 //  Two properties are asserted at BOTH detection call sites:
 //    1. A directive at the TOP of a large (>16 KB) body is STILL detected
 //       (real detection is not weakened — injection sits near the top).
-//    2. The SAME unique injection marker placed OUTSIDE the head+tail scan
-//       window (#13104) is NOT scanned (proves the bound is active and CPU is saved).
+//    2. The SAME unique injection marker placed OUTSIDE the scan window is
+//       NOT scanned (proves the bound is active and CPU is saved).
+//
+//  #13104 changed the SHAPE of that window without changing the bound: the
+//  budget is now split between the head and the TAIL, because the tail is
+//  where never-before-scanned content lands. So "outside the window" is the
+//  MIDDLE of an oversized body, not its end. The 16 KB ceiling — the property
+//  these cases exist to protect — is unchanged.
 // ─────────────────────────────────────────────────────────────────────
 
 const { detectInjection, MAX_INJECTION_SCAN_BYTES } =
@@ -37,7 +43,7 @@ test("inputSanitizer.detectInjection: directive at the TOP of a >16 KB body is s
 });
 
 test("inputSanitizer.detectInjection: a directive OUTSIDE the scan window is NOT scanned", () => {
-  // Place the ONLY injection marker in the middle, past the head slice and
+  // Place the ONLY injection marker in the middle — past the head slice and
   // before the tail slice. With the bound active the scan never reaches it.
   const body = `${padTo(MAX_INJECTION_SCAN_BYTES)}\n${INJECTION_DIRECTIVE}\n${padTo(MAX_INJECTION_SCAN_BYTES)}`;
   const detections = detectInjection(body);

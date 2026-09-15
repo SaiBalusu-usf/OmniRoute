@@ -28,6 +28,12 @@ test("chatCore acquires cumulative gates immediately before withRateLimit", () =
   assert.match(admission, /maxQueueDepth/);
 });
 
+// Invariant: a rotated account NEVER reuses the failed account's composite slot.
+// Every attempt acquires its own global+provider+account slot and gives it back
+// before the next attempt starts, so one wedged account cannot pin the gates of
+// the sibling it rotated to. Before #12867 both loops lived in chatCore.ts and a
+// single index check covered it; the loop is now split across two files, so the
+// guard checks both halves of the same invariant.
 test("each rotated account attempt acquires and releases a fresh composite slot", () => {
   const sendFn = source.indexOf("const executeProviderRequest = async (");
   const attemptLoop = source.indexOf("while (attempts < maxAttempts)", sendFn);
