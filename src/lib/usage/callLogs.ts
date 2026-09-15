@@ -8,9 +8,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { RequestPipelinePayloads } from "@omniroute/open-sse/utils/requestLogger.ts";
-import { ERROR_TYPE_CONTRACT } from "@omniroute/open-sse/services/errorClassifier.ts";
 import { sanitizeErrorMessage } from "@omniroute/open-sse/utils/errorSanitization.ts";
-import { z } from "zod";
 import { getDbInstance } from "../db/core";
 import { getRequestDetailLogByCallLogId } from "../db/detailedLogs";
 import { shouldPersistToDisk } from "./migrations";
@@ -52,6 +50,7 @@ import {
   protectPipelinePayloads,
   buildRequestSummary,
   classifyCallLogError,
+  toStoredErrorType,
 } from "./callLogs/format";
 import {
   clearArtifactReference,
@@ -509,18 +508,16 @@ async function saveCallLogOperation(entry: any): Promise<void> {
     // while reasoning source/char-count are recorded separately for observability.
     const tokensReasoning = getReasoningTokensOrNull(entry.tokens);
     const reasoningObservation = resolveReasoningObservation(tokensReasoning, entry.responseBody);
-    const errorType = classifyCallLogError(entry.status, entry.error, entry.provider);
-    const parsedErrorType =
-      errorType === null ? null : z.enum(ERROR_TYPE_CONTRACT).safeParse(errorType);
-    const safeErrorType =
-      parsedErrorType === null ? null : parsedErrorType.success ? parsedErrorType.data : "unknown";
+    const errorType = toStoredErrorType(
+      classifyCallLogError(entry.status, entry.error, entry.provider)
+    );
     const logEntry = {
       id: typeof entry.id === "string" && entry.id.length > 0 ? entry.id : generateLogId(),
       timestamp: typeof entry.timestamp === "string" ? entry.timestamp : new Date().toISOString(),
       method: entry.method || "POST",
       path: entry.path || "/v1/chat/completions",
       status: entry.status || 0,
-      errorType: safeErrorType,
+      errorType,
       model: entry.model || "-",
       requestedModel: resolvedRequestedModel,
       provider: rawProvider,

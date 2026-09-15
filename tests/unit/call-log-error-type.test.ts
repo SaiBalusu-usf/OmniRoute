@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { getDbInstance, resetDbInstance } from "../../src/lib/db/core.ts";
-import { classifyCallLogError } from "../../src/lib/usage/callLogs/format.ts";
+import { classifyCallLogError, toStoredErrorType } from "../../src/lib/usage/callLogs/format.ts";
 import { saveCallLog } from "../../src/lib/usage/callLogs.ts";
 import { ERROR_TYPE_CUTOVER_ISO, getErrorTypeBreakdown } from "../../src/lib/db/callLogStats.ts";
 import { getCallLogsForExport } from "../../src/lib/usage/callLogExportSource.ts";
@@ -321,5 +321,54 @@ test("log export keeps both legacy NULL and the new unknown error_type intact", 
     assert.equal(toBigQueryRow(byId.get(fresh)!, exportedAt).error_type, "unknown");
   } finally {
     deleteCallLogs([legacy, fresh]);
+  }
+});
+
+test("toStoredErrorType: contract values pass, null stays null, anything else is unknown", () => {
+  for (const value of ERROR_TYPE_CONTRACT) {
+    assert.equal(toStoredErrorType(value), value);
+  }
+  assert.equal(toStoredErrorType(null), null);
+  assert.equal(toStoredErrorType(undefined), null);
+  for (const value of ["typo_free", "RATE_LIMITED", "", " rate_limited", 42, {}, ["unknown"]]) {
+    assert.equal(
+      toStoredErrorType(value),
+      "unknown",
+      `expected unknown for ${JSON.stringify(value)}`
+    );
+  }
+});
+
+test("saveCallLog stores unknown when the classifier emits a family outside the contract", async () => {
+  // Simulates vocabulary drift for real: classifyProviderError reads
+  // PROVIDER_ERROR_TYPES at call time, while ERROR_TYPE_CONTRACT is the frozen
+  // snapshot taken at load. A renamed family therefore reaches the write point
+  // as an out-of-contract string, and the guard must clamp it.
+  const types = PROVIDER_ERROR_TYPES as unknown as Record<string, string>;
+  const original = types.SERVER_ERROR;
+  const id = `test-errtype-drift-${Date.now()}`;
+  try {
+    types.SERVER_ERROR = "server_error_v2";
+    assert.equal(classifyCallLogError(503, "down", "test-provider"), "server_error_v2");
+    await saveCallLog({
+      id,
+      method: "POST",
+      path: "/v1/chat/completions",
+      status: 503,
+      error: "Service Unavailable",
+      model: "m",
+      provider: "test-provider",
+      duration: 1,
+      tokens: { in: 1, out: 1 },
+    });
+    const row = getDbInstance()
+      .prepare("SELECT error_type FROM call_logs WHERE id = ?")
+      .get(id) as {
+      error_type: string | null;
+    };
+    assert.equal(row.error_type, "unknown");
+  } finally {
+    types.SERVER_ERROR = original;
+    deleteCallLogs([id]);
   }
 });
