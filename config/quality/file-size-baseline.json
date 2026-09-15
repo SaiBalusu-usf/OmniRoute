@@ -1,4 +1,5 @@
 {
+  "_rebaseline_2026_09_15_13672_combined_growth": "Combined growth of the 2026-09-15 maxmad64bis uplift batch (each PR rebaselined its own growth; the merged sum is larger): open-sse/services/combo/executeTargetAttempt.ts->1223; open-sse/services/combo/roundRobinCombo.ts->1213. Every hunk is flag-gated or a verified fix covered by that PR's tests; see the batch report.",
   "_rebaseline_2026_09_15_13441_combined_growth": "Combined growth of the 2026-09-15 maxmad64bis uplift batch (each PR rebaselined its own growth; the merged sum is larger): src/lib/db/core.ts->1770. Every hunk is flag-gated or a verified fix covered by that PR's tests; see the batch report.",
   "_rebaseline_2026_09_14_13547_noauth_model_lockout": "PR #13547 own growth: src/sse/services/auth.ts 3542->3556 (+14). The synthetic noauth connection short-circuited before the per-connection status pass, so a recorded model-only lockout was never enforced and the locked model was retried on every request. Irreducible at the early-return site. Covered by tests/unit/noauth-model-lockout.test.ts (carried from #13527).",
   "_rebaseline_2026_09_14_13404_healthcheck_backup_prune": "PR #13404 own growth: src/lib/db/core.ts 1745->1767 (+22). createManagedDbBackup (the health-check-repair snapshot path) never ran retention, so every restart of a healthy DB added a full-size copy to db_backups/; it now prunes with the same env-driven limits as backup.ts, importing backupRetention directly to avoid the backup.ts cycle. Covered by tests/unit/db-backup-healthcheck-prune-13308.test.ts.",
@@ -448,7 +449,7 @@
     "open-sse/services/accountFallback.ts": 2493,
     "open-sse/services/adobeFireflyBrowserLogin.ts": 1401,
     "open-sse/services/combo.ts": 4080,
-    "open-sse/services/combo/executeTargetAttempt.ts": 1220,
+    "open-sse/services/combo/executeTargetAttempt.ts": 1223,
     "open-sse/translator/response/openai-responses.ts": 1466,
     "open-sse/utils/cursorAgentProtobuf.ts": 1547,
     "open-sse/utils/proxyFetch.ts": 1271,
@@ -485,7 +486,7 @@
     "tests/unit/account-fallback-service.test.ts": 2453,
     "tests/unit/provider-validation-specialty.test.ts": 4656,
     "open-sse/services/autoCombo/virtualFactory.ts": 1230,
-    "open-sse/services/combo/roundRobinCombo.ts": 1210
+    "open-sse/services/combo/roundRobinCombo.ts": 1213
   },
   "_rebaseline_base_2026_08_10_proxyfetch": "Base-red fix (green-prs sweep, issue #9985): open-sse/utils/proxyFetch.ts 1207 > cap 1000 — new proxied-TLS fetch helper introduced by the Fal reference-image work. Owner-authorized quick rebaseline to green; structural slim tracked for v3.9.0.",
   "_rebaseline_2026_07_27_v3849_train2": "Merge-train 2 (7 PRs) — owner-approved 2026-07-27. Single entry: chatCore.ts 4955->5006 (#8595, Responses multi-turn image compaction before the context hard-reject). Genuine irreducible growth at the existing compaction chokepoint in handleChatCore — the PR adds a last-resort retry against the concrete budget plus the estimateFinalInputTokens helper, both wired at the pre-existing call site rather than a new branch. Covered by tests/unit/8560-responses-image-compaction.test.ts (4 tests).",
