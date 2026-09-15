@@ -57,7 +57,11 @@ function zonedParts(ms: number, timeZone: string): ZonedParts {
   };
 }
 
-function addCalendarDay(year: number, month: number, day: number): {
+function addCalendarDay(
+  year: number,
+  month: number,
+  day: number
+): {
   year: number;
   month: number;
   day: number;
@@ -75,7 +79,7 @@ function zonedLocalToUtc(
   hour: number,
   minute: number,
   second: number,
-  timeZone: string,
+  timeZone: string
 ): number {
   const wanted = Date.UTC(year, month - 1, day, hour, minute, second);
   let guess = wanted;
@@ -114,7 +118,7 @@ function tryConverge(
   hour: number,
   minute: number,
   second: number,
-  timeZone: string,
+  timeZone: string
 ): number | null {
   const wanted = Date.UTC(year, month - 1, day, hour, minute, second);
   let guess = wanted;
@@ -169,7 +173,7 @@ export type TpdCooldownOptions = {
  */
 export function resolveTpdCooldownMs(
   errorText: string | null | undefined,
-  options: TpdCooldownOptions = {},
+  options: TpdCooldownOptions = {}
 ): number | null {
   if (!isTpdRateLimit(errorText)) return null;
   const now = options.nowMs ?? Date.now();
@@ -191,7 +195,7 @@ export function resolveTpdCooldownMs(
 export function nextConfiguredResetMs(
   timezone: unknown,
   hour: unknown,
-  nowMs: number,
+  nowMs: number
 ): number | null {
   if (typeof timezone !== "string" || !isValidResetHour(hour)) return null;
   if (!nodeDailyResetConfigured(timezone, hour)) return null;
