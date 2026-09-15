@@ -652,33 +652,6 @@ export async function writeStreamError(
   await writer.write(encoder.encode(`data: ${JSON.stringify(errorBody)}\n\n`));
 }
 
-/**
- * Mirror of normalizeRetryAfterSeconds provenance:
- * "upstream" when a real upstream signal exists, "synthetic" when the
- * caller passed nothing/invalid and the 1s default would be a lie.
- * Kept adjacent to normalizeRetryAfterSeconds — any branch change there
- * must update this predicate too (parity tested in
- * tests/unit/retry-after-provenance.test.ts).
- */
-function resolveRetryAfterProvenance(retryAfter?: string | number | Date | null): "upstream" | "synthetic" {
-  if (typeof retryAfter === "number" && Number.isFinite(retryAfter) && retryAfter > 0) {
-    return "upstream";
-  }
-  if (retryAfter instanceof Date) {
-    return Number.isFinite(retryAfter.getTime()) ? "upstream" : "synthetic";
-  }
-  if (typeof retryAfter === "string") {
-    const trimmed = retryAfter.trim();
-    // Numeric strings are not dates ("5" parses as year 1998 → clamp 1,
-    // indistinguishable from the default) — synthetic.
-    if (trimmed.length > 0 && Number.isNaN(Number(trimmed))) {
-      if (Number.isFinite(new Date(retryAfter).getTime())) return "upstream";
-    }
-    return "synthetic";
-  }
-  return "synthetic";
-}
-
 function normalizeRetryAfterSeconds(retryAfter?: string | number | Date | null): number {
   if (typeof retryAfter === "number" && Number.isFinite(retryAfter)) {
     if (retryAfter > 0 && retryAfter < 1_000_000_000) {
@@ -758,44 +731,6 @@ export function parseAntigravityRetryTime(message: unknown): number | null {
   }
 
   return totalMs > 0 ? totalMs : null;
-}
-
-/**
- * Retry delay in ms from already-read prose (Antigravity "reset after XhYmZs",
- * generic "retry after Ns"), capped at 24h. Shared by the combo attempt
- * readers so the same text parses the same way on both dispatch paths.
- */
-export function parseProseRetryDelayMs(text: unknown): number | null {
-  if (typeof text !== "string") return null;
-  const antigravityMs = parseAntigravityRetryTime(text);
-  if (antigravityMs && antigravityMs > 0) return Math.min(antigravityMs, 24 * 60 * 60 * 1000);
-  const m = text.match(/retry\s+after\s+(\d+)\s*s/i);
-  if (!m) return null;
-  const ms = Number.parseInt(m[1], 10) * 1000;
-  return ms > 0 ? Math.min(ms, 24 * 60 * 60 * 1000) : null;
-}
-
-/**
- * ISO retry timestamp from already-read prose, or null when no signal.
- */
-export function proseRetryAfterIso(text: unknown): string | null {
-  const ms = parseProseRetryDelayMs(text);
-  return ms ? new Date(Date.now() + ms).toISOString() : null;
-}
-
-/**
- * One-line warn for an unreadable retry hint (clone/parse failure) on the
- * combo drain path. Keeps the triplet (reason, status, model) while keeping
- * the frozen combo dispatchers under their file-size caps.
- */
-export function warnRetryHintUnreadable(
-  log: { warn: (tag: string, message: string, details: unknown) => void },
-  tag: string,
-  model: string,
-  status: number | undefined,
-  reason: "parse failed" | "clone failed",
-): void {
-  log.warn(tag, `Retry hint unreadable for ${model} — ${reason}`, { status });
 }
 
 /**
@@ -991,22 +926,16 @@ export function unavailableResponse(
   retryAfterHuman?: string
 ) {
   const retryAfterSec = normalizeRetryAfterSeconds(retryAfter);
-  const provenance = resolveRetryAfterProvenance(retryAfter);
   const safeMessage = sanitizeErrorMessage(message) || getDefaultErrorMessage(statusCode);
   const safeRetryAfterHuman = retryAfterHuman ? sanitizeErrorMessage(retryAfterHuman) : "";
   const msg = safeRetryAfterHuman ? `${safeMessage} (${safeRetryAfterHuman})` : safeMessage;
-  return new Response(
-    JSON.stringify({ error: { message: msg, retry_after_provenance: provenance } }),
-    {
-      status: statusCode,
-      headers: {
-        "Content-Type": "application/json",
-        // Omit the header when the value is synthetic: emitting the 1s
-        // default would re-stampede clients at a fixed 1s delay.
-        ...(provenance === "upstream" ? { "Retry-After": String(retryAfterSec) } : {}),
-      },
-    }
-  );
+  return new Response(JSON.stringify({ error: { message: msg } }), {
+    status: statusCode,
+    headers: {
+      "Content-Type": "application/json",
+      "Retry-After": String(retryAfterSec),
+    },
+  });
 }
 
 export function providerCircuitOpenResponse(
