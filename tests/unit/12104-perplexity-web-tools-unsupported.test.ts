@@ -3,7 +3,23 @@ import assert from "node:assert/strict";
 import { perplexity_webProvider } from "../../open-sse/config/providers/registry/perplexity/web/index.ts";
 import { checkToolCallingRequiredButUnsupported } from "../../open-sse/handlers/chatCore/toolCallingRequiredCheck.ts";
 import { filterTargetsByRequestCompatibility } from "../../open-sse/services/combo/comboStructure.ts";
+import { stripUnsupportedParams } from "../../open-sse/handlers/chatCore/unsupportedParamsStrip.ts";
 import { getUnsupportedParams } from "../../open-sse/config/providerRegistry.ts";
+import type { ResolvedComboTarget } from "../../open-sse/services/combo/types.ts";
+
+function buildResolvedTarget(provider: string, model: string): ResolvedComboTarget {
+  return {
+    kind: "model",
+    stepId: `${provider}-step`,
+    executionKey: `${provider}-step:0`,
+    modelStr: `${provider}/${model}`,
+    provider,
+    providerId: null,
+    connectionId: null,
+    weight: 1,
+    label: null,
+  };
+}
 
 test("PR #2: perplexity-web provider metadata declares tool-calling unsupported", () => {
   assert.ok(
@@ -24,7 +40,7 @@ test("PR #2: direct chatCore request with tools returns 400 error guard", () => 
   const model = "pplx-sonar";
   const provider = "perplexity-web";
   const unsupported = getUnsupportedParams(provider, model);
-  
+
   // 1. tools array
   const checkTools = checkToolCallingRequiredButUnsupported(
     { model, tools: [{ type: "function", function: { name: "test" } }] },
@@ -36,47 +52,50 @@ test("PR #2: direct chatCore request with tools returns 400 error guard", () => 
   assert.ok(checkTools.message?.includes("does not support tool calling"));
 });
 
-test("PR #2: combo/auto routing excludes perplexity-web when tools are present", () => {
-  // Mock combo targets
-  const candidateTargets: any[] = [
-    { provider: "openai", model: "gpt-4" },
-    { provider: "perplexity-web", model: "pplx-sonar" }
+test("PR #2: combo/auto keeps perplexity-web eligible (emulated tool-calling), so unsupportedParams stripping is what protects the request", () => {
+  // Real ResolvedComboTarget shape, as produced by the routing layer.
+  const candidateTargets: ResolvedComboTarget[] = [
+    buildResolvedTarget("openai", "gpt-4"),
+    buildResolvedTarget("perplexity-web", "pplx-sonar"),
   ];
 
-  // Request WITH tools
   const bodyWithTools = {
     model: "auto",
     messages: [{ role: "user", content: "hello" }],
-    tools: [{ type: "function", function: { name: "test" } }]
+    tools: [{ type: "function", function: { name: "test" } }],
   };
 
+  // filterTargetsByRequestCompatibility deliberately keeps `toolCalling: "emulated"`
+  // providers (web-cookie.ts, #5240) eligible even when the request carries `tools`,
+  // so this pre-filter alone does NOT drop perplexity-web from the candidate list —
+  // both targets stay.
   const filteredWithTools = filterTargetsByRequestCompatibility(
     candidateTargets,
     bodyWithTools,
-    console, // Mock logger
-    undefined,
-    { bypassChecks: false }
+    console
   );
+  assert.equal(filteredWithTools.length, 2);
+  assert.ok(filteredWithTools.some((target) => target.provider === "perplexity-web"));
 
-  // OpenAI should remain, Perplexity should be dropped because tools are unsupported
-  assert.equal(filteredWithTools.length, 1);
-  assert.equal(filteredWithTools[0].provider, "openai");
-
-  // Request WITHOUT tools
   const bodyNoTools = {
     model: "auto",
-    messages: [{ role: "user", content: "hello" }]
+    messages: [{ role: "user", content: "hello" }],
   };
-
   const filteredNoTools = filterTargetsByRequestCompatibility(
     candidateTargets,
     bodyNoTools,
-    console, // Mock logger
-    undefined,
-    { bypassChecks: false }
+    console
   );
-
-  // Both should remain
   assert.equal(filteredNoTools.length, 2);
-  assert.equal(filteredNoTools[1].provider, "perplexity-web");
+
+  // What actually protects a combo/auto request routed to perplexity-web is the
+  // registry's `unsupportedParams` this PR adds: checkToolCallingRequiredButUnsupported
+  // never blocks combo requests (isCombo: true always returns blocked: false — see
+  // toolCallingRequiredCheck.ts), so chatCore relies on stripUnsupportedParams to
+  // drop the live `tools` param before the translated body reaches the executor.
+  const unsupported = getUnsupportedParams("perplexity-web", "pplx-sonar");
+  const translatedBody: Record<string, unknown> = { ...bodyWithTools };
+  const { strippedParams } = stripUnsupportedParams(translatedBody, unsupported);
+  assert.ok(strippedParams.includes("tools"));
+  assert.equal(translatedBody.tools, undefined);
 });
