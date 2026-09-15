@@ -1843,7 +1843,7 @@ test("handleImageGeneration routes codex image requests through /responses with 
   }
 });
 
-test("handleImageGeneration (codex) returns a data URL when response_format is not b64_json", async () => {
+test("handleImageGeneration (codex) defaults to b64_json when response_format is unset (#12268)", async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async () => {
     const sse = buildCodexSSE([
@@ -1855,6 +1855,29 @@ test("handleImageGeneration (codex) returns a data URL when response_format is n
   try {
     const result = await handleImageGeneration({
       body: { model: "cx/gpt-5.6-sol", prompt: "kitten" },
+      credentials: { accessToken: "codex-token" },
+      log: null,
+    });
+    assert.equal(result.success, true);
+    assert.equal(result.data.data[0].b64_json, "YWJjZA==");
+    assert.equal(result.data.data[0].url, undefined);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("handleImageGeneration (codex) returns a data URL only when response_format is url", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    const sse = buildCodexSSE([
+      { type: "image_generation_call", id: "ig_3", status: "completed", result: "YWJjZA==" },
+    ]);
+    return new Response(sse, { status: 200 });
+  };
+
+  try {
+    const result = await handleImageGeneration({
+      body: { model: "cx/gpt-5.6-sol", prompt: "kitten", response_format: "url" },
       credentials: { accessToken: "codex-token" },
       log: null,
     });
@@ -2103,6 +2126,108 @@ test("handleImageGeneration (codex) does not mark an ordinary 400 as retryable",
     assert.equal(result.success, false);
     assert.equal(result.status, 400);
     assert.equal(result.retryable, undefined);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+// GHSA-34rg-3pqj-35g9 — caller-supplied image URLs (`image_url` / `mask_url` / message
+// parts) reach `fetchRemoteImage()` through `resolveImageSource()`. Without an explicit
+// `guard`, the library falls back to `getProviderOutboundGuard()` — the OPERATOR outbound
+// policy, which is `block-metadata` on a default install (LAN/loopback allowed, DNS
+// rebinding check skipped) — so a request body could make the server fetch intranet
+// URLs and forward the bytes upstream. Caller input must be pinned to `public-only`
+// regardless of the operator policy. The DNS stub at the top of this file resolves every
+// hostname to a public IP, so the string check is the only thing standing between the
+// request body and the loopback/RFC-1918 fetch.
+for (const privateUrl of ["http://127.0.0.1:1/x.png", "http://192.168.1.50/x.png"]) {
+  test(`handleImageGeneration rejects a private image_url (${privateUrl}) before any fetch (GHSA-34rg-3pqj-35g9)`, async () => {
+    const originalFetch = globalThis.fetch;
+    const fetchedUrls = [];
+
+    globalThis.fetch = async (url) => {
+      const stringUrl = String(url);
+      fetchedUrls.push(stringUrl);
+      if (stringUrl === privateUrl) {
+        // Canary: on the vulnerable code the sink downloads these bytes and
+        // forwards them to Stability as the multipart `image` part.
+        return new Response(new Uint8Array([4, 5]), {
+          status: 200,
+          headers: { "content-type": "image/png" },
+        });
+      }
+      return new Response(JSON.stringify({ image: "c3RhYmlsaXR5LWltYWdl" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    };
+
+    try {
+      const result = await handleImageGeneration({
+        body: {
+          model: "stability-ai/inpaint",
+          prompt: "replace the sky with aurora",
+          image_url: privateUrl,
+          mask: "data:image/png;base64,AA==",
+          response_format: "b64_json",
+        },
+        credentials: { apiKey: "stability-key" },
+        log: null,
+      });
+
+      assert.equal(result.success, false);
+      assert.match(String(result.error), /blocked/i);
+      assert.deepEqual(
+        fetchedUrls,
+        [],
+        "neither the private image download nor the upstream call may happen"
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+}
+
+test("handleImageGeneration still downloads a public image_url whose DNS resolves to a public IP (GHSA-34rg-3pqj-35g9)", async () => {
+  const originalFetch = globalThis.fetch;
+  const fetchedUrls = [];
+  let requestCapture;
+
+  globalThis.fetch = async (url, options = {}) => {
+    const stringUrl = String(url);
+    fetchedUrls.push(stringUrl);
+    if (stringUrl === "https://cdn.example.com/public-input.png") {
+      return new Response(new Uint8Array([4, 5, 6]), {
+        status: 200,
+        headers: { "content-type": "image/png" },
+      });
+    }
+    if (stringUrl === "https://api.stability.ai/v2beta/stable-image/edit/inpaint") {
+      requestCapture = { body: options.body };
+      return new Response(JSON.stringify({ image: "c3RhYmlsaXR5LWltYWdl" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    }
+    throw new Error(`Unexpected URL: ${stringUrl}`);
+  };
+
+  try {
+    const result = await handleImageGeneration({
+      body: {
+        model: "stability-ai/inpaint",
+        prompt: "replace the sky with aurora",
+        image_url: "https://cdn.example.com/public-input.png",
+        mask: "data:image/png;base64,AA==",
+        response_format: "b64_json",
+      },
+      credentials: { apiKey: "stability-key" },
+      log: null,
+    });
+
+    assert.equal(result.success, true);
+    assert.equal(fetchedUrls[0], "https://cdn.example.com/public-input.png");
+    assert.equal((requestCapture.body.get("image") as Blob).size, 3);
   } finally {
     globalThis.fetch = originalFetch;
   }
