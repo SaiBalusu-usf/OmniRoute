@@ -115,6 +115,24 @@ test("bypass predicate: true for Gemini target", () => {
   );
 });
 
+// #13447: Antigravity targets translate web_search to googleSearch natively
+// (openaiToAntigravityRequest -> openaiToCloudCodeGeminiRequest ->
+// openaiToGeminiBase -> buildGeminiTools, plus executors/antigravity.ts), so
+// the fallback conversion must be bypassed exactly like FORMATS.GEMINI.
+// Without this, web_search is rewritten to omniroute_web_search, which
+// Responses clients reject as an undeclared tool.
+test("bypass predicate: true for Antigravity target", () => {
+  assert.equal(
+    supportsNativeWebSearchFallbackBypass({
+      provider: "antigravity",
+      sourceFormat: "openai-responses",
+      targetFormat: "antigravity",
+      nativeCodexPassthrough: false,
+    }),
+    true
+  );
+});
+
 test("bypass predicate: true for Claude -> Claude passthrough", () => {
   assert.equal(
     supportsNativeWebSearchFallbackBypass({
@@ -246,6 +264,37 @@ test("native Codex passthrough: built-in web_search_preview forwarded untouched"
   assert.equal(fallback.enabled, false);
   assert.equal(fallback.toolName, null);
   assert.deepEqual(body, inputBody);
+});
+
+test("Antigravity target: built-in web_search forwarded untouched (#13447)", () => {
+  // End-to-end proof for the reported failure: a Responses client declaring
+  // web_search against an Antigravity Gemini model must NOT see its tool
+  // rewritten to omniroute_web_search.
+  const inputBody = { tools: [{ type: "web_search" }] };
+  const { body, fallback } = prepareWebSearchFallbackBody(inputBody, {
+    provider: "antigravity",
+    sourceFormat: "openai-responses",
+    targetFormat: "antigravity",
+    nativeCodexPassthrough: false,
+  });
+
+  assert.equal(fallback.enabled, false);
+  assert.equal(fallback.toolName, null);
+  assert.equal(fallback.convertedToolCount, 0);
+  assert.deepEqual(body, inputBody);
+});
+
+test("#13447 interceptSearchOverride=true forces interception even for Antigravity", () => {
+  assert.equal(
+    supportsNativeWebSearchFallbackBypass({
+      provider: "antigravity",
+      sourceFormat: "openai-responses",
+      targetFormat: "antigravity",
+      nativeCodexPassthrough: false,
+      interceptSearchOverride: true,
+    }),
+    false
+  );
 });
 
 test("OpenAI -> Claude (non-passthrough): built-in web_search IS still converted", () => {
