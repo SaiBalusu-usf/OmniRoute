@@ -32,7 +32,8 @@ import {
   type CompatByProtocolMap,
 } from "../providerPageHelpers";
 import { ModelVisibilityToolbar } from "./ModelRow";
-import { sortModelsFreeFirst, isFreeForProvider } from "@/shared/utils/freeModels";
+import { sortModelsFreeFirst, isModelFreeBadge } from "@/shared/utils/freeModels";
+import { useStrictFreeBadge } from "./useStrictFreeBadge";
 import PassthroughModelRow from "./PassthroughModelRow";
 
 // ---------------------------------------------------------------------------
@@ -138,6 +139,7 @@ export default function PassthroughModelsSection({
   const [freeFilter, setFreeFilter] = useState<"all" | "free" | "paid">("all");
   const [sortFreeFirst, setSortFreeFirst] = useState(false);
   const notify = useNotificationStore();
+  const strictFreeBadge = useStrictFreeBadge();
   const customModelMap = useMemo(() => buildCompatMap(customModels), [customModels]);
 
   const handleTestAll = async () => {
@@ -254,12 +256,16 @@ export default function PassthroughModelsSection({
         alias: aliasByModelId.get(model.id) || defaultAlias,
         displayName: model.name || model.id,
         source,
-        isFree: isFreeForProvider(providerId, {
-          id: model.id,
-          isFree:
-            model.isFree === true ||
-            (model as { free?: unknown }).free === true,
-        }),
+        isFree: isModelFreeBadge(
+          providerId,
+          {
+            id: model.id,
+            name: model.name,
+            free: (model as { free?: unknown }).free,
+            isFree: model.isFree,
+          },
+          { strict: strictFreeBadge }
+        ),
         isHidden: isModelHidden(model.id),
       });
       seenModelIds.add(model.id);
@@ -293,12 +299,16 @@ export default function PassthroughModelsSection({
         alias: displayAlias,
         displayName: displayAlias,
         source: customModel ? customModel.source || "custom" : "alias",
-        isFree: isFreeForProvider(providerId, {
-          id: modelId,
-          isFree:
-            customModel?.isFree === true ||
-            (customModel as { free?: unknown } | undefined)?.free === true,
-        }),
+        isFree: isModelFreeBadge(
+          providerId,
+          {
+            id: modelId,
+            name: customModel?.name || (alias as string) || "",
+            free: (customModel as { free?: unknown } | undefined)?.free,
+            isFree: customModel?.isFree,
+          },
+          { strict: strictFreeBadge }
+        ),
         isHidden: isModelHidden(modelId),
       });
       seenModelIds.add(modelId);
@@ -314,6 +324,7 @@ export default function PassthroughModelsSection({
     providerAlias,
     providerAliases,
     providerId,
+    strictFreeBadge,
   ]);
 
   const filteredModels = allModels.filter((model) => {
