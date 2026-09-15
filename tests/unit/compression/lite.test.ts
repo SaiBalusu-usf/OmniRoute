@@ -78,13 +78,13 @@ describe("dedupSystemPrompt", () => {
 
 describe("compressToolResults", () => {
   it("truncates long tool results", () => {
-    const longContent = "x".repeat(3000);
+    const longContent = "x".repeat(5000);
     const body = { messages: [{ role: "tool", content: longContent }] };
     const result = compressToolResults(body);
     assert.equal(result.applied, true);
     const content = result.body.messages![0].content as string;
-    assert.ok(content.length < 3000);
-    assert.ok(content.includes("[truncated]"));
+    assert.ok(content.length < 5000);
+    assert.ok(content.includes("Output truncated at 4000 characters by OmniRoute"));
   });
 
   it("keeps short tool results unchanged", () => {
@@ -94,7 +94,7 @@ describe("compressToolResults", () => {
   });
 
   it("skips non-tool messages", () => {
-    const body = { messages: [{ role: "user", content: "x".repeat(3000) }] };
+    const body = { messages: [{ role: "user", content: "x".repeat(5000) }] };
     const result = compressToolResults(body);
     assert.equal(result.applied, false);
   });
@@ -195,7 +195,7 @@ describe("replaceImageUrls", () => {
 });
 
 describe("stacked Lite precedence (global config vs explicit step)", () => {
-  const toolContent = `${"word ".repeat(500)}TAIL`;
+  const toolContent = `${"word ".repeat(1000)}TAIL`;
   const liteStep = { engine: "lite" };
   const baseConfig = {
     enabled: true,
@@ -222,8 +222,8 @@ describe("stacked Lite precedence (global config vs explicit step)", () => {
     );
     const messages = result.body.messages as Array<{ content: string }>;
     assert.equal(messages[0].content, toolContent.trimEnd());
-    assert.ok(messages[0].content.length > 2000);
-    assert.doesNotMatch(messages[0].content, /\[truncated\]/);
+    assert.ok(messages[0].content.length > 4000);
+    assert.doesNotMatch(messages[0].content, /Output truncated at/);
     assert.ok(!result.stats?.techniquesUsed.includes("tool-compress"));
   });
 
@@ -240,7 +240,7 @@ describe("stacked Lite precedence (global config vs explicit step)", () => {
       }
     );
     const messages = result.body.messages as Array<{ content: string }>;
-    assert.match(messages[0].content, /\.\.\.\[truncated\]$/);
+    assert.ok(messages[0].content.endsWith("from 4000 onward.]"));
     assert.ok(messages[0].content.length < toolContent.length);
     assert.ok(result.stats?.techniquesUsed.includes("tool-compress"));
   });
@@ -259,7 +259,7 @@ describe("stacked Lite precedence (global config vs explicit step)", () => {
     );
     const messages = result.body.messages as Array<{ content: string }>;
     assert.equal(messages[0].content, toolContent.trimEnd());
-    assert.doesNotMatch(messages[0].content, /\[truncated\]/);
+    assert.doesNotMatch(messages[0].content, /Output truncated at/);
     assert.ok(!result.stats?.techniquesUsed.includes("tool-compress"));
   });
 
@@ -279,7 +279,7 @@ describe("stacked Lite precedence (global config vs explicit step)", () => {
     );
     const messages = result.body.messages as Array<{ content: string }>;
     assert.equal(messages[0].content, toolContent.trimEnd());
-    assert.doesNotMatch(messages[0].content, /\[truncated\]/);
+    assert.doesNotMatch(messages[0].content, /Output truncated at/);
     assert.ok(!result.stats?.techniquesUsed.includes("tool-compress"));
   });
 
@@ -290,7 +290,7 @@ describe("stacked Lite precedence (global config vs explicit step)", () => {
       { config: { ...baseConfig, stackedPipeline: [liteStep] } }
     );
     const messages = result.body.messages as Array<{ content: string }>;
-    assert.match(messages[0].content, /\.\.\.\[truncated\]$/);
+    assert.ok(messages[0].content.endsWith("from 4000 onward.]"));
   });
 });
 
@@ -312,16 +312,16 @@ describe("applyLiteCompression", () => {
   });
 
   it("keeps proactive tool-result truncation enabled when Lite detail config is missing", () => {
-    const toolContent = `${"word ".repeat(500)}TAIL`;
+    const toolContent = `${"word ".repeat(1000)}TAIL`;
     const result = applyCompression({ messages: [{ role: "tool", content: toolContent }] }, "lite");
     const messages = result.body.messages as Array<{ content: string }>;
 
-    assert.match(messages[0].content, /\.\.\.\[truncated\]$/);
+    assert.ok(messages[0].content.endsWith("from 4000 onward.]"));
     assert.ok(messages[0].content.length < toolContent.length);
   });
 
   it("can disable only proactive tool-result truncation while other Lite transforms still apply", () => {
-    const toolContent = `${"word ".repeat(500)}TAIL   `;
+    const toolContent = `${"word ".repeat(1000)}TAIL   `;
     const result = applyCompression(
       { messages: [{ role: "tool", content: toolContent }] },
       "lite",
@@ -342,8 +342,8 @@ describe("applyLiteCompression", () => {
     const messages = result.body.messages as Array<{ content: string }>;
 
     assert.equal(messages[0].content, toolContent.trimEnd());
-    assert.ok(messages[0].content.length > 2000);
-    assert.doesNotMatch(messages[0].content, /\[truncated\]/);
+    assert.ok(messages[0].content.length > 4000);
+    assert.doesNotMatch(messages[0].content, /Output truncated at/);
     assert.ok(result.stats?.techniquesUsed.includes("whitespace"));
     assert.ok(!result.stats?.techniquesUsed.includes("tool-compress"));
   });

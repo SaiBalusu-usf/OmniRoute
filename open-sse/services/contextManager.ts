@@ -496,7 +496,7 @@ export function compressContext(
   }
 
   // Layer 1: Trim tool_result/tool messages
-  messages = trimToolMessages(messages, 2000); // Max 2000 chars per tool result
+  messages = trimToolMessages(messages, 4000); // Max 4000 chars per tool result
   currentTokens = estimateTokens(messages); // #8594: object-path keeps the #8368 image estimate
   stats.layers.push({ name: "trim_tools", tokens: currentTokens });
 
@@ -554,11 +554,12 @@ export function compressContext(
 // ─── Layer 1: Trim Tool Messages ────────────────────────────────────────────
 
 function trimToolMessages(messages: Record<string, unknown>[], maxChars: number) {
+  const truncationNotice = `\n... [Output truncated at ${maxChars} characters by OmniRoute to protect context. To read further, use the tool with offset/start from ${maxChars} onward.]`;
   return messages.map((msg) => {
     if (msg.role === "tool" && typeof msg.content === "string" && msg.content.length > maxChars) {
       return {
         ...msg,
-        content: msg.content.slice(0, maxChars) + "\n... [truncated]",
+        content: msg.content.slice(0, maxChars) + truncationNotice,
       };
     }
     // Handle array content (Claude format with tool_result blocks)
@@ -571,7 +572,7 @@ function trimToolMessages(messages: Record<string, unknown>[], maxChars: number)
             typeof block.content === "string" &&
             block.content.length > maxChars
           ) {
-            return { ...block, content: block.content.slice(0, maxChars) + "\n... [truncated]" };
+            return { ...block, content: block.content.slice(0, maxChars) + truncationNotice };
           }
           return block;
         }),

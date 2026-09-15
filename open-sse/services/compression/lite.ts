@@ -123,8 +123,9 @@ export function compressToolResults(body: ChatBody): {
   applied: boolean;
 } {
   if (!body.messages) return { body, applied: false };
-  const MAX_TOOL_LENGTH = 2000;
+  const MAX_TOOL_LENGTH = 4000;
   let applied = false;
+  const truncationNotice = `\n... [Output truncated at ${MAX_TOOL_LENGTH} characters by OmniRoute to protect context. To read further, use the tool with offset/start from ${MAX_TOOL_LENGTH} onward.]`;
   const messages = body.messages.map((msg) => {
     if (msg.role !== "tool" || typeof msg.content !== "string") return msg;
     if (msg.content.length <= MAX_TOOL_LENGTH) return msg;
@@ -132,7 +133,7 @@ export function compressToolResults(body: ChatBody): {
     const cutIndex = backOffToWordBoundary(msg.content, MAX_TOOL_LENGTH);
     return {
       ...msg,
-      content: msg.content.slice(0, cutIndex) + "\n...[truncated]",
+      content: msg.content.slice(0, cutIndex) + truncationNotice,
     };
   });
   return { body: { ...body, messages }, applied };

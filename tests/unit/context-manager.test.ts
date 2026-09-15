@@ -141,7 +141,7 @@ test("compressContext: Layer 1 — trims long tool messages", () => {
   assert.ok(result.compressed);
   const toolMsg = (result.body.messages as any).find((m: any) => m.role === "tool");
   assert.ok(toolMsg.content.length < longContent.length);
-  assert.ok(toolMsg.content.includes("[truncated]"));
+  assert.ok(toolMsg.content.includes("Output truncated at 4000 characters by OmniRoute"));
 });
 
 test("compressContext: Layer 2 — compresses thinking in old messages", () => {
