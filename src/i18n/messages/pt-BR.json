@@ -13017,6 +13017,10 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Server-Owned Tool Loop",
         "description": "Continue chamadas de ferramentas do servidor (server-owned) em não-streaming até que o modelo retorne uma resposta utilizável pelo cliente."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "__MISSING__:Protected-Priority Infra Stops as 502",
+        "description": "__MISSING__:Answer 502 instead of 503 when a quota-only-fallback priority target stops the combo for a cause that is provably not quota: an open provider circuit breaker or a predictive latency skip."
       }
     }
   },

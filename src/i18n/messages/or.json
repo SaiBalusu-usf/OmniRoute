@@ -13010,6 +13010,10 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "ସର୍ଭର-ମାଲିକାନାଧୀନ ଟୁଲ୍ ଲୁପ୍",
         "description": "ମଡେଲ୍ ଏକ କ୍ଲାଏଣ୍ଟ-ବ୍ୟବହାରଯୋଗ୍ୟ ପ୍ରତିକ୍ରିୟା ଫେରାଇବା ପର୍ଯ୍ୟନ୍ତ ନନ୍-ଷ୍ଟ୍ରିମିଂ ସର୍ଭର-ମାଲିକାନାଧୀନ ଟୁଲ୍ କଲ୍ଗୁଡ଼ିକୁ ଜାରି ରଖନ୍ତୁ।"
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "__MISSING__:Protected-Priority Infra Stops as 502",
+        "description": "__MISSING__:Answer 502 instead of 503 when a quota-only-fallback priority target stops the combo for a cause that is provably not quota: an open provider circuit breaker or a predictive latency skip."
       }
     }
   },

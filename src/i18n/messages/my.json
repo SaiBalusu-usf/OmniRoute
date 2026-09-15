@@ -13010,6 +13010,10 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Server ပိုင် Tool Loop",
         "description": "Model က client အသုံးပြုနိုင်သော response တစ်ခုကို ပြန်ပေးသည်အထိ non-streaming server-owned tool call များကို ဆက်လက်လုပ်ဆောင်ပါ။"
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "__MISSING__:Protected-Priority Infra Stops as 502",
+        "description": "__MISSING__:Answer 502 instead of 503 when a quota-only-fallback priority target stops the combo for a cause that is provably not quota: an open provider circuit breaker or a predictive latency skip."
       }
     }
   },

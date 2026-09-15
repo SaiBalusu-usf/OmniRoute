@@ -13010,6 +13010,10 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "ಸರ್ವರ್-ಸ್ವಾಮ್ಯದ ಪರಿಕರ ಲೂಪ್",
         "description": "ಮಾದರಿಯು ಕ್ಲೈಂಟ್ಗೆ ಬಳಸಬಹುದಾದ ಪ್ರತಿಕ್ರಿಯೆಯನ್ನು ಹಿಂದಿರುಗಿಸುವವರೆಗೆ ಸ್ಟ್ರೀಮಿಂಗ್ ಅಲ್ಲದ ಸರ್ವರ್-ಸ್ವಾಮ್ಯದ ಪರಿಕರ ಕರೆಗಳನ್ನು ಮುಂದುವರಿಸಿ."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "__MISSING__:Protected-Priority Infra Stops as 502",
+        "description": "__MISSING__:Answer 502 instead of 503 when a quota-only-fallback priority target stops the combo for a cause that is provably not quota: an open provider circuit breaker or a predictive latency skip."
       }
     }
   },

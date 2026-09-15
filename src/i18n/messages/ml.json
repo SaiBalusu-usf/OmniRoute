@@ -13010,6 +13010,10 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "സെർവർ ഉടമസ്ഥതയിലുള്ള ടൂൾ ലൂപ്പ്",
         "description": "മോഡൽ ക്ലയന്റിന് ഉപയോഗിക്കാവുന്ന പ്രതികരണം നൽകുന്നതുവരെ സ്ട്രീമിംഗ് അല്ലാത്ത, സെർവർ ഉടമസ്ഥതയിലുള്ള ടൂൾ കോളുകൾ തുടരുക."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "__MISSING__:Protected-Priority Infra Stops as 502",
+        "description": "__MISSING__:Answer 502 instead of 503 when a quota-only-fallback priority target stops the combo for a cause that is provably not quota: an open provider circuit breaker or a predictive latency skip."
       }
     }
   },

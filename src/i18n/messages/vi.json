@@ -13017,6 +13017,10 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Vòng lặp công cụ do máy chủ sở hữu",
         "description": "Tiếp tục các lời gọi công cụ do máy chủ sở hữu ở chế độ không streaming cho đến khi mô hình trả về phản hồi mà máy khách dùng được."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Dừng ưu tiên được bảo vệ do hạ tầng trả 502",
+        "description": "Trả 502 thay vì 503 khi một mục tiêu ưu tiên chỉ dự phòng theo hạn mức dừng combo vì một nguyên nhân chắc chắn không phải hạn mức: bộ ngắt mạch của nhà cung cấp đang mở hoặc bỏ qua do dự đoán độ trễ."
       }
     }
   },

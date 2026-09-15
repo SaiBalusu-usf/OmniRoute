@@ -13010,6 +13010,10 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "ਸਰਵਰ-ਮਲਕੀਅਤ ਵਾਲਾ ਟੂਲ ਲੂਪ",
         "description": "ਸਰਵਰ-ਮਲਕੀਅਤ ਵਾਲੀਆਂ ਗੈਰ-ਸਟ੍ਰੀਮਿੰਗ ਟੂਲ ਕਾਲਾਂ ਨੂੰ ਉਦੋਂ ਤੱਕ ਜਾਰੀ ਰੱਖੋ ਜਦੋਂ ਤੱਕ ਮਾਡਲ ਕਲਾਇੰਟ ਲਈ ਵਰਤਣਯੋਗ ਜਵਾਬ ਨਾ ਦੇਵੇ।"
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "__MISSING__:Protected-Priority Infra Stops as 502",
+        "description": "__MISSING__:Answer 502 instead of 503 when a quota-only-fallback priority target stops the combo for a cause that is provably not quota: an open provider circuit breaker or a predictive latency skip."
       }
     }
   },
