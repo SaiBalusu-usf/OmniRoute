@@ -1,9 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert";
-import {
-  isOpencodeUserBlocked,
-  hasOpencodeUserBlockedSignal,
-} from "../../open-sse/executors/opencodeGeoBlock.ts";
+import { isOpencodeUserBlocked } from "../../open-sse/executors/opencodeGeoBlock.ts";
 
 const BLOCKED_BODY = JSON.stringify({
   error: {
@@ -17,14 +14,20 @@ const AUTH_BODY = JSON.stringify({ error: { message: "invalid api key", type: "a
 describe("isOpencodeUserBlocked", () => {
   it("matches 403 + user_blocked signal", () => {
     assert.strictEqual(isOpencodeUserBlocked(403, BLOCKED_BODY), true);
-    assert.strictEqual(hasOpencodeUserBlockedSignal(BLOCKED_BODY), true);
   });
   it("matches regardless of case", () => {
     assert.strictEqual(isOpencodeUserBlocked(403, "[USER_BLOCKED] restricted"), true);
   });
-  it("rejects 451 at the rotation predicate, detects at the signal level", () => {
-    assert.strictEqual(isOpencodeUserBlocked(451, BLOCKED_BODY), false);
-    assert.strictEqual(hasOpencodeUserBlockedSignal(BLOCKED_BODY), true);
+  it("classifies 451 exactly like 403 (one predicate, no status special case)", () => {
+    assert.strictEqual(isOpencodeUserBlocked(451, BLOCKED_BODY), true);
+    assert.strictEqual(isOpencodeUserBlocked(451, AUTH_BODY), false);
+  });
+  it("leaves a geo-blocked body to the geo predicate even with the token present", () => {
+    const geo = JSON.stringify({
+      error: { type: "RegionError", message: "not available in your country [user_blocked]" },
+    });
+    assert.strictEqual(isOpencodeUserBlocked(403, geo), false);
+    assert.strictEqual(isOpencodeUserBlocked(451, geo), false);
   });
   it("rejects fingerprint 1010 even with the signal present", () => {
     assert.strictEqual(
@@ -49,7 +52,7 @@ describe("isOpencodeUserBlocked", () => {
     assert.strictEqual(isOpencodeUserBlocked(403, AUTH_BODY), false);
   });
   it("rejects non-403 statuses at the rotation predicate", () => {
-    for (const status of [200, 400, 429, 500]) {
+    for (const status of [200, 400, 401, 429, 500]) {
       assert.strictEqual(isOpencodeUserBlocked(status, BLOCKED_BODY), false);
     }
   });
@@ -60,6 +63,5 @@ describe("isOpencodeUserBlocked", () => {
   it("rejects empty and null bodies", () => {
     assert.strictEqual(isOpencodeUserBlocked(403, ""), false);
     assert.strictEqual(isOpencodeUserBlocked(403, null), false);
-    assert.strictEqual(hasOpencodeUserBlockedSignal(null), false);
   });
 });

@@ -28,14 +28,13 @@ import {
   isEmptyUpstreamRejection,
   extractChatcmplId,
 } from "./accountRotation.ts";
-import {
-  isOpencodeGeoBlocked,
-  isOpencodeUserBlocked,
-  hasOpencodeUserBlockedSignal,
-  proxyKeyOf,
-} from "./opencodeGeoBlock.ts";
+import { isOpencodeGeoBlocked, isOpencodeUserBlocked, proxyKeyOf } from "./opencodeGeoBlock.ts";
+import { discardResponseBody } from "./opencodeResponseBody.ts";
 import { isRetriableUpstreamFailure } from "./opencodeTransientFailure.ts";
-import { isNetworkRotationSharedEgressGuardEnabled } from "@/shared/utils/featureFlags";
+import {
+  isNetworkRotationSharedEgressGuardEnabled,
+  isOpencodeUserBlockedRotationEnabled,
+} from "@/shared/utils/featureFlags";
 
 /**
  * The main OpenCode Zen host, shared by the `opencode` and `opencode-zen`
@@ -584,11 +583,16 @@ export class OpencodeExecutor extends BaseExecutor {
       // through the accounts is the retry). Avoids an unbounded loop on a
       // persistently malformed upstream.
       const emptyRejectionBudget = this.accounts.length === 1 ? 1 : 0;
-      // Tried set: proxy keys already proven unusable for this request
-      // (geo-blocked, user_blocked, or transient 5xx). Request-local only — nothing
+      // Tried set: proxy keys already proven unusable for this request's
+      // model (geo-blocked, or transient 5xx). Request-local only — nothing
       // persists past execute().
       const geoTriedProxyKeys = new Set<string>();
       let directTried = false;
+      // A response an opt-in branch rotated away from. It stays lastResult (and
+      // intact) until a newer attempt replaces it, then its body is cancelled.
+      let abandonedResponse: Response | null = null;
+      // OPENCODE_USER_BLOCKED_ROTATION: rotations spent on user_blocked refusals (max 1).
+      let userBlockedRotations = 0;
 
       for (let attempt = 0; attempt < this.accounts.length + emptyRejectionBudget; attempt++) {
         const isProxiedCandidate = (a: OpencodeAccountState): boolean => {
@@ -696,6 +700,8 @@ export class OpencodeExecutor extends BaseExecutor {
           );
           continue;
         }
+        discardResponseBody(abandonedResponse);
+        abandonedResponse = null;
         lastResult = result;
 
         const status = result.response.status;
@@ -733,37 +739,41 @@ export class OpencodeExecutor extends BaseExecutor {
           } catch {
             log?.debug?.("OPENCODE", "body read failed on geo-block check");
           }
-          const isGeo = bodyText !== null && isOpencodeGeoBlocked(status, bodyText);
-          const isUserBlocked =
-            !isGeo && bodyText !== null && isOpencodeUserBlocked(status, bodyText);
-          if (isGeo || isUserBlocked) {
+          if (bodyText !== null && isOpencodeGeoBlocked(status, bodyText)) {
             const key = proxyKeyOf(account.proxy);
             if (key !== null) geoTriedProxyKeys.add(key);
             else directTried = true;
             log?.warn?.(
               "OPENCODE",
-              `${cid}${isGeo ? "geo-blocked" : "user-blocked"} on account ${masked} (proxy ${key ?? "direct"}), rotating to next…`
+              `${cid}geo-blocked on account ${masked} (proxy ${key ?? "direct"}), rotating to next…`
             );
             // Single account with a proxy: 0 retries (same egress = dead latency).
             // (The fast path above already covers single-without-proxy; here length===1 WITH proxy.)
             if (this.accounts.length === 1) return result;
             continue;
           }
-          // A 451 carrying the token is a refusal of this route, never a
-          // success: pass it through explicitly without markSuccess (the fall
-          // through below would mark one).
+          // Opt-in (#13498): an upstream user_blocked refusal (403 or 451, same
+          // predicate) cools the refused account down, joins the tried-set and
+          // rotates at most once per request. Never a success mark. Flag off →
+          // falls through to the unchanged path below.
           if (
-            status === 451 &&
-            !isGeo &&
             bodyText !== null &&
-            hasOpencodeUserBlockedSignal(bodyText)
+            isOpencodeUserBlocked(status, bodyText) &&
+            isOpencodeUserBlockedRotationEnabled()
           ) {
             const key = proxyKeyOf(account.proxy);
+            if (key !== null) geoTriedProxyKeys.add(key);
+            else directTried = true;
+            this.markCooldown(account);
+            const rotate = userBlockedRotations === 0 && this.accounts.length > 1;
             log?.warn?.(
               "OPENCODE",
-              `${cid}user-blocked on account ${masked} (proxy ${key ?? "direct"}), passing through without success mark…`
+              `${cid}user_blocked ${status} on account ${masked} (proxy ${key ?? "direct"}), ${rotate ? "rotating to next account once…" : "returning the refusal"}`
             );
-            return result;
+            if (!rotate) return result;
+            userBlockedRotations++;
+            abandonedResponse = result.response;
+            continue;
           }
         }
 
