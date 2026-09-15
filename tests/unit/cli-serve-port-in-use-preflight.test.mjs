@@ -17,7 +17,28 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import net from "node:net";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { findListeningPids } from "../../bin/cli/utils/pid.mjs";
+
+const execFileAsync = promisify(execFile);
+
+// findListeningPids() has no discovery mechanism on POSIX besides `lsof`
+// (see pid.mjs) — a runner without it (this devbox, some minimal CI images)
+// makes the real preflight silently report "port free" by design (a false
+// "busy" would block a legitimate `serve`, the worse failure of the two), so
+// the end-to-end assertion below cannot pass there. Skip rather than fail: an
+// absent discovery tool is an environment gap, not a regression in this PR.
+async function hasPosixPortDiscovery() {
+  try {
+    await execFileAsync("lsof", ["-v"]);
+    return true;
+  } catch (err) {
+    return err?.code !== "ENOENT";
+  }
+}
+
+const canDiscoverListeningPorts = process.platform === "win32" || (await hasPosixPortDiscovery());
 
 const WIN_NETSTAT = [
   "Active Connections",
@@ -62,23 +83,29 @@ test("findListeningPids returns empty when nothing is listening", async () => {
   assert.deepEqual(pids, [], "a discovery failure must not be reported as a busy port");
 });
 
-test("findListeningPids finds a real listening socket (end-to-end)", async () => {
-  const server = net.createServer();
-  await new Promise((resolve, reject) => {
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", resolve);
-  });
-  const { port } = server.address();
-  try {
-    const pids = await findListeningPids(port);
-    assert.ok(
-      pids.includes(process.pid),
-      `expected the preflight to find this process (${process.pid}) holding port ${port}, got ${JSON.stringify(pids)}`
-    );
-  } finally {
-    await new Promise((r) => server.close(r));
+test(
+  "findListeningPids finds a real listening socket (end-to-end)",
+  {
+    skip: !canDiscoverListeningPorts && "no lsof/netstat available on this runner",
+  },
+  async () => {
+    const server = net.createServer();
+    await new Promise((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", resolve);
+    });
+    const { port } = server.address();
+    try {
+      const pids = await findListeningPids(port);
+      assert.ok(
+        pids.includes(process.pid),
+        `expected the preflight to find this process (${process.pid}) holding port ${port}, got ${JSON.stringify(pids)}`
+      );
+    } finally {
+      await new Promise((r) => server.close(r));
+    }
   }
-});
+);
 
 test("reportPortInUse names the port, the owning pid, and how to resolve it", async () => {
   const { reportPortInUse } = await import("../../bin/cli/commands/serve.mjs");
