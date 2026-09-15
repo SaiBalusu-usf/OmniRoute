@@ -1,0 +1,1 @@
+- **chore(security):** gitleaks allowlists the literal `wvxc-route-*` API-key test labels of the batches delete-completed suite, so security runs no longer raise them as false-positive secret blockers ([#13729](https://github.com/diegosouzapw/OmniRoute/pull/13729))
