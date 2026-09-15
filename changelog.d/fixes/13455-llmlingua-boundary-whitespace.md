@@ -1,0 +1,1 @@
+- **fix(compression):** stop LLMLingua-2 compression from gluing prose onto adjacent preserved inline-code/URL spans by re-stitching original boundary whitespace after each segment is compressed (#13455) — thanks @Xore

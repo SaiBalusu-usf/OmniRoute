@@ -145,6 +145,26 @@ type MessageLike = {
 };
 
 /**
+ * Reattach the original segment's leading/trailing whitespace around a
+ * backend result that dropped it (#13455 — wordpiece-reconstruction backends
+ * such as the real ONNX worker trim/normalize segment boundaries as a side
+ * effect of tokenization, with no promise to preserve caller whitespace).
+ *
+ * Only reinserts the ORIGINAL whitespace run (not a synthesized single
+ * space) so a segment that bordered a newline stays on its own line instead
+ * of collapsing onto one, and only when the backend output doesn't already
+ * carry equivalent boundary whitespace (avoid doubling it up).
+ */
+function restoreBoundaryWhitespace(original: string, compressed: string): string {
+  const lead = original.match(/^\s+/)?.[0] ?? "";
+  const trail = original.match(/\s+$/)?.[0] ?? "";
+  let out = compressed;
+  if (lead && !/^\s/.test(out)) out = lead + out;
+  if (trail && !/\s$/.test(out)) out = out + trail;
+  return out;
+}
+
+/**
  * Compress a single prose string via the backend.
  * On any error, fail-open and return the original text.
  */
@@ -156,9 +176,16 @@ async function compressProseText(
   if (!text.trim()) return { text, didCompress: false };
   try {
     const compressed = await backend(text, opts);
-    // Accept only if it actually gets shorter (reject no-ops or expansions)
-    if (typeof compressed === "string" && compressed.length < text.length) {
-      return { text: compressed, didCompress: true };
+    if (typeof compressed !== "string") {
+      return { text, didCompress: false };
+    }
+    const restored = restoreBoundaryWhitespace(text, compressed);
+    // Accept only if it actually gets shorter (reject no-ops or expansions).
+    // A segment whose only "compression" would be reattaching its own
+    // stripped boundary whitespace (restored === original) is a no-op, not
+    // a real compression — reject it too.
+    if (restored.length < text.length && restored !== text) {
+      return { text: restored, didCompress: true };
     }
     return { text, didCompress: false };
   } catch {
