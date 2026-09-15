@@ -29,9 +29,9 @@ import {
   extractChatcmplId,
 } from "./accountRotation.ts";
 import { isOpencodeGeoBlocked, proxyKeyOf } from "./opencodeGeoBlock.ts";
-import { discardResponseBody } from "./opencodeResponseBody.ts";
 import {
   isRetriableUpstreamFailure,
+  releaseResponseBody,
   sleepAbortable,
   transientRetryDelayMs,
 } from "./opencodeTransientFailure.ts";
@@ -652,30 +652,17 @@ export class OpencodeExecutor extends BaseExecutor {
           continue;
         }
 
-        // Opt-in (#13615): after repeated transient failures, release the failed
-        // attempt's body and wait (bounded) before the next account. A client that
-        // disconnects during the wait gets no further dispatch.
+        // Opt-in (#13615): after repeated transient failures, release the failed body
+        // and wait (bounded) before the next account; a client abort stops the loop.
         const pauseMs = transientRetryDelayMs(transientStreak, transientPausedMs);
         if (pauseMs > 0 && lastResult !== null && isOpencodeTransientFailoverBackoffEnabled()) {
-          const failed = lastResult.response;
-          discardResponseBody(failed);
-          lastResult = {
-            ...lastResult,
-            response: new Response(null, {
-              status: failed.status,
-              statusText: failed.statusText,
-              headers: failed.headers,
-            }),
-          };
+          lastResult = { ...lastResult, response: releaseResponseBody(lastResult.response) };
           transientPausedMs += pauseMs;
           log?.info?.(
             "OPENCODE",
-            `${cid}${transientStreak} transient upstream failures in a row, pausing ${pauseMs}ms before account ${masked}…`
+            `${cid}${transientStreak} transient failures, pausing ${pauseMs}ms`
           );
-          if (!(await this.transientPauseSleep(pauseMs, input.signal))) {
-            log?.warn?.("OPENCODE", `${cid}client aborted during the failover pause, stopping`);
-            break;
-          }
+          if (!(await this.transientPauseSleep(pauseMs, input.signal))) break;
         }
 
         // #5217 (Gap 2): promoted debug→info so the per-request account/proxy

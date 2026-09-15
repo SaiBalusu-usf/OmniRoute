@@ -2,12 +2,14 @@
  * opencodeTransientFailure.ts — retriable-upstream predicate for the opencode
  * executor loop.
  *
- * Leaf module: one internal import only (isEmptyUpstreamRejection, same
- * executors layer — no registry, no DB). 5xx short-circuits on status alone;
- * the 400 arm delegates to the existing empty-rejection classifier.
+ * Leaf module: internal imports from the same executors layer only
+ * (isEmptyUpstreamRejection, discardResponseBody — no registry, no DB). 5xx
+ * short-circuits on status alone; the 400 arm delegates to the existing
+ * empty-rejection classifier.
  */
 
 import { isEmptyUpstreamRejection } from "./accountRotation.ts";
+import { discardResponseBody } from "./opencodeResponseBody.ts";
 
 export function isRetriableUpstreamFailure(status: number, bodyText?: string): boolean {
   if (status >= 500 && status < 600) return true;
@@ -64,5 +66,19 @@ export function sleepAbortable(ms: number, signal?: AbortSignal | null): Promise
       resolve(true);
     }, ms);
     signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+/**
+ * Cancel a failed response's body before a pause and return a body-less copy
+ * that keeps its status, status text and headers (what the exhaustion path may
+ * still surface once the loop ends).
+ */
+export function releaseResponseBody(response: Response): Response {
+  discardResponseBody(response);
+  return new Response(null, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
   });
 }
