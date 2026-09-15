@@ -25,6 +25,8 @@ import {
   resolvePersistedConnectionCooldownSkipReason,
 } from "./comboPredicates.ts";
 import { resolveQuotaExhaustionCutoffForTarget } from "./quotaExhaustionCutoff.ts";
+import { protectedPriorityStopStatus } from "./protectedPriorityStopStatus.ts";
+import type { ProtectedPriorityStopCause } from "./protectedPriorityStopStatus.ts";
 import type { AttemptLoopDeps, AttemptLoopState, GateDecision } from "./attemptLoopTypes.ts";
 import type { ResolvedComboTarget } from "./types.ts";
 
@@ -58,11 +60,11 @@ export async function evaluateExecuteTargetGates(opts: {
   const protectedPriorityTarget =
     deps.strategy === "priority" && target.fallbackOnlyOnQuotaExhaustion === true;
 
-  const stopProtectedPriorityTarget = (message: string, status: 502 | 503 = 502) => {
+  const stopProtectedPriorityTarget = (message: string, cause?: ProtectedPriorityStopCause) => {
     state.observeFailure(false, target.executionKey);
     deps.clearStaleLKGP(deps.combo.name, target.executionKey, deps.combo.id, deps.log, "COMBO");
     return protectedPriorityTarget
-      ? { ok: false as const, response: errorResponse(status, message) }
+      ? { ok: false as const, response: errorResponse(protectedPriorityStopStatus(cause), message) }
       : null;
   };
 
@@ -93,7 +95,10 @@ export async function evaluateExecuteTargetGates(opts: {
     bumpFallback();
     return {
       kind: "skip",
-      result: stopProtectedPriorityTarget(`Provider ${provider} circuit breaker is open`),
+      result: stopProtectedPriorityTarget(
+        `Provider ${provider} circuit breaker is open`,
+        "circuit_open"
+      ),
     };
   }
 
@@ -171,14 +176,9 @@ export async function evaluateExecuteTargetGates(opts: {
       reason: "request_exhaustion",
     });
     bumpFallback();
-    const isProviderQuotaExhaustion =
-      !!provider && state.exhaustedProviders.has(provider);
     return {
       kind: "skip",
-      result: stopProtectedPriorityTarget(
-        `Target ${modelStr} is unavailable`,
-        isProviderQuotaExhaustion ? 503 : 502
-      ),
+      result: stopProtectedPriorityTarget(`Target ${modelStr} is unavailable`),
     };
   }
 
