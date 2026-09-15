@@ -232,3 +232,9 @@ export function getCursorRegistryHeaders(
     "User-Agent": getCursorUserAgent(version),
   };
 }
+
+/**
+ * CodeBuddy CN (Tencent) CLI/CodeBuddy user agent (#12702).
+ * Sourced from the upstream CLI version.
+ */
+export const CODEBUDDY_CN_USER_AGENT = "CLI/2.108.1 CodeBuddy/2.108.1";
