@@ -6,6 +6,14 @@ lastUpdated: 2026-09-09
 
 # Browser Session Sync Extension
 
+> **⚠️ Third-party software — not audited by the OmniRoute team.** The extension and local
+> bridge described on this page live in a separate, independently maintained repository
+> ([`avichal15/omniroute-session-sync`](https://github.com/avichal15/omniroute-session-sync)).
+> The security properties listed below (loopback-only traffic, Cloud Sync enforcement, no
+> disk persistence, etc.) are the author's own description of that project's behavior — they
+> have not been independently verified by the OmniRoute team. Install and use it at your own
+> risk, and review its source before granting it access to your provider credentials.
+
 OmniRoute supports several web-interface provider adapters, including ChatGPT Web, Gemini Web, Z.ai Web, Qwen Web, Grok Web, and DeepSeek Web. These adapters use session cookies from your browser rather than traditional API keys.
 
 Web session cookies periodically expire or rotate. When that happens, requests sent to that provider fail until a fresh Cookie header is pasted into OmniRoute's dashboard.
@@ -123,9 +131,7 @@ Click **Save fallback** to create or update the `browser-sessions` combo in Omni
 ```json
 {
   "model": "browser-sessions",
-  "messages": [
-    { "role": "user", "content": "Hello" }
-  ]
+  "messages": [{ "role": "user", "content": "Hello" }]
 }
 ```
 
