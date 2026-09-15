@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "Оглашавај claude/&lt;provider&gt;/&lt;model&gt; mirror идентификаторе на /v1/models тако да Claude Code gateway откривање модела приказује и модели који нису Claude. Упозорење: дуплира ставке каталога за све клијенте када је омогућено глобално.",
   "featureFlagNoThinkingAliasEnabledDescription": "Главни прекидач за no-think/&lt;provider&gt;/&lt;model&gt; gateway алиасе. Укључено (подразумевано): /v1/models оглашава варијанту без размишљања за сваки подобан Claude модел способан за размишљање, а идентификатор no-think/ послат у захтеву се разрешава на стварни модел са потиснутим резоновањем. Искључено: варијанте се не оглашавају, а идентификатор no-think/ се третира као и сваки други непознат идентификатор модела. Опција по моделу ModelSpec.noThinkingAlias за укључивање/искључивање се и даље примењује док је ово укључено.",
   "featureFlagChatVirtualLanesEnabledDescription": "Омогући по-закупцу адаптивне виртуелне линије пријема за расподелу провајдера (#9654): нагли скок захтева једног закупца више не изазива 503 грешку код другог. Env варијабла OMNIROUTE_CHAT_VIRTUAL_LANES има приоритет над овим прекидачем у контролној табли; промене се примењују при поновном покретању сервера.",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "Странице добављача на контролној табли: приказују ознаку „Бесплатно“ само за сигнале које добављач уважава — без претпоставки на основу приказаног назива, небуловских поља за бесплатан приступ и суфикса :free код регистрованих добављача без документованог бесплатног пакета. Када је искључено, задржава се претходно правило за приказ ознаке.",
   "sidebar": {
     "home": "Почетна",
     "dashboard": "Контролна табла",
@@ -1751,13 +1752,13 @@
     "omniglyph": "OmniGlyph",
     "rtk": "RTK",
     "sessionDedup": "Дедупликација сесија",
-    "ultra": "Ultra",
+    "ultra": "Ултра",
     "budget": "Буџет",
     "pricing": "Ценовник",
     "quotaShare": "Дељење квоте",
     "discovery": "Откривање",
     "freeProviderRankings": "Ранг бесплатних провајдера",
-    "radar": "Radar",
+    "radar": "Радар",
     "setup": "Подешавање",
     "freeTiers": "Бесплатни нивои",
     "gamification": "Гејмификација",
@@ -1774,7 +1775,7 @@
     "sidebar": "Бочна трака",
     "tokens": "Токени",
     "tools": "Алати",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "Мост агента",
     "trafficInspector": "Инспектор саобраћаја",
     "usage": "Употреба",
     "orchestration": "Оркестрација"
@@ -8606,16 +8607,16 @@
       "intensity": {
         "lite": "Lite",
         "full": "Потпуно",
-        "ultra": "Ultra"
+        "ultra": "Ултра"
       }
     },
     "modeOptions": {
       "default": "Подразумевано",
       "off": "Искључено",
-      "lite": "Lite",
+      "lite": "Лајт",
       "standard": "Стандардно",
       "aggressive": "Агресивно",
-      "ultra": "Ultra",
+      "ultra": "Ултра",
       "responsesToolOutput": "Излаз алата за одговоре"
     }
   },
@@ -8888,7 +8889,7 @@
     "fallbackRouting": "Резервно рутирање",
     "fallbackRoutingDescription": "Понови неуспеле захтеве провајдера преко CLIProxyAPI",
     "enableFallback": "Омогући резервну опцију",
-    "cliproxyUrl": "CLIProxyAPI URL",
+    "cliproxyUrl": "URL за CLIProxyAPI",
     "fallbackCodes": "Резервни статус кодови (раздвојени зарезом)",
     "invalidUrl": "Неважећи URL — мора почети са http:// или https://",
     "saved": "Сачувано",
@@ -10779,7 +10780,7 @@
     "saveConnection": "Сачувај везу",
     "gheDescription": "Унесите основни URL своје GitHub Enterprise инстанце (нпр. <code>https://ghe.yourcompany.com</code>).",
     "gheUrlPlaceholder": "https://ghe.yourcompany.com",
-    "gheUrlLabel": "GitHub Enterprise URL",
+    "gheUrlLabel": "URL за GitHub Enterprise",
     "gheUrlRequired": "GitHub Enterprise URL је обавезан",
     "gitlabDuoSetupTitle": "Подешавање GitLab Duo OAuth-а",
     "gitlabDuoSetupMessage": "GitLab Duo OAuth није подешен. Региструјте OAuth апликацију на {applicationsUrl} са redirect URI {redirectUri} и обимима „{scopes}“, затим подесите {clientIdEnv} (и опционо {clientSecretEnv}) и поново покрените.",
@@ -10915,7 +10916,7 @@
     "assignmentsCount": "{count} доделa",
     "noData": "—",
     "testSuccess": "✓ {ip}",
-    "testLatency": "{latency}ms",
+    "testLatency": "{latency} ms",
     "testFailure": "✗ {error}",
     "repair": "Поправи",
     "relayAuthMissing": "недостаје аутентикација",
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "Одбиј захтеве пре слања када циљни модел не поседује потребне могућности (визуелни унос, алати, структурирани излаз, контекстни прозор). Штити директне захтеве ка појединачном добављачу који заобилазе филтер компатибилности комбо-слоја.",
   "featureFlagDisableContextWindowChecksDescription": "Прескочи локалну провера контекстног прозора и максималног броја улазних токена OmniRoute-а за директне захтеве ка појединачном моделу. Добављачи услуга и даље примењују своја стварна ограничења. Компресија упита и ограничења излазних токена остају активни.",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "Статистика претраге и недавне претраге рачунају само добављаче који и даље имају активну везу (добављачи без кључа, као што је duckduckgo-free, увек се рачунају). Искључивањем се задржава сваки сачувани ред претраге са ID-ом добављача.",
   "publicSystem": {
     "notFound": {
       "title": "Страница није пронађена",
@@ -14029,7 +14031,7 @@
     "filterSources": "Извори",
     "filterProviders": "Провајдери",
     "clearFilters": "Обриши филтере",
-    "sourceCloudAgent": "Cloud Agent",
+    "sourceCloudAgent": "Агент у облаку",
     "sourceA2A": "A2A",
     "sourceConductor": "Conductor",
     "sourceStale": "Застарело од {since}",

@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "Inzerujte claude/&lt;provider&gt;/&lt;model&gt; zrcadlové ID na /v1/models, aby seznam objevování modelů brány Claude Code zahrnoval modely, které nejsou Claude. Upozornění: při globálním povolení zdvojuje katalogové položky pro všechny klienty.",
   "featureFlagNoThinkingAliasEnabledDescription": "Hlavní přepínač pro aliasy brány no-think/&lt;provider&gt;/&lt;model&gt;. Zapnuto (výchozí): /v1/models uvádí variantu bez přemýšlení pro každý podporovaný model Claude schopný přemýšlení a id no-think/ odeslané v požadavku se převede zpět na skutečný model s potlačeným uvažováním. Vypnuto: žádné varianty nejsou uváděny a id no-think/ se považuje za jakékoli jiné neznámé id modelu. Přihlášení či odhlášení jednotlivých modelů prostřednictvím ModelSpec.noThinkingAlias se uplatňuje i tehdy, když je tato možnost zapnutá.",
   "featureFlagChatVirtualLanesEnabledDescription": "Povolte adaptivní virtuální vstupní pruhy pro každého tenanta při odesílání poskytovatelům (#9654): špička jednoho tenanta už nezpůsobí 503 u jiného. Proměnná prostředí OMNIROUTE_CHAT_VIRTUAL_LANES má přednost před tímto nastavením na řídicím panelu; změny se projeví po restartu serveru.",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "Stránky poskytovatelů na řídicím panelu: zobrazí odznak Zdarma pouze u signálů, které poskytovatel respektuje — přestane používat heuristiku zobrazovaného názvu, nepravdivostní pole free a přípony :free u registrovaných poskytovatelů bez zdokumentované bezplatné úrovně. Vypnutí zachová původní pravidlo pro odznak.",
   "sidebar": {
     "home": "Domov",
     "dashboard": "Nástěnka",
@@ -1774,7 +1775,7 @@
     "sidebar": "Postranní panel",
     "tokens": "Tokeny",
     "tools": "Nástroje",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "Most agentů",
     "trafficInspector": "Inspektor provozu",
     "usage": "Využití",
     "orchestration": "Orchestrace"
@@ -4541,7 +4542,7 @@
     "tabs": {
       "memories": "Vzpomínky",
       "playground": "Hřiště",
-      "engine": "Engine"
+      "engine": "Jádro"
     },
     "title": "Správa paměti",
     "tokensUsed": "Použité tokeny",
@@ -4573,7 +4574,7 @@
     "runTestPlaceholder": "Spustit test (zástupný symbol)",
     "setModeAria": "Nastavit režim {mode}",
     "uninstallSkill": "Odinstalovat dovednost",
-    "sandboxTab": "Sandbox",
+    "sandboxTab": "Izolované prostředí",
     "loading": "Načítám dovednosti...",
     "noSkills": "Nebyly nalezeny žádné dovednosti",
     "noExecutions": "Nebyla nalezena žádná spuštění",
@@ -4603,12 +4604,12 @@
     "enabledSkills": "Povoleno",
     "totalExecutions": "Spuštění",
     "successRate": "Míra úspěšnosti",
-    "marketplaceTab": "Marketplace",
+    "marketplaceTab": "Tržiště",
     "applyFilters": "Použít filtry",
     "popularDefaultsLabel": "Ve výchozím nastavení populární pro vybraného poskytovatele:",
     "onMode": "ZAP",
     "offMode": "VYP",
-    "autoMode": "AUTO",
+    "autoMode": "AUTOMATICKY",
     "installSkillButton": "Instalovat dovednost",
     "installSkillModalTitle": "Instalovat dovednost",
     "installJsonPlaceholder": "Sem vložte JSON manifest dovednosti...",
@@ -4798,7 +4799,7 @@
     "partialData": "Telemetrie je částečně dostupná: {error}"
   },
   "mitm": {
-    "title": "MITM Proxy",
+    "title": "MITM proxy",
     "description": "Transparentní proxy pro zachycování a směrování požadavků klientů.",
     "enable": "Povolit MITM Proxy",
     "enableDesc": "Spusťte nebo zastavte proces místního zachycení a přepsání DNS.",
@@ -7074,7 +7075,7 @@
     "stickyLimitDesc": "Volání účtem před přepnutím",
     "routingStrategyTitle": "Strategie směrování",
     "routingStrategySubtitle": "Odpovídá 9router: střídání účtů (round-robin), fixní limity a rotace kombinací",
-    "accountRoundRobin": "Round Robin",
+    "accountRoundRobin": "Cyklické střídání",
     "accountRoundRobinDesc": "Procházet účty dokola pro rozložení zátěže",
     "comboRoundRobin": "Round Robin kombinací",
     "comboRoundRobinDesc": "Procházet cíle kombinací dokola namísto neustálého začínání od prvního",
@@ -8626,7 +8627,7 @@
     "editCombo": "Upravit",
     "deleteCombo": "Smazat",
     "deleteConfirm": "Smazat tuto kombinaci komprese?",
-    "pipeline": "Pipeline",
+    "pipeline": "Kanál",
     "addStep": "Přidat krok",
     "removeStep": "Odebrat",
     "name": "Název",
@@ -8694,7 +8695,7 @@
     "replay": "Přehrát",
     "resetReplay": "Resetovat přehrávání",
     "stepProgress": "krok {current}/{total}",
-    "inlineView": "Inline",
+    "inlineView": "V řádku",
     "splitComingSoon": "Rozdělené zobrazení (již brzy)",
     "inputPlaceholder": "Vložte prompt, výstup nástroje nebo kontext…",
     "activeCombined": "Aktivní v kombinovaném toku",
@@ -8791,15 +8792,15 @@
         "description": "Zásady použité při měření publikovaných záznamů. Převádí systémovou výzvu, dokumentaci nástrojů a obsáhlou historii na obrázky."
       },
       "balanced": {
-        "label": "Balanced",
+        "label": "Vyvážený",
         "description": "Ponechává aktuální stav v původní podobě a chrání posledních 8 tahů; slučuje pouze starší uzavřenou historii."
       },
       "codingSafe": {
-        "label": "Coding-safe",
+        "label": "Bezpečný pro kódování",
         "description": "Ponechává autoritativní pokyny, schémata nástrojů a aktuální výstup nástrojů v původní podobě a chrání posledních 12 tahů. Dokud se v relaci nenashromáždí historie, nic nekomprimuje."
       },
       "passthrough": {
-        "label": "Passthrough",
+        "label": "Průchozí",
         "description": "Směruje bez transformace. Engine se přeskočí a požadavek se předá beze změny."
       }
     },
@@ -9173,7 +9174,7 @@
     "comboRouted": "Combo směrováno",
     "uniqueEndpoints": "Jedinečné koncové body",
     "routeDetails": "Podrobnosti trasy",
-    "comboBadge": "Combo",
+    "comboBadge": "Kombinace",
     "routeEndpointLabel": "Koncový bod",
     "routeConnectionLabel": "Připojení",
     "scenarioVision": "Vize (pochopení obrazu)",
@@ -9184,7 +9185,7 @@
     "conceptHeadline": "Vaše aplikace mluví \"jazykem\" jednoho API. Překladač ji převede pro použití s jiným poskytovatelem.",
     "conceptDiagramAppLabel": "Vaše aplikace",
     "conceptDiagramSourceLabel": "Zdrojový formát",
-    "conceptDiagramHubLabel": "OpenAI (hub)",
+    "conceptDiagramHubLabel": "OpenAI (centrum)",
     "conceptDiagramTargetLabel": "Cílový poskytovatel",
     "conceptDiagramExampleApp": "např. Anthropic SDK",
     "conceptDiagramExampleSource": "claude",
@@ -9270,7 +9271,7 @@
     "grokAutoTopUpDisabled": "Zakázáno",
     "grokAutoTopUpAt": "na",
     "grokAutoTopUpAdd": "přidat",
-    "grokAutoTopUpMax": "max",
+    "grokAutoTopUpMax": "max.",
     "grokAutoTopUpMonth": "měsíc",
     "grokAdditionalCredits": "Další kredity",
     "kiloAccountBalance": "Zůstatek na účtu",
@@ -10067,7 +10068,7 @@
     "quickStartStep4Suffix": "Použijte například prefix poskytovatele",
     "deploySetupTitle": "Průvodce nastavením",
     "deploySetupText": "Instalace krok za krokem, konfigurace prostředí a návod k prvnímu spuštění pro OmniRoute.",
-    "deployElectronTitle": "Electron Desktop",
+    "deployElectronTitle": "Electron pro počítače",
     "deployElectronText": "Spusťte OmniRoute jako nativní desktopovou aplikaci na Windows, macOS a Linux.",
     "deployDockerTitle": "Docker",
     "deployDockerText": "Kontejnerové nasazení s Docker Compose; připravené pro produkční zásobníky a Kubernetes.",
@@ -11284,7 +11285,7 @@
     "cacheSem": "SEM",
     "cacheUp": "UP",
     "semantic": "Sémantická",
-    "upstream": "Upstream",
+    "upstream": "Nadřazený server",
     "semanticCacheHit": "Shoda v sémantické mezipaměti (obslouženo službou OmniRoute)",
     "upstreamResponse": "Odpověď upstream poskytovatele",
     "noApiKey": "Bez klíče API",
@@ -11367,7 +11368,7 @@
       },
       "payloadMissing": "Podrobný artefakt payloadu již není k dispozici pro tento záznam protokolu.",
       "payloadCorrupt": "Podrobný payload artefakt nebyl možné analyzovat.",
-      "notAvailable": "N/A",
+      "notAvailable": "Není k dispozici",
       "semanticCache": "Sémantický (OmniRoute)",
       "upstreamCache": "Nadřazený (Poskytovatel)",
       "ariaLabel": "Podrobnosti protokolu žádosti",
@@ -11719,7 +11720,7 @@
     "enabled": "Povoleno",
     "disabled": "Zakázáno",
     "installedTab": "Nainstalováno",
-    "marketplaceTab": "Marketplace",
+    "marketplaceTab": "Tržiště",
     "marketplaceUrlLabel": "Vlastní URL pro Marketplace",
     "marketplaceUrlPlaceholder": "Ponechte prázdné pro oficiální registr Omniroute",
     "saveMarketplaceUrl": "Uložit a znovu načíst",
@@ -12040,7 +12041,7 @@
     "agentBridgeModeDesc": "Zachytávat provoz ze všech připojených IDE agentů",
     "customHostsMode": "Vlastní hostitelé",
     "customHostsModeDesc": "Přidat konkrétní hostitele k zachycení",
-    "httpProxyMode": "HTTP Proxy",
+    "httpProxyMode": "HTTP proxy",
     "httpProxyModeDesc": "Použít proměnnou prostředí HTTP_PROXY",
     "systemWideMode": "Celosystémový",
     "systemWideModeDesc": "Zachytávat veškerý systémový provoz (pokročilé)",
@@ -12681,7 +12682,7 @@
     "levelTitles": {
       "beginner": "Začátečník",
       "explorer": "Průzkumník",
-      "expert": "Expert",
+      "expert": "Odborník",
       "master": "Mistr",
       "legend": "Legenda"
     },
@@ -13297,7 +13298,7 @@
     "missing": "Neuvedeno",
     "signalOnly": "Nediskrétní signál uvažování",
     "requestTags": "Štítky požadavku",
-    "requestTagsExample": "coding, internal",
+    "requestTagsExample": "programování, interní",
     "tagMode": "Porovnávání štítků",
     "effortMode": "Režim úsilí",
     "targetEffort": "Cílové úsilí",
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "Odmítnout požadavky před odesláním, když cílový model postrádá požadované schopnosti (vidění, nástroje, strukturovaný výstup, kontextové okno). Chrání přímé požadavky od jednotlivých poskytovatelů, které obcházejí filtr kompatibility kombinované vrstvy.",
   "featureFlagDisableContextWindowChecksDescription": "Přeskočit místní kontrolu velikosti kontextového okna a maximálního počtu vstupních tokenů v OmniRoute u přímých požadavků na jeden model. Poskytovatelé stále vynucují své skutečné limity. Komprese promptů a omezení počtu výstupních tokenů zůstávají aktivní.",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "Statistiky vyhledávání a nedávná vyhledávání zahrnují pouze poskytovatele, kteří mají stále aktivní připojení (poskytovatelé bez klíče, jako je duckduckgo-free, se započítávají vždy). Vypnutí zachová každý uložený řádek vyhledávání s ID poskytovatele.",
   "publicSystem": {
     "notFound": {
       "title": "Stránka nebyla nalezena",

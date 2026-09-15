@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "آگهی شناسه‌های آینه claude/&lt;provider&gt;/&lt;model&gt; را در /v1/models به‌گونه‌ای تنظیم کنید که لیست کشف مدل‌های دروازه کد Claude شامل مدل‌های غیر Claude باشد. هشدار: در صورت فعال‌سازی جهانی، ورودی‌های کاتالوگ را برای تمام مشتریان دو برابر می‌کند.",
   "featureFlagNoThinkingAliasEnabledDescription": "کلید اصلی برای نامهای مستعار درگاه no-think/&lt;provider&gt;/&lt;model&gt;. روشن (پیشفرض): /v1/models برای هر مدل واجد شرایط Claude که قابلیت تفکر دارد، یک گونه بدون تفکر معرفی میکند و شناسه no-think/ ارسالشده در یک درخواست با استدلال سرکوبشده به مدل واقعی بازگردانده میشود. خاموش: هیچ گونهای معرفی نمیشود و شناسه no-think/ مانند هر شناسه مدل ناشناخته دیگری در نظر گرفته میشود. تا زمانی که این گزینه روشن است، انتخاب فعالسازی/غیرفعالسازی مختص هر مدل در ModelSpec.noThinkingAlias همچنان اعمال میشود.",
   "featureFlagChatVirtualLanesEnabledDescription": "خط‌های پذیرش مجازی تطبیقی به‌ازای هر مستاجر (tenant) را برای ارسال به ارائه‌دهندگان فعال کنید (#9654): افزایش ناگهانی بار یک مستاجر دیگر خطای 503 را برای مستاجر دیگر ایجاد نمی‌کند. متغیر محیطی OMNIROUTE_CHAT_VIRTUAL_LANES بر این تنظیم داشبورد اولویت دارد؛ تغییرات پس از راه‌اندازی مجدد سرور اعمال می‌شوند.",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "صفحههای ارائهدهندگان در داشبورد: نشان «رایگان» را فقط برای سیگنالهایی نمایش میدهد که ارائهدهنده به آنها پایبند است—روش اکتشافی نام نمایشی، فیلدهای رایگانِ غیربولین و پسوندهای :free را برای ارائهدهندگان ثبتشدهای که سطح رایگان مستندی ندارند، کنار میگذارد. در حالت خاموش، قاعده تاریخی نشان حفظ میشود.",
   "sidebar": {
     "home": "خانه",
     "dashboard": "داشبورد",
@@ -3173,7 +3174,7 @@
     "copilotPasteInto": "چسباندن در:",
     "copilotReloadInstruction": "سپس VS Code را مجدداً بارگیری کرده و کلید API را در اعلان ورودی تنظیم کنید.",
     "wireApiChatCompletions": "تکمیل چت (/chat/completions)",
-    "wireApiResponses": "Responses API (/responses)",
+    "wireApiResponses": "API پاسخها (/responses)",
     "cliproxyapiActionFailed": "عملیات ناموفق بود",
     "cliproxyapiActionSucceeded": "عملیات با موفقیت انجام شد",
     "cliproxyapiCheckUpdates": "بررسی به‌روزرسانی‌ها",
@@ -10698,7 +10699,7 @@
     "password": "رمز عبور",
     "passwordPlaceholder": "رمز عبور",
     "connected": "متصل",
-    "ip": "IP:",
+    "ip": "آیپی:",
     "connectionFailed": "اتصال ناموفق بود",
     "testConnection": "آزمایش اتصال",
     "clear": "پاک کردن",
@@ -10772,7 +10773,7 @@
     "devinDesktopPasteDescription": "کلید API موجود Devin را از یک جلسه تأیید شده Devin بچسبانید. در دسترس بودن صادرات کلید و مراحل آن بسته به نسخه و حساب Devin متفاوت است.",
     "devinPasteDescription": "کلید API WINDSURF خود را ارائه دهید (که از طریق `devin auth login` یا از طریق دستور \"Windsurf: Provide Auth Token\" در IDE Windsurf به دست آمده است).",
     "grokAuthJsonPlaceholder": "{\"https://auth.x.ai::clientId\": {\"key\": \"eyJ...\", \"refresh_token\": \"...\"}}",
-    "grokAuthJsonLabel": "Grok Build auth.json",
+    "grokAuthJsonLabel": "احراز هویت Grok Build در auth.json",
     "apiTokenPlaceholder": "ws-...",
     "apiKeyTokenLabel": "کلید API / توکن",
     "saving": "در حال ذخیره‌سازی…",
@@ -12829,7 +12830,7 @@
         "criteria": "رسیدن به ۱۰ نفر برتر در هر جدول رده‌بندی."
       },
       "secret-badge": {
-        "name": "???",
+        "name": "؟؟؟",
         "description": "یک دستاورد پنهان در انتظار است...",
         "criteria": "دستاورد پنهان را کامل کنید تا این نشان نمایان شود."
       }
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "درخواست‌ها را قبل از ارسال رد کنید زمانی که مدل هدف قابلیت‌های مورد نیاز (بینایی، ابزارها، خروجی ساختاریافته، پنجره زمینه) را ندارد. از درخواست‌های مستقیم تک‌تأمین‌کننده که فیلتر سازگاری لایه ترکیبی را دور می‌زنند، محافظت می‌کند.",
   "featureFlagDisableContextWindowChecksDescription": "برای درخواستهای مستقیم تکمدلی، بررسی محلی OmniRoute درباره پنجره زمینه و حداکثر توکنهای ورودی را نادیده بگیرید. ارائهدهندگان بالادستی همچنان محدودیتهای واقعی خود را اعمال میکنند. فشردهسازی پرامپت و سقف توکنهای خروجی فعال باقی میمانند.",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "آمار جستوجو و جستوجوهای اخیر فقط ارائهدهندگانی را محاسبه میکنند که همچنان اتصال فعالی دارند (ارائهدهندگان بدون کلید مانند duckduckgo-free همیشه محاسبه میشوند). حالت خاموش، همه ردیفهای جستوجوی نگهداریشده دارای شناسه ارائهدهنده را حفظ میکند.",
   "publicSystem": {
     "notFound": {
       "title": "صفحه پیدا نشد",

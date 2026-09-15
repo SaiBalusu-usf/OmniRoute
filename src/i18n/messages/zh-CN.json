@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "在 /v1/models 上发布 claude/&lt;provider&gt;/&lt;model&gt; 镜像 ID，让 Claude Code 网关模型发现能列出非 Claude 模型。警告：全局启用会使所有客户端的目录条目翻倍。",
   "featureFlagNoThinkingAliasEnabledDescription": "no-think/&lt;provider&gt;/&lt;model&gt; 网关别名的总开关。开启（默认）：/v1/models 会为每个符合条件且支持思考的 Claude 模型公布一个无思考变体，请求中发送的 no-think/ ID 会解析回实际模型，并抑制推理。关闭：不会公布任何变体，no-think/ ID 会像其他未知模型 ID 一样处理。开启此开关时，每个模型的 ModelSpec.noThinkingAlias 选择启用/停用设置仍然适用。",
   "featureFlagChatVirtualLanesEnabledDescription": "为提供者调度启用按租户的自适应虚拟准入通道（#9654）：一个租户的突发流量不再导致另一个租户收到 503。OMNIROUTE_CHAT_VIRTUAL_LANES 环境变量优先于此仪表板设置；更改在服务器重启后生效。",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "控制面板提供者页面：仅在提供者明确支持的信号上显示“免费”徽章——不再对没有文档说明免费层级的已注册提供者使用显示名称启发式规则、非布尔型免费字段和 :free 后缀。关闭时沿用旧版徽章规则。",
   "sidebar": {
     "home": "首页",
     "dashboard": "仪表板",
@@ -13098,7 +13099,7 @@
     "comboHealth": "组合健康状况",
     "callLogs": "调用日志",
     "costs": "费用",
-    "playground": "Playground",
+    "playground": "试验场",
     "nestedCombo": "嵌套组合",
     "modelTarget": "模型目标",
     "weight": "{value}% 权重",
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "在目标模型缺少所需能力（视觉、工具、结构化输出、上下文窗口）时，拒绝调度前的请求。保护绕过组合层兼容性过滤器的直接单一提供者请求。",
   "featureFlagDisableContextWindowChecksDescription": "对于直接发送到单个模型的请求，跳过 OmniRoute 本地的上下文窗口和最大输入令牌检查。上游提供者仍会强制执行其实际限制。提示词压缩和输出令牌上限仍然有效。",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "搜索统计信息和最近搜索仅统计仍保持实时连接的提供者（无需密钥的提供者，如 duckduckgo-free，始终会被统计）。关闭时，将保留每一条包含提供者 ID 的搜索记录。",
   "publicSystem": {
     "notFound": {
       "title": "页面未找到",

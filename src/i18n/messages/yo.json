@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "Polówó àwọn mirror ids claude/&lt;provider&gt;/&lt;model&gt; lórí /v1/models kí ìṣàwárí àwòṣe gateway Claude Code lè ṣàtòjọ àwọn àwòṣe tí kì í ṣe ti Claude. Ìkìlọ̀: èyí máa sọ iye àwọn àkọsílẹ̀ katalọ́ọ̀gù di ìlọ́po méjì fún gbogbo clients nígbà tí a bá mú un ṣiṣẹ́ kárí ayé.",
   "featureFlagNoThinkingAliasEnabledDescription": "Yíyí àkọ́kọ́ fún àwọn gateway aliases no-think/&lt;provider&gt;/&lt;model&gt;. Títàn (àìyípadà): /v1/models máa ń polówó ẹ̀dà tí kò ronú fún gbogbo àwòṣe Claude tó lè ronú tí ó sì yẹ, no-think/ id tí a sì fi ránṣẹ́ pẹ̀lú ìbéèrè máa yanjú padà sí àwòṣe gidi pẹ̀lú fífi reasoning pamọ́. Pípa: a kì yóò polówó àwọn ẹ̀dà kankan, a ó sì ṣe no-think/ id bí model id àìmọ̀ mìíràn. Ìforúkọsílẹ̀/ìyọkúrò ModelSpec.noThinkingAlias ti àwòṣe kọ̀ọ̀kan ṣì wúlò nígbà tí èyí bá tàn.",
   "featureFlagChatVirtualLanesEnabledDescription": "Mú àwọn ọ̀nà ìgbàwọlé aláfojúṣe tí ń mú ara wọn bá ipò mu fún tenant kọ̀ọ̀kan ṣiṣẹ́ fún provider dispatch (#9654): ìrujáde tenant kan kò ní fa 503 fún tenant mìíràn mọ́. env var OMNIROUTE_CHAT_VIRTUAL_LANES ni ó ṣáájú àtúnṣe dashboard yìí; àwọn ìyípadà yóò bẹ̀rẹ̀ sí í ṣiṣẹ́ nígbà tí server bá tún bẹ̀rẹ̀.",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "Àwọn ojú-ìwé olùpèsè lórí Dashboard: fi báàjì Ọ̀fẹ́ hàn lórí àwọn àmì tí olùpèsè náà fọwọ́ sí nìkan — èyí yọ ọ̀nà ìfojúrí orúkọ ìfihàn, àwọn ààyè ọ̀fẹ́ tí kì í ṣe Boolean àti àwọn ìparí :free kúrò lórí àwọn olùpèsè tí a forúkọsílẹ̀ tí kò ní ipele ọ̀fẹ́ tí a ṣàkọsílẹ̀. Pípa rẹ̀ yóò pa òfin báàjì ìṣáájú mọ́.",
   "sidebar": {
     "home": "Ilé",
     "dashboard": "Pátákó Ìṣàkóso",
@@ -11282,7 +11283,7 @@
     "refresh": "Sọ di tuntun",
     "columnsLabel": "Àwọn ọ̀wọ̀n",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "ṢÍṢẸ́",
     "semantic": "Ìtumọ̀",
     "upstream": "Orísun òkè",
     "semanticCacheHit": "A rí i nínú kaṣe ìtumọ̀ (OmniRoute ló pèsè rẹ̀)",
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "Kọ àwọn ìbéèrè kí a tó fi wọ́n ránṣẹ́ nígbà tí àwòṣe àfojúsùn kò bá ní àwọn agbára tí a nílò (ìríran, irinṣẹ́, àbájáde tó ní ìṣètò, fèrèsé àyíká-ọ̀rọ̀). Èyí ń dáàbò bo àwọn ìbéèrè olùpèsè-kan tààrà tí ó ré àlẹ̀mọ́ ìbámu combo-layer kọjá.",
   "featureFlagDisableContextWindowChecksDescription": "Fo àyẹ̀wò fèrèsé àyíká-ọ̀rọ̀ àti iye token ìṣàkóso tó pọ̀jù ti OmniRoute fún àwọn ìbéèrè àwòṣe-kan tààrà. Àwọn olùpèsè upstream ṣì ń fi àwọn ààlà gidi wọn múlẹ̀. Fúnpọ̀ prompt àti àwọn ààlà token àbájáde ṣì ń ṣiṣẹ́.",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "Àwọn ìṣirò ìṣàwárí àti àwọn ìṣàwárí àìpẹ́ yóò ka àwọn olùpèsè tí àsopọ̀ wọn ṣì ń ṣiṣẹ́ nìkan (àwọn olùpèsè tí kò nílò kọ́kọ́rọ́ bíi duckduckgo-free ni a máa ń kà nígbà gbogbo). Pípa yóò pa gbogbo ìlà ìṣàwárí tí a ti fi pamọ́ tí ó ní ID olùpèsè mọ́.",
   "publicSystem": {
     "notFound": {
       "title": "A kò rí ojú-ewé náà",

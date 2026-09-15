@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "在 /v1/models 上廣告 claude/&lt;provider&gt;/&lt;model&gt; 鏡像 ID，以便 Claude Code 閘道模型發現列出非 Claude 模型。警告：當全域啟用時，會為所有客戶端重複目錄條目。",
   "featureFlagNoThinkingAliasEnabledDescription": "no-think/&lt;provider&gt;/&lt;model&gt; 閘道別名的主開關。開啟（預設）：/v1/models 會為每個符合資格且支援思考的 Claude 模型提供不思考變體，而請求中傳送的 no-think/ ID 會解析回實際模型並抑制推理。關閉：不會提供任何變體，且 no-think/ ID 會像其他未知模型 ID 一樣處理。開啟此選項時，每個模型的 ModelSpec.noThinkingAlias 選擇加入／退出設定仍然適用。",
   "featureFlagChatVirtualLanesEnabledDescription": "為提供者調度啟用按租戶的自適應虛擬准入通道（#9654）：一個租戶的突發流量不再導致另一個租戶收到 503。OMNIROUTE_CHAT_VIRTUAL_LANES 環境變數優先於此儀表板設定；變更在伺服器重新啟動後生效。",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "儀表板提供者頁面：僅在提供者認可的訊號上顯示「免費」徽章——不再對沒有已記錄免費方案的已註冊提供者使用顯示名稱啟發法、非布林值免費欄位及 :free 後綴。關閉時會沿用過往的徽章規則。",
   "sidebar": {
     "home": "首頁",
     "dashboard": "儀表板",
@@ -6367,11 +6368,11 @@
     "poeWebDesc": "通過 poe.com 進行多模型聊天",
     "veniceWebLabel": "威尼斯網路",
     "veniceWebDesc": "隱私專注的 AI 聊天",
-    "v0VercelWebLabel": "v0 Vercel Web",
+    "v0VercelWebLabel": "v0 Vercel 網頁版",
     "v0VercelWebDesc": "通過 v0.dev 的 AI 程式碼生成",
-    "kimiWebLabel": "Kimi Web",
+    "kimiWebLabel": "Kimi 網頁版",
     "kimiWebDesc": "通過 www.kimi.com 訪問 Moonshot AI 聊天（國際版，Connect-RPC API）",
-    "doubaoWebLabel": "Dola Web",
+    "doubaoWebLabel": "Dola 網頁版",
     "doubaoWebDesc": "通過 dola.com 訪問字節跳動 AI 聊天",
     "overrideBaseUrlAdvanced": "進階：覆寫基礎 URL",
     "overrideBaseUrlHint": "進階：將此內建提供者指向自訂端點。留空以使用預設值。",
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "在目標模型缺乏所需功能（視覺、工具、結構化輸出、上下文窗口）時，拒絕發送前的請求。保護繞過組合層兼容性過濾器的直接單一提供者請求。",
   "featureFlagDisableContextWindowChecksDescription": "對直接的單一模型請求，略過 OmniRoute 的本機上下文視窗與輸入權杖上限檢查。上游提供者仍會強制執行其實際限制。提示詞壓縮與輸出權杖上限仍會生效。",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "搜尋統計資料與最近的搜尋只會計入仍有有效連線的提供者（不需要金鑰的提供者，例如 duckduckgo-free，則一律會計入）。關閉後，將保留每一筆含有提供者 ID 的搜尋記錄。",
   "publicSystem": {
     "notFound": {
       "title": "找不到頁面",

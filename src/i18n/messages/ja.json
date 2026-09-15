@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "/v1/models で Claude Code ゲートウェイのモデル発見リストに非 Claude モデルを表示するために、claude/&lt;provider&gt;/&lt;model&gt; ミラー ID を広告します。警告: グローバルに有効にすると、すべてのクライアントのカタログエントリが重複します。",
   "featureFlagNoThinkingAliasEnabledDescription": "no-think/&lt;provider&gt;/&lt;model&gt; ゲートウェイエイリアスのマスタースイッチです。オン（デフォルト）の場合、/v1/models は、対象となる思考機能対応の各 Claude モデルについて思考なしのバリアントを提示し、リクエストで送信された no-think/ ID は実際のモデルに解決され、推論が抑制されます。オフの場合、バリアントは提示されず、no-think/ ID は他の不明なモデル ID と同様に扱われます。オンの場合でも、モデルごとの ModelSpec.noThinkingAlias によるオプトイン／オプトアウトが適用されます。",
   "featureFlagChatVirtualLanesEnabledDescription": "プロバイダーへのディスパッチ用に、テナントごとの適応型仮想受付レーンを有効にします（#9654）：あるテナントのバーストが他のテナントに503を返さなくなります。OMNIROUTE_CHAT_VIRTUAL_LANES環境変数はこのダッシュボード設定より優先されます。変更はサーバー再起動時に反映されます。",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "ダッシュボードのプロバイダーページ：プロバイダーが正式に対応していることを示すシグナルに対してのみ「Free」バッジを表示します。表示名による推測、ブール値ではない無料フィールド、および無料枠が文書化されていない登録済みプロバイダーの「:free」サフィックスは使用しません。オフにすると、従来のバッジ判定ルールが適用されます。",
   "sidebar": {
     "home": "ホーム",
     "dashboard": "ダッシュボード",
@@ -11282,7 +11283,7 @@
     "refresh": "更新",
     "columnsLabel": "列",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "稼働中",
     "semantic": "セマンティック",
     "upstream": "アップストリーム",
     "semanticCacheHit": "セマンティックキャッシュヒット（OmniRouteから提供）",
@@ -13297,7 +13298,7 @@
     "missing": "未指定",
     "signalOnly": "非離散的な推論シグナル",
     "requestTags": "リクエストタグ",
-    "requestTagsExample": "coding, internal",
+    "requestTagsExample": "コーディング、内部",
     "tagMode": "タグの照合",
     "effortMode": "推論強度モード",
     "targetEffort": "ターゲットの推論強度",
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "ディスパッチ前にリクエストを拒否します。ターゲットモデルに必要な機能（ビジョン、ツール、構造化出力、コンテキストウィンドウ）が欠けている場合。コンボレイヤーの互換性フィルターをバイパスする直接の単一プロバイダーリクエストを保護します。",
   "featureFlagDisableContextWindowChecksDescription": "単一モデルへの直接リクエストについて、OmniRoute のローカルなコンテキストウィンドウと最大入力トークン数のチェックをスキップします。上流プロバイダーでは、実際の制限が引き続き適用されます。プロンプト圧縮と出力トークン数の上限も引き続き有効です。",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "検索統計と最近の検索には、接続が有効なプロバイダーのみが含まれます（duckduckgo-free などのキーレスプロバイダーは常に含まれます）。オフにすると、プロバイダー ID が設定された保持済みの検索行がすべて維持されます。",
   "publicSystem": {
     "notFound": {
       "title": "ページが見つかりません",

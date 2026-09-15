@@ -162,7 +162,7 @@
     "effortMax": "Máx",
     "effortUltra": "Ultra",
     "reasoningEffort": "Esforço de raciocínio",
-    "wireApi": "Wire API",
+    "wireApi": "API Wire",
     "modelAliases": "Aliases do modelo",
     "combos": "Combinações",
     "noModelsFound": "Nenhum modelo encontrado",
@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "Anuncie os ids de espelho claude/&lt;provider&gt;/&lt;model&gt; em /v1/models para que a descoberta de modelos do gateway Claude Code liste modelos não Claude. Aviso: duplica entradas de catálogo para todos os clientes quando ativado globalmente.",
   "featureFlagNoThinkingAliasEnabledDescription": "Interruptor principal para os aliases de gateway no-think/&lt;provider&gt;/&lt;model&gt;. Ativado (predefinição): /v1/models anuncia uma variante sem raciocínio para cada modelo Claude elegível com capacidade de raciocínio, e um ID no-think/ enviado num pedido é resolvido para o modelo real com o raciocínio suprimido. Desativado: não são anunciadas variantes e um ID no-think/ é tratado como qualquer outro ID de modelo desconhecido. A opção de ativação/desativação ModelSpec.noThinkingAlias por modelo continua a aplicar-se enquanto esta opção estiver ativada.",
   "featureFlagChatVirtualLanesEnabledDescription": "Ative filas de admissão virtuais adaptativas por tenant para o encaminhamento de fornecedores (#9654): um pico de tráfego de um tenant já não gera 503 noutro. A variável de ambiente OMNIROUTE_CHAT_VIRTUAL_LANES sobrepõe-se a esta definição do painel; as alterações entram em vigor ao reiniciar o servidor.",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "Páginas de fornecedores no dashboard: mostrar o distintivo Gratuito apenas com base nos sinais que o fornecedor reconhece — ignora a heurística do nome de apresentação, os campos free não booleanos e os sufixos :free em fornecedores registados sem um nível gratuito documentado. Desativado mantém a regra histórica do distintivo.",
   "sidebar": {
     "home": "Página inicial",
     "dashboard": "Painel",
@@ -1104,7 +1105,7 @@
     "contextUltra": "Ultra",
     "contextOmniglyph": "OmniGlyph",
     "contextSettings": "Definições de Compressão",
-    "contextHeadroom": "Headroom",
+    "contextHeadroom": "Margem disponível",
     "contextSessionDedup": "Deduplicação de Sessão",
     "contextCcr": "CCR",
     "contextLlmlingua": "LLMLingua",
@@ -1174,7 +1175,7 @@
     "omniProxySection": "OmniProxy",
     "quotaTracker": "Quota de Fornecedor",
     "providerQuota": "Quota de Fornecedor",
-    "runtime": "Runtime",
+    "runtime": "Ambiente de execução",
     "consoleLogs": "Registos da Consola",
     "logsTimeline": "Linha do Tempo",
     "logsTimelineSubtitle": "Linha do tempo de pedidos visuais",
@@ -8626,7 +8627,7 @@
     "editCombo": "Editar",
     "deleteCombo": "Eliminar",
     "deleteConfirm": "Eliminar este combo de compressão?",
-    "pipeline": "Pipeline",
+    "pipeline": "Fluxo",
     "addStep": "Adicionar Passo",
     "removeStep": "Remover",
     "name": "Nome",
@@ -9780,7 +9781,7 @@
     "systemMonitor": {
       "metricsAriaLabel": "Métricas do sistema",
       "memory": "Memória",
-      "memoryShort": "mem",
+      "memoryShort": "memória",
       "uptime": "Tempo de Atividade",
       "ariaLabel": "Monitorização do sistema",
       "title": "Monitor do Sistema",
@@ -10958,7 +10959,7 @@
     "poolStrategyLabel": "Estratégia de rotação",
     "poolStrategyHint": "round-robin percorre os membros por ordem; random escolhe uniformemente; sticky mantém um membro durante uma janela; latency-optimized escolhe o mais rápido com base nos registos.",
     "poolStrategyFailed": "Falha ao atualizar a estratégia de rotação",
-    "strategyRoundRobin": "Round-robin",
+    "strategyRoundRobin": "Distribuição circular",
     "strategyRandom": "Aleatório",
     "strategySticky": "Persistente",
     "strategyLatency": "Otimizado para latência",
@@ -10975,7 +10976,7 @@
   "playground": {
     "title": "Title",
     "description": "Description",
-    "endpoint": "Endpoint",
+    "endpoint": "Ponto final",
     "provider": "Fornecedor",
     "model": "Modelo",
     "accountKey": "Account Key",
@@ -11005,7 +11006,7 @@
       "responses": "Respostas",
       "completions": "Conclusões",
       "images": "Images",
-      "embeddings": "Embeddings",
+      "embeddings": "Incorporações",
       "speech": "Speech",
       "transcription": "Transcription",
       "video": "Video",
@@ -11018,7 +11019,7 @@
     "conversationalChat": "Bate-papo conversacional",
     "clearChat": "Limpar bate-papo",
     "typeMessagePlaceholder": "Digite uma mensagem... (Shift+Enter para nova linha)",
-    "tabChat": "Chat",
+    "tabChat": "Conversação",
     "tabCompare": "Comparar",
     "tabApi": "API",
     "tabBuild": "Construir",
@@ -11026,7 +11027,7 @@
     "systemPrompt": "Prompt do sistema",
     "systemPromptPlaceholder": "És um assistente útil.",
     "modelPlaceholder": "ex: openai/gpt-4o",
-    "endpointLabel": "Endpoint",
+    "endpointLabel": "Ponto final",
     "parametersLabel": "Parâmetros",
     "collapseConfig": "Recolher painel de configuração",
     "expandConfig": "Expandir painel de configuração",
@@ -11179,7 +11180,7 @@
     }
   },
   "miniPlayground": {
-    "endpoint": "Endpoint",
+    "endpoint": "Ponto final",
     "apiKey": "Chave de API",
     "model": "Modelo",
     "voice": "Voz",
@@ -11207,7 +11208,7 @@
     "play": "Reproduzir",
     "query": "Consulta",
     "numResults": "Resultados máximos",
-    "prompt": "Prompt",
+    "prompt": "Pedido",
     "size": "Tamanho",
     "duration": "Duração",
     "question": "Pergunta",
@@ -11221,7 +11222,7 @@
     "noAudioUrl": "A resposta não incluiu um URL de áudio: {response}",
     "music": "Música",
     "embeddingSample": "O OmniRoute encaminha pedidos de IA através de múltiplos provedores.",
-    "embedding": "Embedding",
+    "embedding": "Incorporação",
     "imageSample": "Uma cidade futurista ao pôr do sol, iluminação cinematográfica",
     "image": "Imagem",
     "ttsSample": "Olá do OmniRoute. Este é um teste de conversão de texto em voz.",
@@ -11282,7 +11283,7 @@
     "refresh": "Atualizar",
     "columnsLabel": "Colunas",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "ATIVO",
     "semantic": "Semântico",
     "upstream": "A montante",
     "semanticCacheHit": "Acerto de cache semântica (servido pelo OmniRoute)",
@@ -11468,7 +11469,7 @@
     "responses": "Respostas",
     "rerank": "Reordenar",
     "video": "Vídeo",
-    "embeddings": "Embeddings",
+    "embeddings": "Incorporações",
     "transcription": "Transcrição"
   },
   "toolDescriptions": {
@@ -12390,7 +12391,7 @@
         "description": "Os endpoints principais de inferência compatíveis com a OpenAI: conclusões de chat, embeddings, imagens, áudio (TTS/STT), moderações, rerank e a Responses API. A principal superfície de integração para agentes de IA."
       },
       "cli-serve": {
-        "name": "CLI: Serve",
+        "name": "CLI: Servir",
         "description": "Serve o agente localmente"
       },
       "cli-health": {
@@ -12410,7 +12411,7 @@
         "description": "Consultar modelos de IA disponíveis, listar aliases de modelos e navegar pelo catálogo completo de modelos a partir da CLI. Filtrar por fornecedor, pesquisar por capacidade e resolver variantes de nomes de modelos."
       },
       "cli-chat": {
-        "name": "CLI: Chat",
+        "name": "CLI: Conversa",
         "description": "Cliente de chat em linha de comandos"
       },
       "cli-routing": {
@@ -12886,7 +12887,7 @@
       "redact": "Ocultar",
       "disabled": "Desativado",
       "dual": "Duplo",
-      "alias": "Alias",
+      "alias": "Nome alternativo",
       "canonical": "Canónico"
     },
     "definitions": {
@@ -13556,9 +13557,9 @@
     "timeline": {
       "title": "Transições do Disjuntor",
       "window": "Janela",
-      "window1h": "1h",
-      "window6h": "6h",
-      "window24h": "24h",
+      "window1h": "1 h",
+      "window6h": "6 h",
+      "window24h": "24 h",
       "empty": "Sem transições na janela selecionada",
       "currentState": "Estado Atual",
       "state": {
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "Rejeitar pedidos antes do envio quando o modelo de destino não tiver as capacidades necessárias (visão, ferramentas, saída estruturada, janela de contexto). Protege pedidos diretos de um único fornecedor que contornam o filtro de compatibilidade da camada combinada.",
   "featureFlagDisableContextWindowChecksDescription": "Ignorar a verificação local do OmniRoute relativa à janela de contexto e ao número máximo de tokens de entrada para pedidos diretos de um único modelo. Os fornecedores a montante continuam a aplicar os respetivos limites reais. A compressão de pedidos e os limites de tokens de saída permanecem ativos.",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "As estatísticas de pesquisa e as pesquisas recentes só contabilizam fornecedores que ainda tenham uma ligação ativa (os fornecedores sem chave, como duckduckgo-free, são sempre contabilizados). A opção Desativado mantém todas as linhas de pesquisa retidas com um ID de fornecedor.",
   "publicSystem": {
     "notFound": {
       "title": "Página não encontrada",
@@ -13936,7 +13938,7 @@
     "tokens": "Tokens",
     "active": "Ativo",
     "other": "Outro",
-    "tenMinutes": "10min",
+    "tenMinutes": "10 min",
     "hour": "hora",
     "day": "dia",
     "unknownModel": "desconhecido",

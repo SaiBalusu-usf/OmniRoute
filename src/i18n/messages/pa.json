@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "/v1/models ਉੱਤੇ claude/&lt;provider&gt;/&lt;model&gt; ਮਿਰਰ IDs ਦਾ ਪ੍ਰਚਾਰ ਕਰੋ, ਤਾਂ ਜੋ Claude Code ਗੇਟਵੇ ਮਾਡਲ ਖੋਜ ਵਿੱਚ ਗੈਰ-Claude ਮਾਡਲ ਸੂਚੀਬੱਧ ਹੋਣ। ਚੇਤਾਵਨੀ: ਗਲੋਬਲ ਤੌਰ 'ਤੇ ਸਮਰੱਥ ਕਰਨ 'ਤੇ ਇਹ ਸਾਰੇ ਕਲਾਇੰਟਾਂ ਲਈ ਕੈਟਾਲਾਗ ਐਂਟਰੀਆਂ ਨੂੰ ਦੁੱਗਣਾ ਕਰ ਦਿੰਦਾ ਹੈ।",
   "featureFlagNoThinkingAliasEnabledDescription": "no-think/&lt;provider&gt;/&lt;model&gt; ਗੇਟਵੇ ਉਪਨਾਮਾਂ ਲਈ ਮੁੱਖ ਸਵਿੱਚ। ਚਾਲੂ (ਡਿਫਾਲਟ): /v1/models ਹਰ ਯੋਗ, ਸੋਚਣ-ਸਮਰੱਥ Claude ਮਾਡਲ ਲਈ ਇੱਕ ਬਿਨਾਂ-ਸੋਚ ਵਾਲਾ ਰੂਪ ਦਰਸਾਉਂਦਾ ਹੈ, ਅਤੇ ਬੇਨਤੀ ਵਿੱਚ ਭੇਜਿਆ ਗਿਆ no-think/ ID ਤਰਕ ਨੂੰ ਦਬਾ ਕੇ ਮੁੜ ਅਸਲ ਮਾਡਲ ਵਿੱਚ ਹੱਲ ਹੁੰਦਾ ਹੈ। ਬੰਦ: ਕੋਈ ਰੂਪ ਦਰਸਾਏ ਨਹੀਂ ਜਾਂਦੇ ਅਤੇ no-think/ ID ਨੂੰ ਕਿਸੇ ਹੋਰ ਅਣਜਾਣ ਮਾਡਲ ID ਵਾਂਗ ਮੰਨਿਆ ਜਾਂਦਾ ਹੈ। ਜਦੋਂ ਇਹ ਚਾਲੂ ਹੋਵੇ, ਤਾਂ ਪ੍ਰਤੀ-ਮਾਡਲ ModelSpec.noThinkingAlias ਔਪਟ-ਇਨ/ਔਪਟ-ਆਉਟ ਫਿਰ ਵੀ ਲਾਗੂ ਹੁੰਦਾ ਹੈ।",
   "featureFlagChatVirtualLanesEnabledDescription": "ਪ੍ਰਦਾਤਾ ਡਿਸਪੈਚ (#9654) ਲਈ ਪ੍ਰਤੀ-ਟੈਨੈਂਟ ਅਨੁਕੂਲ ਵਰਚੁਅਲ ਐਡਮਿਸ਼ਨ ਲੇਨ ਸਮਰੱਥ ਕਰੋ: ਹੁਣ ਇੱਕ ਟੈਨੈਂਟ ਦਾ ਅਚਾਨਕ ਵਧਿਆ ਲੋਡ ਦੂਜੇ ਲਈ 503 ਪੈਦਾ ਨਹੀਂ ਕਰੇਗਾ। OMNIROUTE_CHAT_VIRTUAL_LANES env var ਨੂੰ ਇਸ ਡੈਸ਼ਬੋਰਡ ਓਵਰਰਾਈਡ ਉੱਤੇ ਤਰਜੀਹ ਮਿਲਦੀ ਹੈ; ਤਬਦੀਲੀਆਂ ਸਰਵਰ ਮੁੜ ਚਾਲੂ ਹੋਣ 'ਤੇ ਲਾਗੂ ਹੁੰਦੀਆਂ ਹਨ।",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "ਡੈਸ਼ਬੋਰਡ ਪ੍ਰਦਾਤਾ ਪੰਨੇ: ਮੁਫ਼ਤ ਬੈਜ ਸਿਰਫ਼ ਉਹਨਾਂ ਸੰਕੇਤਾਂ ਉੱਤੇ ਦਿਖਾਓ ਜਿਨ੍ਹਾਂ ਨੂੰ ਪ੍ਰਦਾਤਾ ਮੰਨਦਾ ਹੈ — ਇਹ ਡਿਸਪਲੇ-ਨਾਮ ਅਨੁਮਾਨ, ਗੈਰ-ਬੂਲੀਅਨ free ਫ਼ੀਲਡਾਂ ਅਤੇ ਬਿਨਾਂ ਦਸਤਾਵੇਜ਼ਬੱਧ ਮੁਫ਼ਤ ਟੀਅਰ ਵਾਲੇ ਰਜਿਸਟਰਡ ਪ੍ਰਦਾਤਾਵਾਂ ਉੱਤੇ :free ਪਿਛੇਤਰਾਂ ਨੂੰ ਹਟਾਉਂਦਾ ਹੈ। ਬੰਦ ਹੋਣ ਉੱਤੇ ਪੁਰਾਣਾ ਬੈਜ ਨਿਯਮ ਬਰਕਰਾਰ ਰਹਿੰਦਾ ਹੈ।",
   "sidebar": {
     "home": "ਮੁੱਖ ਪੰਨਾ",
     "dashboard": "ਡੈਸ਼ਬੋਰਡ",
@@ -1425,19 +1426,19 @@
       "secretKeyHint": "ਪ੍ਰਮਾਣੀਕਰਨ ਲਈ ਪੇਲੋਡ ਹੈਡਰ 'ਤੇ ਦਸਤਖਤ ਕਰਨ ਵਾਸਤੇ ਵਰਤਿਆ ਜਾਂਦਾ ਹੈ।"
     },
     "discord": {
-      "webhookUrl": "Discord Webhook URL",
+      "webhookUrl": "Discord ਵੈੱਬਹੁੱਕ URL",
       "webhookUrlPlaceholder": "https://discord.com/api/webhooks/...",
       "webhookUrlHint": "ਤੁਹਾਡੇ Discord ਚੈਨਲ ਦੀ ਇੰਟੀਗ੍ਰੇਸ਼ਨ ਸੈਟਿੰਗਾਂ ਤੋਂ ਕਾਪੀ ਕੀਤਾ ਵੈੱਬਹੁੱਕ URL।",
       "tutorial": "Discord ਵੈੱਬਹੁੱਕ ਕਿਵੇਂ ਬਣਾਉਣਾ ਹੈ:"
     },
     "slack": {
-      "webhookUrl": "Slack Webhook URL",
+      "webhookUrl": "Slack ਵੈੱਬਹੁੱਕ URL",
       "webhookUrlPlaceholder": "https://hooks.slack.com/services/...",
       "webhookUrlHint": "ਤੁਹਾਡੀ Slack Incoming Webhooks ਇੰਟੀਗ੍ਰੇਸ਼ਨ ਤੋਂ ਕਾਪੀ ਕੀਤਾ ਵੈੱਬਹੁੱਕ URL।",
       "tutorial": "Slack ਵੈੱਬਹੁੱਕ ਕਿਵੇਂ ਬਣਾਉਣਾ ਹੈ:"
     },
     "telegram": {
-      "botToken": "Telegram Bot Token",
+      "botToken": "Telegram ਬੌਟ ਟੋਕਨ",
       "botTokenPlaceholder": "123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ",
       "botTokenHint": "ਤੁਹਾਡਾ ਬੋਟ ਬਣਾਉਂਦੇ ਸਮੇਂ @BotFather ਤੋਂ ਪ੍ਰਾਪਤ ਹੋਇਆ HTTP API ਟੋਕਨ।",
       "chatId": "Telegram ਚੈਟ ID / ਚੈਨਲ",
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "ਜਦੋਂ ਟਾਰਗੇਟ ਮਾਡਲ ਵਿੱਚ ਲੋੜੀਂਦੀਆਂ ਸਮਰੱਥਾਵਾਂ (ਵਿਜ਼ਨ, ਟੂਲ, ਸਟ੍ਰਕਚਰਡ ਆਉਟਪੁੱਟ, ਕਾਂਟੈਕਸਟ ਵਿੰਡੋ) ਨਾ ਹੋਣ, ਤਾਂ ਡਿਸਪੈਚ ਤੋਂ ਪਹਿਲਾਂ ਬੇਨਤੀਆਂ ਅਸਵੀਕਾਰ ਕਰੋ। ਇਹ ਉਹਨਾਂ ਸਿੱਧੀਆਂ ਸਿੰਗਲ-ਪ੍ਰੋਵਾਈਡਰ ਬੇਨਤੀਆਂ ਦੀ ਸੁਰੱਖਿਆ ਕਰਦਾ ਹੈ ਜੋ ਕੌਂਬੋ-ਲੇਅਰ ਅਨੁਕੂਲਤਾ ਫਿਲਟਰ ਨੂੰ ਬਾਈਪਾਸ ਕਰਦੀਆਂ ਹਨ।",
   "featureFlagDisableContextWindowChecksDescription": "ਸਿੱਧੀਆਂ ਸਿੰਗਲ-ਮਾਡਲ ਬੇਨਤੀਆਂ ਲਈ OmniRoute ਦੀ ਸਥਾਨਕ ਕਾਂਟੈਕਸਟ-ਵਿੰਡੋ ਅਤੇ ਅਧਿਕਤਮ-ਇਨਪੁੱਟ-ਟੋਕਨ ਜਾਂਚ ਨੂੰ ਛੱਡੋ। ਅੱਪਸਟ੍ਰੀਮ ਪ੍ਰੋਵਾਈਡਰ ਫਿਰ ਵੀ ਆਪਣੀਆਂ ਅਸਲ ਸੀਮਾਵਾਂ ਲਾਗੂ ਕਰਦੇ ਹਨ। ਪ੍ਰੌਂਪਟ ਕੰਪ੍ਰੈਸ਼ਨ ਅਤੇ ਆਉਟਪੁੱਟ-ਟੋਕਨ ਸੀਮਾਵਾਂ ਸਰਗਰਮ ਰਹਿੰਦੀਆਂ ਹਨ।",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "ਖੋਜ ਅੰਕੜੇ ਅਤੇ ਹਾਲੀਆ ਖੋਜਾਂ ਸਿਰਫ਼ ਉਹਨਾਂ ਪ੍ਰਦਾਤਾਵਾਂ ਨੂੰ ਗਿਣਦੀਆਂ ਹਨ ਜਿਨ੍ਹਾਂ ਦਾ ਕਨੈਕਸ਼ਨ ਅਜੇ ਵੀ ਸਰਗਰਮ ਹੈ (ਕੁੰਜੀ-ਰਹਿਤ ਪ੍ਰਦਾਤਾ, ਜਿਵੇਂ ਕਿ duckduckgo-free, ਹਮੇਸ਼ਾ ਗਿਣੇ ਜਾਂਦੇ ਹਨ)। ਬੰਦ ਕਰਨ ਨਾਲ ਪ੍ਰਦਾਤਾ ID ਵਾਲੀ ਹਰ ਸੰਭਾਲੀ ਹੋਈ ਖੋਜ ਕਤਾਰ ਬਰਕਰਾਰ ਰਹਿੰਦੀ ਹੈ।",
   "publicSystem": {
     "notFound": {
       "title": "ਪੰਨਾ ਨਹੀਂ ਮਿਲਿਆ",

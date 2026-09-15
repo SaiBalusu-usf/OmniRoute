@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "Διαφήμιση αναγνωριστικών καθρέφτη claude/&lt;provider&gt;/&lt;model&gt; στο /v1/models ώστε η ανακάλυψη μοντέλων πύλης Claude Code να εμφανίζει μη-Claude μοντέλα. Προειδοποίηση: διπλασιάζει τις εγγραφές καταλόγου για όλους τους πελάτες όταν ενεργοποιείται καθολικά.",
   "featureFlagNoThinkingAliasEnabledDescription": "Κύριος διακόπτης για τα ψευδώνυμα πύλης no-think/&lt;provider&gt;/&lt;model&gt;. Ενεργό (προεπιλογή): το /v1/models διαφημίζει μια παραλλαγή χωρίς σκέψη για κάθε κατάλληλο Claude μοντέλο ικανό για σκέψη, και ένα αναγνωριστικό no-think/ που αποστέλλεται σε αίτημα επιλύεται στο πραγματικό μοντέλο με καταστολή του συλλογισμού. Ανενεργό: δεν διαφημίζονται παραλλαγές και ένα αναγνωριστικό no-think/ αντιμετωπίζεται όπως οποιοδήποτε άλλο άγνωστο αναγνωριστικό μοντέλου. Η επιλογή ενεργοποίησης/απενεργοποίησης ανά μοντέλο ModelSpec.noThinkingAlias εξακολουθεί να ισχύει ενώ αυτό είναι ενεργό.",
   "featureFlagChatVirtualLanesEnabledDescription": "Ενεργοποίηση προσαρμοστικών εικονικών λωρίδων αποδοχής ανά ενοικιαστή για αποστολή παρόχου (#9654): η έκρηξη ενός ενοικιαστή δεν προκαλεί πλέον 503 σε άλλον. Η μεταβλητή περιβάλλοντος OMNIROUTE_CHAT_VIRTUAL_LANES υπερισχύει αυτής της παράκαμψης του πίνακα ελέγχου· οι αλλαγές τίθενται σε ισχύ κατά την επανεκκίνηση του διακομιστή.",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "Σελίδες παρόχων στον πίνακα ελέγχου: εμφάνιση του σήματος «Δωρεάν» μόνο για ενδείξεις που αναγνωρίζει ο πάροχος — καταργεί τη χρήση του εμφανιζόμενου ονόματος ως ευρετικής μεθόδου, τα μη δυαδικά πεδία δωρεάν χρήσης και τις καταλήξεις :free σε καταχωρισμένους παρόχους χωρίς τεκμηριωμένο δωρεάν επίπεδο. Όταν είναι ανενεργό, διατηρείται ο παλαιότερος κανόνας εμφάνισης του σήματος.",
   "sidebar": {
     "home": "Αρχική",
     "dashboard": "Πίνακας Ελέγχου",
@@ -3984,7 +3985,7 @@
     "modelsCount": "{count, plural, one {# μοντέλο} other {# μοντέλα}}",
     "sectionTitle": "Επιφάνεια Ενσωμάτωσης",
     "sectionDescription": "OpenAI-compatible APIs και endpoints επιχειρησιακού πρωτοκόλλου",
-    "tabApis": "APIs",
+    "tabApis": "API",
     "tabProtocols": "Πρωτόκολλα",
     "tabsAria": "Τμήματα endpoint",
     "protocolsTitle": "Πρωτόκολλα",
@@ -4128,14 +4129,14 @@
     "vscodeAliasModelsLabel": "Μοντέλα VS Code",
     "vscodeAliasChatLabel": "Συνομιλία VS Code",
     "localServer": "Τοπικός Διακομιστής",
-    "cloudOmniroute": "Cloud OmniRoute",
+    "cloudOmniroute": "OmniRoute στο cloud",
     "copyUrl": "Αντιγραφή URL",
     "badgeLoopbackTooltip": "Αυτό το endpoint είναι προσβάσιμο μόνο τοπικά (μόνο loopback)",
     "badgeAlwaysProtectedTooltip": "Αυτό το endpoint προστατεύεται πάντα και απαιτεί εξουσιοδότηση",
     "badgeInternalTooltip": "Αυτό είναι ένα εσωτερικό endpoint συστήματος",
     "tierAll": "Όλα",
     "tierAuth": "Με Πιστοποίηση",
-    "tierLoopback": "Loopback",
+    "tierLoopback": "Βρόχος επιστροφής",
     "tierAlwaysProtected": "Πάντα Προστατευμένο",
     "tierPublic": "Δημόσιο",
     "hideInternal": "Απόκρυψη Εσωτερικών",
@@ -10067,7 +10068,7 @@
     "quickStartStep4Suffix": "Χρησιμοποιήστε το πρόθεμα παρόχου, για παράδειγμα",
     "deploySetupTitle": "Οδηγός Εγκατάστασης",
     "deploySetupText": "Βήμα-βήμα εγκατάσταση, ρύθμιση περιβάλλοντος και οδηγός πρώτης εκτέλεσης για το OmniRoute.",
-    "deployElectronTitle": "Electron Desktop",
+    "deployElectronTitle": "Electron για υπολογιστές",
     "deployElectronText": "Εκτελέστε το OmniRoute ως εγγενή εφαρμογή επιφάνειας εργασίας σε Windows, macOS και Linux.",
     "deployDockerTitle": "Docker",
     "deployDockerText": "Ανάπτυξη σε container με Docker Compose· έτοιμο για στοίβες παραγωγής και Kubernetes.",
@@ -12370,7 +12371,7 @@
         "description": "Εκκίνηση αντιγράφων ασφαλείας συστήματος, επαναφορά από αρχεία αντιγράφων ασφαλείας και διαχείριση κύκλου ζωής βάσης δεδομένων SQLite. Υποστηρίζει στρατηγικές εξαγωγής, εισαγωγής και σταδιακών στιγμιότυπων."
       },
       "omni-webhooks": {
-        "name": "Webhooks",
+        "name": "Webhook",
         "description": "Εγγραφή, καταχώριση, δοκιμή και αφαίρεση endpoints webhook. Διαμόρφωση συνδρομών συμβάντων (request.completed, request.failed, quota.exceeded κ.ά.) και διαχείριση επαναλήψεων παράδοσης."
       },
       "omni-mcp": {
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "Απόρριψη αιτημάτων πριν από την αποστολή όταν το στοχευόμενο μοντέλο δεν διαθέτει τις απαιτούμενες δυνατότητες (όραση, εργαλεία, δομημένη έξοδος, παράθυρο περιβάλλοντος). Προστατεύει άμεσα αιτήματα μεμονωμένου παρόχου που παρακάμπτουν το φίλτρο συμβατότητας του επιπέδου combo.",
   "featureFlagDisableContextWindowChecksDescription": "Παράλειψη του τοπικού ελέγχου παραθύρου περιβάλλοντος και μέγιστου εισόδου διακριτικών του OmniRoute για άμεσα αιτήματα μεμονωμένου μοντέλου. Οι upstream πάροχοι εξακολουθούν να επιβάλλουν τα πραγματικά τους όρια. Η συμπίεση προτροπής και τα ανώτατα όρια διακριτικών εξόδου παραμένουν ενεργά.",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "Τα στατιστικά αναζήτησης και οι πρόσφατες αναζητήσεις υπολογίζουν μόνο τους παρόχους που εξακολουθούν να έχουν ενεργή σύνδεση (οι πάροχοι χωρίς κλειδί, όπως ο duckduckgo-free, υπολογίζονται πάντα). Η απενεργοποίηση διατηρεί κάθε αποθηκευμένη εγγραφή αναζήτησης με αναγνωριστικό παρόχου.",
   "publicSystem": {
     "notFound": {
       "title": "Η σελίδα δεν βρέθηκε",
@@ -14029,7 +14031,7 @@
     "filterSources": "Πηγές",
     "filterProviders": "Πάροχοι",
     "clearFilters": "Εκκαθάριση φίλτρων",
-    "sourceCloudAgent": "Cloud Agent",
+    "sourceCloudAgent": "Πράκτορας cloud",
     "sourceA2A": "A2A",
     "sourceConductor": "Conductor",
     "sourceStale": "Ανενεργό από {since}",

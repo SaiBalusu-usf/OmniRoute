@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "Hirdesse a claude/&lt;provider&gt;/&lt;model&gt; tükör azonosítókat a /v1/models-on, hogy a Claude Code átjáró modell felfedezése nem Claude modelleket is listázzon. Figyelmeztetés: globális engedélyezés esetén megduplázza a katalógus bejegyzéseket minden kliens számára.",
   "featureFlagNoThinkingAliasEnabledDescription": "A no-think/&lt;provider&gt;/&lt;model&gt; átjáróaliasok főkapcsolója. Bekapcsolva (alapértelmezett): a /v1/models minden jogosult, gondolkodásra képes Claude modellhez meghirdet egy gondolkodás nélküli változatot, és a kérésben küldött no-think/ azonosítót visszafejti a valódi modellre, letiltott érveléssel. Kikapcsolva: nem hirdet meg változatokat, és a no-think/ azonosítót ugyanúgy kezeli, mint bármely más ismeretlen modellazonosítót. Modellenként a ModelSpec.noThinkingAlias engedélyezési/letiltási beállítása bekapcsolt állapotban is érvényes.",
   "featureFlagChatVirtualLanesEnabledDescription": "Tegye lehetővé a bérlőnkénti adaptív virtuális beléptetősávokat a szolgáltatók felé történő továbbításhoz (#9654): az egyik bérlő kiugró terhelése már nem okoz 503-as hibát egy másiknál. Az OMNIROUTE_CHAT_VIRTUAL_LANES környezeti változó felülírja ezt a vezérlőpult-beállítást; a változtatások a szerver újraindításakor lépnek életbe.",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "Irányítópult szolgáltatói oldalai: az Ingyenes jelvény csak azoknál a jelzéseknél jelenjen meg, amelyeket a szolgáltató figyelembe vesz — figyelmen kívül hagyja a megjelenítési néven alapuló heurisztikát, a nem logikai típusú ingyenességi mezőket és a dokumentált ingyenes szinttel nem rendelkező regisztrált szolgáltatók :free utótagjait. Kikapcsolt állapotban a korábbi jelvényszabály marad érvényben.",
   "sidebar": {
     "home": "Otthon",
     "dashboard": "Irányítópult",
@@ -2402,7 +2403,7 @@
     "filterStatusDisabled": "Letiltva",
     "filterStatusBanned": "Kitiltva",
     "filterStatusExpired": "Lejárt",
-    "filterTypeStandard": "Standard",
+    "filterTypeStandard": "Normál",
     "filterTypeManage": "Kezelés",
     "filterTypeRestricted": "Korlátozott",
     "shownOf": "{shown} / {total} megjelenítve",
@@ -3136,7 +3137,7 @@
     "hermesRoleGoalJudgeDesc": "Cél teljesítmény értékelése",
     "hermesRoleCurator": "Kurátor",
     "hermesRoleCuratorDesc": "Képesség- és memória-kurálás",
-    "hermesRoleMonitor": "Monitor",
+    "hermesRoleMonitor": "Monitorozás",
     "hermesRoleMonitorDesc": "Háttérfigyelés",
     "hermesRoleBackgroundReview": "Háttér Ellenőrzés",
     "hermesRoleBackgroundReviewDesc": "Háttérkód-ellenőrzés",
@@ -4128,7 +4129,7 @@
     "vscodeAliasModelsLabel": "VS Code modellek",
     "vscodeAliasChatLabel": "VS Code csevegés",
     "localServer": "Helyi szerver",
-    "cloudOmniroute": "Cloud OmniRoute",
+    "cloudOmniroute": "Felhőalapú OmniRoute",
     "copyUrl": "URL másolása",
     "badgeLoopbackTooltip": "Ez a végpont csak helyileg érhető el (csak loopback)",
     "badgeAlwaysProtectedTooltip": "Ez a végpont mindig védett, és hitelesítést igényel",
@@ -6420,7 +6421,7 @@
     "codexServiceModeUpdated": "A Codex szolgáltatásmód frissítve lett",
     "codexServiceTierActive": "A {tier} szintű Codex szolgáltatás aktív",
     "codexTierFastLabel": "Gyors",
-    "codexTierFlexLabel": "Flex",
+    "codexTierFlexLabel": "Rugalmas",
     "commandCodeApplyFailed": "A Parancskód-azonosító alkalmazása nem sikerült",
     "commandCodeApplyingApproval": "Böngésző jóváhagyva, alkalmazás…",
     "commandCodeApplyingKey": "Böngésző által jóváhagyott kulcs alkalmazása…",
@@ -6526,7 +6527,7 @@
     "routingSummarizeDropParagraphContains": "bekezdések elvetése, amelyek tartalmazzák: {items}",
     "routingSummarizeDropParagraphStartsWith": "bekezdések elvetése, amelyek ezzel kezdődnek: {items}",
     "routingSummarizeReplaceText": "helyettesítés: \"{match}\" → \"{replacement}\"",
-    "routingSummarizeReplaceRegex": "regex /{pattern}/{flags} → \"{replacement}\"",
+    "routingSummarizeReplaceRegex": "reguláris kifejezés /{pattern}/{flags} → \"{replacement}\"",
     "routingSummarizeDropBlockContains": "blokkok elvetése, amelyek tartalmazzák: {items}",
     "routingSummarizePrependSystemBlock": "blokk eléillesztése: \"{text}\"",
     "routingSummarizeAppendSystemBlock": "blokk hozzáfűzése: \"{text}\"",
@@ -7685,7 +7686,7 @@
     "routingZeroConfigTitle": "Konfigurációmentes automatikus útválasztás",
     "routingZeroConfigDesc": "Engedélyezze az automatikus szolgáltató-választást az auto/ előtag használatával. Ha engedélyezve van, az auto, auto/coding, auto/fast stb. címekre érkező kérések dinamikusan lesznek irányítva az összes csatlakoztatott szolgáltató között.",
     "routingDefaultAutoVariant": "Alapértelmezett automatikus változat",
-    "visionBridge": "Vision Bridge",
+    "visionBridge": "Vizuális híd",
     "visionBridgeDesc": "Automatikus kép-szöveg (vision-to-text) tartalék megoldás futtatása, mielőtt a képkéréseket csak szöveges modellekhez irányítaná.",
     "visionBridgeEnabledLabel": "Engedélyezve",
     "visionBridgeEnabledDesc": "A hívás előtti híd (bridge) ki-/bekapcsolása, amely a képrészeket a kinyert szöveggel helyettesíti.",
@@ -7694,7 +7695,7 @@
     "visionBridgeModel": "Hídmodell",
     "visionBridgeModelPlaceholder": "openai/gpt-4o-mini",
     "visionBridgeModelHint": "Bármely látástámogató (vision) OmniRoute modellazonosító használható itt.",
-    "visionBridgePrompt": "Bridge Prompt",
+    "visionBridgePrompt": "Hídprompt",
     "visionBridgePromptPlaceholder": "Írd le tömören ezt a képet.",
     "visionBridgePromptHint": "Elküldve a látásmodellnek (vision model), mielőtt a kinyert leírás vissza lenne illesztve az eredeti kérésbe.",
     "visionBridgeTimeoutMs": "Időtúllépés (ms)",
@@ -7881,7 +7882,7 @@
         "description": "Kivonatoló mondatpontozás a legutóbbi felhasználói lekérdezés alapján."
       },
       "caveman": {
-        "label": "Caveman",
+        "label": "Ősember",
         "description": "Szabályalapú prózatömörítés."
       },
       "aggressive": {
@@ -8007,7 +8008,7 @@
     "codexAutoPingToggleAria": "A Codex-kvóta automatikus pingelésének be- vagy kikapcsolása ehhez: {connection}",
     "codexFastTierTierLabel": "Szolgáltatási szint",
     "codexFastTierTierPriority": "Prioritás",
-    "codexFastTierTierFlex": "Flex",
+    "codexFastTierTierFlex": "Rugalmas",
     "codexFastTierTierDefault": "Alapértelmezett",
     "codexFastTierModelsLabel": "Fast-tier modellek",
     "codexFastTierModelsHint": "Csak a bejelölt modellek kapnak service_tier értéket, ha a Fast Tier engedélyezve van.",
@@ -8791,15 +8792,15 @@
         "description": "A közzétett bizonylatok által mért szabályzat. Leképezi a rendszerpromptot, az eszközdokumentációt és a sűrű előzményeket."
       },
       "balanced": {
-        "label": "Balanced",
+        "label": "Kiegyensúlyozott",
         "description": "Natív formában tartja az élő állapotot, és védi az utolsó 8 fordulót; csak a régebbi, lezárt előzményeket vonja össze."
       },
       "codingSafe": {
-        "label": "Coding-safe",
+        "label": "Kódolásbiztos",
         "description": "Natív formában tartja a jogosultságokat, az eszközsémákat és az élő eszközkimenetet, miközben védi az utolsó 12 fordulót. Addig semmit sem tömörít, amíg a munkamenetben nem gyűlnek össze előzmények."
       },
       "passthrough": {
-        "label": "Passthrough",
+        "label": "Átengedés",
         "description": "Átalakítás nélkül irányít. A motor kimarad, és a kérés változatlanul kerül továbbításra."
       }
     },
@@ -10779,7 +10780,7 @@
     "saveConnection": "Kapcsolat Mentése",
     "gheDescription": "Írd be a GitHub Enterprise példányod alap URL-jét (pl. <code>https://ghe.yourcompany.com</code>).",
     "gheUrlPlaceholder": "https://ghe.yourcompany.com",
-    "gheUrlLabel": "GitHub Enterprise URL",
+    "gheUrlLabel": "GitHub Enterprise URL-címe",
     "gheUrlRequired": "A GitHub Enterprise URL megadása kötelező",
     "gitlabDuoSetupTitle": "GitLab Duo OAuth beállítása",
     "gitlabDuoSetupMessage": "A GitLab Duo OAuth nincs konfigurálva. Regisztráljon egy OAuth alkalmazást a {applicationsUrl} címen a {redirectUri} átirányítási URI-val és a \"{scopes}\" jogosultságokkal, majd állítsa be a {clientIdEnv} (és opcionálisan a {clientSecretEnv}) értékét, és indítsa újra.",
@@ -11207,7 +11208,7 @@
     "play": "Lejátszás",
     "query": "Lekérdezés",
     "numResults": "Maximális találatszám",
-    "prompt": "Prompt",
+    "prompt": "Utasítás",
     "size": "Méret",
     "duration": "Időtartam",
     "question": "Kérdés",
@@ -11282,9 +11283,9 @@
     "refresh": "Frissítés",
     "columnsLabel": "Oszlopok",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "MŰKÖDIK",
     "semantic": "Szemantikus",
-    "upstream": "Upstream",
+    "upstream": "Felsőbb szolgáltató",
     "semanticCacheHit": "Szemantikus gyorsítótár-találat (az OmniRoute szolgálta ki)",
     "upstreamResponse": "Upstream-szolgáltató válasza",
     "noApiKey": "Nincs API-kulcs",
@@ -12057,7 +12058,7 @@
     "resumeBtn": "Folytatás",
     "clearBtn": "Kiürítés",
     "exportHar": ".har exportálása",
-    "recordSession": "REC",
+    "recordSession": "FELV",
     "stopSession": "Leállítás",
     "liveBadge": "élő",
     "offlineBadge": "offline",
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "Elutasítja a kéréseket a kiszállítás előtt, amikor a célmodell hiányzik a szükséges képességekből (látás, eszközök, strukturált kimenet, kontextusablak). Védi a közvetlen, egy szolgáltatótól érkező kéréseket, amelyek megkerülik a kombinált réteg kompatibilitási szűrőt.",
   "featureFlagDisableContextWindowChecksDescription": "Az OmniRoute helyi kontextusablak- és maximálisbemeneti-token-ellenőrzésének kihagyása közvetlen, egyetlen modellt használó kéréseknél. A külső szolgáltatók továbbra is érvényesítik a tényleges korlátaikat. A prompttömörítés és a kimeneti tokenek korlátozása aktív marad.",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "A keresési statisztikák és a legutóbbi keresések csak azokat a szolgáltatókat veszik figyelembe, amelyek még aktív kapcsolattal rendelkeznek (a kulcs nélküli szolgáltatók, például a duckduckgo-free, mindig beleszámítanak). Kikapcsolt állapotban minden megőrzött keresési sor megmarad szolgáltatói azonosítóval.",
   "publicSystem": {
     "notFound": {
       "title": "Az oldal nem található",

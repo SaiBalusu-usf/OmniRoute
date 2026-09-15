@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "Reklamera claude/&lt;provider&gt;/&lt;model&gt; spegel-id på /v1/models så att Claude Code gateway-modellens upptäcktslista visar icke-Claude-modeller. Varning: dubblerar katalogposter för alla klienter när det är aktiverat globalt.",
   "featureFlagNoThinkingAliasEnabledDescription": "Huvudreglage för gateway-aliasen no-think/&lt;provider&gt;/&lt;model&gt;. På (standard): /v1/models visar en variant utan tänkande för varje kvalificerad Claude-modell med stöd för tänkande, och ett no-think/-id som skickas i en förfrågan matchas tillbaka till den verkliga modellen med resonemang inaktiverat. Av: inga varianter visas och ett no-think/-id behandlas som vilket annat okänt modell-id som helst. Opt-in/opt-out-inställningen ModelSpec.noThinkingAlias per modell gäller fortfarande när detta är aktiverat.",
   "featureFlagChatVirtualLanesEnabledDescription": "Aktivera adaptiva virtuella åtkomstfiler per tenant för providerutskick (#9654): en tenants burst ger inte längre en annan 503. Miljövariabeln OMNIROUTE_CHAT_VIRTUAL_LANES har företräde framför den här inställningen i instrumentpanelen; ändringarna träder i kraft vid omstart av servern.",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "Leverantörssidor på kontrollpanelen: visa märket Gratis endast för signaler som leverantören respekterar — slopar heuristiken för visningsnamn, icke-booleska gratisfält och suffixet :free för registrerade leverantörer utan en dokumenterad kostnadsfri nivå. Av behåller den tidigare märkesregeln.",
   "sidebar": {
     "home": "Hem",
     "dashboard": "Instrumentpanel",
@@ -1208,7 +1209,7 @@
     "oneProxySubtitle": "Offentlig proxygateway",
     "leaderboard": "Topplista",
     "profile": "Profil",
-    "tokens": "Tokens",
+    "tokens": "Token",
     "gamificationAdmin": "Administration av spelifiering",
     "leaderboardSubtitle": "Rankningar och prestationer",
     "profileSubtitle": "Konto och inställningar",
@@ -1772,7 +1773,7 @@
     "searchTools": "Sökverktyg",
     "security": "Säkerhet",
     "sidebar": "Sidofält",
-    "tokens": "Tokens",
+    "tokens": "Token",
     "tools": "Verktyg",
     "agentBridge": "Agentbrygga",
     "trafficInspector": "Trafikinspektör",
@@ -2704,7 +2705,7 @@
     "classifierCompatLoadFailed": "Misslyckades med att läsa in inställning",
     "classifierCompatMode": {
       "off": "Av",
-      "auto": "Auto",
+      "auto": "Automatisk",
       "always": "Alltid"
     },
     "ccDiscoveryInfoButton": "Hur man aktiverar upptäcktsläge i Claude Code",
@@ -2734,7 +2735,7 @@
     "reasoningEffort": "Resonemangsansträngning för {model}",
     "effortNone": "Ingen",
     "effortLow": "Låg",
-    "effortMedium": "Medium",
+    "effortMedium": "Medel",
     "effortHigh": "Hög",
     "effortExtraHigh": "Extra hög",
     "effortMax": "Max",
@@ -2804,7 +2805,7 @@
     "reasoningEffortTier": {
       "none": "Ingen",
       "low": "Låg",
-      "medium": "Medium",
+      "medium": "Medel",
       "high": "Hög",
       "xhigh": "X-hög"
     },
@@ -4466,7 +4467,7 @@
       "strategyExact": "Exakt (FTS5)",
       "strategySemantic": "Semantisk (vektor)",
       "strategyHybrid": "Hybrid (RRF)",
-      "budgetLabel": "Budget (tokens)",
+      "budgetLabel": "Budget (token)",
       "simulate": "Simulera",
       "resultsTitle": "{count} resultat",
       "resolutionTitle": "Sökhantering",
@@ -6474,7 +6475,7 @@
     "savedModelEndpointSettings": "Inställningar för sparad modellslutpunkt",
     "searchByModelAria": "Sök efter modell",
     "selectSupportedEndpoint": "Välj minst en stödd slutpunkt",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Testmiljö / CLI"
   },
   "settings": {
     "title": "Inställningar",
@@ -7074,7 +7075,7 @@
     "stickyLimitDesc": "Samtal per konto innan byte",
     "routingStrategyTitle": "Ruttstrategi",
     "routingStrategySubtitle": "Matcha 9router: konto-round-robin, sticky-gränser och kombinationsrotation",
-    "accountRoundRobin": "Round Robin",
+    "accountRoundRobin": "Turordning",
     "accountRoundRobinDesc": "Växla mellan konton för att fördela belastningen",
     "comboRoundRobin": "Kombinations-Round Robin",
     "comboRoundRobinDesc": "Växla mellan kombinationsmål istället för att alltid börja med det första",
@@ -7489,7 +7490,7 @@
     "compressionModeOffDesc": "Ingen komprimering tillämpas",
     "compressionModeLite": "Lätt",
     "compressionModeLiteDesc": "Reducering av blanksteg och tomma rader",
-    "compressionModeStandard": "Standard (Caveman)",
+    "compressionModeStandard": "Standard (Grottmänniska)",
     "compressionModeStandardDesc": "Regelbaserad komprimering med fler än 30 mönster, bevarar kodblock och URL:er",
     "compressionModeAggressive": "Aggressiv",
     "compressionModeAggressiveDesc": "Sammanfattning + komprimering av verktygsresultat + progressiv åldring för maximala besparingar",
@@ -7753,7 +7754,7 @@
     "storageRetentionCleanup": "Kvarhållningsinställningar",
     "storageRetentionCleanupDesc": "Konfigurera kvarhållning av driftposter och rensning av databassäkerhetskopior.",
     "retentionCallDays": "Anrop {count}d",
-    "retentionAppDays": "App {count}d",
+    "retentionAppDays": "App {count} d",
     "retentionRows": "{count} rader",
     "retentionQuotaSnapshots": "Kvotsögonblicksbilder (dagar)",
     "retentionCompressionAnalytics": "Komprimeringsanalys (dagar)",
@@ -7847,8 +7848,8 @@
       "minimal": "Minimal",
       "standard": "Standard",
       "aggressive": "Aggressiv",
-      "lite": "Lite",
-      "full": "Full",
+      "lite": "Lätt",
+      "full": "Fullständig",
       "ultra": "Ultra"
     },
     "compressionEngine": {
@@ -7861,7 +7862,7 @@
         "description": "Innehållsadresserade hämtningsmarkörer."
       },
       "lite": {
-        "label": "Lite",
+        "label": "Lätt",
         "description": "Rensning av blanksteg och format."
       },
       "rtk": {
@@ -7873,7 +7874,7 @@
         "description": "Konservativ komprimering för utdata från Responses-verktyg som stöds."
       },
       "headroom": {
-        "label": "Headroom",
+        "label": "Marginal",
         "description": "Tabulär JSON-komprimering."
       },
       "relevance": {
@@ -7881,7 +7882,7 @@
         "description": "Extraherande meningspoängsättning mot den senaste användarfrågan."
       },
       "caveman": {
-        "label": "Caveman",
+        "label": "Grottmänniska",
         "description": "Regelbaserad prosakomprimering."
       },
       "aggressive": {
@@ -8626,7 +8627,7 @@
     "editCombo": "Redigera",
     "deleteCombo": "Ta bort",
     "deleteConfirm": "Vill du ta bort den här komprimeringskombinationen?",
-    "pipeline": "Pipeline",
+    "pipeline": "Bearbetningskedja",
     "addStep": "Lägg till steg",
     "removeStep": "Ta bort",
     "name": "Namn",
@@ -8673,7 +8674,7 @@
     "saveComboFailed": "Misslyckades med att spara kombinationen (HTTP {status}).",
     "deleteNamedConfirm": "Ta bort kombinationen ”{name}”?",
     "intensityLite": "Lite",
-    "intensityFull": "Full",
+    "intensityFull": "Fullständig",
     "intensityUltra": "Ultra",
     "active": "Aktiv",
     "languagePacksList": "Språkpaket: {packs}",
@@ -8685,7 +8686,7 @@
     "noRun": "Ingen komprimeringskörning tillgänglig.",
     "liveDataHint": "Live-data anländer via WebSocket-komprimeringskanalen.",
     "cockpitView": "Cockpit-vy",
-    "canvas": "Canvas",
+    "canvas": "Arbetsyta",
     "waterfall": "Vattenfall",
     "replayDone": "Uppspelning klar",
     "pauseReplay": "Pausa uppspelning",
@@ -8694,7 +8695,7 @@
     "replay": "Spela upp",
     "resetReplay": "Återställ uppspelning",
     "stepProgress": "steg {current}/{total}",
-    "inlineView": "Inline",
+    "inlineView": "Infogad",
     "splitComingSoon": "Delad vy (kommer snart)",
     "inputPlaceholder": "Klistra in en prompt, verktygsutdata eller kontext…",
     "activeCombined": "Aktiv i det kombinerade flödet",
@@ -9050,7 +9051,7 @@
       "thinking": "Tänker",
       "system-prompt": "Systemprompt",
       "streaming": "Strömning",
-      "vision": "Vision",
+      "vision": "Bildanalys",
       "schema-coercion": "Schema tvång"
     },
     "templateDescriptions": {
@@ -9339,7 +9340,7 @@
     "evaluateStepDescription": "Svar jämförs mot förväntade kriterier. Se godkänt/underkänt för varje fall med latensstatistik och detaljerad feedback.",
     "evalsStrategyContainsLabel": "Innehåller",
     "evalsStrategyExactLabel": "Exakt matchning",
-    "evalsStrategyRegexLabel": "Regex",
+    "evalsStrategyRegexLabel": "Reguljärt uttryck",
     "evalsStrategyCustomLabel": "Anpassad logik",
     "evalsStrategyContainsDescription": "Kontrollerar om LLM-utdata innehåller den förväntade delsträngen.",
     "evalsStrategyExactDescription": "Kontrollerar om LLM-utdata exakt matchar det förväntade värdet.",
@@ -11282,7 +11283,7 @@
     "refresh": "Uppdatera",
     "columnsLabel": "Kolumner",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "UPP",
     "semantic": "Semantisk",
     "upstream": "Uppströms",
     "semanticCacheHit": "Semantisk cacheträff (levererad av OmniRoute)",
@@ -12059,7 +12060,7 @@
     "exportHar": "Exportera .har",
     "recordSession": "REC",
     "stopSession": "Stoppa",
-    "liveBadge": "live",
+    "liveBadge": "direkt",
     "offlineBadge": "offline",
     "noRequests": "Inga anrop har fångats än.",
     "noRequestsDesc": "Se till att AgentBridge körs eller aktivera ett annat fångstläge.",
@@ -12102,7 +12103,7 @@
     "httpProxyTitle": "HTTP-proxy-kodsnutt — port {port}",
     "notRecording": "Spelar inte in",
     "anyStatus": "Valfri status",
-    "liveOnly": "Live",
+    "liveOnly": "Direkt",
     "viewingRecordedSession": "Visar inspelad session",
     "backToLive": "Tillbaka till live",
     "untitledSession": "Namnlös session",
@@ -12390,15 +12391,15 @@
         "description": "De centrala OpenAI-kompatibla inferensslutpunkterna: chat completions, embeddings, bilder, ljud (TTS/STT), modereringar, rerank och Responses API. Den primära integrationsytan för AI-agenter."
       },
       "cli-serve": {
-        "name": "CLI: Serve",
+        "name": "CLI: Servera",
         "description": "Starta, stoppa och starta om OmniRoute-servern från CLI. Hantera bakgrundsläge, portkonfiguration, automatisk återställning, systemfältsintegration och genvägen för att öppna instrumentpanelen."
       },
       "cli-health": {
-        "name": "CLI: Health",
+        "name": "CLI: Hälsa",
         "description": "Kontrollera serverhälsa, komponentstatus och realtidsmått från CLI. Kör `health`, `health components` och `health watch` för en realtidsinstrumentpanel av kretsbrytare och leverantörsstatus."
       },
       "cli-providers": {
-        "name": "CLI: Providers",
+        "name": "CLI: Leverantörer",
         "description": "Hantera leverantörsanslutningar från CLI: lista tillgängliga/konfigurerade leverantörer, lägg till, testa, testa alla, validera, rotera API-nycklar och visa mått per leverantör."
       },
       "cli-keys": {
@@ -12410,7 +12411,7 @@
         "description": "Fråga efter tillgängliga AI-modeller, lista modellalias och bläddra i hela modellkatalogen från CLI. Filtrera efter leverantör, sök efter förmåga och matcha modellnamnsvarianter."
       },
       "cli-chat": {
-        "name": "CLI: Chat",
+        "name": "CLI: Chatt",
         "description": "Skapa chat completions, strömma svar och starta en interaktiv REPL-session från CLI. Stöder alla OmniRoute-leverantörer, kombinationsdirigering och konfiguration av systemprompter."
       },
       "cli-routing": {
@@ -13098,7 +13099,7 @@
     "comboHealth": "Kombohälsa",
     "callLogs": "Anropsloggar",
     "costs": "Kostnader",
-    "playground": "Playground",
+    "playground": "Testmiljö",
     "nestedCombo": "Nästlad kombo",
     "modelTarget": "Modellmål",
     "weight": "{value}% vikt",
@@ -13319,7 +13320,7 @@
     "extendedUnknownWarning": "Ange en målmodell för att verifiera stöd för Max/Ultra.",
     "extendedUnsupportedWarning": "Max/Ultra stöds såvitt känt endast av lämpliga Codex GPT-5.6-modeller. Okända anpassade modeller accepteras av servern med en varning.",
     "scope": {
-      "global": "Global",
+      "global": "Globalt",
       "apiKey": "API-nyckel",
       "combo": "Kombination",
       "model": "Modell",
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "Avvisa förfrågningar innan de skickas när målmodellen saknar nödvändiga funktioner (vision, verktyg, strukturerad utdata, kontextfönster). Skyddar direkta förfrågningar från en enda leverantör som kringgår kompatibilitetsfiltret för kombinationslager.",
   "featureFlagDisableContextWindowChecksDescription": "Hoppa över OmniRoutes lokala kontroll av kontextfönster och maximalt antal indatatoken för direkta förfrågningar till en enskild modell. Uppströmsleverantörer tillämpar fortfarande sina faktiska gränser. Promptkomprimering och gränser för utdatatoken förblir aktiva.",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "Sökstatistik och senaste sökningar räknar endast leverantörer som fortfarande har en aktiv anslutning (nyckellösa leverantörer som duckduckgo-free räknas alltid). Av behåller varje sparad sökrad med ett leverantörs-ID.",
   "publicSystem": {
     "notFound": {
       "title": "Sidan kunde inte hittas",

@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "ផ្សព្វផ្សាយ mirror ids របស់ claude/&lt;provider&gt;/&lt;model&gt; នៅលើ /v1/models ដើម្បីឱ្យការស្វែងរកម៉ូដែលតាម gateway របស់ Claude Code រាយបញ្ជីម៉ូដែលដែលមិនមែនជា Claude។ ការព្រមាន៖ វានឹងបង្កើនធាតុក្នុងកាតាឡុកទ្វេដងសម្រាប់ client ទាំងអស់ នៅពេលបើកជាសកល។",
   "featureFlagNoThinkingAliasEnabledDescription": "កុងតាក់មេសម្រាប់ gateway aliases របស់ no-think/&lt;provider&gt;/&lt;model&gt;។ បើក (លំនាំដើម)៖ /v1/models ផ្សព្វផ្សាយវ៉ារ្យ៉ង់មិនគិតសម្រាប់គ្រប់ម៉ូដែល Claude ដែលមានសមត្ថភាពគិត និងមានលក្ខណៈសម្បត្តិគ្រប់គ្រាន់ ហើយ no-think/ id ដែលបានផ្ញើក្នុងសំណើ នឹងត្រូវដោះស្រាយត្រឡប់ទៅម៉ូដែលពិត ដោយបិទការវែកញែក។ បិទ៖ គ្មានវ៉ារ្យ៉ង់ណាមួយត្រូវបានផ្សព្វផ្សាយទេ ហើយ no-think/ id ត្រូវបានចាត់ទុកដូចជា model id មិនស្គាល់ផ្សេងទៀត។ ការជ្រើសរើសបើក/បិទ ModelSpec.noThinkingAlias សម្រាប់ម៉ូដែលនីមួយៗ នៅតែអនុវត្ត ខណៈដែលវាត្រូវបានបើក។",
   "featureFlagChatVirtualLanesEnabledDescription": "បើកផ្លូវចូលនិម្មិតដែលសម្របខ្លួនតាម tenant នីមួយៗ សម្រាប់ការបញ្ជូនទៅ provider (#9654)៖ ការកើនឡើងខ្លាំងភ្លាមៗរបស់ tenant មួយ នឹងលែងបណ្ដាលឱ្យ tenant មួយទៀតទទួល 503។ env var OMNIROUTE_CHAT_VIRTUAL_LANES មានអាទិភាពលើការកំណត់ជំនួសពី dashboard នេះ ហើយការផ្លាស់ប្ដូរនឹងមានប្រសិទ្ធភាពនៅពេលចាប់ផ្ដើម server ឡើងវិញ។",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "ទំព័រអ្នកផ្តល់សេវានៅលើផ្ទាំងគ្រប់គ្រង៖ បង្ហាញស្លាក ឥតគិតថ្លៃ តែលើសញ្ញាដែលអ្នកផ្តល់សេវាទទួលស្គាល់ប៉ុណ្ណោះ — លុបចោលការសន្និដ្ឋានតាមឈ្មោះបង្ហាញ វាលឥតគិតថ្លៃដែលមិនមែនជាតម្លៃប៊ូលីន និងបច្ច័យ :free លើអ្នកផ្តល់សេវាដែលបានចុះបញ្ជី ប៉ុន្តែមិនមានកម្រិតសេវាឥតគិតថ្លៃដែលបានចងក្រងជាឯកសារ។ ការបិទនឹងរក្សាច្បាប់ស្លាកចាស់ដដែល។",
   "sidebar": {
     "home": "ទំព័រដើម",
     "dashboard": "ផ្ទាំងគ្រប់គ្រង",
@@ -12516,7 +12517,7 @@
         "storage": {
           "label": "កន្លែងផ្ទុក",
           "agent": "កាតាឡុកថាមវន្ត (/api/agent-skills) → SKILL.md នៅលើ GitHub",
-          "omni": "SQLite (SkillsMP / skills.sh / local)"
+          "omni": "SQLite (SkillsMP / skills.sh / មូលដ្ឋាន)"
         },
         "tagline": {
           "label": "ពាក្យស្លោក",
@@ -12535,7 +12536,7 @@
     "categoryConfig": "ការកំណត់រចនាសម្ព័ន្ធ",
     "filterAll": "ទាំងអស់",
     "coverageLabel": "វិសាលភាពគ្របដណ្តប់",
-    "mcpUrl": "MCP URL",
+    "mcpUrl": "URL របស់ MCP",
     "a2aLink": "A2A",
     "mcpPrompt": "បន្ថែម MCP endpoint នេះទៅក្នុង Agent របស់អ្នក ដើម្បីផ្តល់ឧបករណ៍ OmniRoute ចំនួន 37 ដល់វា។",
     "a2aPrompt": "ចុះឈ្មោះ Agent Card នេះជាមួយ orchestrator របស់អ្នក ដើម្បីបើកការផ្ទេរភារកិច្ច A2A។",
@@ -13588,7 +13589,7 @@
       "remaining": "នៅសល់",
       "noLockouts": "គ្មានការចាក់សោសកម្មទេ",
       "provider": "អ្នកផ្តល់សេវា",
-      "id": "ID",
+      "id": "លេខសម្គាល់",
       "authType": "ប្រភេទការផ្ទៀងផ្ទាត់",
       "priority": "អាទិភាព",
       "isActive": "សកម្ម",
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "បដិសេធសំណើមុនពេលបញ្ជូន នៅពេលម៉ូដែលគោលដៅខ្វះសមត្ថភាពដែលត្រូវការ (ចក្ខុវិស័យ ឧបករណ៍ លទ្ធផលមានរចនាសម្ព័ន្ធ បង្អួចបរិបទ)។ វាការពារសំណើទៅកាន់អ្នកផ្តល់សេវាតែមួយដោយផ្ទាល់ ដែលរំលងតម្រងភាពត្រូវគ្នានៃស្រទាប់បន្សំ។",
   "featureFlagDisableContextWindowChecksDescription": "រំលងការត្រួតពិនិត្យបង្អួចបរិបទ និងចំនួនថូខិនបញ្ចូលអតិបរមាក្នុងមូលដ្ឋានរបស់ OmniRoute សម្រាប់សំណើទៅកាន់ម៉ូដែលតែមួយដោយផ្ទាល់។ អ្នកផ្តល់សេវាខាងលើនៅតែអនុវត្តដែនកំណត់ជាក់ស្តែងរបស់ពួកគេ។ ការបង្ហាប់ប្រូម និងដែនកំណត់ថូខិនលទ្ធផលនៅតែដំណើរការ។",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "ស្ថិតិស្វែងរក និងការស្វែងរកថ្មីៗ រាប់បញ្ចូលតែអ្នកផ្តល់សេវាដែលនៅមានការតភ្ជាប់សកម្មប៉ុណ្ណោះ (អ្នកផ្តល់សេវាដែលមិនត្រូវការសោ ដូចជា duckduckgo-free ត្រូវបានរាប់បញ្ចូលជានិច្ច)។ ការបិទនឹងរក្សាទុករាល់ជួរទិន្នន័យស្វែងរកដែលបានរក្សាទុក ដោយមានលេខសម្គាល់អ្នកផ្តល់សេវា។",
   "publicSystem": {
     "notFound": {
       "title": "រកមិនឃើញទំព័រ",
@@ -14029,7 +14031,7 @@
     "filterSources": "ប្រភព",
     "filterProviders": "អ្នកផ្តល់សេវា",
     "clearFilters": "សម្អាតតម្រង",
-    "sourceCloudAgent": "Cloud Agent",
+    "sourceCloudAgent": "ភ្នាក់ងារក្លោដ",
     "sourceA2A": "A2A",
     "sourceConductor": "Conductor",
     "sourceStale": "លែងទាន់សម័យតាំងពី {since}",

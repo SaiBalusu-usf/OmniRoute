@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "/v1/models에서 Claude Code 게이트웨이 모델 검색 목록에 비Claude 모델이 포함되도록 claude/&lt;provider&gt;/&lt;model&gt; 미러 ID를 광고합니다. 경고: 전역적으로 활성화하면 모든 클라이언트에 대해 카탈로그 항목이 두 배로 증가합니다.",
   "featureFlagNoThinkingAliasEnabledDescription": "no-think/&lt;provider&gt;/&lt;model&gt; 게이트웨이 별칭의 마스터 스위치입니다. 켜짐(기본값): /v1/models가 조건에 맞는 모든 사고 가능 Claude 모델에 대해 사고하지 않는 변형을 표시하며, 요청에 전송된 no-think/ ID는 추론이 억제된 실제 모델로 다시 확인됩니다. 꺼짐: 변형이 표시되지 않으며 no-think/ ID는 다른 알 수 없는 모델 ID와 동일하게 처리됩니다. 이 기능이 켜져 있는 동안에도 모델별 ModelSpec.noThinkingAlias 옵트인/옵트아웃이 적용됩니다.",
   "featureFlagChatVirtualLanesEnabledDescription": "공급자 디스패치를 위해 테넌트별 적응형 가상 승인 레인을 활성화합니다(#9654): 한 테넌트의 폭증이 더 이상 다른 테넌트에 503을 반환하지 않습니다. OMNIROUTE_CHAT_VIRTUAL_LANES 환경 변수가 이 대시보드 설정보다 우선하며, 변경 사항은 서버 재시작 시 적용됩니다.",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "대시보드 제공업체 페이지: 제공업체가 인정하는 신호에만 무료 배지를 표시합니다. 문서화된 무료 등급이 없는 등록된 제공업체의 표시 이름 추정 방식, 불리언이 아닌 무료 필드 및 :free 접미사는 사용하지 않습니다. 끄면 기존 배지 규칙이 유지됩니다.",
   "sidebar": {
     "home": "홈",
     "dashboard": "대시보드",
@@ -11282,7 +11283,7 @@
     "refresh": "새로 고침",
     "columnsLabel": "열",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "가동 중",
     "semantic": "시맨틱",
     "upstream": "업스트림",
     "semanticCacheHit": "시맨틱 캐시 적중(OmniRoute에서 제공)",
@@ -12057,7 +12058,7 @@
     "resumeBtn": "재개",
     "clearBtn": "지우기",
     "exportHar": ".har 내보내기",
-    "recordSession": "REC",
+    "recordSession": "녹화",
     "stopSession": "중지",
     "liveBadge": "라이브",
     "offlineBadge": "오프라인",
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "대상 모델에 필수 기능(비전, 도구, 구조화된 출력, 컨텍스트 창)이 부족할 경우 요청을 발송 전에 거부합니다. 콤보 레이어 호환성 필터를 우회하는 직접 단일 공급자 요청을 보호합니다.",
   "featureFlagDisableContextWindowChecksDescription": "단일 모델로 직접 요청할 때 OmniRoute의 로컬 컨텍스트 창 및 최대 입력 토큰 검사를 건너뜁니다. 업스트림 제공업체는 여전히 실제 한도를 적용합니다. 프롬프트 압축과 출력 토큰 상한은 계속 적용됩니다.",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "검색 통계와 최근 검색에는 현재 연결이 활성화된 공급자만 포함됩니다(duckduckgo-free와 같은 키가 필요 없는 공급자는 항상 포함됨). 끄면 공급자 ID가 있는 보존된 모든 검색 행을 유지합니다.",
   "publicSystem": {
     "notFound": {
       "title": "페이지를 찾을 수 없습니다",

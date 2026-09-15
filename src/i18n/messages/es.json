@@ -832,7 +832,7 @@
     "wizardStep3Validate": "Validar",
     "wizardStep4Cost": "Coste y creación",
     "wizardProviderLabel": "Proveedor",
-    "wizardEndpointLabel": "Endpoint",
+    "wizardEndpointLabel": "Punto de conexión",
     "wizardModelLabel": "Modelo",
     "wizardInputKindJsonl": "JSONL",
     "wizardInputKindCsv": "CSV (lo convertiremos)",
@@ -901,7 +901,7 @@
     "batchListRemoveCompleted": "Eliminar completados",
     "batchListTableStatus": "Estado",
     "batchListTableId": "ID",
-    "batchListTableEndpoint": "Endpoint",
+    "batchListTableEndpoint": "Punto de conexión",
     "batchListTableModel": "Modelo",
     "batchListTableProgress": "Progreso",
     "batchListTableCreated": "Creado",
@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "Anunciar los ids de espejo claude/&lt;provider&gt;/&lt;model&gt; en /v1/models para que la lista de descubrimiento de modelos del gateway de Claude Code incluya modelos que no son de Claude. Advertencia: duplica las entradas del catálogo para todos los clientes cuando se habilita globalmente.",
   "featureFlagNoThinkingAliasEnabledDescription": "Interruptor principal para los alias de puerta de enlace no-think/&lt;provider&gt;/&lt;model&gt;. Activado (valor predeterminado): /v1/models anuncia una variante sin razonamiento para cada modelo Claude compatible con razonamiento que cumpla los requisitos, y un id no-think/ enviado en una solicitud se resuelve al modelo real con el razonamiento suprimido. Desactivado: no se anuncia ninguna variante y un id no-think/ se trata como cualquier otro id de modelo desconocido. La opción de inclusión/exclusión por modelo ModelSpec.noThinkingAlias sigue aplicándose mientras esté activado.",
   "featureFlagChatVirtualLanesEnabledDescription": "Activa carriles de admisión virtuales adaptativos por tenant para el envío de proveedores (#9654): el pico de un tenant ya no devuelve 503 a otro. La variable de entorno OMNIROUTE_CHAT_VIRTUAL_LANES tiene prioridad sobre esta opción del panel; los cambios surten efecto al reiniciar el servidor.",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "Páginas de proveedores del panel: muestra la insignia Gratis solo cuando haya indicios de que el proveedor la admite; descarta la heurística basada en el nombre para mostrar, los campos free no booleanos y los sufijos :free en proveedores registrados sin un nivel gratuito documentado. Desactivado mantiene la regla histórica de la insignia.",
   "sidebar": {
     "home": "Inicio",
     "dashboard": "Panel de control",
@@ -1018,7 +1019,7 @@
     "chaosConfig": "Modo caos",
     "docs": "Documentación",
     "issues": "Problemas",
-    "endpoints": "Endpoints",
+    "endpoints": "Puntos de conexión",
     "endpointsSubtitle": "Las URL de su conexión de IA",
     "apiManager": "Gestor de API",
     "apiManagerSubtitle": "Administrar claves API y acceso",
@@ -1271,7 +1272,7 @@
     "systemGroup": "Sistema",
     "costsOverview": "Vista general",
     "costsOverviewSubtitle": "Análisis consolidado de costes",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "Puente de agentes",
     "agentBridgeSubtitle": "Interceptar el tráfico de agentes del IDE",
     "trafficInspector": "Inspector de tráfico",
     "trafficInspectorSubtitle": "Inspeccionar el tráfico de solicitudes y respuestas de tus aplicaciones",
@@ -1294,7 +1295,7 @@
     "groupSeparatorLabel": "Separador",
     "discovery": "Descubrimiento",
     "discoverySubtitle": "Buscar acceso gratuito en los proveedores",
-    "conductor": "Conductor",
+    "conductor": "Orquestador",
     "conductorSubtitle": "Flota de CLI-agent",
     "orchestration": "Orquestación",
     "orchestrationSubtitle": "Vista en vivo de todo lo que se está ejecutando",
@@ -1441,7 +1442,7 @@
       "botTokenPlaceholder": "123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ",
       "botTokenHint": "El token de la API HTTP recibido de @BotFather al crear tu bot.",
       "chatId": "ID del chat/canal de Telegram",
-      "chatIdPlaceholder": "-100123456789 or @channelname",
+      "chatIdPlaceholder": "-100123456789 o @channelname",
       "chatIdHint": "El identificador numérico único o nombre de usuario público del chat/canal.",
       "tutorial": "Cómo configurar el webhook de Telegram:"
     }
@@ -1587,7 +1588,7 @@
     "cliToolsDescription": "Configurar herramientas CLI",
     "home": "Inicio",
     "homeDescription": "Bienvenido a OmniRoute",
-    "endpoint": "Endpoints",
+    "endpoint": "Puntos de conexión",
     "endpointDescription": "Gestionar endpoints proxy, MCP, A2A y endpoints de API",
     "mcp": "MCP",
     "mcpDescription": "Gestión y herramientas del servidor Model Context Protocol",
@@ -1959,10 +1960,10 @@
     "rangeCancel": "Cancelar",
     "rangeApply": "Aplicar",
     "rangeErrorInvalid": "El inicio debe ser anterior al fin",
-    "period1D": "1D",
-    "period7D": "7D",
-    "period30D": "30D",
-    "period90D": "90D",
+    "period1D": "1 d",
+    "period7D": "7 d",
+    "period30D": "30 d",
+    "period90D": "90 d",
     "periodYTD": "Año hasta la fecha",
     "periodAll": "Todo",
     "totalTokens": "Total de tokens",
@@ -3776,7 +3777,7 @@
     "errorDescription": "No pudimos cargar los datos del combo en este momento. Verifica tu conexión y vuelve a intentarlo.",
     "errorId": "ID del error: {id}",
     "errorRetry": "Inténtalo de nuevo",
-    "comboLabel": "Combo",
+    "comboLabel": "Combinación",
     "duplicateAutoComboConfirm": "¿Crear una combinación estática de \"{name}\"?",
     "duplicateAutoComboSnapshotMsg": "Esto capturará los proveedores/modelos conectados actualmente que coincidan con esta plantilla en una combinación editable.",
     "duplicateAutoComboFailedPrefix": "Error al duplicar la combinación automática:",
@@ -7074,7 +7075,7 @@
     "stickyLimitDesc": "Llamadas por cuenta antes de cambiar",
     "routingStrategyTitle": "Estrategia de enrutamiento",
     "routingStrategySubtitle": "Igual que 9router: rotación de cuentas, límites de afinidad y rotación de combinaciones",
-    "accountRoundRobin": "Round Robin",
+    "accountRoundRobin": "Turnos rotativos",
     "accountRoundRobinDesc": "Alterna entre las cuentas para distribuir la carga",
     "comboRoundRobin": "Round Robin de combinaciones",
     "comboRoundRobinDesc": "Alterna entre los destinos de la combinación en lugar de empezar siempre por el primero",
@@ -7873,7 +7874,7 @@
         "description": "Compresión conservadora de las salidas compatibles de la herramienta Responses."
       },
       "headroom": {
-        "label": "Headroom",
+        "label": "Margen",
         "description": "Compactación de JSON tabular."
       },
       "relevance": {
@@ -7881,7 +7882,7 @@
         "description": "Puntuación extractiva de frases respecto a la última consulta del usuario."
       },
       "caveman": {
-        "label": "Caveman",
+        "label": "Cavernícola",
         "description": "Compresión de texto basada en reglas."
       },
       "aggressive": {
@@ -9362,7 +9363,7 @@
     "columnModel": "modelo",
     "columnStrategy": "Estrategia",
     "columnExpected": "esperado",
-    "statsSuites": "Suites",
+    "statsSuites": "Conjuntos",
     "statsTestCases": "Casos de prueba",
     "statsModels": "Modelos",
     "statsCoverage": "Cobertura",
@@ -9553,7 +9554,7 @@
     "targetSuiteDefaults": "Valores predeterminados de la suite",
     "suiteBuilderDeleteConfirm": "¿Seguro que quieres eliminar esta suite? Esta acción no se puede deshacer.",
     "suiteBuilderNameLabel": "Nombre de la suite",
-    "scorecardSuites": "Suites",
+    "scorecardSuites": "Conjuntos",
     "evalCompareTarget": "Comparar objetivo",
     "suiteBuilderCaseModelPlaceholder": "p. ej., gpt-4o-mini",
     "evalControlsHint": "Configura el objetivo de evaluación y la clave de API y, a continuación, ejecuta conjuntos de pruebas para validar la calidad del modelo.",
@@ -11026,7 +11027,7 @@
     "systemPrompt": "Prompt del sistema",
     "systemPromptPlaceholder": "Eres un asistente útil.",
     "modelPlaceholder": "p. ej., openai/gpt-4o",
-    "endpointLabel": "Endpoint",
+    "endpointLabel": "Punto de conexión",
     "parametersLabel": "Parámetros",
     "collapseConfig": "Contraer panel de configuración",
     "expandConfig": "Expandir panel de configuración",
@@ -11304,7 +11305,7 @@
       "protocol": "Protocolo de solicitud",
       "account": "Cuenta",
       "apiKey": "Clave de API",
-      "combo": "Combo",
+      "combo": "Combinado",
       "tokens": "Tokens",
       "compressed": "Compresión",
       "tps": "TPS",
@@ -11399,7 +11400,7 @@
       "rotated": "Rotado: {initial} -> {final}",
       "apiKey": "Clave de API",
       "noApiKey": "Sin clave de API",
-      "combo": "Combo",
+      "combo": "Combinado",
       "error": "Error",
       "unblockAll": "Desbloquear todo",
       "cleared": "Borrado",
@@ -11685,7 +11686,7 @@
     "dismiss": "Descartar"
   },
   "plugins": {
-    "title": "Plugins",
+    "title": "Complementos",
     "description": "Instala y gestiona plugins para ampliar la funcionalidad de OmniRoute",
     "loading": "Cargando plugins...",
     "scanning": "Escaneando...",
@@ -12496,7 +12497,7 @@
         "crossLinkLabel": "Entender la diferencia →"
       },
       "comparison": {
-        "colAgent": "Agent Skills",
+        "colAgent": "Habilidades de agentes",
         "colOmni": "Omni Skills",
         "whatIs": {
           "label": "Qué es",
@@ -13098,7 +13099,7 @@
     "comboHealth": "Estado de la combinación",
     "callLogs": "Registros de llamadas",
     "costs": "Costos",
-    "playground": "Playground",
+    "playground": "Área de pruebas",
     "nestedCombo": "Combo anidado",
     "modelTarget": "Modelo de destino",
     "weight": "{value}% de peso",
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "Rechazar solicitudes antes del despacho cuando el modelo objetivo carece de capacidades requeridas (visión, herramientas, salida estructurada, ventana de contexto). Protege las solicitudes directas de un solo proveedor que eluden el filtro de compatibilidad de la capa combinada.",
   "featureFlagDisableContextWindowChecksDescription": "Omite la comprobación local de OmniRoute de la ventana de contexto y del máximo de tokens de entrada para las solicitudes directas a un único modelo. Los proveedores ascendentes siguen aplicando sus límites reales. La compresión de prompts y los límites de tokens de salida permanecen activos.",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "Las estadísticas de búsqueda y las búsquedas recientes solo cuentan los proveedores que aún tienen una conexión activa (los proveedores sin clave, como duckduckgo-free, siempre cuentan). Si se desactiva esta opción, se conservan todas las filas de búsqueda retenidas con un id de proveedor.",
   "publicSystem": {
     "notFound": {
       "title": "Página no encontrada",

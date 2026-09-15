@@ -992,6 +992,7 @@
   "featureFlagExposeCcDiscoveryAliasesDescription": "የClaude Code ጌትዌይ ሞዴል ፍለጋ Claude ያልሆኑ ሞዴሎችን እንዲዘረዝር፣ የclaude/&lt;provider&gt;/&lt;model&gt; መስታወት መለያዎችን በ/v1/models ላይ ያስተዋውቁ። ማስጠንቀቂያ፦ በዓለም አቀፍ ደረጃ ሲነቃ ለሁሉም ደንበኞች የካታሎግ ግቤቶችን በእጥፍ ያደርጋል።",
   "featureFlagNoThinkingAliasEnabledDescription": "ለno-think/&lt;provider&gt;/&lt;model&gt; ጌትዌይ ተለዋጭ ስሞች ዋና ማብሪያ/ማጥፊያ። ሲበራ (ነባሪ)፦ /v1/models ለእያንዳንዱ ብቁ የማሰብ ችሎታ ያለው Claude ሞዴል የማያስብ ልዩነትን ያስተዋውቃል፤ እንዲሁም በጥያቄ የተላከ no-think/ መለያ የማመዛዘን ባህሪው ታፍኖ ወደ እውነተኛው ሞዴል ይመለሳል። ሲጠፋ፦ ምንም ልዩነቶች አይተዋወቁም፣ እና no-think/ መለያ እንደ ማንኛውም ሌላ ያልታወቀ የሞዴል መለያ ይቆጠራል። ይህ ሲበራም የእያንዳንዱ ሞዴል ModelSpec.noThinkingAlias የመርጦ መግባት/መውጣት ቅንብር እንደተገበረ ይቆያል።",
   "featureFlagChatVirtualLanesEnabledDescription": "ለአቅራቢ ማሰራጨት በተከራይ ደረጃ የሚላመዱ ምናባዊ የመቀበያ መስመሮችን ያንቁ (#9654)፦ የአንድ ተከራይ ድንገተኛ ጭማሪ ከእንግዲህ በሌላው ላይ 503 ስህተት አያስከትልም። የOMNIROUTE_CHAT_VIRTUAL_LANES የአካባቢ ተለዋዋጭ ከዚህ የዳሽቦርድ ማሻሻያ ቅድሚያ ይኖረዋል፤ ለውጦች አገልጋዩ ዳግም ሲጀመር ተግባራዊ ይሆናሉ።",
+  "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "የዳሽቦርድ አቅራቢ ገጾች፦ ነፃ ባጁን አቅራቢው በሚያከብራቸው ምልክቶች ላይ ብቻ ያሳዩ — የማሳያ ስም ግምታዊ ደንብን፣ ቡሊያን ያልሆኑ የነፃ መስኮችን እና ሰነድ የተደረገለት ነፃ ደረጃ በሌላቸው የተመዘገቡ አቅራቢዎች ላይ ያሉ :free ቅጥያዎችን ያስወግዳል። ማጥፋት ታሪካዊውን የባጅ ደንብ ይጠብቃል።",
   "sidebar": {
     "home": "መነሻ",
     "dashboard": "ዳሽቦርድ",
@@ -1441,7 +1442,7 @@
       "botTokenPlaceholder": "123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ",
       "botTokenHint": "ቦትዎን ሲፈጥሩ ከ@BotFather የተቀበሉት HTTP API token።",
       "chatId": "Telegram Chat ID / ቻናል",
-      "chatIdPlaceholder": "-100123456789 or @channelname",
+      "chatIdPlaceholder": "-100123456789 ወይም @channelname",
       "chatIdHint": "የውይይቱ/ቻናሉ ልዩ የቁጥር መለያ ወይም ይፋዊ የተጠቃሚ ስም።",
       "tutorial": "Telegram webhook እንዴት እንደሚዋቀር፦"
     }
@@ -10698,7 +10699,7 @@
     "password": "የይለፍ ቃል",
     "passwordPlaceholder": "የይለፍ ቃል",
     "connected": "ተገናኝቷል",
-    "ip": "IP:",
+    "ip": "IP፦",
     "connectionFailed": "ግንኙነቱ አልተሳካም",
     "testConnection": "ግንኙነትን ይፈትሹ",
     "clear": "አጽዳ",
@@ -11477,7 +11478,7 @@
     "droid": "Droid",
     "codex": "Codex",
     "claude": "Claude",
-    "kilo": "Kilo"
+    "kilo": "ኪሎ"
   },
   "runtime": {
     "title": "የአሂድ ጊዜ",
@@ -13633,6 +13634,7 @@
   },
   "featureFlagCapabilityFilterEnabledDescription": "የታለመው ሞዴል አስፈላጊ ችሎታዎች (ምስል፣ መሣሪያዎች፣ የተዋቀረ ውጤት፣ የአውድ መስኮት) ሲጎድሉት፣ ጥያቄዎች ከመላካቸው በፊት ውድቅ አድርግ። ይህ የጥምር-ንብርብር ተኳኋኝነት ማጣሪያን የሚያልፉ ቀጥተኛ የአንድ-አቅራቢ ጥያቄዎችን ይጠብቃል።",
   "featureFlagDisableContextWindowChecksDescription": "ለቀጥተኛ የአንድ-ሞዴል ጥያቄዎች የOmniRouteን አካባቢያዊ የአውድ-መስኮት እና ከፍተኛ-የግቤት-ቶከን ማረጋገጫ ዝለል። የላይኛው ደረጃ አቅራቢዎች እውነተኛ ገደቦቻቸውን አሁንም ያስፈጽማሉ። የጥያቄ መጭመቅ እና የውጤት-ቶከን ገደቦች እንደነቁ ይቆያሉ።",
+  "featureFlagSearchStatsHideDeletedConnectionsDescription": "የፍለጋ ስታቲስቲክስ እና የቅርብ ጊዜ ፍለጋዎች አሁንም ንቁ ግንኙነት ያላቸውን አቅራቢዎች ብቻ ይቆጥራሉ (እንደ duckduckgo-free ያሉ ቁልፍ የማይፈልጉ አቅራቢዎች ሁልጊዜ ይቆጠራሉ)። ማጥፋት እያንዳንዱን የተቀመጠ የፍለጋ ረድፍ ከአቅራቢ መታወቂያ ጋር ያቆየዋል።",
   "publicSystem": {
     "notFound": {
       "title": "ገጹ አልተገኘም",
