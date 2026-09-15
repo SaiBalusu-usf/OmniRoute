@@ -39,8 +39,9 @@ const {
 // OMNIROUTE_DISABLE_THINKING_LEVEL_VARIANTS bumped it from 53 to 54;
 // the dead ONEPROXY_ENABLED (readerless since the 1proxy purge, #12091)
 // brought it back to 53. UNIVERSAL_CONTEXT_HANDOFF_ENABLED bumped it to 54.
-// REASONING_REPLAY_ENABLED bumped it to 55.
-const EXPECTED_FEATURE_FLAG_COUNT = 55;
+// #13641 added SEARCH_STATS_HIDE_DELETED_CONNECTIONS, bumping the count to 56.
+// REASONING_REPLAY_ENABLED bumped it from 57 to 58.
+const EXPECTED_FEATURE_FLAG_COUNT = 58;
 
 // ──────────────────────────────────────────────────────
 // Test group 1 — Flag definitions registry

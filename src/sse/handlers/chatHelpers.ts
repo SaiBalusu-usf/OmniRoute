@@ -3,7 +3,12 @@ import {
   getComboForModel,
   getModelInfoOrRetirementResponse,
 } from "../services/model";
-import { clearAccountError, markAccountUnavailable } from "../services/auth";
+import {
+  clearAccountError,
+  markAccountUnavailable,
+  buildExhaustionOptions,
+} from "../services/auth";
+import { maybeReactivateAfterExplicitProbe } from "../services/explicitInactiveProbe";
 import { connectionHasExtraKeys } from "@omniroute/open-sse/services/apiKeyRotator.ts";
 import { createBuiltinAutoCombo } from "@omniroute/open-sse/services/autoCombo/builtinCatalog.ts";
 import * as log from "../utils/logger";
@@ -334,7 +339,15 @@ export async function resolveModelOrError(
     log.info("ROUTING", `Provider: ${provider}, Model: ${model}${ctxTag}`);
   }
 
-  return { provider, model, sourceFormat, targetFormat, extendedContext, apiFormat };
+  return {
+    provider,
+    model,
+    sourceFormat,
+    targetFormat,
+    customModelTargetFormat,
+    extendedContext,
+    apiFormat,
+  };
 }
 
 export async function checkPipelineGates(
@@ -443,6 +456,7 @@ export async function executeChatWithBreaker({
   // for every non-video request. Passed straight through to handleChatCore;
   // see its own destructure default for the shape and consumers.
   videoBridgeLog = undefined,
+  fallbackAttempts = undefined,
 }: ExecuteChatWithBreakerOptions): Promise<ExecuteChatWithBreakerResult> {
   let tlsFingerprintUsed = false;
   const normalizedTrafficType: TrafficType =
@@ -503,6 +517,7 @@ export async function executeChatWithBreaker({
             reasoningTransportFallback,
             managedLease,
             videoBridgeLog,
+            fallbackAttempts,
             skipResourcePressureGuard: true,
             onCredentialsRefreshed: async (newCreds: any) => {
               await updateProviderCredentials(credentials.connectionId, {
@@ -521,6 +536,13 @@ export async function executeChatWithBreaker({
             onRequestSuccess: async () => {
               if (isShadowTraffic) return;
               await clearAccountError(credentials.connectionId, credentials);
+              await maybeReactivateAfterExplicitProbe({
+                connectionId: credentials.connectionId,
+                reactivatedFromInactive: credentials.reactivatedFromInactive,
+                isShadowTraffic,
+                requestedModel: model,
+                provider,
+              });
             },
             onStreamFailure: async (failure: any) => {
               if (isShadowTraffic) return;
@@ -555,7 +577,7 @@ export async function executeChatWithBreaker({
                 provider,
                 model,
                 providerProfile,
-                { isCombo }
+                buildExhaustionOptions(correlationId ?? null, { isCombo })
               );
             },
           })
@@ -731,7 +753,8 @@ export function handleNoCredentials(
   lastStatus: number | null,
   candidateAliases?: readonly string[],
   isCombo: boolean = false,
-  shadowedNode: ShadowedProviderNode | null = null
+  shadowedNode: ShadowedProviderNode | null = null,
+  correlationId?: string | null
 ) {
   if (credentials?.allRateLimited) {
     const errorMsg = lastError || credentials.lastError || "Unavailable";
@@ -772,14 +795,17 @@ export function handleNoCredentials(
       provider,
       model,
       lastStatus,
+      ...(correlationId ? { correlationId } : {}),
     });
     return errorResponse(lastStatus, lastError);
   }
   if (credentials?.allExpired) {
     // Every connection for this provider is in a terminal state (expired,
-    // banned, or credits_exhausted). Surface as 401 with a re-auth hint
-    // instead of the generic 400 "No credentials", so dashboards/CLIs can
-    // distinguish "never configured" from "needs to reconnect".
+    // banned, or credits_exhausted). Surface expired/banned as 401 with a
+    // re-auth hint instead of the generic 400 "No credentials", so
+    // dashboards/CLIs can distinguish "never configured" from "needs to
+    // reconnect". credits_exhausted is quota (HTTP 402), not invalid
+    // credentials — see #12441.
     const status = credentials.expiredStatus || "expired";
     const count = credentials.expiredCount || 1;
     const reason =
@@ -790,7 +816,12 @@ export function handleNoCredentials(
           : "authentication expired";
     const message = `[${provider}] All ${count} connection(s) ${reason} — please reconnect in the dashboard`;
     log.warn("CHAT", message);
-    return errorResponse(HTTP_STATUS.UNAUTHORIZED, message);
+    // #12441: credits_exhausted is quota, not invalid credentials. Combo
+    // dispatch treats 401 as AUTH_LEVEL skip (#8133). Surface 402 so quota
+    // exhaustion follows the #1731 path instead of "authentication expired".
+    const httpStatus =
+      status === "credits_exhausted" ? HTTP_STATUS.PAYMENT_REQUIRED : HTTP_STATUS.UNAUTHORIZED;
+    return errorResponse(httpStatus, message);
   }
   if (!excludeConnectionId) {
     // Ported from upstream decolua/9router#336 (Ibrahim Ryan): surface as 404
