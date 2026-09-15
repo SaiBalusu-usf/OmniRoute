@@ -1,16 +1,13 @@
 /**
- * A target that refuses the egress IP is not a healthy proxy, but the proxy
- * did relay the request.
+ * A target that refuses the egress IP is not a healthy proxy (policy E).
  *
  * The probe classified any response under 500 as "ok", so a 401/403/429 from the
  * probe target — the shape a destination uses to refuse a banned or rate-limited
  * IP — was reported as a healthy proxy. The proxy did relay, so it is not
  * failing; but it is not serving that destination either, and "ok" hid that.
  *
- * `blocked` resets the consecutive-failure streak: any relayed HTTP response
- * proves the proxy relayed, while the refusal itself stays out of the failure
- * count (one target refusing an IP does not make the proxy dead, and the
- * removal policy stays operator-owned).
+ * `blocked` is deliberately NEUTRAL in the decision layer: one target refusing an
+ * IP does not make the proxy dead, and the removal policy stays operator-owned.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -38,18 +35,9 @@ test("a 5xx from the target stays inconclusive — the proxy relayed fine", () =
   }
 });
 
-// ─── decideProxyHealthAction: refused relays reset the streak ───
-// Rationale: the probe target needs no key, so a `blocked` response is the
-// normal answer of a healthy proxy behind a shared egress IP. Keeping the
-// old streak would count relayed responses as dead air; any relayed HTTP
-// response proves the proxy relayed, so the streak resets while status and
-// removal stay untouched.
+// ─── decideProxyHealthAction: policy E ─────────────────
 
-test("blocked resets the streak, never advances it, never touches status", () => {
-  // Old contract (generic keyed target): a refusal said nothing about the
-  // proxy, so the streak was kept. With a keyless provider target a refusal
-  // is a relayed response, i.e. proof of relay; keeping the streak would
-  // count successes as silence.
+test("blocked never counts as a failure and never touches status", () => {
   const d = decideProxyHealthAction({
     outcome: "blocked",
     priorFailures: 2,
@@ -57,7 +45,7 @@ test("blocked resets the streak, never advances it, never touches status", () =>
     autoDisable: false,
     removeAfter: 3,
   });
-  assert.deepEqual(d, { failures: 0, clearFailures: true, setStatus: null, remove: false });
+  assert.deepEqual(d, { failures: 2, clearFailures: false, setStatus: null, remove: false });
 });
 
 test("blocked cannot remove or disable a proxy, even at the threshold with both flags on", () => {
@@ -73,13 +61,10 @@ test("blocked cannot remove or disable a proxy, even at the threshold with both 
   });
   assert.equal(d.remove, false);
   assert.equal(d.setStatus, null);
-  assert.equal(d.failures, 0, "the streak is reset, never advanced");
+  assert.equal(d.failures, 3, "the streak must be neither advanced nor reset");
 });
 
-test("a refused relay still proves the proxy relayed: resets the streak", () => {
-  // Old contract: `blocked` was neutral like `inconclusive` (kept the streak)
-  // because the target was generic. Since the probe target needs no key, a
-  // refusal is the normal answer of a healthy proxy — the streak resets.
+test("blocked does not reset a failure streak the way ok does", () => {
   const blockedDecision = decideProxyHealthAction({
     outcome: "blocked",
     priorFailures: 2,
@@ -94,8 +79,7 @@ test("a refused relay still proves the proxy relayed: resets the streak", () => 
     autoDisable: false,
     removeAfter: 3,
   });
-  assert.equal(blockedDecision.clearFailures, true);
-  assert.equal(blockedDecision.failures, 0);
+  assert.equal(blockedDecision.clearFailures, false);
   assert.equal(okDecision.clearFailures, true);
 });
 
@@ -120,14 +104,62 @@ test("only the target-refusal statuses are flagged blocked across the whole rang
   assert.deepEqual(flagged, [401, 403, 429]);
 });
 
-test("the sweep summary counts refusals separately from served probes", async () => {
-  // The summary label changed with the reset so the refusal tally is never
-  // mistaken for served probes or dead air.
-  const { readFile } = await import("node:fs/promises");
-  const src = await readFile(
-    new URL("../../src/lib/proxyHealth/scheduler.ts", import.meta.url),
-    "utf8"
+// ─── policy E, opt-in: PROXY_HEALTH_BLOCKED_RESETS_STREAK (#13608) ───
+// The probe target needs no key, so a refusal is often the normal answer of a healthy proxy
+// behind a shared egress IP. With the flag on, a refused relay resets the streak; status and
+// removal stay untouched. A relayed 5xx is `inconclusive` and keeps the streak either way.
+
+test("flag on: blocked resets the streak, never advances it, never touches status", () => {
+  const d = decideProxyHealthAction({
+    outcome: "blocked",
+    priorFailures: 2,
+    autoRemove: false,
+    autoDisable: false,
+    removeAfter: 3,
+    blockedResetsStreak: true,
+  });
+  assert.deepEqual(d, { failures: 0, clearFailures: true, setStatus: null, remove: false });
+});
+
+test("flag on: blocked still cannot remove, disable or re-activate a proxy", () => {
+  for (const managed of [
+    { autoRemove: true, autoDisable: true },
+    { autoRemove: false, autoDisable: true },
+    { autoRemove: true, autoDisable: false },
+  ]) {
+    const d = decideProxyHealthAction({
+      outcome: "blocked",
+      priorFailures: 3,
+      removeAfter: 3,
+      blockedResetsStreak: true,
+      ...managed,
+    });
+    assert.equal(d.remove, false);
+    assert.equal(d.setStatus, null, "a refusal is not proof of health: no re-activation");
+    assert.equal(d.failures, 0);
+  }
+});
+
+test("flag on: an inconclusive (5xx/timeout) probe still keeps the streak", () => {
+  const d = decideProxyHealthAction({
+    outcome: "inconclusive",
+    priorFailures: 2,
+    autoRemove: true,
+    removeAfter: 3,
+    blockedResetsStreak: true,
+  });
+  assert.deepEqual(d, { failures: 2, clearFailures: false, setStatus: null, remove: false });
+});
+
+test("flag explicitly off is the neutral default", () => {
+  const input = {
+    outcome: "blocked" as const,
+    priorFailures: 2,
+    autoRemove: false,
+    removeAfter: 3,
+  };
+  assert.deepEqual(
+    decideProxyHealthAction({ ...input, blockedResetsStreak: false }),
+    decideProxyHealthAction(input)
   );
-  assert.match(src, /\$\{blocked\} refused by target/);
-  assert.doesNotMatch(src, /\$\{blocked\} blocked by target/);
 });
