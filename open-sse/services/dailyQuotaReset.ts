@@ -32,17 +32,30 @@ type ZonedParts = {
   second: number;
 };
 
+// Formatter construction dominates zonedParts; the DST-gap walk below calls it
+// hundreds of times, so reuse one formatter per (validated) IANA zone.
+const zonedFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function zonedFormatter(timeZone: string): Intl.DateTimeFormat {
+  let fmt = zonedFormatters.get(timeZone);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+    zonedFormatters.set(timeZone, fmt);
+  }
+  return fmt;
+}
+
 function zonedParts(ms: number, timeZone: string): ZonedParts {
-  const fmt = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  const fmt = zonedFormatter(timeZone);
   const bag: Record<string, string> = {};
   for (const part of fmt.formatToParts(new Date(ms))) {
     if (part.type !== "literal") bag[part.type] = part.value;
@@ -71,6 +84,35 @@ function addCalendarDay(
   return { year: dt.getUTCFullYear(), month: dt.getUTCMonth() + 1, day: dt.getUTCDate() };
 }
 
+/**
+ * Offset-iteration wall-clock → epoch conversion. `exact` is false when the
+ * iteration never lands on the wanted wall time, which is what a wall time
+ * inside a DST gap (a local time that does not exist) does.
+ */
+function convergeWallTime(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number,
+  timeZone: string
+): { ms: number; exact: boolean } {
+  const wanted = Date.UTC(year, month - 1, day, hour, minute, second);
+  let guess = wanted;
+  for (let i = 0; i < 4; i++) {
+    const p = zonedParts(guess, timeZone);
+    const asIfUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+    const delta = asIfUtc - wanted;
+    if (delta === 0) return { ms: guess, exact: true };
+    guess -= delta;
+  }
+  return { ms: guess, exact: false };
+}
+
+/** Gap-walk bound: one full day covers every civil gap, including a skipped calendar day. */
+const MAX_GAP_WALK_MINUTES = 24 * 60;
+
 /** Convert wall-clock time in `timeZone` to epoch ms. */
 function zonedLocalToUtc(
   year: number,
@@ -81,55 +123,33 @@ function zonedLocalToUtc(
   second: number,
   timeZone: string
 ): number {
-  const wanted = Date.UTC(year, month - 1, day, hour, minute, second);
-  let guess = wanted;
-  for (let i = 0; i < 4; i++) {
-    const p = zonedParts(guess, timeZone);
-    const asIfUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
-    const delta = asIfUtc - wanted;
-    if (delta === 0) return guess;
-    guess -= delta;
-  }
-  // Gap (nonexistent wall-clock hour): walk the wall clock forward minute by
-  // minute to the first wall time that actually exists. Bounded well above
-  // any civil gap width; never a fixed offset (gaps vary: 30m, 1h, dateline).
-  let d = { year, month, day };
-  let wallMin = hour * 60 + minute;
-  for (let step = 0; step < 24 * 60; step++) {
-    wallMin += 1;
-    let dd = d;
-    let h = Math.floor(wallMin / 60);
-    let m = wallMin % 60;
-    while (h >= 24) {
-      h -= 24;
-      dd = addCalendarDay(dd.year, dd.month, dd.day);
+  const first = convergeWallTime(year, month, day, hour, minute, second, timeZone);
+  if (first.exact) return first.ms;
+  // DST gap (New York 02:00 on spring-forward, Havana/Santiago 00:00): the offset
+  // iteration settles an hour EARLY. Walk the wall clock forward minute by minute to
+  // the first wall time that exists; gap widths vary (30 min, 1 h), so never add a
+  // fixed offset.
+  let date = { year, month, day };
+  let minuteOfDay = hour * 60 + minute;
+  for (let step = 0; step < MAX_GAP_WALK_MINUTES; step++) {
+    minuteOfDay += 1;
+    if (minuteOfDay >= 24 * 60) {
+      minuteOfDay -= 24 * 60;
+      date = addCalendarDay(date.year, date.month, date.day);
     }
-    const candidate = tryConverge(dd.year, dd.month, dd.day, h, m, second, timeZone);
-    if (candidate !== null) return candidate;
+    const h = Math.floor(minuteOfDay / 60);
+    const candidate = convergeWallTime(
+      date.year,
+      date.month,
+      date.day,
+      h,
+      minuteOfDay % 60,
+      second,
+      timeZone
+    );
+    if (candidate.exact) return candidate.ms;
   }
-  return guess;
-}
-
-/** 4-pass wall→utc iteration; null when the wall time does not exist (gap). */
-function tryConverge(
-  year: number,
-  month: number,
-  day: number,
-  hour: number,
-  minute: number,
-  second: number,
-  timeZone: string
-): number | null {
-  const wanted = Date.UTC(year, month - 1, day, hour, minute, second);
-  let guess = wanted;
-  for (let i = 0; i < 4; i++) {
-    const p = zonedParts(guess, timeZone);
-    const asIfUtc = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
-    const delta = asIfUtc - wanted;
-    if (delta === 0) return guess;
-    guess -= delta;
-  }
-  return null;
+  return first.ms;
 }
 
 /**
