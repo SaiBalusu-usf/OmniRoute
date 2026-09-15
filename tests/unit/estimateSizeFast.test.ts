@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 const {
   estimateSizeFast,
+  estimateSizeFastResult,
   isSmallEnoughForSemanticCache,
   ESTIMATE_SIZE_BYTE_LIMIT,
   ESTIMATE_SIZE_NODE_BUDGET,
@@ -98,7 +99,25 @@ test("estimateSizeFast respects a caller-supplied byteLimit above the 256KB defa
     trueTotal,
     "must report the true accumulated size instead of early-exiting at the default 256KB"
   );
-  assert.ok(withCustomLimit <= oneMiB, "payload must be recognized as under the caller's own limit");
+  assert.ok(
+    withCustomLimit <= oneMiB,
+    "payload must be recognized as under the caller's own limit"
+  );
+});
+
+test("estimateSizeFastResult distinguishes node exhaustion from byte overflow", () => {
+  const highNodePayload = Array.from({ length: 20_000 }, () => "x");
+  assert.deepEqual(estimateSizeFastResult(highNodePayload, 64 * 1024), {
+    status: "node-budget",
+    bytes: 16_383,
+  });
+  assert.equal(estimateSizeFastResult("x".repeat(70_000), 64 * 1024).status, "byte-limit");
+});
+
+test("estimateSizeFast accepts an explicit node budget for valid high-node payloads", () => {
+  const payload = Array.from({ length: 20_000 }, () => "x");
+  assert.ok(estimateSizeFast(payload, 64 * 1024) > 64 * 1024);
+  assert.equal(estimateSizeFast(payload, 64 * 1024, 50_000), 20_000);
 });
 
 test("estimateSizeFast node-budget fail-closed return respects a caller-supplied byteLimit", () => {

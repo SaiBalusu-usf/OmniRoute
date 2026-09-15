@@ -12,9 +12,9 @@ const DATA_DIR = resolveDataDir({ isCloud });
 export const CALL_LOGS_DIR = isCloud ? null : path.join(DATA_DIR, "call_logs");
 export const MAX_CALL_LOG_ARTIFACT_BYTES = 512 * 1024;
 
-const SIZE_LIMIT_EXCEEDED_REASON = "call_log_artifact_size_limit_exceeded";
-const OMITTED_FOR_SIZE_LIMIT = "[omitted: call log artifact size limit exceeded]";
-const STREAM_CHUNKS_OMITTED_FOR_SIZE_LIMIT =
+export const SIZE_LIMIT_EXCEEDED_REASON = "call_log_artifact_size_limit_exceeded";
+export const OMITTED_FOR_SIZE_LIMIT = "[omitted: call log artifact size limit exceeded]";
+export const STREAM_CHUNKS_OMITTED_FOR_SIZE_LIMIT =
   "[stream chunks omitted: call log artifact size limit exceeded]";
 
 /**
@@ -54,7 +54,7 @@ function preserveErrorForSizeLimit(error: unknown): unknown {
   if (error === null || error === undefined) return null;
   let serialized: string;
   try {
-    serialized = typeof error === "string" ? error : JSON.stringify(error) ?? String(error);
+    serialized = typeof error === "string" ? error : (JSON.stringify(error) ?? String(error));
   } catch {
     // A circular or unserializable error must not take the whole artifact down.
     serialized = String(error);

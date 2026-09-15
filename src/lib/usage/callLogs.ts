@@ -8,8 +8,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { RequestPipelinePayloads } from "@omniroute/open-sse/utils/requestLogger.ts";
+import { estimateSizeFastResult } from "@omniroute/open-sse/utils/estimateSize.ts";
 import { sanitizeErrorMessage } from "@omniroute/open-sse/utils/errorSanitization.ts";
 import { getDbInstance } from "../db/core";
+import { getCallLogPipelineMaxSizeBytes } from "../logEnv";
 import { getRequestDetailLogByCallLogId } from "../db/detailedLogs";
 import { shouldPersistToDisk } from "./migrations";
 import { getCallLogApiKeyContext } from "./callLogApiKeyContext";
@@ -35,6 +37,10 @@ import {
 import { pickDisplayValue } from "@/shared/utils/maskEmail";
 import {
   CALL_LOGS_DIR,
+  MAX_CALL_LOG_ARTIFACT_BYTES,
+  OMITTED_FOR_SIZE_LIMIT,
+  SIZE_LIMIT_EXCEEDED_REASON,
+  STREAM_CHUNKS_OMITTED_FOR_SIZE_LIMIT,
   readCallArtifact,
   type CallLogArtifact,
   type CallLogDetailState,
@@ -449,6 +455,43 @@ function getLegacyInlineDetail(id: string) {
   };
 }
 
+function boundPayloadBeforeProtection(value: unknown, maxBytes: number): unknown {
+  if (value === null || value === undefined) return value;
+  try {
+    return estimateSizeFastResult(value, maxBytes).status === "byte-limit"
+      ? OMITTED_FOR_SIZE_LIMIT
+      : value;
+  } catch {
+    return OMITTED_FOR_SIZE_LIMIT;
+  }
+}
+
+function boundPipelineBeforeProtection(
+  value: RequestPipelinePayloads | null,
+  maxBytes: number
+): RequestPipelinePayloads | null | typeof OMITTED_FOR_SIZE_LIMIT {
+  if (!value) return null;
+  const streamChunks = value.streamChunks;
+  if (
+    streamChunks &&
+    boundPayloadBeforeProtection(streamChunks, maxBytes) === OMITTED_FOR_SIZE_LIMIT
+  ) {
+    value = {
+      ...value,
+      streamChunks: {
+        provider: streamChunks.provider?.length
+          ? [STREAM_CHUNKS_OMITTED_FOR_SIZE_LIMIT]
+          : undefined,
+        openai: streamChunks.openai?.length ? [STREAM_CHUNKS_OMITTED_FOR_SIZE_LIMIT] : undefined,
+        client: streamChunks.client?.length ? [STREAM_CHUNKS_OMITTED_FOR_SIZE_LIMIT] : undefined,
+      },
+    };
+  }
+  return boundPayloadBeforeProtection(value, maxBytes) === OMITTED_FOR_SIZE_LIMIT
+    ? OMITTED_FOR_SIZE_LIMIT
+    : value;
+}
+
 async function saveCallLogOperation(entry: any): Promise<void> {
   try {
     const apiKeyContext = getCallLogApiKeyContext();
@@ -459,20 +502,46 @@ async function saveCallLogOperation(entry: any): Promise<void> {
     const apiKeyName = entry.apiKeyName || apiKeyContext?.apiKeyName || null;
     const noLogEnabled = Boolean(entry.noLog) || (apiKeyId ? isNoLog(apiKeyId) : false);
 
-    const protectedRequestBody = noLogEnabled ? null : protectPayloadForLog(entry.requestBody);
+    const rawPipelinePayloads = entry.pipelinePayloads ?? entry.pipeline ?? null;
+    const maxArtifactBytes = rawPipelinePayloads
+      ? getCallLogPipelineMaxSizeBytes()
+      : MAX_CALL_LOG_ARTIFACT_BYTES;
+    const boundedRequestBody = noLogEnabled
+      ? null
+      : boundPayloadBeforeProtection(entry.requestBody, maxArtifactBytes);
+    const boundedResponseBody = noLogEnabled
+      ? null
+      : boundPayloadBeforeProtection(entry.responseBody, maxArtifactBytes);
+    const boundedPipelinePayloads = noLogEnabled
+      ? null
+      : boundPipelineBeforeProtection(rawPipelinePayloads, maxArtifactBytes);
+    const protectedRequestBody = noLogEnabled
+      ? null
+      : boundedRequestBody === OMITTED_FOR_SIZE_LIMIT
+        ? OMITTED_FOR_SIZE_LIMIT
+        : protectPayloadForLog(boundedRequestBody);
     const responseStatus = Number(entry.status);
     const failedResponse = Number.isFinite(responseStatus) && responseStatus >= 400;
     const protectedResponseBody = noLogEnabled
       ? null
-      : failedResponse
-        ? protectErrorPayloadForLog(entry.responseBody)
-        : protectPayloadForLog(entry.responseBody);
+      : boundedResponseBody === OMITTED_FOR_SIZE_LIMIT
+        ? OMITTED_FOR_SIZE_LIMIT
+        : failedResponse
+          ? protectErrorPayloadForLog(boundedResponseBody)
+          : protectPayloadForLog(boundedResponseBody);
     const protectedPipelinePayloads = noLogEnabled
       ? null
-      : protectPipelinePayloads(
-          entry.pipelinePayloads ?? entry.pipeline ?? null,
-          failedResponse ? responseStatus : undefined
-        );
+      : boundedPipelinePayloads === OMITTED_FOR_SIZE_LIMIT
+        ? {
+            error: {
+              _omniroute_truncated: true,
+              reason: SIZE_LIMIT_EXCEEDED_REASON,
+            },
+          }
+        : protectPipelinePayloads(
+            boundedPipelinePayloads,
+            failedResponse ? responseStatus : undefined
+          );
     const protectedError = sanitizeErrorForLog(entry.error);
 
     // Bridges the window before this row's own artifact write (queued below,

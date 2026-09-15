@@ -79,6 +79,11 @@ function expandContainerFrame(stack: Frame[], frame: Exclude<Frame, ValueFrame>)
   stack.push({ t: "v", v: (frame.o as Record<string, unknown>)[next.value] });
 }
 
+export type SizeEstimateResult =
+  | { status: "complete"; bytes: number }
+  | { status: "byte-limit"; bytes: number }
+  | { status: "node-budget"; bytes: number };
+
 /**
  * @param byteLimit - early-exit threshold (default ESTIMATE_SIZE_BYTE_LIMIT,
  * 256 KiB). Pass the actual threshold you're comparing against (see
@@ -87,14 +92,18 @@ function expandContainerFrame(stack: Frame[], frame: Exclude<Frame, ValueFrame>)
  * the byte check and the node-budget fail-closed fallback both key off this
  * value, not the fixed module constant, when a caller supplies one.
  */
-export function estimateSizeFast(value: unknown, byteLimit = ESTIMATE_SIZE_BYTE_LIMIT): number {
+export function estimateSizeFastResult(
+  value: unknown,
+  byteLimit = ESTIMATE_SIZE_BYTE_LIMIT,
+  nodeBudget = ESTIMATE_SIZE_NODE_BUDGET
+): SizeEstimateResult {
   let bytes = 0;
-  let visitsLeft = ESTIMATE_SIZE_NODE_BUDGET;
+  let visitsLeft = nodeBudget;
   const seen = new WeakSet<object>();
   const stack: Frame[] = [{ t: "v", v: value }];
 
   while (stack.length > 0) {
-    if (visitsLeft <= 0) return byteLimit + 1;
+    if (visitsLeft <= 0) return { status: "node-budget", bytes };
 
     const frame = stack.pop()!;
     if (!isValueFrame(frame)) {
@@ -109,7 +118,7 @@ export function estimateSizeFast(value: unknown, byteLimit = ESTIMATE_SIZE_BYTE_
     const ty = typeof v;
     if (ty === "string" || ty === "number" || ty === "boolean") {
       bytes = addPrimitiveBytes(bytes, v as string | number | boolean);
-      if (bytes > byteLimit) return bytes;
+      if (bytes > byteLimit) return { status: "byte-limit", bytes };
       continue;
     }
     if (ty === "object") {
@@ -117,7 +126,16 @@ export function estimateSizeFast(value: unknown, byteLimit = ESTIMATE_SIZE_BYTE_
     }
   }
 
-  return bytes;
+  return { status: "complete", bytes };
+}
+
+export function estimateSizeFast(
+  value: unknown,
+  byteLimit = ESTIMATE_SIZE_BYTE_LIMIT,
+  nodeBudget = ESTIMATE_SIZE_NODE_BUDGET
+): number {
+  const result = estimateSizeFastResult(value, byteLimit, nodeBudget);
+  return result.status === "node-budget" ? byteLimit + 1 : result.bytes;
 }
 
 export function isSmallEnoughForSemanticCache(value: unknown): boolean {

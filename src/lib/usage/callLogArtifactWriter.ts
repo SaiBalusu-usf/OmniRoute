@@ -3,7 +3,10 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { Worker } from "node:worker_threads";
 
-import { estimateSizeFast } from "@omniroute/open-sse/utils/estimateSize.ts";
+import {
+  ESTIMATE_SIZE_NODE_BUDGET,
+  estimateSizeFastResult,
+} from "@omniroute/open-sse/utils/estimateSize.ts";
 import { isAutomatedTestProcess } from "@/shared/utils/testProcess";
 import type { CallLogArtifact, CallLogArtifactWriteResult } from "./callLogArtifacts.ts";
 import { parseFileSize } from "../logEnv.ts";
@@ -194,7 +197,11 @@ export function writeCallArtifactAsync(
   const maxQueuedBytes = getMaxQueuedBytes();
   let estimatedBytes: number;
   try {
-    estimatedBytes = estimateSizeFast(artifact, maxQueuedBytes + 1);
+    const estimate = estimateSizeFastResult(artifact, maxQueuedBytes);
+    estimatedBytes =
+      estimate.status === "node-budget"
+        ? Math.max(estimate.bytes, ESTIMATE_SIZE_NODE_BUDGET)
+        : estimate.bytes;
   } catch {
     warnRateLimited("[callLogs] Call-log artifact size estimation failed; detail omitted.");
     return Promise.resolve(null);

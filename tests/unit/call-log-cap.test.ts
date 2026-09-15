@@ -502,6 +502,23 @@ test("getCallLogById marks missing artifacts explicitly and clears stale DB poin
   assert.equal((row as CallLogRow).detail_state, "missing");
 });
 
+test("saveCallLog omits oversized bodies before payload protection", async () => {
+  await callLogs.saveCallLog({
+    id: "pre-protection-size-bound",
+    timestamp: "2026-03-31T09:04:00.000Z",
+    method: "POST",
+    path: "/v1/chat/completions",
+    status: 200,
+    model: "openai/gpt-4.1",
+    provider: "openai",
+    requestBody: { payload: "x".repeat(2 * 1024 * 1024) },
+  });
+
+  const detail = await callLogs.getCallLogById("pre-protection-size-bound");
+  assert.equal(detail?.requestBody, "[omitted: call log artifact size limit exceeded]");
+  assert.equal(detail?.hasRequestBody, true);
+});
+
 test("saveCallLog keeps large payloads out of SQLite while preserving explicit detail export", async () => {
   const requestBody = { payload: "x".repeat(320 * 1024) };
 
