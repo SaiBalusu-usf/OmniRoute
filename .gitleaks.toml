@@ -101,4 +101,7 @@
       # "Yakunlash/javob tokenlari" = "completion/response tokens". The rule reads the
       # `...TokenDesc` key as a token assignment and the translated words as its value.
       '''Yakunlash/javob''',
+      # Feature-flag id from #13439 (src/shared/constants/featureFlagDefinitions.ts):
+      # `key: "PROTECTED_PRIORITY_INFRA_502_ENABLED"` is a flag name, not a credential.
+      '''PROTECTED_PRIORITY_INFRA_502_ENABLED''',
     ]
