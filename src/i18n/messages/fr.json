@@ -1187,7 +1187,7 @@
     "agenticFeaturesSection": "Fonctionnalités agentiques",
     "otherFeaturesSection": "Autres fonctionnalités",
     "compressionContextGroup": "Compression du contexte",
-    "gamificationGroup": "Gamification",
+    "gamificationGroup": "Ludification",
     "toolsGroup": "Outils",
     "integrationsGroup": "Intégrations",
     "proxyGroup": "Proxy",
@@ -1272,7 +1272,7 @@
     "systemGroup": "Système",
     "costsOverview": "Vue d'ensemble",
     "costsOverviewSubtitle": "Analyse consolidée des coûts",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "Pont d’agents",
     "agentBridgeSubtitle": "Intercepter le trafic de l'agent IDE",
     "trafficInspector": "Inspecteur de trafic",
     "trafficInspectorSubtitle": "Inspectez le trafic des requêtes et des réponses provenant de vos applications",
@@ -6475,7 +6475,7 @@
     "savedModelEndpointSettings": "Saved modèles endpoint paramètres",
     "searchByModelAria": "Rechercher un modèle",
     "selectSupportedEndpoint": "Sélectionnez au moins un endpoint pris en charge",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Harnais / CLI"
   },
   "settings": {
     "title": "Paramètres",
@@ -8231,7 +8231,7 @@
     "modalityBridgeAudioTab": "Audio",
     "modalityBridgeVideoTab": "Vidéo",
     "modalityBridgeSubTabsAria": "Sections du Pont de Modalité",
-    "modalityBridgeVisionTitle": "Vision Bridge",
+    "modalityBridgeVisionTitle": "Pont visuel",
     "modalityBridgeVisionDesc": "Décrivez les images avec un modèle de vision et continuez avec le modèle de texte choisi par l'utilisateur.",
     "modalityBridgeMode": "Mode",
     "modalityBridgeModeAuto": "Automatique (recommandé)",
@@ -8379,7 +8379,7 @@
     "qdrantCollection": "Collection"
   },
   "contextRtk": {
-    "title": "RTK Engine",
+    "title": "Moteur RTK",
     "description": "Compression sensible aux commandes pour la sortie des outils, les journaux du terminal et les résultats de compilation.",
     "enabled": "Activé",
     "intensity": "Intensité",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Autoriser la récupération de flux à demander à nouveau la réponse et à la raccorder après que des octets ont déjà atteint le client."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Sécuriser les appels d’outils lors d’une continuation en cours de flux : ne jamais reprendre un flux interrompu après l’envoi d’un appel d’outil (qu’il soit toujours en cours ou déjà terminé), et s’arrêter après une continuation vide au lieu d’utiliser tout le quota de nouvelles tentatives."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Inclure des champs de nom conviviaux pour l'affichage dans les réponses /v1/models. Désactivez cette option pour les clients qui n'acceptent que les ID de modèle."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Boucle d’outils gérée par le serveur",
         "description": "Poursuivre les appels d’outils non diffusés en continu et gérés par le serveur jusqu’à ce que le modèle renvoie une réponse exploitable par le client."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Provenance de Retry-After",
+        "description": "Pour les réponses agrégées 429/503 indiquant une indisponibilité, omettre Retry-After lorsqu’aucune date future concrète de nouvelle tentative n’est connue au lieu d’envoyer une valeur synthétique de 1 s, ajouter error.retry_after_provenance et interpréter les indications textuelles de nouvelle tentative sur les chemins d’épuisement des combinaisons."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Arrêts d’infrastructure à priorité protégée en tant que 502",
+        "description": "Répondre avec 502 au lieu de 503 lorsqu’une cible prioritaire avec repli uniquement en cas de quota arrête la combinaison pour une cause dont il est démontré qu’elle n’est pas liée au quota : un disjoncteur de fournisseur ouvert ou un saut prédictif dû à la latence."
       }
     }
   },
@@ -14100,7 +14111,7 @@
     "trialDays": "{days, plural, one {# jour} other {# jours}}"
   },
   "radarIntelPage": {
-    "title": "Radar Intel",
+    "title": "Renseignements radar",
     "subtitle": "Classements ELO gérés par Radar et évolution factuelle du catalogue.",
     "backToRadar": "Retour à Radar",
     "loading": "Chargement de Radar Intel...",

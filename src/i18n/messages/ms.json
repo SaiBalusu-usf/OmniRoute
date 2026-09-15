@@ -7862,7 +7862,7 @@
         "description": "Penanda pengambilan beralamat kandungan."
       },
       "lite": {
-        "label": "Lite",
+        "label": "Ringan",
         "description": "Pembersihan ruang putih dan format."
       },
       "rtk": {
@@ -7882,7 +7882,7 @@
         "description": "Pemarkahan ayat ekstraktif terhadap pertanyaan pengguna terakhir."
       },
       "caveman": {
-        "label": "Caveman",
+        "label": "Manusia Gua",
         "description": "Pemampatan prosa berasaskan peraturan."
       },
       "aggressive": {
@@ -9608,7 +9608,7 @@
     "suiteBuilderUpdatedAt": "Dikemas kini",
     "errorBadge": "Ralat",
     "suiteBuilderCasesTitle": "Kes Ujian",
-    "edit": "Edit",
+    "edit": "Sunting",
     "monthly": "Bulanan",
     "suiteBuilderCasesRequired": "Sekurang-kurangnya satu kes ujian diperlukan",
     "weeklyLimitSummary": "Ringkasan had belanjawan mingguan",
@@ -10859,7 +10859,7 @@
     "tableUsage": "Table Usage",
     "tableActions": "Table Actions",
     "test": "Uji",
-    "edit": "Edit",
+    "edit": "Sunting",
     "delete": "Padam",
     "modalCreateTitle": "Modal Create Title",
     "modalEditTitle": "Modal Edit Title",
@@ -11672,7 +11672,7 @@
     "endpointsBaseUrl": "URL Asas",
     "endpointsCollapse": "Kuncupkan",
     "endpointsExpand": "Kembangkan",
-    "endpointsAnthropicNote": "Anthropic-native",
+    "endpointsAnthropicNote": "Natif Anthropic",
     "endpointsResponsesNote": "Respons OpenAI — codex/github",
     "endpointsWsNote": "WebSocket — codex sahaja",
     "betaText": "Kongsi Kuota berfungsi tetapi pepijat dijangka berlaku. Menemui satu? Sila laporkannya.",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Benarkan pemulihan strim untuk meminta respons semula dan mencantumkannya selepas bait telah sampai ke pelanggan."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Jadikan panggilan alat sambungan pertengahan strim selamat: jangan sekali-kali sambung semula strim yang terputus selepas panggilan alat dihantar (masih berlangsung atau sudah selesai), dan hentikan selepas satu sambungan kosong dan bukannya menggunakan keseluruhan had percubaan semula."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Sertakan medan nama mesra paparan dalam respons /v1/models. Nyahdayakan ini untuk pelanggan yang hanya menerima ID model."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Gelung Alat Milik Pelayan",
         "description": "Teruskan panggilan alat milik pelayan tanpa penstriman sehingga model mengembalikan respons yang boleh digunakan oleh klien."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Asal Usul Retry-After",
+        "description": "Pada respons tidak tersedia 429/503 yang diagregatkan, abaikan Retry-After apabila tiada masa percubaan semula masa hadapan yang khusus diketahui dan bukannya menghantar nilai sintetik 1s, tambahkan error.retry_after_provenance, dan baca petunjuk percubaan semula dalam bentuk prosa pada laluan pengosongan gabungan."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Hentian Infrastruktur Keutamaan Terlindung sebagai 502",
+        "description": "Berikan respons 502 dan bukannya 503 apabila sasaran keutamaan sandaran-kuota-sahaja menghentikan gabungan atas sebab yang dapat dibuktikan bukan berkaitan kuota: pemutus litar penyedia yang terbuka atau pelangkauan latensi ramalan."
       }
     }
   },
@@ -13099,7 +13110,7 @@
     "comboHealth": "Kesihatan Kombo",
     "callLogs": "Log Panggilan",
     "costs": "Kos",
-    "playground": "Playground",
+    "playground": "Ruang Uji",
     "nestedCombo": "Kombo bersarang",
     "modelTarget": "Sasaran model",
     "weight": "Pemberat {value}%",
@@ -13471,7 +13482,7 @@
     "campaignsValidUntil": "Sah sehingga {date}",
     "colActions": "Tindakan",
     "localBadge": "setempat",
-    "editModel": "Edit",
+    "editModel": "Sunting",
     "saveModel": "Simpan",
     "cancelEdit": "Batal",
     "resetModel": "Tetapkan semula perubahan setempat",
@@ -13783,7 +13794,7 @@
     "googleDescription": "Log masuk dengan akaun Google anda.",
     "githubAccount": "Akaun GitHub",
     "githubDescription": "Log masuk dengan akaun GitHub anda.",
-    "importToken": "Import Token",
+    "importToken": "Token Import",
     "importDescription": "Tampal token penyegaran yang dieksport dari {providerLabel}.",
     "apiKey": "Kunci API",
     "apiKeyDescription": "Tampal kunci API {providerLabel} / CodeWhisperer yang tahan lama. Ia disimpan sebagai kelayakan pembawa tanpa token penyegaran; penemuan profil adalah usaha terbaik.",
@@ -13856,7 +13867,7 @@
     "tenant": "Penyewa",
     "region": "Wilayah",
     "importing": "Mengimport…",
-    "importToken": "Import Token",
+    "importToken": "Token Import",
     "cancel": "Batal"
   },
   "sharedComponents": {

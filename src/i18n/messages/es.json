@@ -1658,7 +1658,7 @@
     "featureFlagsCategoryRuntime": "Tiempo de ejecución",
     "featureFlagsCategoryCli": "CLI",
     "featureFlagsCategoryHealth": "Salud",
-    "featureFlagsSourceDb": "DB",
+    "featureFlagsSourceDb": "BD",
     "featureFlagsSourceEnv": "ENV",
     "featureFlagsSourceDefault": "DEF",
     "featureFlagsReset": "Reiniciar",
@@ -4430,7 +4430,7 @@
       "reindexFailed": "No se pudo iniciar la reindexación",
       "keywordLabel": "Palabra clave (FTS5)",
       "keywordReason": "La búsqueda por palabras clave siempre está disponible",
-      "embeddingLabel": "Embedding",
+      "embeddingLabel": "Incrustación",
       "vectorStoreLabel": "Almacén vectorial",
       "qdrantLabel": "Qdrant",
       "rerankLabel": "Reordenación",
@@ -4471,7 +4471,7 @@
       "simulate": "Simular",
       "resultsTitle": "{count} resultado(s)",
       "resolutionTitle": "Resolución de búsqueda",
-      "resolutionEmbedding": "Embedding",
+      "resolutionEmbedding": "Incrustación",
       "resolutionStore": "Almacén vectorial",
       "resolutionStrategy": "Estrategia utilizada",
       "rerankApplied": "Reordenación aplicada",
@@ -5305,7 +5305,7 @@
     "openaiCompatibleDetails": "Detalles compatibles con OpenAI",
     "messagesApi": "API de mensajes",
     "responsesApi": "API de respuestas",
-    "embeddings": "Embeddings",
+    "embeddings": "Incrustaciones",
     "audioTranscriptions": "Transcripciones de audio",
     "audioSpeech": "Síntesis de voz",
     "imagesGenerations": "Generación de imágenes",
@@ -11208,7 +11208,7 @@
     "play": "Reproducir",
     "query": "Consulta",
     "numResults": "Resultados máximos",
-    "prompt": "Prompt",
+    "prompt": "Instrucción",
     "size": "Tamaño",
     "duration": "Duración",
     "question": "Pregunta",
@@ -11720,7 +11720,7 @@
     "enabled": "Activado",
     "disabled": "Desactivado",
     "installedTab": "Instalados",
-    "marketplaceTab": "Marketplace",
+    "marketplaceTab": "Mercado",
     "marketplaceUrlLabel": "URL personalizada del Marketplace",
     "marketplaceUrlPlaceholder": "Déjalo vacío para usar el registro oficial de Omniroute",
     "saveMarketplaceUrl": "Guardar y recargar",
@@ -12218,7 +12218,7 @@
       "versionNotFound": "no encontrado",
       "manualConfig": "Configuración manual",
       "installGuide": "Guía de instalación",
-      "endpointLabel": "Endpoint",
+      "endpointLabel": "Punto de conexión",
       "baseUrlFull": "URL base completa",
       "baseUrlPartial": "URL base parcial",
       "refreshDetection": "Actualizar detección",
@@ -12886,7 +12886,7 @@
       "block": "Bloquear",
       "redact": "Censurar",
       "disabled": "Deshabilitado",
-      "dual": "Dual",
+      "dual": "Doble",
       "alias": "Alias",
       "canonical": "Canónico"
     },
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Permite que la recuperación del flujo vuelva a solicitar la respuesta y la concatene después de que algunos bytes ya hayan llegado al cliente."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Hacer que la continuación a mitad del flujo sea segura para las llamadas a herramientas: nunca reanudar un flujo interrumpido después de que se haya enviado una llamada a una herramienta (tanto si sigue en curso como si ya ha finalizado) y detenerse después de una continuación vacía en lugar de agotar todo el límite de reintentos."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Incluye campos de nombre fáciles de visualizar en las respuestas de /v1/models. Deshabilita esta opción para los clientes que solo aceptan identificadores de modelo."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Bucle de herramientas controlado por el servidor",
         "description": "Continúa las llamadas no transmitidas a herramientas controladas por el servidor hasta que el modelo devuelva una respuesta utilizable por el cliente."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Procedencia de Retry-After",
+        "description": "En las respuestas agregadas 429/503 de indisponibilidad, omitir Retry-After cuando no se conozca un momento futuro concreto para reintentar, en lugar de enviar un valor sintético de 1 s; añadir error.retry_after_provenance y leer las indicaciones textuales de reintento en las rutas de agotamiento del combo."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Detenciones de infraestructura de prioridad protegida como 502",
+        "description": "Responder con 502 en lugar de 503 cuando un destino prioritario con alternativa solo por cuota detenga el combo por una causa que se pueda demostrar que no está relacionada con la cuota: un disyuntor abierto del proveedor o una omisión predictiva por latencia."
       }
     }
   },

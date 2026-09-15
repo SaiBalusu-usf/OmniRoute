@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Dopusti oporavku toka da ponovo zatraži odgovor i spoji ga nakon što su bajtovi već stigli do klijenta."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Učinite nastavak usred toka sigurnim za pozive alata: nikada ne nastavljajte prekinuti tok nakon što je poziv alata poslan (još traje ili je već dovršen) i zaustavite se nakon jednog praznog nastavka umjesto korištenja cijelog dopuštenog broja ponovnih pokušaja."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Uključi polja s imenima prilagođenim za prikaz u odgovorima /v1/models. Onemogući ovo za klijente koji prihvaćaju samo ID-ove modela."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Petlja alata pod nadzorom poslužitelja",
         "description": "Nastavi s nestrujnim pozivima alata pod nadzorom poslužitelja sve dok model ne vrati odgovor koji klijent može upotrijebiti."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Podrijetlo zaglavlja Retry-After",
+        "description": "U agregiranim odgovorima 429/503 o nedostupnosti izostavite Retry-After kada nije poznato konkretno buduće vrijeme ponovnog pokušaja umjesto slanja sintetičke vrijednosti od 1 s, dodajte error.retry_after_provenance i čitajte tekstualne upute za ponovni pokušaj na putanjama pražnjenja kombinacije."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Zaustavljanja infrastrukture za zaštićeni prioritet kao 502",
+        "description": "Odgovorite kodom 502 umjesto 503 kada prioritetno odredište s pričuvnim rješenjem samo za kvotu zaustavi kombinaciju zbog uzroka koji dokazivo nije kvota: otvorenog prekidača strujnog kruga pružatelja ili prediktivnog preskakanja zbog latencije."
       }
     }
   },

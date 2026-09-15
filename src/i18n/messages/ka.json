@@ -2416,7 +2416,7 @@
     "bypassProviderQuota": "პროვაიდერის კვოტის ზღვრული შეზღუდვების გვერდის ავლა",
     "bypassProviderQuotaDescription": "საშუალებას აძლევს ამ გასაღებს, მარშრუტიზაციისას უგულებელყოს ზედა დონის პროვაიდერის/ანგარიშის ზღვრული შეზღუდვის პოლიტიკა. API გასაღების USD კვოტები კვლავ მოქმედებს.",
     "quotaPill": "კვოტა",
-    "quotaModeOnly": "qtSd-only",
+    "quotaModeOnly": "მხოლოდ qtSd",
     "exclusiveLease": "ექსკლუზიური იჯარა",
     "exclusiveLeaseNoticeTitle": "ექსკლუზიური იჯარა",
     "exclusiveLeaseNoticeDesc": "ამ API გასაღებს აქვს გამოყოფილი კავშირების მარშრუტიზაციისთვის ექსკლუზიური იჯარის ნებართვები.",
@@ -7934,7 +7934,7 @@
     "memorySkillsActiveSkillsProvider": "უნარების აქტიური პროვაიდერი",
     "cliproxyapiFallback": "CLIProxyAPI-ის სარეზერვო ვარიანტი",
     "cliproxyapiEnableFallback": "CLIProxyAPI-ის სარეზერვო ვარიანტის ჩართვა",
-    "cliproxyapiUrl": "CLIProxyAPI URL",
+    "cliproxyapiUrl": "CLIProxyAPI-ის URL",
     "headroomProxyTitle": "Headroom პროქსი",
     "headroomProxyDesc": "არასავალდებულო Headroom ტოკენების დამზოგავი პროქსის URL. ცარიელი მნიშვნელობის შემთხვევაში გამოიყენება HEADROOM_URL ან http://localhost:8787.",
     "headroomProxyUrl": "Headroom-ის URL",
@@ -10773,7 +10773,7 @@
     "devinDesktopPasteDescription": "ჩასვით არსებული Devin API გასაღები ავთენტიფიცირებული Devin სესიიდან. გასაღების ექსპორტის ხელმისაწვდომობა და ნაბიჯები განსხვავდება Devin-ის ვერსიისა და ანგარიშის მიხედვით.",
     "devinPasteDescription": "მიუთითეთ თქვენი WINDSURF_API_KEY (მიღებული `devin auth login`-ის ან Windsurf IDE-ის ბრძანების „Windsurf: Provide Auth Token“ მეშვეობით).",
     "grokAuthJsonPlaceholder": "{\"https://auth.x.ai::clientId\": {\"key\": \"eyJ...\", \"refresh_token\": \"...\"}}",
-    "grokAuthJsonLabel": "Grok Build auth.json",
+    "grokAuthJsonLabel": "Grok Build-ის auth.json",
     "apiTokenPlaceholder": "ws-...",
     "apiKeyTokenLabel": "API გასაღები / ტოკენი",
     "saving": "ინახება…",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "ნაკადის აღდგენისას პასუხის ხელახლა მოთხოვნისა და მისი გაერთიანების დაშვება მას შემდეგაც, რაც ბაიტები უკვე მიაღწევს კლიენტამდე."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "ნაკადის შუაში გაგრძელება ინსტრუმენტის გამოძახებისას უსაფრთხო გახადეთ: არასოდეს განაახლოთ შეწყვეტილი ნაკადი ინსტრუმენტის გამოძახების გაგზავნის შემდეგ (მიუხედავად იმისა, ის ჯერ კიდევ მიმდინარეობს თუ უკვე დასრულდა) და ხელახალი ცდების მთელი ლიმიტის გამოყენების ნაცვლად შეჩერდით ერთი ცარიელი გაგრძელების შემდეგ."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models-ის პასუხებში ეკრანზე გამოსატანად მოსახერხებელი სახელის ველების ჩართვა. გამორთეთ ეს იმ კლიენტებისთვის, რომლებიც მხოლოდ მოდელის ID-ებს იღებენ."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "სერვერის მიერ მართული ხელსაწყოების ციკლი",
         "description": "გააგრძელეთ სერვერის მიერ მართული ხელსაწყოების არასტრიმინგული გამოძახებები, სანამ მოდელი კლიენტისთვის გამოსაყენებელ პასუხს არ დააბრუნებს."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After-ის წარმოშობა",
+        "description": "გაერთიანებულ 429/503 მიუწვდომლობის პასუხებში გამოტოვეთ Retry-After, როდესაც მომდევნო ცდის კონკრეტული მომავალი დრო უცნობია, სინთეზური 1 წმ-ის გაგზავნის ნაცვლად; დაამატეთ error.retry_after_provenance და combo-ს დაცლის მარშრუტებზე წაიკითხეთ ტექსტურად მოცემული მინიშნებები ხელახალი ცდის შესახებ."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "დაცული პრიორიტეტის ინფრასტრუქტურული შეჩერებები, როგორც 502",
+        "description": "უპასუხეთ 502-ით 503-ის ნაცვლად, როდესაც მხოლოდ კვოტაზე ორიენტირებული სარეზერვო პრიორიტეტული სამიზნე აჩერებს combo-ს მიზეზით, რომელიც დადასტურებულად არ უკავშირდება კვოტას: პროვაიდერის ღია circuit breaker ან პროგნოზული დაყოვნების გამო გამოტოვება."
       }
     }
   },

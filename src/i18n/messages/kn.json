@@ -6364,15 +6364,15 @@
     "checkWebToken": "ಟೋಕನ್ ಅನ್ನು ಪರಿಶೀಲಿಸಿ",
     "huggingchatLabel": "HuggingChat (ಉಚಿತ)",
     "huggingchatDesc": "huggingface.co/chat ಮೂಲಕ ಉಚಿತ LLM ಚಾಟ್",
-    "poeWebLabel": "Poe Web",
+    "poeWebLabel": "Poe ವೆಬ್",
     "poeWebDesc": "poe.com ಮೂಲಕ ಬಹು-ಮಾದರಿ ಚಾಟ್",
-    "veniceWebLabel": "Venice Web",
+    "veniceWebLabel": "Venice ವೆಬ್",
     "veniceWebDesc": "ಗೌಪ್ಯತೆ-ಕೇಂದ್ರಿತ AI ಚಾಟ್",
-    "v0VercelWebLabel": "v0 Vercel Web",
+    "v0VercelWebLabel": "v0 Vercel ವೆಬ್",
     "v0VercelWebDesc": "v0.dev ಮೂಲಕ AI ಕೋಡ್ ರಚನೆ",
-    "kimiWebLabel": "Kimi Web",
+    "kimiWebLabel": "Kimi ವೆಬ್",
     "kimiWebDesc": "www.kimi.com ಮೂಲಕ Moonshot AI ಗ್ರಾಹಕ ಚಾಟ್ (ಅಂತರರಾಷ್ಟ್ರೀಯ, Connect-RPC API)",
-    "doubaoWebLabel": "Dola Web",
+    "doubaoWebLabel": "Dola ವೆಬ್",
     "doubaoWebDesc": "dola.com ಮೂಲಕ ByteDance AI ಚಾಟ್",
     "overrideBaseUrlAdvanced": "ಸುಧಾರಿತ: ಮೂಲ URL ಅನ್ನು ಅತಿಕ್ರಮಿಸಿ",
     "overrideBaseUrlHint": "ಸುಧಾರಿತ: ಈ ಅಂತರ್ನಿರ್ಮಿತ ಪೂರೈಕೆದಾರರನ್ನು ಕಸ್ಟಮ್ ಎಂಡ್ಪಾಯಿಂಟ್ಗೆ ನಿರ್ದೇಶಿಸಿ. ಡೀಫಾಲ್ಟ್ ಬಳಸಲು ಖಾಲಿ ಬಿಡಿ.",
@@ -8379,7 +8379,7 @@
     "qdrantCollection": "ಸಂಗ್ರಹ"
   },
   "contextRtk": {
-    "title": "RTK Engine",
+    "title": "RTK ಎಂಜಿನ್",
     "description": "ಟೂಲ್ ಔಟ್ಪುಟ್, ಟರ್ಮಿನಲ್ ಲಾಗ್ಗಳು ಮತ್ತು ಬಿಲ್ಡ್ ಫಲಿತಾಂಶಗಳಿಗಾಗಿ ಕಮಾಂಡ್-ಅರಿವಿನ ಸಂಕುಚನ.",
     "enabled": "ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ",
     "intensity": "ತೀವ್ರತೆ",
@@ -8905,7 +8905,7 @@
     "save": "ಉಳಿಸಿ"
   },
   "contextCaveman": {
-    "title": "Caveman Engine",
+    "title": "Caveman ಎಂಜಿನ್",
     "description": "ನಿಯಮ-ಆಧಾರಿತ ಸಂದೇಶ ಸಂಕುಚನ, ಭಾಷಾ ಪ್ಯಾಕ್ಗಳು, ವಿಶ್ಲೇಷಣೆ ಮತ್ತು ಔಟ್ಪುಟ್ ಮೋಡ್ ನಿಯಂತ್ರಣಗಳು.",
     "advancedConfig": "ಸುಧಾರಿತ ಕಾನ್ಫಿಗರೇಶನ್",
     "advancedConfigDesc": "ಸಂಕುಚನದ ಕಾರ್ಯವಿಧಾನವನ್ನು ಸೂಕ್ಷ್ಮವಾಗಿ ಹೊಂದಿಸಿ",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "ಬೈಟ್ಗಳು ಈಗಾಗಲೇ ಕ್ಲೈಂಟ್ ಅನ್ನು ತಲುಪಿದ ನಂತರವೂ ಪ್ರತಿಕ್ರಿಯೆಯನ್ನು ಮತ್ತೊಮ್ಮೆ ವಿನಂತಿಸಿ, ಅದನ್ನು ಜೋಡಿಸಲು ಸ್ಟ್ರೀಮ್ ಮರುಪಡೆಯುವಿಕೆಗೆ ಅನುಮತಿಸಿ."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "ಮಧ್ಯ-ಸ್ಟ್ರೀಮ್ ಮುಂದುವರಿಕೆಯನ್ನು ಟೂಲ್-ಕಾಲ್ಗೆ ಸುರಕ್ಷಿತವಾಗಿಸಿ: ಟೂಲ್ ಕಾಲ್ ಕಳುಹಿಸಿದ ನಂತರ ಕಡಿತಗೊಂಡ ಸ್ಟ್ರೀಮ್ ಅನ್ನು ಎಂದಿಗೂ ಪುನರಾರಂಭಿಸಬೇಡಿ (ಅದು ಇನ್ನೂ ಪ್ರಗತಿಯಲ್ಲಿದ್ದರೂ ಅಥವಾ ಈಗಾಗಲೇ ಪೂರ್ಣಗೊಂಡಿದ್ದರೂ), ಮತ್ತು ಸಂಪೂರ್ಣ ಮರುಪ್ರಯತ್ನ ಮಿತಿಯನ್ನು ಬಳಸುವ ಬದಲು ಒಂದು ಖಾಲಿ ಮುಂದುವರಿಕೆಯ ನಂತರ ನಿಲ್ಲಿಸಿ."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models ಪ್ರತಿಕ್ರಿಯೆಗಳಲ್ಲಿ ಪ್ರದರ್ಶನಕ್ಕೆ ಸೂಕ್ತವಾದ ಹೆಸರು ಕ್ಷೇತ್ರಗಳನ್ನು ಸೇರಿಸಿ. ಕೇವಲ ಮಾದರಿ IDಗಳನ್ನು ಸ್ವೀಕರಿಸುವ ಕ್ಲೈಂಟ್ಗಳಿಗಾಗಿ ಇದನ್ನು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಿ."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "ಸರ್ವರ್-ಸ್ವಾಮ್ಯದ ಪರಿಕರ ಲೂಪ್",
         "description": "ಮಾದರಿಯು ಕ್ಲೈಂಟ್ಗೆ ಬಳಸಬಹುದಾದ ಪ್ರತಿಕ್ರಿಯೆಯನ್ನು ಹಿಂದಿರುಗಿಸುವವರೆಗೆ ಸ್ಟ್ರೀಮಿಂಗ್ ಅಲ್ಲದ ಸರ್ವರ್-ಸ್ವಾಮ್ಯದ ಪರಿಕರ ಕರೆಗಳನ್ನು ಮುಂದುವರಿಸಿ."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After ಮೂಲಸ್ಥಾನ",
+        "description": "ಒಟ್ಟುಗೂಡಿಸಿದ 429/503 ಅಲಭ್ಯ ಪ್ರತಿಕ್ರಿಯೆಗಳಲ್ಲಿ, ಖಚಿತವಾದ ಭವಿಷ್ಯದ ಮರುಪ್ರಯತ್ನ ಸಮಯ ತಿಳಿದಿಲ್ಲದಿದ್ದಾಗ ಕೃತಕ 1s ಕಳುಹಿಸುವ ಬದಲು Retry-After ಅನ್ನು ಬಿಟ್ಟುಬಿಡಿ, error.retry_after_provenance ಅನ್ನು ಸೇರಿಸಿ ಮತ್ತು ಕಾಂಬೊ ಡ್ರೇನ್ ಪಥಗಳಲ್ಲಿ ಗದ್ಯರೂಪದ ಮರುಪ್ರಯತ್ನ ಸುಳಿವುಗಳನ್ನು ಓದಿ."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "ರಕ್ಷಿತ-ಆದ್ಯತೆಯ ಮೂಲಸೌಕರ್ಯ ನಿಲುಗಡೆಗಳು 502 ಆಗಿ",
+        "description": "ಕೇವಲ ಕೋಟಾ-ಫಾಲ್ಬ್ಯಾಕ್ ಆದ್ಯತಾ ಗುರಿಯು ಕಾಂಬೊವನ್ನು ಕೋಟಾದ ಕಾರಣವಲ್ಲ ಎಂದು ಖಚಿತವಾಗಿ ಸಾಬೀತುಪಡಿಸಬಹುದಾದ ಕಾರಣಕ್ಕಾಗಿ ನಿಲ್ಲಿಸಿದಾಗ 503 ಬದಲು 502 ಉತ್ತರಿಸಿ: ತೆರೆದ ಪೂರೈಕೆದಾರ ಸರ್ಕ್ಯೂಟ್ ಬ್ರೇಕರ್ ಅಥವಾ ಮುನ್ಸೂಚಕ ಲೇಟೆನ್ಸಿ ಸ್ಕಿಪ್."
       }
     }
   },

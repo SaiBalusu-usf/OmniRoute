@@ -978,7 +978,7 @@
     "batchTimelineCancelling": "Annuleren",
     "batchTimelineCancelled": "Geannuleerd",
     "batchTokenUsage": "Tokengebruik",
-    "batchMetadata": "Metadata",
+    "batchMetadata": "Metagegevens",
     "batchFileContents": "Bestandsinhoud",
     "batchFileUsedByCount": "Gebruikt door {count, plural, one {# batch} other {# batches}}",
     "batchFilePreview": "Voorbeeld",
@@ -1458,7 +1458,7 @@
     "eventTypePlaceholder": "Filter op actie of gebeurtenistype",
     "severity": "Ernst",
     "allSeverities": "Alle ernst",
-    "info": "Info",
+    "info": "Informatie",
     "warning": "Waarschuwing",
     "critical": "Kritisch",
     "sourceIp": "Bron-IP",
@@ -1955,15 +1955,15 @@
     "rangeLast14Days": "Afgelopen 14 dagen",
     "rangeThisMonth": "Deze maand",
     "rangeQuickSelect": "Snelle selectie",
-    "rangeStart": "Start",
+    "rangeStart": "Begin",
     "rangeEnd": "Einde",
     "rangeCancel": "Annuleren",
     "rangeApply": "Toepassen",
     "rangeErrorInvalid": "Start moet voor einde liggen",
     "period1D": "1 d",
-    "period7D": "7D",
-    "period30D": "30D",
-    "period90D": "90D",
+    "period7D": "7 d",
+    "period30D": "30 d",
+    "period90D": "90 d",
     "periodYTD": "JTD",
     "periodAll": "Alles",
     "totalTokens": "Totaal aantal tokens",
@@ -6776,7 +6776,7 @@
     "themeBlue": "Blauw",
     "themeRed": "Rood",
     "themeGreen": "Groen",
-    "themeViolet": "Violet",
+    "themeViolet": "Paars",
     "themeOrange": "Oranje",
     "themeCyan": "Cyaan",
     "whitelabeling": "Branding",
@@ -8083,7 +8083,7 @@
     },
     "resilienceBaseCooldownLabel": "Basis afkoeling",
     "scopeLabel": "Reikwijdte",
-    "triggerLabel": "Trigger",
+    "triggerLabel": "Activering",
     "effectLabel": "Effect",
     "statusEnabled": "Ingeschakeld",
     "statusDisabled": "Uitgeschakeld",
@@ -8991,7 +8991,7 @@
     "ideCliIntegrations": "IDE/CLI-integraties",
     "inMemoryNote": "Opmerking: Gebeurtenissen worden in het geheugen opgeslagen en opnieuw ingesteld wanneer de server opnieuw opstart.",
     "ok": "Oké",
-    "errorShort": "ERR",
+    "errorShort": "FOUT",
     "formatConverter": "Formaatconverter",
     "formatConverterDescription": "Plak of typ een JSON-aanvraagtekst. De vertaler detecteert automatisch het bronformaat en converteert dit naar het doelformaat. Gebruik dit om fouten op te sporen in de manier waarop OmniRoute verzoeken tussen formaten vertaalt (OpenAI ↔ Claude ↔ Gemini ↔ Responses API).",
     "translationPathHubSpoke": "{source} → OpenAI (gemiddeld) → {target}",
@@ -11283,7 +11283,7 @@
     "refresh": "Vernieuwen",
     "columnsLabel": "Kolommen",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "OMHOOG",
     "semantic": "Semantisch",
     "upstream": "Upstream",
     "semanticCacheHit": "Semantische cachetreffer (geleverd door OmniRoute)",
@@ -11469,7 +11469,7 @@
     "responses": "Antwoorden",
     "rerank": "Herrangschikking",
     "video": "Video",
-    "embeddings": "Embeddings",
+    "embeddings": "Inbeddingen",
     "transcription": "Transcriptie"
   },
   "toolDescriptions": {
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Sta streamherstel toe om de respons opnieuw aan te vragen en samen te voegen nadat bytes de client al hebben bereikt."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Maak voortzetting halverwege een stream veilig voor toolaanroepen: hervat nooit een afgebroken stream nadat een toolaanroep is verzonden (ongeacht of deze nog wordt uitgevoerd of al is voltooid) en stop na één lege voortzetting in plaats van het volledige aantal nieuwe pogingen te benutten."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Voeg weergavevriendelijke naamvelden toe aan /v1/models-responsen. Schakel dit uit voor clients die alleen model-ID's accepteren."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Door de server beheerde toolcyclus",
         "description": "Ga door met niet-streamende, door de server beheerde toolaanroepen totdat het model een voor de client bruikbaar antwoord retourneert."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Herkomst van Retry-After",
+        "description": "Laat bij geaggregeerde 429/503-antwoorden wegens onbeschikbaarheid Retry-After weg wanneer geen concreet toekomstig tijdstip voor een nieuwe poging bekend is, in plaats van een synthetische 1s te verzenden; voeg error.retry_after_provenance toe en lees tekstuele aanwijzingen voor nieuwe pogingen op combo-drainpaden."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Infrastructuurstops met beschermde prioriteit als 502",
+        "description": "Antwoord met 502 in plaats van 503 wanneer een prioriteitsdoel met uitsluitend quota als fallback de combo stopt om een oorzaak waarvan aantoonbaar is dat die niet quotagerelateerd is: een open circuitbreaker van een provider of een voorspellende latentie-overslag."
       }
     }
   },

@@ -4173,7 +4173,7 @@
     "obsidianDisable": "अक्षम करें",
     "obsidianConfigureMobile": "Obsidian मोबाइल कॉन्फ़िगर करें",
     "obsidianMobileInstructions": "Obsidian मोबाइल में: सेटिंग्स → सिंक → WebDAV → निम्नलिखित दर्ज करें:",
-    "obsidianWebdavUrl": "WebDAV URL",
+    "obsidianWebdavUrl": "WebDAV यूआरएल",
     "obsidianUsername": "यूज़रनेम",
     "obsidianPassword": "पासवर्ड",
     "obsidianTailscaleHint": "यदि मोबाइल से कनेक्ट कर रहे हैं तो localhost के बजाय अपने Tailscale IP का उपयोग करें। दोनों डिवाइस एक ही Tailscale नेटवर्क पर होने चाहिए।",
@@ -6527,7 +6527,7 @@
     "routingSummarizeDropParagraphContains": "इनको शामिल करने वाले पैराग्राफ हटाएं: {items}",
     "routingSummarizeDropParagraphStartsWith": "इनसे शुरू होने वाले पैराग्राफ हटाएं: {items}",
     "routingSummarizeReplaceText": "\"{match}\" → \"{replacement}\" बदलें",
-    "routingSummarizeReplaceRegex": "regex /{pattern}/{flags} → \"{replacement}\"",
+    "routingSummarizeReplaceRegex": "रेगेक्स /{pattern}/{flags} → \"{replacement}\"",
     "routingSummarizeDropBlockContains": "इनको शामिल करने वाले ब्लॉक्स हटाएं: {items}",
     "routingSummarizePrependSystemBlock": "ब्लॉक को शुरुआत में जोड़ें: \"{text}\"",
     "routingSummarizeAppendSystemBlock": "ब्लॉक को अंत में जोड़ें: \"{text}\"",
@@ -7937,7 +7937,7 @@
     "cliproxyapiUrl": "CLIProxyAPI यूआरएल",
     "headroomProxyTitle": "Headroom प्रॉक्सी",
     "headroomProxyDesc": "वैकल्पिक Headroom टोकन-सेवर प्रॉक्सी का URL। खाली छोड़ने पर HEADROOM_URL या http://localhost:8787 का उपयोग होता है।",
-    "headroomProxyUrl": "Headroom URL",
+    "headroomProxyUrl": "Headroom यूआरएल",
     "headroomProxyUrlHint": "लूपबैक URL इस पेज से शुरू किए जा सकते हैं। बाहरी URL की केवल जाँच की जाती है।",
     "headroomProxySave": "सहेजें",
     "headroomProxyStart": "शुरू करें",
@@ -8889,7 +8889,7 @@
     "fallbackRouting": "फ़ॉलबैक राउटिंग",
     "fallbackRoutingDescription": "CLIProxyAPI के माध्यम से विफल प्रदाता अनुरोधों को पुनः प्रयास करें",
     "enableFallback": "फ़ॉलबैक सक्षम करें",
-    "cliproxyUrl": "CLIProxyAPI URL",
+    "cliproxyUrl": "CLIProxyAPI यूआरएल",
     "fallbackCodes": "फ़ॉलबैक स्थिति कोड (अल्पविराम से अलग किए गए)",
     "invalidUrl": "अमान्य URL — http:// या https:// से शुरू होना चाहिए",
     "saved": "सहेजा गया",
@@ -9340,7 +9340,7 @@
     "evaluateStepDescription": "प्रत्युत्तरों की तुलना अपेक्षित मानदंडों से की जाती है। विलंबता मेट्रिक्स और विस्तृत फीडबैक के साथ प्रत्येक मामले के लिए पास/असफल देखें।",
     "evalsStrategyContainsLabel": "शामिल है",
     "evalsStrategyExactLabel": "सटीक मिलान",
-    "evalsStrategyRegexLabel": "Regex",
+    "evalsStrategyRegexLabel": "रेगेक्स",
     "evalsStrategyCustomLabel": "कस्टम लॉजिक",
     "evalsStrategyContainsDescription": "जांचता है कि क्या LLM आउटपुट में अपेक्षित सबस्ट्रिंग शामिल है।",
     "evalsStrategyExactDescription": "जांचता है कि क्या LLM आउटपुट अपेक्षित मान से सटीक रूप से मेल खाता है।",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "बाइट्स पहले से ही क्लाइंट तक पहुँचने के बाद प्रतिक्रिया का फिर से अनुरोध करने और उसे जोड़ने के लिए स्ट्रीम रिकवरी की अनुमति दें।"
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "मिड-स्ट्रीम निरंतरता को टूल-कॉल के लिए सुरक्षित बनाएँ: टूल कॉल भेजे जाने के बाद कट चुकी स्ट्रीम को कभी फिर से शुरू न करें (चाहे वह अभी जारी हो या पहले ही पूरी हो चुकी हो), और पूरे पुनः-प्रयास बजट का उपयोग करने के बजाय एक खाली निरंतरता के बाद रुक जाएँ।"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models प्रतिक्रियाओं में प्रदर्शन-अनुकूल नाम फ़ील्ड शामिल करें। उन क्लाइंट्स के लिए इसे अक्षम करें जो केवल मॉडल ID स्वीकार करते हैं।"
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "सर्वर-स्वामित्व वाला टूल लूप",
         "description": "गैर-स्ट्रीमिंग सर्वर-स्वामित्व वाली टूल कॉल तब तक जारी रखें, जब तक मॉडल क्लाइंट द्वारा उपयोग योग्य प्रतिक्रिया न दे।"
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After का स्रोत",
+        "description": "समेकित 429/503 अनुपलब्धता प्रतिक्रियाओं में, भविष्य में पुनः प्रयास का कोई ठोस समय ज्ञात न होने पर कृत्रिम 1s भेजने के बजाय Retry-After को छोड़ दें, error.retry_after_provenance जोड़ें, और कॉम्बो ड्रेन पाथ पर गद्य रूप में दिए गए पुनः-प्रयास संकेत पढ़ें।"
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "संरक्षित-प्राथमिकता वाले इंफ्रा स्टॉप को 502 के रूप में दिखाएँ",
+        "description": "जब केवल-कोटा-फ़ॉलबैक वाला प्राथमिकता लक्ष्य किसी ऐसे कारण से कॉम्बो को रोकता है जो प्रमाणित रूप से कोटा से संबंधित नहीं है—जैसे खुला प्रोवाइडर सर्किट ब्रेकर या पूर्वानुमानित विलंबता के कारण स्किप—तो 503 के बजाय 502 उत्तर दें।"
       }
     }
   },

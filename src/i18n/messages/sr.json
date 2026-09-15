@@ -2918,19 +2918,19 @@
       "claude": "Anthropic Claude Code CLI",
       "codex": "OpenAI Codex CLI",
       "grok-build": "xAI Grok Build TUI agent za kodiranje sa podrškom za prilagođene provajdere",
-      "droid": "Factory Droid AI Assistant",
-      "openclaw": "Open Claw AI Assistant",
-      "cline": "Cline AI Coding Assistant CLI",
-      "kilo": "Kilo Code AI Assistant CLI",
+      "droid": "Factory Droid AI асистент",
+      "openclaw": "Open Claw AI асистент",
+      "cline": "Cline CLI AI асистент за програмирање",
+      "kilo": "Kilo Code CLI AI асистент",
       "qwen": "Alibaba Qwen Code CLI",
       "cursor": "Cursor AI Code Editor",
-      "continue": "Continue AI Assistant",
+      "continue": "Continue AI асистент",
       "opencode": "OpenCode AI agent za kodiranje (terminal)",
       "kiro": "Amazon Kiro — AI IDE okruženje",
       "windsurf": "Windsurf AI Code Editor",
       "copilot": "GitHub Copilot AI Assistant",
       "amp": "Sourcegraph Amp CLI asistent za kodiranje",
-      "hermes": "Hermes AI Terminal Assistant",
+      "hermes": "Hermes AI терминалски асистент",
       "hermes-agent": "Hermes Agent (od Nousresearch) - Napredni terminalski AI sa podrškom za više modela (delegiranje, vid, kompresija itd.)",
       "custom": "Generator konfiguracije za generički CLI ili SDK kompatibilan sa OpenAI",
       "aider": "Aider AI CLI za programiranje u paru sa OpenAI-kompatibilnim baznim URL-om",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Дозволи опоравку тока да поново затражи одговор и споји га након што су бајтови већ стигли до клијента."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Омогућите безбедан наставак позива алатке усред тока: никада не настављајте прекинути ток након што је позив алатке послат (било да је још у току или је већ завршен) и зауставите се након једног празног наставка уместо коришћења целокупног броја покушаја."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Укључи поља са именом прилагођеним за приказ у одговорима /v1/models. Онемогући ово за клијенте који прихватају само ID-ове модела."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Серверска петља алата",
         "description": "Наставите нестримујуће серверске позиве алата док модел не врати одговор који клијент може да користи."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Порекло вредности Retry-After",
+        "description": "За обједињене одговоре 429/503 о недоступности изоставите Retry-After када није познато конкретно будуће време поновног покушаја, уместо слања вештачке вредности од 1s; додајте error.retry_after_provenance и читајте текстуалне назнаке за поновни покушај на путањама пражњења комбинације."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Заустављања инфраструктуре за заштићени приоритет као 502",
+        "description": "Одговорите статусом 502 уместо 503 када приоритетно одредиште које користи резервну опцију само због квоте заустави комбинацију из разлога за који се може доказати да није квота: активираног прекидача кола провајдера или предиктивног прескакања због кашњења."
       }
     }
   },

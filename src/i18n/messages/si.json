@@ -6364,15 +6364,15 @@
     "checkWebToken": "ටෝකනය පරීක්ෂා කරන්න",
     "huggingchatLabel": "HuggingChat (නොමිලේ)",
     "huggingchatDesc": "huggingface.co/chat හරහා නොමිලේ LLM චැට්",
-    "poeWebLabel": "Poe Web",
+    "poeWebLabel": "Poe වෙබ්",
     "poeWebDesc": "poe.com හරහා බහු-මාදිලි චැට්",
-    "veniceWebLabel": "Venice Web",
+    "veniceWebLabel": "Venice වෙබ්",
     "veniceWebDesc": "පෞද්ගලිකත්වය කේන්ද්ර කරගත් AI චැට්",
-    "v0VercelWebLabel": "v0 Vercel Web",
+    "v0VercelWebLabel": "v0 Vercel වෙබ්",
     "v0VercelWebDesc": "v0.dev හරහා AI කේත ජනනය",
-    "kimiWebLabel": "Kimi Web",
+    "kimiWebLabel": "Kimi වෙබ්",
     "kimiWebDesc": "www.kimi.com හරහා Moonshot AI පාරිභෝගික චැට් (ජාත්යන්තර, Connect-RPC API)",
-    "doubaoWebLabel": "Dola Web",
+    "doubaoWebLabel": "Dola වෙබ්",
     "doubaoWebDesc": "dola.com හරහා ByteDance AI චැට්",
     "overrideBaseUrlAdvanced": "උසස්: මූලික URL එක අතික්රමණය කරන්න",
     "overrideBaseUrlHint": "උසස්: මෙම අන්තර්ගත provider එක අභිරුචි endpoint එකකට යොමු කරන්න. පෙරනිමිය භාවිත කිරීමට හිස්ව තබන්න.",
@@ -6746,11 +6746,11 @@
     "themeSystem": "පද්ධතිය",
     "endpointTunnelVisibility": "අන්ත ලක්ෂ්ය උමඟේ දෘශ්යතාව",
     "endpointTunnelVisibilityDesc": "උමඟේ තත්ත්වය වෙනස් නොකර අන්ත ලක්ෂ්ය පිටුවෙන් උමං පාලක සඟවන්න.",
-    "showCloudflareTunnel": "Cloudflare Quick Tunnel",
+    "showCloudflareTunnel": "Cloudflare ක්ෂණික උමඟ",
     "showCloudflareTunnelDesc": "Endpoint පිටුවේ Cloudflare Quick Tunnel පාලක පෙන්වන්න.",
     "showTailscaleFunnel": "Tailscale Funnel",
     "showTailscaleFunnelDesc": "Endpoint පිටුවේ Tailscale Funnel පාලක පෙන්වන්න.",
-    "showNgrokTunnel": "ngrok Tunnel",
+    "showNgrokTunnel": "ngrok උමඟ",
     "showNgrokTunnelDesc": "Endpoint පිටුවේ ngrok Tunnel පාලක පෙන්වන්න.",
     "sidebarVisibility": "පැති තීරු අයිතම සඟවන්න",
     "sidebarVisibilityDesc": "කිසිදු විශේෂාංගයක් අක්රිය නොකර දෘශ්ය අවුල් අඩු කිරීමට ඕනෑම පැති තීරු සංචාලන අයිතමයක් සඟවන්න",
@@ -8379,7 +8379,7 @@
     "qdrantCollection": "එකතුව"
   },
   "contextRtk": {
-    "title": "RTK Engine",
+    "title": "RTK එන්ජිම",
     "description": "මෙවලම් ප්රතිදානය, ටර්මිනල් ලොග සහ ගොඩනැගීම් ප්රතිඵල සඳහා විධාන-සංවේදී සම්පීඩනය.",
     "enabled": "සක්රීයයි",
     "intensity": "තීව්රතාව",
@@ -8905,7 +8905,7 @@
     "save": "සුරකින්න"
   },
   "contextCaveman": {
-    "title": "Caveman Engine",
+    "title": "Caveman එන්ජිම",
     "description": "රීති මත පදනම් වූ පණිවිඩ සම්පීඩනය, භාෂා ඇසුරුම්, විශ්ලේෂණ සහ ප්රතිදාන මාදිලි පාලන.",
     "advancedConfig": "උසස් වින්යාසය",
     "advancedConfigDesc": "සම්පීඩන හැසිරීම සියුම්ව සකසන්න",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "බයිට් දැනටමත් සේවාලාභියා වෙත ළඟා වූ පසුවත් ප්රතිචාරය නැවත ඉල්ලා එය සම්බන්ධ කිරීමට ප්රවාහ ප්රතිසාධනයට ඉඩ දෙන්න."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "ප්රවාහය මැද සිදු කරන අඛණ්ඩ කිරීමේ මෙවලම් ඇමතුම ආරක්ෂිත කරන්න: මෙවලම් ඇමතුමක් යැවීමෙන් පසු කපා හැරුණු ප්රවාහයක් කිසිවිටෙක නැවත ආරම්භ නොකරන්න (එය තවමත් ක්රියාත්මක වෙමින් තිබුණත් හෝ දැනටමත් අවසන් වී තිබුණත්), සහ සම්පූර්ණ නැවත උත්සාහ කිරීමේ සීමාව භාවිත කිරීම වෙනුවට එක් හිස් අඛණ්ඩ කිරීමකින් පසු නවත්වන්න."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models ප්රතිචාරවල ප්රදර්ශනයට හිතකර නාම ක්ෂේත්ර ඇතුළත් කරන්න. ආකෘති ID පමණක් පිළිගන්නා සේවාලාභීන් සඳහා මෙය අක්රිය කරන්න."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "සේවාදායකය සතු මෙවලම් ලූපය",
         "description": "ආකෘතිය සේවාලාභියාට භාවිත කළ හැකි ප්රතිචාරයක් ලබා දෙන තෙක් ප්රවාහ නොවන, සේවාදායකය සතු මෙවලම් ඇමතුම් දිගටම කරගෙන යන්න."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After මූලාශ්රය",
+        "description": "එකතු කළ 429/503 සේවාව නොමැති ප්රතිචාරවලදී, නිශ්චිත අනාගත නැවත උත්සාහ කිරීමේ වේලාවක් නොදන්නා විට කෘත්රිම තත්පර 1ක් යැවීම වෙනුවට Retry-After අත්හරින්න, error.retry_after_provenance එක් කරන්න, සහ combo drain මාර්ගවල විස්තරාත්මක නැවත උත්සාහ කිරීමේ ඉඟි කියවන්න."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "ආරක්ෂිත-ප්රමුඛතා යටිතල පහසුකම් නැවතුම් 502 ලෙස",
+        "description": "කෝටාව-පමණක්-විකල්ප ප්රමුඛතා ඉලක්කයක්, කෝටාව නිසා නොවන බව නිශ්චිතව ඔප්පු කළ හැකි හේතුවක් මත combo එක නවත්වන විට 503 වෙනුවට 502 ලෙස පිළිතුරු දෙන්න: විවෘත provider circuit breaker එකක් හෝ පුරෝකථන ප්රමාද මඟහැරීමක්."
       }
     }
   },

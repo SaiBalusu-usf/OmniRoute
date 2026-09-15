@@ -199,7 +199,7 @@
     "audioProvidersHeading": "Заглавие на доставчиците на аудио",
     "cloudAgentProviders": "Доставчици на облачни агенти",
     "minutesAgo": "Преди минути",
-    "a": "A",
+    "a": "А",
     "liveAutoRefreshing": "Автоматично обновяване на живо",
     "webSearch": "Уеб търсене",
     "anthropicPrefixPlaceholder": "Заместващ текст за префикс на Anthropic",
@@ -2920,17 +2920,17 @@
       "grok-build": "xAI Grok Build TUI агент за програмиране с поддръжка на персонализиран доставчик",
       "droid": "Фабричен Droid AI Assistant",
       "openclaw": "Отворете Claw AI Assistant",
-      "cline": "Cline AI Coding Assistant CLI",
-      "kilo": "Kilo Code AI Assistant CLI",
+      "cline": "Cline AI асистент за програмиране CLI",
+      "kilo": "Kilo Code AI асистент CLI",
       "qwen": "Qwen Code CLI",
       "cursor": "Cursor AI Code Editor",
       "continue": "Продължете AI Assistant",
-      "opencode": "OpenCode AI coding agent (Terminal)",
+      "opencode": "OpenCode AI агент за програмиране (терминал)",
       "kiro": "Amazon Kiro — IDE с възможности за ИИ",
       "windsurf": "Windsurf AI Code Editor",
       "copilot": "GitHub Copilot AI Assistant",
-      "amp": "Sourcegraph Amp coding assistant CLI",
-      "hermes": "Hermes AI Terminal Assistant",
+      "amp": "Sourcegraph Amp асистент за програмиране CLI",
+      "hermes": "Hermes AI терминален асистент",
       "hermes-agent": "Hermes Agent (от Nousresearch) - усъвършенстван терминален изкуствен интелект с поддръжка на множество модели (делегиране, компютърно зрение, компресия и др.)",
       "custom": "Generic OpenAI-съвместим CLI или SDK генератор на конфигурация",
       "aider": "Aider AI CLI за съвместно програмиране с базов URL адрес, съвместим с OpenAI",
@@ -4173,7 +4173,7 @@
     "obsidianDisable": "Деактивиране",
     "obsidianConfigureMobile": "Конфигуриране на Obsidian Mobile",
     "obsidianMobileInstructions": "В Obsidian mobile: Настройки → Синхронизиране → WebDAV → въведете следното:",
-    "obsidianWebdavUrl": "WebDAV URL",
+    "obsidianWebdavUrl": "WebDAV URL адрес",
     "obsidianUsername": "Потребителско име",
     "obsidianPassword": "Парола",
     "obsidianTailscaleHint": "Използвайте вашия Tailscale IP адрес вместо localhost, ако се свързвате от мобилно устройство. И двете устройства трябва да са в една и съща Tailscale мрежа.",
@@ -6364,15 +6364,15 @@
     "checkWebToken": "Чек токен",
     "huggingchatLabel": "HuggingChat (Безплатно)",
     "huggingchatDesc": "Безплатен LLM чат чрез huggingface.co/chat",
-    "poeWebLabel": "Poe Web",
+    "poeWebLabel": "Poe уеб",
     "poeWebDesc": "Мултимоделен чат чрез poe.com",
-    "veniceWebLabel": "Venice Web",
+    "veniceWebLabel": "Venice уеб",
     "veniceWebDesc": "Чат с изкуствен интелект с фокус върху поверителността",
-    "v0VercelWebLabel": "v0 Vercel Web",
+    "v0VercelWebLabel": "v0 Vercel уеб",
     "v0VercelWebDesc": "Генериране на код с ИИ чрез v0.dev",
-    "kimiWebLabel": "Kimi Web",
+    "kimiWebLabel": "Kimi уеб",
     "kimiWebDesc": "Потребителски чат с Moonshot AI чрез www.kimi.com (международен, Connect-RPC API)",
-    "doubaoWebLabel": "Dola Web",
+    "doubaoWebLabel": "Dola уеб",
     "doubaoWebDesc": "Чат с ИИ на ByteDance чрез dola.com",
     "overrideBaseUrlAdvanced": "Разширени: презаписване на базовия URL адрес",
     "overrideBaseUrlHint": "Разширени: насочване на този вграден доставчик към персонализирана крайна точка. Оставете празно за използване на стойността по подразбиране.",
@@ -6527,7 +6527,7 @@
     "routingSummarizeDropParagraphContains": "премахване на абзаци, съдържащи: {items}",
     "routingSummarizeDropParagraphStartsWith": "премахване на абзаци, започващи с: {items}",
     "routingSummarizeReplaceText": "замяна на \"{match}\" → \"{replacement}\"",
-    "routingSummarizeReplaceRegex": "regex /{pattern}/{flags} → \"{replacement}\"",
+    "routingSummarizeReplaceRegex": "регулярен израз /{pattern}/{flags} → \"{replacement}\"",
     "routingSummarizeDropBlockContains": "премахване на блокове, съдържащи: {items}",
     "routingSummarizePrependSystemBlock": "добавяне на блок в началото: \"{text}\"",
     "routingSummarizeAppendSystemBlock": "добавяне на блок в края: \"{text}\"",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Разрешаване на възстановяването на потока да поиска отговора отново и да го съедини, след като байтовете вече са достигнали до клиента."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Направете продължаването по средата на потока безопасно за извиквания на инструменти: никога не възобновявайте прекъснат поток, след като е изпратено извикване на инструмент (все още изпълняващо се или вече завършило), и спрете след едно празно продължение, вместо да използвате целия лимит за повторни опити."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Включване на лесни за четене полета за имена в отговорите на /v1/models. Деактивирайте това за клиенти, които приемат само идентификатори на модели."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Управляван от сървъра цикъл за инструменти",
         "description": "Продължавайте нестрийминг извикванията на инструменти, управлявани от сървъра, докато моделът върне отговор, който може да се използва от клиента."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Произход на Retry-After",
+        "description": "При обобщени отговори 429/503 за недостъпност пропускайте Retry-After, когато не е известно конкретно бъдещо време за повторен опит, вместо да изпращате синтетична стойност от 1s; добавете error.retry_after_provenance и разпознавайте текстови указания за повторен опит в пътищата за изчерпване на комбинацията."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Спирания на инфраструктурата с защитен приоритет като 502",
+        "description": "Връщайте 502 вместо 503, когато цел с приоритет и резервен вариант само при изчерпана квота спре комбинацията по причина, за която може да се докаже, че не е свързана с квота: отворен прекъсвач на веригата на доставчика или прогнозно пропускане поради латентност."
       }
     }
   },
@@ -13589,7 +13600,7 @@
       "remaining": "Оставащо",
       "noLockouts": "Няма активни заключвания",
       "provider": "Доставчик",
-      "id": "ID",
+      "id": "Идентификатор",
       "authType": "Тип на Удостоверяване",
       "priority": "Приоритет",
       "isActive": "Активен",

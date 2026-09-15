@@ -159,7 +159,7 @@
     "effortMedium": "Mittel",
     "effortHigh": "Hoch",
     "effortExtraHigh": "Extra hoch",
-    "effortMax": "Max",
+    "effortMax": "Max.",
     "effortUltra": "Ultra",
     "reasoningEffort": "Reasoning-Aufwand",
     "wireApi": "Wire-API",
@@ -702,7 +702,7 @@
     "flaggedAnomalies": "Gekennzeichnete Anomalien",
     "noAnomaliesDetected": "Keine Anomalien festgestellt",
     "apiKey": "API-Schlüssel",
-    "xpLastHour": "XP (1h)",
+    "xpLastHour": "XP (1 Std.)",
     "zScore": "Z-Wert",
     "suspicious": "Verdächtig",
     "tokensCommunityServers": "Community-Server",
@@ -3165,7 +3165,7 @@
     "selectAll": "Alle auswählen",
     "loadingModels": "Modelle werden geladen...",
     "advancedOptions": "Erweiterte Optionen",
-    "vision": "Vision",
+    "vision": "Bildanalyse",
     "copilotCopyConfigForModels": "Konfiguration kopieren ({count, plural, one {# Modell} other {# Modelle}})",
     "copilotFilterModelsPlaceholder": "Modelle filtern...",
     "copilotMaxInputTokens": "Max. Eingabe-Tokens",
@@ -3860,7 +3860,7 @@
     "groupAccount": "Konto",
     "groupServiceTier": "Service-Stufe",
     "serviceTierFast": "Schnell",
-    "serviceTierFlex": "Flex",
+    "serviceTierFlex": "Flexibel",
     "serviceTierStandard": "Standard",
     "serviceTierBreakdownTitle": "Service-Stufe",
     "serviceTierBreakdownSubtitle": "Schnell / Flex / Standard",
@@ -7848,7 +7848,7 @@
       "minimal": "Minimal",
       "standard": "Standard",
       "aggressive": "Aggressiv",
-      "lite": "Lite",
+      "lite": "Leicht",
       "full": "Vollständig",
       "ultra": "Ultra"
     },
@@ -7862,7 +7862,7 @@
         "description": "Inhaltsadressierte Retrieval-Marker."
       },
       "lite": {
-        "label": "Lite",
+        "label": "Leicht",
         "description": "Bereinigung von Leerzeichen und Formatierung."
       },
       "rtk": {
@@ -8379,7 +8379,7 @@
     "qdrantCollection": "Sammlung"
   },
   "contextRtk": {
-    "title": "RTK Engine",
+    "title": "RTK-Engine",
     "description": "Befehlsbezogene Komprimierung für Tool-Ausgaben, Terminalprotokolle und Build-Ergebnisse.",
     "enabled": "Aktiviert",
     "intensity": "Intensität",
@@ -8515,7 +8515,7 @@
         "description": "ONNX-basierte semantische Token-Klassifizierung. Komprimiert nur Fließtext; Codeblöcke und geschützte Konstrukte sind geschützt. Fällt bei Modell- oder Worker-Fehlern auf 'offen' zurück."
       },
       "lite": {
-        "name": "Lite",
+        "name": "Leicht",
         "description": "Schnelle Reduzierung von Leerzeichen, Tool-Ergebnissen und Bild-URLs."
       },
       "aggressive": {
@@ -8605,7 +8605,7 @@
         "bert-base": "BERT-base (710 MB, höhere Genauigkeit)"
       },
       "intensity": {
-        "lite": "Lite",
+        "lite": "Leicht",
         "full": "Vollständig",
         "ultra": "Ultra"
       }
@@ -8613,7 +8613,7 @@
     "modeOptions": {
       "default": "Standardmäßig",
       "off": "Aus",
-      "lite": "Lite",
+      "lite": "Leicht",
       "standard": "Standard",
       "aggressive": "Aggressiv",
       "ultra": "Ultra",
@@ -9479,7 +9479,7 @@
     "filterTierLabel": "Stufe",
     "purchaseAll": "Alle",
     "purchaseOauthSub": "Abonnement",
-    "purchaseOauthFree": "OAuth Free",
+    "purchaseOauthFree": "OAuth kostenlos",
     "purchaseApiKey": "API-Schlüssel",
     "creditsLabel": "Guthaben",
     "creditBalanceHint": "Restguthaben",
@@ -9688,7 +9688,7 @@
     "budgetProjection": "Prognose",
     "budgetAboveMonthlyLimit": "⚠ über {limit}/Monat",
     "budgetCostBreakdown30d": "Kostenaufschlüsselung (30 Tage)",
-    "budgetLimits": "Limits",
+    "budgetLimits": "Grenzwerte",
     "budgetResetDaily": "Täglich",
     "budgetResetWeekly": "Wöchentlich",
     "budgetResetMonthly": "Monatlich",
@@ -11126,7 +11126,7 @@
     "jsonSchemaEditor": "JSON-Schema-Editor",
     "schemaValidated": "Schema validiert",
     "validateSchema": "Schema validieren",
-    "seed": "Seed",
+    "seed": "Startwert",
     "stopSequences": "Stoppsequenzen",
     "stopSequencesPlaceholder": "z. B. \"\\n\\n\" oder \"END\"",
     "autoProvider": "Automatisch",
@@ -11283,7 +11283,7 @@
     "refresh": "Aktualisieren",
     "columnsLabel": "Spalten",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "AKTIV",
     "semantic": "Semantisch",
     "upstream": "Upstream",
     "semanticCacheHit": "Semantischer Cache-Treffer (bereitgestellt von OmniRoute)",
@@ -11686,7 +11686,7 @@
     "dismiss": "Schließen"
   },
   "plugins": {
-    "title": "Plugins",
+    "title": "Plug-ins",
     "description": "Plugins installieren und verwalten, um die Funktionalität von OmniRoute zu erweitern",
     "loading": "Plugins werden geladen...",
     "scanning": "Suche läuft...",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Stream-Wiederherstellung erlauben, um die Antwort erneut anzufordern und zusammenzufügen, nachdem bereits Bytes den Client erreicht haben."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Fortsetzungen mitten im Stream für Tool-Aufrufe sicher gestalten: Einen unterbrochenen Stream nie fortsetzen, nachdem ein Tool-Aufruf gesendet wurde (noch in Bearbeitung oder bereits abgeschlossen), und nach einer leeren Fortsetzung abbrechen, anstatt das gesamte Wiederholungsbudget auszuschöpfen."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Benutzerfreundliche Namensfelder in /v1/models-Antworten einschließen. Deaktivieren Sie dies für Clients, die nur Modell-IDs akzeptieren."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Serverseitige Tool-Schleife",
         "description": "Nicht streamende serverseitige Tool-Aufrufe fortsetzen, bis das Modell eine vom Client nutzbare Antwort zurückgibt."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Herkunft von Retry-After",
+        "description": "Bei aggregierten 429/503-Nichtverfügbarkeitsantworten Retry-After weglassen, wenn kein konkreter zukünftiger Wiederholungszeitpunkt bekannt ist, anstatt einen künstlichen Wert von 1 s zu senden; error.retry_after_provenance hinzufügen und textuelle Wiederholungshinweise in Combo-Drain-Pfaden auslesen."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Infrastrukturbedingte Stopps mit geschützter Priorität als 502",
+        "description": "Mit 502 statt 503 antworten, wenn ein priorisiertes Ziel mit reinem Kontingent-Fallback die Kombination aus einem nachweislich nicht kontingentbedingten Grund stoppt: ein offener Schutzschalter des Anbieters oder eine prädiktive Latenzüberspringung."
       }
     }
   },
@@ -13099,7 +13110,7 @@
     "comboHealth": "Combo-Health",
     "callLogs": "Aufrufprotokolle",
     "costs": "Kosten",
-    "playground": "Playground",
+    "playground": "Testumgebung",
     "nestedCombo": "Verschachtelte Combo",
     "modelTarget": "Modellziel",
     "weight": "{value}% Gewichtung",

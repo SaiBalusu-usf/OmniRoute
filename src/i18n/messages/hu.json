@@ -8379,7 +8379,7 @@
     "qdrantCollection": "Gyűjtemény"
   },
   "contextRtk": {
-    "title": "RTK Engine",
+    "title": "RTK motor",
     "description": "Parancsérzékeny tömörítés az eszközkimenetekhez, terminálnaplókhoz és buildelési eredményekhez.",
     "enabled": "Engedélyezve",
     "intensity": "Intenzitás",
@@ -8718,7 +8718,7 @@
     "input": "BEMENET",
     "output": "KIMENET",
     "tokenCount": "{count, number} token",
-    "tokenShort": "tok",
+    "tokenShort": "token",
     "provider": "Szolgáltató",
     "judgeModel": "Bíráló modell",
     "judgeModelPlaceholder": "pl. claude-haiku",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Az adatfolyam-helyreállítás engedélyezése a válasz újbóli lekérésére és összefűzésére, miután a bájtok már elérték az ügyfelet."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "A folyamat közbeni folytatás biztonságossá tétele eszközhívások esetén: soha ne folytasson egy megszakadt streamet egy elküldött eszközhívás után (akár még folyamatban van, akár már befejeződött), és egyetlen üres folytatás után álljon le a teljes újrapróbálkozási keret felhasználása helyett."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Megjelenítésbarát névmezők szerepeltetése a /v1/models válaszokban. Tiltsa le ezt azon ügyfelek esetében, amelyek csak modell-azonosítókat fogadnak el."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Kiszolgáló által kezelt eszközhívási ciklus",
         "description": "A kiszolgáló által kezelt, nem streamelt eszközhívások folytatása addig, amíg a modell az ügyfél által használható választ nem ad."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "A Retry-After eredete",
+        "description": "Összesített 429/503-as nem elérhető válaszok esetén hagyja el a Retry-After értéket, ha nem ismert konkrét jövőbeli újrapróbálkozási időpont, ahelyett, hogy mesterséges 1 másodperces értéket küldene; adja hozzá az error.retry_after_provenance mezőt, és a kombinált kiürítési útvonalakon olvassa be a szöveges újrapróbálkozási utalásokat."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Védett prioritású infrastruktúra-leállások 502-ként",
+        "description": "503 helyett 502-es választ adjon, amikor egy csak kvóta esetén tartalékként használt prioritási cél olyan okból állítja le a kombinációt, amely bizonyíthatóan nem kvótával kapcsolatos: nyitott szolgáltatói megszakító vagy prediktív késleltetés miatti kihagyás."
       }
     }
   },

@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Ļaut straumes atkopšanai atkārtoti pieprasīt atbildi un pievienot to straumei pēc tam, kad baiti jau ir sasnieguši klientu."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Padariet turpināšanu plūsmas vidū drošu rīka izsaukumiem: nekad neatsāciet pārtrauktu plūsmu pēc rīka izsaukuma nosūtīšanas (kamēr tas vēl tiek izpildīts vai jau ir pabeigts) un pārtrauciet pēc viena tukša turpinājuma, nevis izmantojiet visu atkārtoto mēģinājumu limitu."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Iekļaut lietotājam draudzīga attēlojamā nosaukuma laukus /v1/models atbildēs. Atspējojiet šo opciju klientiem, kas pieņem tikai modeļu ID."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Servera pārvaldīta rīku izsaukumu cilpa",
         "description": "Turpināt servera pārvaldītos rīku izsaukumus bez straumēšanas, līdz modelis atgriež klientam izmantojamu atbildi."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After izcelsme",
+        "description": "Apkopotajās 429/503 nepieejamības atbildēs izlaidiet Retry-After, ja nav zināms konkrēts atkārtota mēģinājuma laiks nākotnē, nevis nosūtiet mākslīgi izveidotu 1 s vērtību; pievienojiet error.retry_after_provenance un kombināciju iztukšošanas ceļos nolasiet tekstuālas norādes par atkārtotu mēģinājumu."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Aizsargātas prioritātes infrastruktūras apturēšanas kā 502",
+        "description": "Atbildiet ar 502, nevis 503, ja prioritārais mērķis ar atkāpšanos tikai kvotas dēļ aptur kombināciju tāda iemesla dēļ, kas pierādāmi nav saistīts ar kvotu: atvērts nodrošinātāja automātiskais slēdzis vai prognozējoša latentuma dēļ veikta izlaišana."
       }
     }
   },

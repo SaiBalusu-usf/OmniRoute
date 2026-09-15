@@ -526,7 +526,7 @@
     "invalidFileType": "Aina Batili ya Faili",
     "monitoredProviders": "Watoa Huduma Wanaofuatiliwa",
     "errors": "Hitilafu",
-    "heap": "Heap",
+    "heap": "Lundo",
     "chatCompletions": "Ukamilishaji wa Gumzo",
     "exampleTemplatesHint": "Kidokezo cha Violezo vya Mifano",
     "retryDelayLabel": "Lebo ya Ucheleweshaji wa Kujaribu Tena",
@@ -978,7 +978,7 @@
     "batchTimelineCancelling": "Kufuta",
     "batchTimelineCancelled": "Imesitishwa",
     "batchTokenUsage": "Matumizi ya Token",
-    "batchMetadata": "Metadata",
+    "batchMetadata": "Metadeta",
     "batchFileContents": "Maudhui ya Faili",
     "batchFileUsedByCount": "Inatumika na {count, plural, one {# kundi} other {# makundi}}",
     "batchFilePreview": "Muonekano",
@@ -1097,7 +1097,7 @@
     "faviconPreview": "Onyesho la Awali la Favicon",
     "changelog": "Kumbukumbu ya Mabadiliko",
     "contextSection": "Muktadha na Akiba",
-    "contextCaveman": "Caveman",
+    "contextCaveman": "Mtu wa Pangoni",
     "contextRtk": "RTK",
     "contextCombos": "Mchanganyiko wa Injini",
     "contextLite": "Lite",
@@ -1272,7 +1272,7 @@
     "systemGroup": "Mfumo",
     "costsOverview": "Muhtasari",
     "costsOverviewSubtitle": "Uchambuzi wa gharama uliounganishwa",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "Daraja la Ajenti",
     "agentBridgeSubtitle": "Nasa trafiki ya wakala wa IDE",
     "trafficInspector": "Kikaguzi cha Trafiki",
     "trafficInspectorSubtitle": "Kagua trafiki ya maombi na majibu kutoka kwenye programu zako",
@@ -6475,7 +6475,7 @@
     "savedModelEndpointSettings": "Mipangilio ya mwisho wa mfano uliohifadhiwa",
     "searchByModelAria": "Tafuta kwa mfano",
     "selectSupportedEndpoint": "Chagua angalau kiunganishi kimoja kinachoungwa mkono",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Kiunzi / CLI"
   },
   "settings": {
     "title": "Mipangilio",
@@ -8675,7 +8675,7 @@
     "deleteNamedConfirm": "Futa mchanganyiko “{name}”?",
     "intensityLite": "Lite",
     "intensityFull": "Kamili",
-    "intensityUltra": "Ultra",
+    "intensityUltra": "Bora zaidi",
     "active": "Inatumika",
     "languagePacksList": "Vifurushi vya lugha: {packs}",
     "dragToReorder": "Buruta ili kupanga upya hatua",
@@ -9469,7 +9469,7 @@
     "tierPro": "Pro",
     "tierPlus": "Plus",
     "tierFree": "Bure",
-    "tierLite": "Lite",
+    "tierLite": "Nyepesi",
     "tierUnknown": "Haijulikani",
     "statTotal": "Jumla",
     "statCritical": "Mahututi",
@@ -11672,7 +11672,7 @@
     "endpointsBaseUrl": "URL ya msingi",
     "endpointsCollapse": "Kunja",
     "endpointsExpand": "Panua",
-    "endpointsAnthropicNote": "Anthropic-native",
+    "endpointsAnthropicNote": "Asilia ya Anthropic",
     "endpointsResponsesNote": "Majibu ya OpenAI — codex/github",
     "endpointsWsNote": "WebSocket — codex pekee",
     "betaText": "Quota Share inafanya kazi lakini hitilafu zinatarajiwa. Umepata moja? Tafadhali iripoti.",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Ruhusu urejesho wa mkondo kuomba jibu tena na kuliunganisha baada ya baiti kuwa tayari zimefikia mteja."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Fanya mwendelezo wa katikati ya mtiririko baada ya wito wa zana uwe salama: usiwahi kuendelea na mtiririko uliokatika baada ya wito wa zana kutumwa (ukiwa bado unaendelea au tayari umekamilika), na usitishe baada ya mwendelezo mmoja mtupu badala ya kutumia bajeti yote ya majaribio upya."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Jumuisha sehemu za majina rahisi kuonyeshwa katika majibu ya /v1/models. Zima hii kwa wateja wanaokubali vitambulisho vya mfano pekee."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Mzunguko wa Zana Unaomilikiwa na Seva",
         "description": "Endelea na miito ya zana inayomilikiwa na seva isiyotiririshwa hadi modeli irudishe jibu linaloweza kutumiwa na kiteja."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Asili ya Retry-After",
+        "description": "Kwa majibu yaliyojumlishwa ya 429/503 ya kutopatikana, ondoa Retry-After wakati ambapo hakuna muda mahususi wa kujaribu tena katika siku zijazo unaojulikana badala ya kutuma muda bandia wa sekunde 1, ongeza error.retry_after_provenance, na usome vidokezo vya maandishi kuhusu kujaribu tena kwenye njia za uondoaji wa combo."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Kusimamishwa kwa Miundombinu ya Kipaumbele Kilicholindwa kama 502",
+        "description": "Jibu 502 badala ya 503 wakati lengo la kipaumbele la urejeshi wa mgawo pekee linaposimamisha mseto kwa sababu ambayo kwa hakika si mgawo: kivunja saketi cha mtoa huduma kilicho wazi au urukaji unaotabiriwa kutokana na muda wa kusubiri."
       }
     }
   },

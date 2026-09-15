@@ -6009,7 +6009,7 @@
     "freeTierProviders": "Fornituri b’livell bla ħlas",
     "freeTierLabel": "Livell bla ħlas disponibbli",
     "freeTierProvidersDesc": "Fornituri b’livelli bla ħlas — xi wħud jeħtieġu reġistrazzjoni għal ċavetta API, filwaqt li oħrajn ma jeħtieġu l-ebda kredenzjali.",
-    "providerSummaryAll": "Total",
+    "providerSummaryAll": "Totali",
     "ideProviders": "Fornituri tal-IDE",
     "ideProvidersDesc": "Edituri b’abbonament AI integrat. Uża l-paġna tal-fornitur biex timporta l-kredenzjali direttament mill-ħażna taċ-ċwievet tal-IDE.",
     "noIdeProviders": "L-ebda fornitur tal-IDE ma jaqbel mal-filtri attwali.",
@@ -6902,7 +6902,7 @@
     "healthcheckAll": "Iċċekkja s-Saħħa ta' Kollha",
     "healthcheckFailed": "Ma rnexxiex jitwettaq il-kontroll tas-saħħa",
     "healthcheckTestingAll": "Qed jiġu ttestjati l-proxies kollha b'mod parallel...",
-    "healthcheckTotal": "Total",
+    "healthcheckTotal": "Totali",
     "healthcheckWorking": "Jaħdmu",
     "healthcheckFailedLabel": "Fallew",
     "healthcheckStatus": "Stat",
@@ -6938,7 +6938,7 @@
     "proxyFreePoolMinQualityPlaceholder": "Kwalità minima",
     "proxyFreePoolMinQualityLabel": "Punteġġ minimu tal-kwalità",
     "proxyFreePoolSyncAll": "Issinkronizza Kollox",
-    "proxyFreePoolTotal": "Total",
+    "proxyFreePoolTotal": "Totali",
     "proxyFreePoolInPool": "Fil-ġabra",
     "proxyFreePoolAvgQuality": "Kwalità medja",
     "proxyFreePoolSelected": "{count} magħżula",
@@ -8627,7 +8627,7 @@
     "editCombo": "Editja",
     "deleteCombo": "Ħassar",
     "deleteConfirm": "Tħassar din il-kombinazzjoni tal-kompressjoni?",
-    "pipeline": "Pipeline",
+    "pipeline": "Katina tal-ipproċessar",
     "addStep": "Żid Pass",
     "removeStep": "Neħħi",
     "name": "Isem",
@@ -9340,7 +9340,7 @@
     "evaluateStepDescription": "It-tweġibiet jitqabblu mal-kriterji mistennija. Ara jekk kull każ għaddiex jew falliex, flimkien mal-metriċi tal-latenza u feedback dettaljat.",
     "evalsStrategyContainsLabel": "Fih",
     "evalsStrategyExactLabel": "Taqbila Eżatta",
-    "evalsStrategyRegexLabel": "Regex",
+    "evalsStrategyRegexLabel": "Espressjoni regolari",
     "evalsStrategyCustomLabel": "Loġika Personalizzata",
     "evalsStrategyContainsDescription": "Jiċċekkja jekk l-output tal-LLM fihx is-substring mistennija.",
     "evalsStrategyExactDescription": "Jiċċekkja jekk l-output tal-LLM jaqbilx eżattament mal-valur mistenni.",
@@ -10018,7 +10018,7 @@
     "apiReference": "Referenza tal-API",
     "helpCenter": "Ċentru tal-Għajnuna",
     "about": "Dwarna",
-    "blog": "Blog",
+    "blog": "Blogg",
     "contact": "Kuntatt",
     "terms": "Termini",
     "privacy": "Privatezza",
@@ -10828,7 +10828,7 @@
     "pricingRatesFormat": "Format tar-Rati tal-Ipprezzar",
     "ratesDescription": "Ir-rati kollha huma f'<strong>dollari għal kull miljun token</strong> ($/1M tokens). Eżempju: Rata ta' input ta' 2.50 tfisser $2.50 għal kull 1,000,000 token ta' input.",
     "model": "Mudell",
-    "input": "Input",
+    "input": "Dħul",
     "output": "Ħruġ",
     "cached": "Fil-cache",
     "reasoning": "Raġunament",
@@ -11464,7 +11464,7 @@
     "speech": "Diskors",
     "search": "Fittex",
     "images": "Stampi",
-    "chat": "Chat",
+    "chat": "Taħdita",
     "music": "Mużika",
     "responses": "Tweġibiet",
     "rerank": "Klassifikazzjoni mill-Ġdid",
@@ -12411,7 +12411,7 @@
         "description": "Fittex il-mudelli tal-IA disponibbli, elenka l-ismijiet alternattivi tal-mudelli u esplora l-katalgu sħiħ tal-mudelli mis-CLI. Iffiltra skont il-fornitur, fittex skont il-kapaċità u identifika l-varjanti tal-isem tal-mudell."
       },
       "cli-chat": {
-        "name": "CLI: Chat",
+        "name": "CLI: Ċat",
         "description": "Ibgħat kompletamenti taċ-chat, ittrażmetti t-tweġibiet u ibda sessjoni REPL interattiva mis-CLI. Jappoġġja l-fornituri kollha ta' OmniRoute, routing ikkombinat u l-konfigurazzjoni tal-prompt tas-sistema."
       },
       "cli-routing": {
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Ħalli l-irkupru tal-fluss jitlob it-tweġiba mill-ġdid u jgħaqqadha wara li l-bytes ikunu diġà waslu għand il-klijent."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Agħmel is-sejħa tal-għodda tal-kontinwazzjoni f’nofs il-fluss sikura: qatt tkomplix fluss maqtugħ wara li tkun intbagħtet sejħa tal-għodda (kemm jekk għadha għaddejja kif ukoll jekk diġà tlestiet), u waqqaf wara kontinwazzjoni vojta waħda minflok tuża l-baġit kollu tat-tentattivi mill-ġdid."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Inkludi oqsma tal-isem adattati għall-wiri fit-tweġibiet ta’ /v1/models. Iddiżattiva dan għal klijenti li jaċċettaw biss IDs tal-mudelli."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Ċiklu tal-Għodod Immexxi mis-Server",
         "description": "Kompli s-sejħiet mhux streaming tal-għodod immexxija mis-server sakemm il-mudell jirritorna tweġiba li tista’ tintuża mill-klijent."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Provenjenza ta’ Retry-After",
+        "description": "Fuq tweġibiet aggregati 429/503 ta’ indisponibbiltà, ħalli barra Retry-After meta ma jkun magħruf l-ebda ħin konkret futur għal tentattiv mill-ġdid minflok tibgħat 1s sintetika, żid error.retry_after_provenance, u aqra l-indikazzjonijiet testwali dwar tentattivi mill-ġdid fil-mogħdijiet ta’ combo drain."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Waqfiet tal-Infrastruttura bi Prijorità Protetta bħala 502",
+        "description": "Wieġeb b’502 minflok 503 meta mira ta’ prijorità li tuża biss fallback tal-kwota twaqqaf il-combo għal kawża li tista’ tiġi ppruvata li mhijiex il-kwota: circuit breaker miftuħ tal-fornitur jew qbiż predittiv minħabba l-latenza."
       }
     }
   },

@@ -8374,7 +8374,7 @@
     "cliproxyapiUnknown": "Bilinmiyor",
     "cliproxyapiVersion": "Sürüm",
     "cliproxyapiHealth": "Sağlık",
-    "cliproxyapiPort": "Port",
+    "cliproxyapiPort": "Bağlantı Noktası",
     "qdrantHost": "Ana Bilgisayar",
     "qdrantCollection": "Koleksiyon"
   },
@@ -9340,7 +9340,7 @@
     "evaluateStepDescription": "Yanıtlar beklenen ölçütlerle karşılaştırılır. Her senaryonun başarılı/başarısız sonucu, gecikme metrikleri ve ayrıntılı geri bildirimle gösterilir.",
     "evalsStrategyContainsLabel": "İçerir",
     "evalsStrategyExactLabel": "Tam Eşleşme",
-    "evalsStrategyRegexLabel": "Regex",
+    "evalsStrategyRegexLabel": "Düzenli İfade",
     "evalsStrategyCustomLabel": "Özel Mantık",
     "evalsStrategyContainsDescription": "LLM çıktısının beklenen alt dizeyi içerip içermediğini kontrol eder.",
     "evalsStrategyExactDescription": "LLM çıktısının beklenen değerle tam olarak eşleşip eşleşmediğini kontrol eder.",
@@ -10891,7 +10891,7 @@
     "bulkScopeIdsPlaceholder": "sağlayıcı-openai,sağlayıcı-antropik",
     "bulkApply": "Uygula",
     "labelScope": "Kapsam",
-    "labelProxy": "Proxy",
+    "labelProxy": "Vekil Sunucu",
     "scopeGlobal": "genel",
     "scopeProvider": "sağlayıcı",
     "scopeAccount": "hesap",
@@ -12659,7 +12659,7 @@
     "add": "Ekle",
     "manualApiKey": "Manuel API anahtarı kullanın",
     "createDahlTokenFailed": "Dahl token oluşturulamadı",
-    "providerProxy": "Proxy",
+    "providerProxy": "Vekil sunucu",
     "providerProxyConfigureHint": "Proxy'yi yapılandırın",
     "providerProxyTitleConfigured": "Proxy yapılandırıldı: {host}"
   },
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Baytlar istemciye ulaştıktan sonra akış kurtarmanın yanıtı tekrar istemesine ve birleştirmesine izin verin."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Akış ortasında devam etmeyi araç çağrıları açısından güvenli hâle getirin: Bir araç çağrısı gönderildikten sonra (hâlâ devam ediyor veya tamamlanmış olsa bile) kesilmiş bir akışı asla sürdürmeyin ve tüm yeniden deneme bütçesini kullanmak yerine tek bir boş devamdan sonra durun."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models yanıtlarına görüntüleme dostu ad alanlarını dahil edin. Yalnızca model kimliklerini kabul eden istemciler için bunu devre dışı bırakın."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Sunucu Tarafından Yönetilen Araç Döngüsü",
         "description": "Model, istemcinin kullanabileceği bir yanıt döndürene kadar sunucu tarafından yönetilen akışsız araç çağrılarına devam edin."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After Kaynağı",
+        "description": "Toplanan 429/503 kullanılamıyor yanıtlarında, gelecekteki somut bir yeniden deneme zamanı bilinmiyorsa yapay bir 1 sn değeri göndermek yerine Retry-After başlığını atlayın, error.retry_after_provenance alanını ekleyin ve combo tükenme yollarındaki düz metin yeniden deneme ipuçlarını okuyun."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Korumalı Öncelikli Altyapı Durdurmaları 502 Olarak",
+        "description": "Yalnızca kota durumunda yedeğe geçen öncelikli bir hedef, kota olmadığı kanıtlanabilen bir nedenle (açık bir sağlayıcı devre kesicisi veya tahmine dayalı gecikme atlaması) combo'yu durdurduğunda 503 yerine 502 yanıtı verin."
       }
     }
   },

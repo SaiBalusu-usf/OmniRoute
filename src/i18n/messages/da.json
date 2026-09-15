@@ -813,7 +813,7 @@
     "batchStep2": "2 · Opret batch",
     "batchStep2Desc": "Kør job",
     "batchStep3": "3 · Hent resultater",
-    "batchStep3Desc": "Download output",
+    "batchStep3Desc": "Hent output",
     "filesConceptTitle": "Batchfiler",
     "filesConceptSubtitle": "JSONL-filer, der bruges af batches: inputanmodninger, resultater og fejl.",
     "filesConceptInput": "Input — din JSONL med én anmodning pr. linje",
@@ -876,7 +876,7 @@
     "batchListAutoRefresh": "Automatisk opdatering hvert 30. sek.",
     "batchListCostColumn": "Pris",
     "batchActionCancel": "Annuller",
-    "batchActionDownloadOutput": "Download output",
+    "batchActionDownloadOutput": "Hent output",
     "batchActionDownloadErrors": "Download fejl",
     "batchActionRetry": "Prøv mislykkede igen",
     "batchActionRetryConfirm": "Prøv {n} mislykkede anmodning(er) igen? Den endelige pris afhænger af det faktiske antal forbrugte tokens.",
@@ -945,7 +945,7 @@
     "wizardCostWindow24h": "24-timers frist for fuldførelse",
     "wizardValidationFieldsOk": "påkrævede felter er gyldige",
     "filesListDelete": "Slet",
-    "filesListDownload": "Download",
+    "filesListDownload": "Hent",
     "batchDetailActionCancel": "Annuller batch",
     "batchDetailActionRetry": "Prøv mislykkede anmodninger igen",
     "batchDetailCancelling": "Annullerer…",
@@ -1125,7 +1125,7 @@
     "compressionStudioSubtitle": "Live motorkaskade",
     "compressionExclusionsSubtitle": "Per-model/endpoint omgåelse",
     "chaosConfigSubtitle": "Parallel udførelse med flere modeller",
-    "routingSection": "Routing",
+    "routingSection": "Rutevalg",
     "protocolsSection": "Protokoller",
     "agentsAiSection": "Agenter og AI",
     "cacheContextSection": "Cache og kontekst",
@@ -1168,7 +1168,7 @@
     "settingsFeatureFlags": "Feature Flag",
     "settingsCache": "Cache",
     "settingsAuthz": "Godkendelse",
-    "settingsRouting": "Routing",
+    "settingsRouting": "Rutevalg",
     "settingsResilience": "Robusthed",
     "modelLockout": "Modeludelukkelse",
     "settingsAdvanced": "Avanceret",
@@ -4777,7 +4777,7 @@
     "cooldownCount": "{count} nedkøling",
     "lockoutCount": "{count} udelukkelser",
     "issueCount": "{count} problemer",
-    "score": "Score",
+    "score": "Resultat",
     "lastRequest": "Sidste anmodning",
     "lastError": "Sidste fejl"
   },
@@ -6482,7 +6482,7 @@
     "general": "Generelt",
     "security": "Sikkerhed",
     "appearance": "Udseende",
-    "routing": "Routing",
+    "routing": "Rutevalg",
     "cache": "Cache",
     "resilience": "Modstandsdygtighed",
     "description": "Beskrivelse",
@@ -9340,7 +9340,7 @@
     "evaluateStepDescription": "Svar sammenlignes med forventede kriterier. Se bestået/ikke bestået for hver sag med latency-metrics og detaljeret feedback.",
     "evalsStrategyContainsLabel": "Indeholder",
     "evalsStrategyExactLabel": "Eksakt match",
-    "evalsStrategyRegexLabel": "Regex",
+    "evalsStrategyRegexLabel": "Regulært udtryk",
     "evalsStrategyCustomLabel": "Brugerdefineret logik",
     "evalsStrategyContainsDescription": "Kontrollerer, om LLM-outputtet indeholder den forventede delstreng.",
     "evalsStrategyExactDescription": "Kontrollerer, om LLM-outputtet matcher den forventede værdi nøjagtigt.",
@@ -10359,7 +10359,7 @@
     "opencodeIntegration": "OpenCode-integration",
     "opencodeDetected": "opencode {version} registreret",
     "opencodeDesc": "Generér en brugsklar {configFile} med din OmniRoute-basis-URL og alle tilgængelige modeller — placér den i projektets rodmappe, og kør {command}.",
-    "downloadConfig": "Download {file}",
+    "downloadConfig": "Hent {file}",
     "downloaded": "Downloadet!",
     "setupGuideTitle": "Opsætningsvejledning",
     "openCliTools": "Åbn CLI-værktøjer",
@@ -11126,7 +11126,7 @@
     "jsonSchemaEditor": "JSON-skemaeditor",
     "schemaValidated": "Skema valideret",
     "validateSchema": "Valider skema",
-    "seed": "Seed",
+    "seed": "Startværdi",
     "stopSequences": "Stopsekvenser",
     "stopSequencesPlaceholder": "f.eks. \"\\n\\n\" eller \"END\"",
     "autoProvider": "Automatisk",
@@ -11672,7 +11672,7 @@
     "endpointsBaseUrl": "Base-URL",
     "endpointsCollapse": "Fold sammen",
     "endpointsExpand": "Udvid",
-    "endpointsAnthropicNote": "Anthropic-native",
+    "endpointsAnthropicNote": "Anthropic-integreret",
     "endpointsResponsesNote": "OpenAI-svar — codex/github",
     "endpointsWsNote": "WebSocket — kun codex",
     "betaText": "Quota Share er funktionel, men der må forventes fejl. Har du fundet en? Rapportér den venligst.",
@@ -12060,7 +12060,7 @@
     "exportHar": "Eksporter .har",
     "recordSession": "OPT",
     "stopSession": "Stop",
-    "liveBadge": "live",
+    "liveBadge": "aktiv",
     "offlineBadge": "offline",
     "noRequests": "Ingen anmodninger registreret endnu.",
     "noRequestsDesc": "Sørg for, at AgentBridge kører, eller aktivér en anden optagelsestilstand.",
@@ -12604,7 +12604,7 @@
     "subtitle": "Scan udbydere for gratis/ubegrænsede adgangsmetoder og gennemse resultaterne. Tilvalg, kun lokalt.",
     "scanLabel": "Udbyder, der skal scannes",
     "scanPlaceholder": "f.eks. huggingchat",
-    "scan": "Scan",
+    "scan": "Scanning",
     "scanning": "Scanner…",
     "scanQueued": "Scanning fuldført for {provider}.",
     "scanFailed": "Scanning mislykkedes.",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Tillad stream-gendannelse at anmode om svaret igen og sammenføje det, efter at bytes allerede har nået klienten."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Gør fortsættelse midt i en stream sikker ved værktøjskald: Genoptag aldrig en afbrudt stream, efter at et værktøjskald er blevet sendt (uanset om det stadig er i gang eller allerede er afsluttet), og stop efter én tom fortsættelse i stedet for at bruge hele genforsøgsbudgettet."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Inkluder visningsvenlige navnefelter i /v1/models-svar. Deaktivér dette for klienter, der kun accepterer model-id'er."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Serverstyret værktøjsløkke",
         "description": "Fortsæt ikke-streamede, serverstyrede værktøjskald, indtil modellen returnerer et svar, som klienten kan bruge."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Oprindelse for Retry-After",
+        "description": "Ved aggregerede 429/503-svar om utilgængelighed skal Retry-After udelades, når der ikke kendes et konkret fremtidigt tidspunkt for et nyt forsøg, i stedet for at sende et syntetisk tidsrum på 1 sek., error.retry_after_provenance skal tilføjes, og tekstbaserede anvisninger om nye forsøg skal læses i kombinationens dræningsforløb."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Beskyttede prioritetsstop i infrastrukturen som 502",
+        "description": "Svar med 502 i stedet for 503, når et prioriteret mål med fallback kun ved kvoteproblemer stopper kombinationen af en årsag, der beviseligt ikke skyldes kvoten: en åben circuit breaker hos udbyderen eller en prædiktiv overspringning på grund af latenstid."
       }
     }
   },

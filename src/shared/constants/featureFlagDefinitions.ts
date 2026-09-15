@@ -450,6 +450,18 @@ export const FEATURE_FLAG_DEFINITIONS: FeatureFlagDefinition[] = [
     warningLevel: "danger",
   },
   {
+    key: "STREAM_RECOVERY_TOOLCALL_ORDER_FIX",
+    label: "Tool-Call-Safe Continuation",
+    description:
+      "Make mid-stream continuation tool-call safe: never resume a cut stream once a tool call was emitted (in flight or already finished with finish_reason tool_calls), and close after one empty continuation instead of spending the whole budget. Off: release behavior.",
+    descriptionI18nKey: "featureFlagStreamRecoveryToolcallOrderFixDescription",
+    category: "runtime",
+    defaultValue: "false",
+    type: "boolean",
+    requiresRestart: false,
+    warningLevel: "info",
+  },
+  {
     key: "MODEL_CATALOG_INCLUDE_NAMES",
     label: "Model Catalog Names",
     description:
@@ -593,6 +605,30 @@ export const FEATURE_FLAG_DEFINITIONS: FeatureFlagDefinition[] = [
     type: "boolean",
     requiresRestart: false,
     warningLevel: "info",
+  },
+  {
+    key: "RETRY_AFTER_PROVENANCE_ENABLED",
+    label: "Retry-After Provenance",
+    description:
+      "On aggregated 429/503 unavailable responses, omit Retry-After when no concrete future retry time is known (instead of a synthetic 1s), add error.retry_after_provenance (signal | none), and let combo drain paths read prose retry hints from JSON and plain-text upstream bodies.",
+    descriptionI18nKey: "featureFlagRetryAfterProvenanceEnabledDescription",
+    category: "runtime",
+    defaultValue: "false",
+    type: "boolean",
+    requiresRestart: false,
+    warningLevel: "caution",
+  },
+  {
+    key: "PROTECTED_PRIORITY_INFRA_502_ENABLED",
+    label: "Protected-Priority Infra Stops as 502",
+    description:
+      "When a priority combo target marked fallback-only-on-quota-exhaustion stops the combo for a cause that is provably not quota (provider circuit breaker open, predictive latency skip), answer 502 instead of the quota-looking 503. Lockout, cooldown, unavailable, exhaustion and concurrency-cap stops keep 503.",
+    descriptionI18nKey: "featureFlagProtectedPriorityInfra502EnabledDescription",
+    category: "runtime",
+    defaultValue: "false",
+    type: "boolean",
+    requiresRestart: false,
+    warningLevel: "caution",
   },
 
   // ──────────────── CLI (5) ────────────────

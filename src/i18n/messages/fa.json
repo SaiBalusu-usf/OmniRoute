@@ -6527,7 +6527,7 @@
     "routingSummarizeDropParagraphContains": "حذف پاراگراف‌های حاوی: {items}",
     "routingSummarizeDropParagraphStartsWith": "حذف پاراگراف‌های شروع شونده با: {items}",
     "routingSummarizeReplaceText": "جایگزینی \"{match}\" → \"{replacement}\"",
-    "routingSummarizeReplaceRegex": "regex /{pattern}/{flags} → \"{replacement}\"",
+    "routingSummarizeReplaceRegex": "عبارت منظم /{pattern}/{flags} → \"{replacement}\"",
     "routingSummarizeDropBlockContains": "حذف بلوک‌های حاوی: {items}",
     "routingSummarizePrependSystemBlock": "افزودن بلوک به ابتدا: \"{text}\"",
     "routingSummarizeAppendSystemBlock": "افزودن بلوک به انتها: \"{text}\"",
@@ -7377,7 +7377,7 @@
     "customPricingNote": "میتوانید قیمتگذاری پیشفرض را برای مدلهای خاص بازنویسی کنید. بازنویسیهای سفارشی بر قیمتگذاری شناساییشده بهصورت خودکار اولویت دارند.",
     "editPricing": "ویرایش قیمتگذاری",
     "viewFullDetails": "مشاهدهٔ جزئیات کامل",
-    "themeCoral": "Coral",
+    "themeCoral": "مرجانی",
     "adaptiveVolumeRouting": "مسیریابی تطبیقی بر اساس حجم",
     "adaptiveVolumeRoutingDesc": "تعداد اتصالها را بر اساس حجم بار و فشار توان عملیاتی، بهصورت پویا مقیاسبندی میکند.",
     "lkgpToggleTitle": "آخرین ارائهدهندهٔ سالم شناختهشده (LKGP)",
@@ -11283,7 +11283,7 @@
     "refresh": "تازهسازی",
     "columnsLabel": "ستونها",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "فعال",
     "semantic": "معنایی",
     "upstream": "بالادستی",
     "semanticCacheHit": "برخورد با کش معنایی (ارائهشده توسط OmniRoute)",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "اجازه دادن به بازیابی جریان برای درخواست مجدد پاسخ و پیوند زدن آن پس از اینکه بایت‌ها قبلاً به کلاینت رسیده‌اند."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "ادامهدادن در میانهٔ جریان را برای فراخوانی ابزار ایمن کنید: پس از ارسال فراخوانی ابزار (چه هنوز در حال اجرا باشد و چه پایان یافته باشد)، هرگز یک جریان قطعشده را از سر نگیرید و بهجای استفاده از کل بودجهٔ تلاش مجدد، پس از یک ادامهٔ خالی متوقف شوید."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "گنجاندن فیلدهای نام مناسب برای نمایش در پاسخ‌های /v1/models. این را برای کلاینت‌هایی که فقط شناسه مدل را می‌پذیرند غیرفعال کنید."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "حلقه ابزار تحت مالکیت سرور",
         "description": "فراخوانیهای غیراستریمی ابزار تحت مالکیت سرور را تا زمانی ادامه دهید که مدل پاسخی قابلاستفاده برای کلاینت برگرداند."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "منشأ Retry-After",
+        "description": "در پاسخهای تجمیعشدهٔ 429/503 مربوط به عدم دسترسپذیری، هنگامی که زمان مشخصی برای تلاش مجدد در آینده معلوم نیست، بهجای ارسال مقدار ساختگی 1s، Retry-After را حذف کنید، error.retry_after_provenance را اضافه کنید و در مسیرهای تخلیهٔ ترکیبی، راهنمای متنیِ تلاش مجدد را بخوانید."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "توقفهای زیرساختی با اولویت محافظتشده بهصورت 502",
+        "description": "هنگامی که یک مقصد اولویتدار با بازگشت صرفاً مبتنی بر سهمیه، به علتی که اثباتاً مربوط به سهمیه نیست ترکیب را متوقف میکند—یعنی قطعکنندهٔ مدار بازِ ارائهدهنده یا رد پیشبینانه بهدلیل تأخیر—بهجای 503، پاسخ 502 بدهید."
       }
     }
   },

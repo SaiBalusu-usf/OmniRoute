@@ -9781,7 +9781,7 @@
     "systemMonitor": {
       "metricsAriaLabel": "Méadrachtaí an chórais",
       "memory": "Cuimhne",
-      "memoryShort": "mem",
+      "memoryShort": "cuimhne",
       "uptime": "Am ar bun",
       "ariaLabel": "Monatóireacht ar an gcóras",
       "title": "Monatóir Córais",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Ceadaigh d'aisghabháil srutha an freagra a iarraidh arís agus é a fhuáil le chéile tar éis do bhearta a bheith sroichte ag an gcliant cheana féin."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Déan leanúint ar aghaidh i lár srutha sábháilte do ghlaonna uirlise: ná hathchrom riamh ar shruth gearrtha tar éis glao uirlise a bheith seolta (bíodh sé fós ar bun nó críochnaithe cheana féin), agus stad tar éis aon leanúint fholamh amháin in ionad an buiséad iomlán atrialacha a úsáid."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Cuir réimsí ainmneacha atá cairdiúil don taispeáint san áireamh i bhfreagraí /v1/models. Díchumasaigh é seo do chliaint a ghlacann le haitheantóirí múnla amháin."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Lúb Uirlisí faoi Úinéireacht an Fhreastalaí",
         "description": "Lean ar aghaidh le glaonna uirlise neamhshruthaithe atá faoi úinéireacht an fhreastalaí go dtí go gcuirfidh an tsamhail freagra ar fáil is féidir leis an gcliant a úsáid."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Bunús Retry-After",
+        "description": "I gcás freagraí comhiomlánaithe neamh-infhaighteachta 429/503, fág Retry-After ar lár nuair nach eol aon am sonrach amach anseo chun triail eile a bhaint as, in ionad luach saorga 1s a sheoladh; cuir error.retry_after_provenance leis; agus léigh leideanna atrialach i bprós ar chonairí draenála teaglama."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Stadanna Bonneagair Tosaíochta Cosanta mar 502",
+        "description": "Tabhair freagra 502 in ionad 503 nuair a stopann sprioc tosaíochta le cúltaca cuóta amháin an teaglama ar chúis ar féidir a chruthú nach mbaineann sí le cuóta: scoradán ciorcaid oscailte soláthraí nó scipeáil thuarthach de bharr aga folaigh."
       }
     }
   },
@@ -13589,7 +13600,7 @@
       "remaining": "Fágtha",
       "noLockouts": "Gan aon ghlásáil ghníomhach",
       "provider": "Soláthraí",
-      "id": "ID",
+      "id": "Aitheantas",
       "authType": "Cineál údaraithe",
       "priority": "Tosaíocht",
       "isActive": "Gníomhach",
@@ -14033,7 +14044,7 @@
     "clearFilters": "Glan scagairí",
     "sourceCloudAgent": "Gníomhaí Scáileáin",
     "sourceA2A": "A2A",
-    "sourceConductor": "Conductor",
+    "sourceConductor": "Seoltóir",
     "sourceStale": "As dáta ó {since}",
     "sourceOffline": "As líne",
     "sourceCollapse": "Comhbhrúigh",
@@ -14100,7 +14111,7 @@
     "trialDays": "{days, plural, one {# lá} other {# laethanta}}"
   },
   "radarIntelPage": {
-    "title": "Radar Intel",
+    "title": "Faisnéis Radair",
     "subtitle": "Ranganna ELO Radar agus gluaiseacht catalóige fíorasach.",
     "backToRadar": "Ar ais go Radar",
     "loading": "Ag lódáil Intel...",

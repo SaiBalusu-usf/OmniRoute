@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "બાઇટ્સ પહેલેથી જ ક્લાયન્ટ સુધી પહોંચી ગયા પછી પ્રતિસાદની ફરીથી વિનંતી કરવા અને તેને જોડવા માટે સ્ટ્રીમ પુનઃપ્રાપ્તિને મંજૂરી આપો."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "મધ્ય-સ્ટ્રીમ ચાલુ રાખવાનું tool-call માટે સુરક્ષિત બનાવો: tool call મોકલાયા પછી (હજુ પ્રગતિમાં હોય કે પહેલેથી પૂર્ણ થઈ ગયો હોય) કપાયેલા સ્ટ્રીમને ક્યારેય ફરી શરૂ કરશો નહીં, અને સમગ્ર retry budget વાપરવાને બદલે એક ખાલી continuation પછી અટકી જાઓ."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models પ્રતિસાદોમાં પ્રદર્શન-અનુકૂળ નામ ફીલ્ડ્સ શામેલ કરો. ફક્ત મોડલ IDs સ્વીકારતા ક્લાયન્ટ્સ માટે આને નિષ્ક્રિય કરો."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "સર્વર-માલિકીનું ટૂલ લૂપ",
         "description": "મોડલ ક્લાયન્ટ માટે ઉપયોગી પ્રતિસાદ આપે ત્યાં સુધી નોન-સ્ટ્રીમિંગ સર્વર-માલિકીના ટૂલ કૉલ ચાલુ રાખો."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-Afterનું મૂળ",
+        "description": "એકીકૃત 429/503 unavailable responses પર, જ્યારે ભવિષ્યમાં ફરી પ્રયાસ કરવાનો કોઈ ચોક્કસ સમય જાણીતો ન હોય ત્યારે કૃત્રિમ 1s મોકલવાને બદલે Retry-Afterને છોડી દો, error.retry_after_provenance ઉમેરો અને combo drain paths પર ગદ્યરૂપ retry hints વાંચો."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Protected-Priority ઇન્ફ્રાસ્ટ્રક્ચર સ્ટોપ્સને 502 તરીકે દર્શાવો",
+        "description": "જ્યારે quota-only-fallback priority target એવા કારણસર comboને અટકાવે જે નિશ્ચિતપણે quota નથી—ખુલ્લું provider circuit breaker અથવા predictive latency skip—ત્યારે 503ને બદલે 502નો જવાબ આપો."
       }
     }
   },

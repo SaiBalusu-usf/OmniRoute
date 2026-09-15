@@ -37,7 +37,7 @@
     "manage": "İdarə et",
     "name": "Ad",
     "actions": "Əməliyyatlar",
-    "status": "Status",
+    "status": "Vəziyyət",
     "type": "Növ",
     "model": "Model",
     "models": "modellər",
@@ -899,7 +899,7 @@
     "batchListCount": "{count} paket",
     "batchListRemovingCompleted": "Silinir…",
     "batchListRemoveCompleted": "Tamamlanmışları sil",
-    "batchListTableStatus": "Status",
+    "batchListTableStatus": "Vəziyyət",
     "batchListTableId": "ID",
     "batchListTableEndpoint": "Son nöqtə",
     "batchListTableModel": "Model",
@@ -1330,7 +1330,7 @@
     "secret": "Məxfi açar",
     "secretPlaceholder": "Məxfi açarın avtomatik yaradılması üçün boş saxlayın",
     "secretEditPlaceholder": "Cari məxfi açarı saxlamaq üçün boş saxlayın",
-    "status": "Status",
+    "status": "Vəziyyət",
     "active": "Aktiv",
     "inactive": "Qeyri-aktiv",
     "errored": "Xətalı",
@@ -1388,7 +1388,7 @@
       "title": "Çatdırılma qeydləri",
       "loadFailed": "Webhook çatdırılma qeydlərini yükləmək mümkün olmadı.",
       "empty": "Hələ heç bir çatdırılma qeydə alınmayıb. Bir hadisəni işə salın və ya test payload-u göndərin.",
-      "status": "Status",
+      "status": "Vəziyyət",
       "event": "Hadisə",
       "latency": "Gecikmə",
       "at": "Göndərilmə vaxtı"
@@ -2646,7 +2646,7 @@
     "size": "Ölçü",
     "configurationPane": "Konfiqurasiya paneli",
     "configuration": "Konfiqurasiya",
-    "status": "Status",
+    "status": "Vəziyyət",
     "compareProviderHint": "Onları yanaşı müqayisə etmək üçün Müqayisə tabında 4-ə qədər provayder seçin.",
     "history": "Tarixçə",
     "historyHint": "Tarixçə Axtarış tabında mövcuddur.",
@@ -3860,7 +3860,7 @@
     "groupAccount": "Hesab",
     "groupServiceTier": "Xidmət səviyyəsi",
     "serviceTierFast": "Sürətli",
-    "serviceTierFlex": "Flex",
+    "serviceTierFlex": "Çevik",
     "serviceTierStandard": "Standart",
     "serviceTierBreakdownTitle": "Xidmət səviyyəsi",
     "serviceTierBreakdownSubtitle": "Sürətli / Flex / Standart bölgüsü",
@@ -8379,7 +8379,7 @@
     "qdrantCollection": "Kolleksiya"
   },
   "contextRtk": {
-    "title": "RTK Engine",
+    "title": "RTK Mühərriki",
     "description": "Alət çıxışı, terminal jurnalları və qurma nəticələri üçün əmrləri nəzərə alan sıxılma.",
     "enabled": "Aktivdir",
     "intensity": "İntensivlik",
@@ -10854,7 +10854,7 @@
     "noProxies": "Hələ saxlanmış proksi yoxdur.",
     "tableName": "Ad",
     "tableEndpoint": "Son nöqtə",
-    "tableStatus": "Status",
+    "tableStatus": "Vəziyyət",
     "tableHealth": "Sağlamlıq (24 saat)",
     "tableUsage": "İstifadə",
     "tableActions": "Əməliyyatlar",
@@ -10875,7 +10875,7 @@
     "labelUsername": "İstifadəçi adı",
     "labelPassword": "Şifrə",
     "labelRegion": "Region",
-    "labelStatus": "Status",
+    "labelStatus": "Vəziyyət",
     "labelNotes": "Qeydlər",
     "usernamePlaceholderEdit": "Cari istifadəçi adını saxlamaq üçün boş buraxın",
     "passwordPlaceholderEdit": "Cari şifrəni saxlamaq üçün boş buraxın",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Baytlar artıq müştəriyə çatdıqdan sonra axının bərpasına cavabı yenidən sorğulamağa və onu birləşdirməyə icazə verin."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Axının ortasında davam etməni alət çağırışları üçün təhlükəsiz edin: alət çağırışı göndərildikdən sonra (hələ davam edirsə və ya artıq tamamlanıbsa) kəsilmiş axını heç vaxt bərpa etməyin və bütün təkrar cəhd limitindən istifadə etmək əvəzinə bir boş davam cəhdindən sonra dayandırın."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models cavablarına göstərilməsi asan olan ad sahələrini daxil edin. Bunu yalnız model ID-lərini qəbul edən müştərilər üçün sıradan çıxarın."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Serverə məxsus alət dövrəsi",
         "description": "Model müştərinin istifadə edə biləcəyi cavab qaytaranadək serverə məxsus yayımsız alət çağırışlarını davam etdirin."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After mənşəyi",
+        "description": "Birləşdirilmiş 429/503 əlçatmazlıq cavablarında konkret gələcək təkrar cəhd vaxtı məlum olmadıqda sintetik 1 saniyə göndərmək əvəzinə Retry-After parametrini buraxın, error.retry_after_provenance əlavə edin və combo boşaltma yollarında mətn şəklində təkrar cəhd göstərişlərini oxuyun."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Qorunan prioritetli infrastruktur dayanmaları 502 kimi",
+        "description": "Yalnız kvota üzrə ehtiyat variant olan prioritet hədəf combo-nu kvota ilə əlaqəli olmadığı sübuta yetirilən səbəbdən — açıq provayder dövrəqırıcısı və ya proqnozlaşdırılmış gecikməyə görə keçid — dayandırdıqda 503 əvəzinə 502 cavabı verin."
       }
     }
   },

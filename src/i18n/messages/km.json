@@ -4015,9 +4015,9 @@
     "messagesApiDesc": "ទម្រង់ Anthropic Messages API ដើមសម្រាប់អ្នកផ្ដល់សេវាដែលត្រូវគ្នាជាមួយ Claude",
     "imageEdits": "ការកែសម្រួលរូបភាព",
     "imageEditsDesc": "កែសម្រួល និងកែប្រែរូបភាពដែលមានស្រាប់ដោយប្រើ AI (inpainting, outpainting, variations)",
-    "batchApi": "Batch API",
+    "batchApi": "API ដំណើរការជាបាច់",
     "batchApiDesc": "ដំណើរការសំណើជាបាច់ធំៗដោយអសមកាល (ត្រូវគ្នាជាមួយ OpenAI)",
-    "filesApi": "Files API",
+    "filesApi": "API ឯកសារ",
     "filesApiDesc": "ផ្ទុកឡើង និងគ្រប់គ្រងឯកសារសម្រាប់ដំណើរការជាបាច់",
     "videoGeneration": "ការបង្កើតវីដេអូ",
     "videoDesc": "បង្កើតវីដេអូដោយប្រើម៉ូដែល AI ដូចជា ComfyUI និង Stable Video Diffusion។",
@@ -9967,7 +9967,7 @@
     "howItWorksDescription": "ទិន្នន័យហូរដោយរលូនពីកម្មវិធីរបស់អ្នក កាត់តាមស្រទាប់កំណត់ផ្លូវឆ្លាតវៃរបស់យើង ទៅកាន់អ្នកផ្តល់សេវាដែលស័ក្តិសមបំផុតសម្រាប់កិច្ចការនោះ។",
     "howItWorksStep1Title": "1. CLI និង SDKs",
     "howItWorksStep1Description": "សំណើរបស់អ្នកចាប់ផ្ដើមពីឧបករណ៍ដែលអ្នកពេញចិត្ត ឬ SDK រួមរបស់យើង។ គ្រាន់តែប្ដូរ URL មូលដ្ឋាន។",
-    "howItWorksStep2Title": "2. OmniRoute Hub",
+    "howItWorksStep2Title": "2. មជ្ឈមណ្ឌល OmniRoute",
     "howItWorksStep2Description": "ម៉ាស៊ីនរបស់យើងវិភាគប្រូម បន្ទាប់មកពិនិត្យស្ថានភាពអ្នកផ្តល់សេវា និងកំណត់ផ្លូវដើម្បីទទួលបានភាពយឺត ឬចំណាយទាបបំផុត។",
     "howItWorksStep3Title": "3. អ្នកផ្តល់សេវា AI",
     "howItWorksStep3Description": "សំណើត្រូវបានបំពេញភ្លាមៗដោយ OpenAI, Anthropic, Gemini ឬអ្នកផ្តល់សេវាផ្សេងទៀត។",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "អនុញ្ញាតឱ្យការសង្គ្រោះ stream ស្នើសុំ response ម្តងទៀត និងភ្ជាប់វាបន្ត បន្ទាប់ពី bytes បានទៅដល់ client រួចហើយ។"
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "ធ្វើឱ្យការបន្តពាក់កណ្តាលស្ទ្រីមមានសុវត្ថិភាពសម្រាប់ការហៅឧបករណ៍៖ កុំបន្តស្ទ្រីមដែលត្រូវបានកាត់ផ្តាច់ បន្ទាប់ពីការហៅឧបករណ៍ត្រូវបានផ្ញើរួច (កំពុងដំណើរការ ឬបានបញ្ចប់រួចហើយ) ហើយបញ្ឈប់បន្ទាប់ពីការបន្តទទេមួយដង ជំនួសឱ្យការប្រើប្រាស់កូតាសាកល្បងឡើងវិញទាំងមូល។"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "រួមបញ្ចូលវាលឈ្មោះដែលងាយស្រួលបង្ហាញក្នុង response របស់ /v1/models។ បិទវាសម្រាប់ clients ដែលទទួលយកតែ model IDs ប៉ុណ្ណោះ។"
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "រង្វិលជុំ Tool ដែលគ្រប់គ្រងដោយ Server",
         "description": "បន្តការហៅ tool ដែលគ្រប់គ្រងដោយ server ដោយមិនប្រើ streaming រហូតដល់ model ត្រឡប់ response ដែល client អាចប្រើបាន។"
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "ប្រភពដើមនៃ Retry-After",
+        "description": "សម្រាប់ការឆ្លើយតប unavailable 429/503 ដែលបានប្រមូលផ្តុំ សូមលុប Retry-After ចេញ នៅពេលមិនដឹងពេលវេលាជាក់លាក់ណាមួយសម្រាប់សាកល្បងឡើងវិញនាពេលអនាគត ជំនួសឱ្យការផ្ញើតម្លៃសិប្បនិម្មិត 1s បន្ថែម error.retry_after_provenance និងអានការណែនាំអំពីការសាកល្បងឡើងវិញជាអត្ថបទនៅលើផ្លូវ combo drain។"
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "ការបញ្ឈប់ហេដ្ឋារចនាសម្ព័ន្ធអាទិភាពដែលបានការពារ ជា 502",
+        "description": "ឆ្លើយតបដោយ 502 ជំនួសឱ្យ 503 នៅពេលគោលដៅអាទិភាព quota-only-fallback បញ្ឈប់ combo ដោយសារមូលហេតុដែលអាចបញ្ជាក់បានថាមិនមែនជា quota៖ ឧបករណ៍បំបែកសៀគ្វីរបស់អ្នកផ្តល់សេវាដែលបើក ឬការរំលងដោយសារការព្យាករណ៍ភាពយឺតយ៉ាវ។"
       }
     }
   },

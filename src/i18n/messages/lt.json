@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Leisti atkuriant srautą dar kartą paprašyti atsakymo ir jį sujungti, net jei klientas jau gavo dalį baitų."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Užtikrinkite saugų įrankio iškvietimą tęsiant srautą nuo vidurio: niekada neatnaujinkite nutraukto srauto po to, kai buvo išsiųstas įrankio iškvietimas (jis vis dar vykdomas arba jau baigtas), ir sustokite po vieno tuščio tęsinio, užuot išnaudoję visą pakartotinių bandymų limitą."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Į /v1/models atsakymus įtraukti patogiam rodymui skirtus pavadinimų laukus. Išjunkite tai klientams, kurie priima tik modelių ID."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Serverio valdomas įrankių ciklas",
         "description": "Tęsti serverio valdomus nesrautinius įrankių iškvietimus, kol modelis pateiks klientui tinkamą atsakymą."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After kilmė",
+        "description": "Gavę agreguotus 429/503 nepasiekiamumo atsakymus, nenurodykite Retry-After, kai konkretus būsimo pakartotinio bandymo laikas nežinomas, užuot siuntę dirbtinę 1 s reikšmę; pridėkite error.retry_after_provenance ir nuskaitykite tekstines pakartotinio bandymo užuominas kombinacijos ištuštinimo keliuose."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Apsaugoto prioriteto infrastruktūros stabdymai pateikiami kaip 502",
+        "description": "Pateikite 502, o ne 503, kai prioritetinis tik kvotos atsarginiam perėjimui skirtas tikslas sustabdo kombinaciją dėl priežasties, kuri akivaizdžiai nesusijusi su kvota: suveikusio teikėjo grandinės pertraukiklio arba prognozuojamo delsos praleidimo."
       }
     }
   },

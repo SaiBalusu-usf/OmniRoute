@@ -1722,7 +1722,7 @@
     "costs": "Kuɗaɗe",
     "health": "Lafiya",
     "runtime": "Lokacin Gudana",
-    "webhooks": "Webhooks",
+    "webhooks": "Kiran yanar gizo",
     "home": "Gida",
     "activity": "Ayyuka",
     "agentSkills": "Ƙwarewar Wakili",
@@ -4430,7 +4430,7 @@
       "reindexFailed": "An kasa fara sake gina fihirisa",
       "keywordLabel": "Kalmar bincike (FTS5)",
       "keywordReason": "Binciken kalmomi yana samuwa koyaushe",
-      "embeddingLabel": "Embedding",
+      "embeddingLabel": "Cusawa",
       "vectorStoreLabel": "Ma’ajiyar Vector",
       "qdrantLabel": "Qdrant",
       "rerankLabel": "Sake jera sakamako",
@@ -4471,7 +4471,7 @@
       "simulate": "Gwada",
       "resultsTitle": "Sakamako {count}",
       "resolutionTitle": "Ƙudurin bincike",
-      "resolutionEmbedding": "Embedding",
+      "resolutionEmbedding": "Cusawa",
       "resolutionStore": "Ma'ajiyar vector",
       "resolutionStrategy": "Dabarar da aka yi amfani da ita",
       "rerankApplied": "An yi sake jeri",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Ba stream recovery damar sake neman martanin da haɗa shi bayan bytes sun riga sun isa ga abokin ciniki."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Tabbatar da ci gaba a tsakiyar kwarara bayan kiran kayan aiki yana da aminci: kada a taɓa ci gaba da kwararar da aka katse bayan an aika kiran kayan aiki (ko har yanzu yana gudana ko ya riga ya ƙare), sannan a dakata bayan ci gaba mara komai guda ɗaya maimakon amfani da duk kasafin sake gwadawa."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Haɗa filayen suna masu sauƙin nunawa a cikin martanin /v1/models. Kashe wannan ga abokan cinikin da ke karɓar IDs na samfuri kawai."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Madaukin Kayan Aiki Mallakar Sabar",
         "description": "Ci gaba da kiran kayan aikin sabar marasa gudana har sai samfurin ya dawo da amsar da abokin ciniki zai iya amfani da ita."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Asalin Retry-After",
+        "description": "A kan haɗaɗɗun martanin rashin samuwa na 429/503, a bar Retry-After idan ba a san takamaiman lokacin sake gwadawa na gaba ba maimakon aika ƙirƙirarren 1s, a ƙara error.retry_after_provenance, sannan a karanta alamomin sake gwadawa na rubutu a hanyoyin zubar da combo."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Tsayawar Infra na Protected-Priority a matsayin 502",
+        "description": "A ba da amsar 502 maimakon 503 lokacin da maƙasudin fifiko na quota-only-fallback ya dakatar da combo saboda dalilin da aka tabbatar ba quota ba ne: buɗaɗɗen circuit breaker na provider ko tsallakewa bisa hasashen latency."
       }
     }
   },

@@ -6527,7 +6527,7 @@
     "routingSummarizeDropParagraphContains": "ഇവ അടങ്ങിയ ഖണ്ഡികകൾ ഒഴിവാക്കുക: {items}",
     "routingSummarizeDropParagraphStartsWith": "ഇവകൊണ്ട് ആരംഭിക്കുന്ന ഖണ്ഡികകൾ ഒഴിവാക്കുക: {items}",
     "routingSummarizeReplaceText": "\"{match}\" → \"{replacement}\" ആയി പകരംവയ്ക്കുക",
-    "routingSummarizeReplaceRegex": "regex /{pattern}/{flags} → \"{replacement}\"",
+    "routingSummarizeReplaceRegex": "റെഗുലർ എക്സ്പ്രഷൻ /{pattern}/{flags} → \"{replacement}\"",
     "routingSummarizeDropBlockContains": "ഇവ അടങ്ങിയ ബ്ലോക്കുകൾ ഒഴിവാക്കുക: {items}",
     "routingSummarizePrependSystemBlock": "ബ്ലോക്ക് തുടക്കത്തിൽ ചേർക്കുക: \"{text}\"",
     "routingSummarizeAppendSystemBlock": "ബ്ലോക്ക് അവസാനത്തിൽ ചേർക്കുക: \"{text}\"",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "ബൈറ്റുകൾ ഇതിനകം ക്ലയന്റിൽ എത്തിയതിനുശേഷവും പ്രതികരണം വീണ്ടും അഭ്യർത്ഥിച്ച് കൂട്ടിച്ചേർക്കാൻ സ്ട്രീം വീണ്ടെടുക്കലിനെ അനുവദിക്കുക."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "മിഡ്-സ്ട്രീം തുടർച്ചയിലെ ടൂൾ കോൾ സുരക്ഷിതമാക്കുക: ഒരു ടൂൾ കോൾ അയച്ചതിന് ശേഷം (ഇപ്പോഴും പുരോഗതിയിലായാലും ഇതിനകം പൂർത്തിയായാലും) മുറിഞ്ഞ സ്ട്രീം ഒരിക്കലും പുനരാരംഭിക്കരുത്; മുഴുവൻ റീട്രൈ ബജറ്റും ഉപയോഗിക്കുന്നതിന് പകരം ഒരു ശൂന്യ തുടർച്ചയ്ക്ക് ശേഷം നിർത്തുക."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models പ്രതികരണങ്ങളിൽ പ്രദർശനത്തിന് അനുയോജ്യമായ നാമ ഫീൽഡുകൾ ഉൾപ്പെടുത്തുക. മോഡൽ ID-കൾ മാത്രം സ്വീകരിക്കുന്ന ക്ലയന്റുകൾക്കായി ഇത് പ്രവർത്തനരഹിതമാക്കുക."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "സെർവർ ഉടമസ്ഥതയിലുള്ള ടൂൾ ലൂപ്പ്",
         "description": "മോഡൽ ക്ലയന്റിന് ഉപയോഗിക്കാവുന്ന പ്രതികരണം നൽകുന്നതുവരെ സ്ട്രീമിംഗ് അല്ലാത്ത, സെർവർ ഉടമസ്ഥതയിലുള്ള ടൂൾ കോളുകൾ തുടരുക."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After ഉറവിടം",
+        "description": "സമാഹരിച്ച 429/503 ലഭ്യമല്ലാത്ത പ്രതികരണങ്ങളിൽ, വ്യക്തമായ ഭാവി റീട്രൈ സമയം അറിയാത്തപ്പോൾ കൃത്രിമമായ 1s അയയ്ക്കുന്നതിന് പകരം Retry-After ഒഴിവാക്കുക, error.retry_after_provenance ചേർക്കുക, കൂടാതെ കോംബോ ഡ്രെയിൻ പാത്തുകളിലെ വിവരണാത്മക റീട്രൈ സൂചനകൾ വായിക്കുക."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "സംരക്ഷിത-മുൻഗണന ഇൻഫ്രാ സ്റ്റോപ്പുകൾ 502 ആയി",
+        "description": "ക്വോട്ട-മാത്രം-ഫാൾബാക്ക് മുൻഗണനാ ടാർഗറ്റ്, ക്വോട്ട കാരണമല്ലെന്ന് തെളിയിക്കാവുന്ന ഒരു കാരണത്താൽ കോംബോ നിർത്തുമ്പോൾ 503-ന് പകരം 502 നൽകുക: തുറന്ന പ്രൊവൈഡർ സർക്യൂട്ട് ബ്രേക്കർ അല്ലെങ്കിൽ പ്രവചനാത്മക ലേറ്റൻസി സ്കിപ്പ്."
       }
     }
   },

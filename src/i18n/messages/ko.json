@@ -9781,7 +9781,7 @@
     "systemMonitor": {
       "metricsAriaLabel": "시스템 메트릭스",
       "memory": "메모리",
-      "memoryShort": "mem",
+      "memoryShort": "메모리",
       "uptime": "가동 시간",
       "ariaLabel": "시스템 모니터링",
       "title": "시스템 모니터",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "바이트가 이미 클라이언트에 도달한 후에도 스트림 복구가 응답을 다시 요청하고 이어 붙일 수 있도록 허용합니다."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "스트림 중간 이어가기를 도구 호출에 안전하도록 개선: 도구 호출이 전송된 후에는 호출이 아직 진행 중이거나 이미 완료되었는지와 관계없이 중단된 스트림을 절대 재개하지 않으며, 전체 재시도 한도를 사용하는 대신 빈 이어가기 한 번 후 중지합니다."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models 응답에 표시용 이름 필드를 포함합니다. 모델 ID만 허용하는 클라이언트의 경우 이 설정을 비활성화하세요."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "서버 소유 도구 루프",
         "description": "모델이 클라이언트에서 사용할 수 있는 응답을 반환할 때까지 스트리밍이 아닌 서버 소유 도구 호출을 계속합니다."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After 출처",
+        "description": "집계된 429/503 사용 불가 응답에서 구체적인 향후 재시도 시간을 알 수 없는 경우 인위적인 1초 값을 보내는 대신 Retry-After를 생략하고, error.retry_after_provenance를 추가하며, 콤보 드레인 경로에서 서술형 재시도 힌트를 읽습니다."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "보호된 우선순위 인프라 중단을 502로 처리",
+        "description": "할당량 전용 폴백 우선순위 대상이 할당량 문제가 아님을 입증할 수 있는 원인, 즉 열린 공급자 회로 차단기 또는 예측적 지연 시간 건너뛰기로 인해 콤보를 중단하는 경우 503 대신 502로 응답합니다."
       }
     }
   },

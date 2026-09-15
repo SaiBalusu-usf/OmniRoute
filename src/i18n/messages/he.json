@@ -1182,7 +1182,7 @@
     "conversations": "שיחות",
     "conversationsSubtitle": "שיחות סוכניות מרובות סבבים",
     "globalRouting": "ניתוב גלובלי",
-    "mitmProxy": "MITM Proxy",
+    "mitmProxy": "פרוקסי MITM",
     "oneProxy": "1Proxy",
     "agenticFeaturesSection": "תכונות סוכניות",
     "otherFeaturesSection": "תכונות אחרות",
@@ -1272,7 +1272,7 @@
     "systemGroup": "מערכת",
     "costsOverview": "סקירה כללית",
     "costsOverviewSubtitle": "ניתוח עלויות מאוחד",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "גשר סוכנים",
     "agentBridgeSubtitle": "יירוט תעבורת סוכן IDE",
     "trafficInspector": "מפקח תעבורה",
     "trafficInspectorSubtitle": "בדיקת תעבורת הבקשות והתשובות מהאפליקציות שלך",
@@ -1315,7 +1315,7 @@
     "noResults": "אין תוצאות"
   },
   "webhooks": {
-    "title": "Webhooks",
+    "title": "וובהוקים",
     "description": "הגדר התקשרות עם HTTP עבור אירועי מערכת.",
     "configuredWebhooks": "Webhooks מוגדרים",
     "configuredWebhooksDesc": "נהל נקודות קצה מסירה, אירועים רשומים, סטטוס ושליחות בדיקה.",
@@ -1722,7 +1722,7 @@
     "costs": "עלויות",
     "health": "תקינות",
     "runtime": "זמן ריצה",
-    "webhooks": "Webhooks",
+    "webhooks": "וובהוקים",
     "home": "בית",
     "activity": "פעילות",
     "agentSkills": "AgentSkills",
@@ -9469,7 +9469,7 @@
     "tierPro": "פרו",
     "tierPlus": "בנוסף",
     "tierFree": "חינם",
-    "tierLite": "Lite",
+    "tierLite": "קל",
     "tierUnknown": "לא ידוע",
     "statTotal": "סך הכל",
     "statCritical": "קריטי",
@@ -11126,7 +11126,7 @@
     "jsonSchemaEditor": "עורך סכמת JSON",
     "schemaValidated": "הסכמה אומתה",
     "validateSchema": "אמת סכמה",
-    "seed": "Seed",
+    "seed": "זרע",
     "stopSequences": "רצפי עצירה",
     "stopSequencesPlaceholder": "לדוגמה \"\\n\\n\" או \"END\"",
     "autoProvider": "אוטומטי",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "התרת שחזור זרם כדי לבקש את התגובה מחדש ולחבר אותה לאחר שביתים כבר הגיעו ללקוח."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "הפיכת המשך באמצע זרם לבטוח עבור קריאות לכלים: לעולם אין לחדש זרם שנקטע לאחר שנשלחה קריאה לכלי (בין שהיא עדיין מתבצעת ובין שכבר הסתיימה), ויש לעצור לאחר ניסיון המשך ריק אחד במקום לנצל את כל מכסת הניסיונות החוזרים."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "הכללת שדות שם ידידותיים לתצוגה בתגובות של /v1/models. השבת זאת עבור לקוחות המקבלים מזהי מודל בלבד."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "לולאת כלים בניהול השרת",
         "description": "המשיכו קריאות לא-מוזרמות לכלים בניהול השרת עד שהמודל יחזיר תגובה שהלקוח יכול להשתמש בה."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "מקור ה-Retry-After",
+        "description": "בתגובות אי-זמינות מצטברות מסוג 429/503, יש להשמיט את Retry-After כאשר לא ידוע מועד קונקרטי עתידי לניסיון חוזר במקום לשלוח ערך סינתטי של 1s, להוסיף את error.retry_after_provenance ולקרוא רמזים טקסטואליים לניסיון חוזר בנתיבי ריקון משולבים."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "עצירות תשתית בעדיפות מוגנת כ-502",
+        "description": "יש להשיב ב-502 במקום ב-503 כאשר יעד בעדיפות עם גיבוי למכסה בלבד עוצר את השילוב מסיבה שניתן להוכיח שאינה קשורה למכסה: מפסק מעגל פתוח של ספק או דילוג חזוי בשל זמן השהיה."
       }
     }
   },

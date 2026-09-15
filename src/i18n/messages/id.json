@@ -4129,7 +4129,7 @@
     "vscodeAliasModelsLabel": "Model VS Code",
     "vscodeAliasChatLabel": "Obrolan VS Code",
     "localServer": "Server Lokal",
-    "cloudOmniroute": "Cloud OmniRoute",
+    "cloudOmniroute": "OmniRoute Cloud",
     "copyUrl": "Salin URL",
     "badgeLoopbackTooltip": "Endpoint ini hanya dapat diakses secara lokal (hanya loopback)",
     "badgeAlwaysProtectedTooltip": "Endpoint ini selalu dilindungi dan memerlukan otorisasi",
@@ -8627,7 +8627,7 @@
     "editCombo": "Edit",
     "deleteCombo": "Hapus",
     "deleteConfirm": "Hapus kombinasi kompresi ini?",
-    "pipeline": "Pipeline",
+    "pipeline": "Alur Pemrosesan",
     "addStep": "Tambahkan Langkah",
     "removeStep": "Hapus",
     "name": "Nama",
@@ -8636,7 +8636,7 @@
     "outputMode": "Mode Output",
     "assignToRouting": "Tetapkan ke Kombinasi Perutean",
     "noAssignments": "Tidak ada kombinasi perutean yang tersedia",
-    "default": "Default",
+    "default": "Bawaan",
     "setAsDefault": "Tetapkan sebagai Default",
     "save": "Simpan",
     "cancel": "Batal",
@@ -8695,7 +8695,7 @@
     "replay": "Putar ulang",
     "resetReplay": "Atur ulang pemutaran ulang",
     "stepProgress": "langkah {current}/{total}",
-    "inlineView": "Inline",
+    "inlineView": "Sebaris",
     "splitComingSoon": "Tampilan terpisah (segera hadir)",
     "inputPlaceholder": "Tempelkan prompt, output alat, atau konteks…",
     "activeCombined": "Aktif dalam alur gabungan",
@@ -8738,7 +8738,7 @@
     "compareTab": "Bandingkan",
     "encoderComparison": "Encoder A/B — {count} array",
     "encoderWinner": "pemenang: {winner}",
-    "encoder": "encoder",
+    "encoder": "enkoder",
     "bytes": "byte",
     "tokensCl100k": "token (cl100k)"
   },
@@ -9608,7 +9608,7 @@
     "suiteBuilderUpdatedAt": "Diperbarui",
     "errorBadge": "Kesalahan",
     "suiteBuilderCasesTitle": "Kasus Uji",
-    "edit": "Edit",
+    "edit": "Sunting",
     "monthly": "Bulanan",
     "suiteBuilderCasesRequired": "Setidaknya satu kasus uji diperlukan",
     "weeklyLimitSummary": "Ringkasan batas anggaran mingguan",
@@ -11126,7 +11126,7 @@
     "jsonSchemaEditor": "Editor skema JSON",
     "schemaValidated": "Skema tervalidasi",
     "validateSchema": "Validasi skema",
-    "seed": "Seed",
+    "seed": "Benih",
     "stopSequences": "Urutan henti",
     "stopSequencesPlaceholder": "mis. \"\\n\\n\" atau \"END\"",
     "autoProvider": "Otomatis",
@@ -11180,7 +11180,7 @@
     }
   },
   "miniPlayground": {
-    "endpoint": "Endpoint",
+    "endpoint": "Titik Akhir",
     "apiKey": "Kunci API",
     "model": "Model",
     "voice": "Suara",
@@ -11222,7 +11222,7 @@
     "noAudioUrl": "Respons tidak menyertakan URL audio: {response}",
     "music": "Musik",
     "embeddingSample": "OmniRoute merutekan permintaan AI ke berbagai penyedia.",
-    "embedding": "Embedding",
+    "embedding": "Penyematan",
     "imageSample": "Kota futuristik saat matahari terbenam, pencahayaan sinematik",
     "image": "Gambar",
     "ttsSample": "Halo dari OmniRoute. Ini adalah pengujian teks ke ucapan.",
@@ -11285,7 +11285,7 @@
     "cacheSem": "SEM",
     "cacheUp": "AKTIF",
     "semantic": "Semantik",
-    "upstream": "Upstream",
+    "upstream": "Hulu",
     "semanticCacheHit": "Cache semantik ditemukan (disajikan oleh OmniRoute)",
     "upstreamResponse": "Respons penyedia upstream",
     "noApiKey": "Tidak ada kunci API",
@@ -11561,7 +11561,7 @@
     "loading": "Memuat…",
     "removePool": "Hapus pool",
     "removeConfirm": "Hapus pool ini?",
-    "pool": "Pool",
+    "pool": "Kumpulan",
     "used": "digunakan",
     "allocationsCount": "Alokasi ({count})",
     "allocatedFree": "{allocated}% dialokasikan · {free}% tersedia",
@@ -11720,7 +11720,7 @@
     "enabled": "Diaktifkan",
     "disabled": "Dinonaktifkan",
     "installedTab": "Terinstal",
-    "marketplaceTab": "Marketplace",
+    "marketplaceTab": "Pasar",
     "marketplaceUrlLabel": "URL Marketplace Kustom",
     "marketplaceUrlPlaceholder": "Biarkan kosong untuk registri resmi Omniroute",
     "saveMarketplaceUrl": "Simpan & Muat Ulang",
@@ -12569,7 +12569,7 @@
     "categoryCoding": "Pemrograman",
     "categoryReview": "Tinjauan",
     "categoryDocumentation": "Dokumentasi",
-    "categoryDebugging": "Debugging",
+    "categoryDebugging": "Penelusuran kesalahan",
     "colRank": "Peringkat",
     "colProvider": "Penyedia",
     "colTopModel": "Model Teratas",
@@ -12847,7 +12847,7 @@
       "security": "Keamanan",
       "network": "Jaringan",
       "policies": "Kebijakan",
-      "runtime": "Runtime",
+      "runtime": "Waktu proses",
       "cli": "CLI",
       "health": "Kesehatan",
       "requiresRestart": "Memerlukan Mulai Ulang"
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Izinkan pemulihan streaming untuk meminta respons kembali dan menggabungkannya setelah byte telah mencapai klien."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Amankan pemanggilan alat saat melanjutkan streaming di tengah proses: jangan pernah melanjutkan stream yang terputus setelah pemanggilan alat dikirim (masih berlangsung atau sudah selesai), dan hentikan setelah satu kelanjutan kosong alih-alih menggunakan seluruh jatah percobaan ulang."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Sertakan bidang nama yang mudah dibaca dalam respons /v1/models. Nonaktifkan ini untuk klien yang hanya menerima ID model."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Loop Alat Milik Server",
         "description": "Lanjutkan panggilan alat non-streaming milik server hingga model mengembalikan respons yang dapat digunakan klien."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Asal Retry-After",
+        "description": "Pada respons gabungan 429/503 tidak tersedia, hilangkan Retry-After jika waktu percobaan ulang konkret di masa mendatang tidak diketahui alih-alih mengirim nilai sintetis 1 detik, tambahkan error.retry_after_provenance, dan baca petunjuk percobaan ulang dalam teks pada jalur pengosongan combo."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Penghentian Infrastruktur Prioritas Terlindungi sebagai 502",
+        "description": "Berikan respons 502 alih-alih 503 ketika target prioritas dengan fallback khusus kuota menghentikan combo karena penyebab yang terbukti bukan kuota: circuit breaker penyedia yang terbuka atau pelompatan berdasarkan prediksi latensi."
       }
     }
   },
@@ -13298,7 +13309,7 @@
     "missing": "Tidak ditentukan",
     "signalOnly": "Sinyal penalaran non-diskret",
     "requestTags": "Tag permintaan",
-    "requestTagsExample": "coding, internal",
+    "requestTagsExample": "pemrograman, internal",
     "tagMode": "Pencocokan tag",
     "effortMode": "Mode upaya",
     "targetEffort": "Upaya target",

@@ -1272,7 +1272,7 @@
     "systemGroup": "Systém",
     "costsOverview": "Přehled",
     "costsOverviewSubtitle": "Konsolidovaná analýza nákladů",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "Most agenta",
     "agentBridgeSubtitle": "Zachytávat provoz agenta IDE",
     "trafficInspector": "Inspektor provozu",
     "trafficInspectorSubtitle": "Kontrolujte provoz požadavků a odpovědí z vašich aplikací",
@@ -6475,7 +6475,7 @@
     "savedModelEndpointSettings": "Nastavení koncového bodu uloženého modelu",
     "searchByModelAria": "Hledat podle modelu",
     "selectSupportedEndpoint": "Vyberte alespoň jeden podporovaný koncový bod",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Testovací rozhraní / CLI"
   },
   "settings": {
     "title": "Nastavení",
@@ -8379,7 +8379,7 @@
     "qdrantCollection": "Kolekce"
   },
   "contextRtk": {
-    "title": "RTK Engine",
+    "title": "Modul RTK",
     "description": "Komprese výstupu nástrojů, terminálových protokolů a výsledků sestavení s ohledem na příkazy.",
     "enabled": "Povoleno",
     "intensity": "Intenzita",
@@ -8729,7 +8729,7 @@
     "spent": "vyčerpáno ${spent} / ${cap}",
     "capReached": "limit dosažen",
     "loadAb": "Načíst A/B",
-    "engine": "Engine",
+    "engine": "Modul",
     "savings": "Úspory",
     "retention": "Retence",
     "outputTokensShort": "Výstupní tokeny",
@@ -9469,7 +9469,7 @@
     "tierPro": "Pro",
     "tierPlus": "Plus",
     "tierFree": "Zdarma",
-    "tierLite": "Lite",
+    "tierLite": "Odlehčený",
     "tierUnknown": "Neznámý",
     "statTotal": "Celkem",
     "statCritical": "Kritické",
@@ -10885,13 +10885,13 @@
     "save": "Uložit",
     "bulkModalTitle": "Hromadné přiřazení proxy",
     "bulkLabelScope": "Rozsah",
-    "bulkLabelProxy": "Proxy",
+    "bulkLabelProxy": "Proxy server",
     "bulkClearAssignment": "(Vymazat zadání)",
     "bulkLabelScopeIds": "ID rozsahu (oddělené čárkou nebo novým řádkem)",
     "bulkScopeIdsPlaceholder": "poskytovatel-openai,poskytovatel-antropický",
     "bulkApply": "Použít",
     "labelScope": "Rozsah",
-    "labelProxy": "Proxy",
+    "labelProxy": "Proxy server",
     "scopeGlobal": "globální",
     "scopeProvider": "poskytovatel",
     "scopeAccount": "účet",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Povolit obnovení streamu pro opětovné vyžádání odpovědi a její spojení poté, co bajty již dorazily ke klientovi."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Zajistit bezpečné pokračování volání nástroje uprostřed streamu: nikdy neobnovovat přerušený stream poté, co bylo odesláno volání nástroje (ať už stále probíhá, nebo již skončilo), a skončit po jednom prázdném pokračování namísto vyčerpání celého limitu opakovaných pokusů."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Zahrnout uživatelsky přívětivá pole názvů v odpovědích /v1/models. Zakažte to pro klienty, kteří přijímají pouze ID modelů."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Serverem řízená smyčka nástrojů",
         "description": "Pokračuje v nestreamovaných voláních nástrojů řízených serverem, dokud model nevrátí odpověď použitelnou klientem."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Původ hodnoty Retry-After",
+        "description": "U agregovaných odpovědí 429/503 o nedostupnosti vynechat Retry-After, pokud není znám žádný konkrétní budoucí čas opakování, namísto odesílání umělé hodnoty 1 s; přidat error.retry_after_provenance a číst textové pokyny k opakování na cestách vyprázdnění kombinace."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Zastavení infrastruktury s chráněnou prioritou jako 502",
+        "description": "Odpovědět stavem 502 namísto 503, když prioritní cíl s náhradním řešením pouze při vyčerpání kvóty zastaví kombinaci z důvodu, který prokazatelně nesouvisí s kvótou: rozpojený jistič poskytovatele nebo prediktivní přeskočení kvůli latenci."
       }
     }
   },
@@ -14100,7 +14111,7 @@
     "trialDays": "{days, plural, one {# den} few {# dny} other {# dní}}"
   },
   "radarIntelPage": {
-    "title": "Radar Intel",
+    "title": "Radarová inteligence",
     "subtitle": "Žebříčky ELO spravované službou Radar a faktické změny v katalogu.",
     "backToRadar": "Zpět do služby Radar",
     "loading": "Načítání Intel...",

@@ -1741,7 +1741,7 @@
     "changelog": "Muutosloki",
     "chaos": "Kaaos",
     "cloudAgents": "Pilviagentit",
-    "live": "Live",
+    "live": "Reaaliaikainen",
     "studio": "Studio",
     "aggressive": "Aggressiivinen",
     "caveman": "Luolamies",
@@ -8877,7 +8877,7 @@
     "providerExposureHint": "Kun tämä on käytössä, löydetyt mallit näkyvät palveluntarjoajan valitsimissa OmniRoutessa.",
     "providerExposureUpdateFailed": "Päivitys epäonnistui (HTTP {status})",
     "providerExposureNetworkFailed": "Verkkovirhe — palveluntarjoajan näkyvyysasetusta ei voitu päivittää",
-    "webUi": "9Router Web UI",
+    "webUi": "9Router-verkkokäyttöliittymä",
     "openNewTab": "Avaa uudessa välilehdessä",
     "filterLogs": "Suodata lokeja…",
     "resume": "Jatka",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Salli virran palautuksen pyytää vastausta uudelleen ja liittää se sen jälkeen, kun tavuja on jo saapunut asiakkaalle."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Tee kesken suoratoiston jatkamisesta turvallista työkalukutsujen kannalta: älä koskaan jatka katkennutta suoratoistoa sen jälkeen, kun työkalukutsu on lähetetty (se on yhä käynnissä tai jo valmistunut), ja lopeta yhden tyhjän jatkoyrityksen jälkeen sen sijaan, että käyttäisit koko uudelleenyritysbudjetin."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Sisällytä näyttöystävälliset nimikentät /v1/models-vastauksiin. Poista tämä käytöstä asiakkaille, jotka hyväksyvät vain mallitunnuksia."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Palvelimen hallinnoima työkalusilmukka",
         "description": "Jatka palvelimen hallinnoimia suoratoistamattomia työkalukutsuja, kunnes malli palauttaa asiakkaan käytettävissä olevan vastauksen."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After-alkuperä",
+        "description": "Kun yhdistetty vastaus on 429/503 ja palvelu ei ole käytettävissä, jätä Retry-After pois, jos konkreettista tulevaa uudelleenyritysaikaa ei tiedetä, sen sijaan että lähettäisit keinotekoisen 1 sekunnin ajan. Lisää error.retry_after_provenance ja lue sanalliset uudelleenyritysvihjeet combon tyhjennyspoluilla."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Suojatun prioriteetin infrastruktuuripysäytykset vastauksena 502",
+        "description": "Vastaa koodilla 502 koodin 503 sijaan, kun vain kiintiön varavaihtoehtona toimiva prioriteettikohde pysäyttää combon syystä, jonka voidaan varmasti osoittaa olevan muu kuin kiintiö: palveluntarjoajan avoin katkaisija tai ennakoivaan viiveeseen perustuva ohitus."
       }
     }
   },
@@ -14100,7 +14111,7 @@
     "trialDays": "{days, plural, one {# päivä} other {# päivää}}"
   },
   "radarIntelPage": {
-    "title": "Radar Intel",
+    "title": "Tutkatiedustelu",
     "subtitle": "Radarin omat ELO-sijoitukset ja luettelon tosiasialliset muutokset.",
     "backToRadar": "Takaisin Radariin",
     "loading": "Ladataan Intel-tietoja...",

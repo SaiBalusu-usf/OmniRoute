@@ -1002,7 +1002,7 @@
     "analytics": "Nnyocha Data",
     "costs": "Ọnụ Ahịa",
     "health": "Ahụike",
-    "proxy": "Proxy",
+    "proxy": "Onye nnọchite anya",
     "limits": "Oke Kwota",
     "cliTools": "Ngwaọrụ CLI",
     "media": "Mgbasa Ozi",
@@ -1026,7 +1026,7 @@
     "embeddedServices": "Ọrụ agbakwunyere",
     "embeddedServicesSubtitle": "Ọrụ mpaghara ndị a na-ahọrọ",
     "logs": "Ndekọ",
-    "webhooks": "Webhooks",
+    "webhooks": "Nko weebụ",
     "webhooksSubtitle": "Nweta ọkwa maka ihe omume",
     "logExport": "Mbupụ ndekọ",
     "logExportSubtitle": "Zipụ ndekọ oku",
@@ -1097,7 +1097,7 @@
     "faviconPreview": "Nlele Favicon",
     "changelog": "Ndekọ Mgbanwe",
     "contextSection": "Ọnọdụ & Cache",
-    "contextCaveman": "Caveman",
+    "contextCaveman": "Nwoke ọgba",
     "contextRtk": "RTK",
     "contextCombos": "Ngwakọta Injin",
     "contextLite": "Dị Mfe",
@@ -1315,7 +1315,7 @@
     "noResults": "Enweghị nsonaazụ"
   },
   "webhooks": {
-    "title": "Webhooks",
+    "title": "Nko weebụ",
     "description": "Hazie ọkpụkpọ azụ HTTP maka ihe omume sistemụ.",
     "configuredWebhooks": "Webhooks Ahaziri",
     "configuredWebhooksDesc": "Jikwaa ebe nnyefe, ihe omume edebanyere aha, ọnọdụ, na nnwale izipu.",
@@ -1722,7 +1722,7 @@
     "costs": "Ọnụ ahịa",
     "health": "Ahụike",
     "runtime": "Oge ịrụ ọrụ",
-    "webhooks": "Webhooks",
+    "webhooks": "Nko weebụ",
     "home": "Ụlọ",
     "activity": "Ihe omume",
     "agentSkills": "AgentSkills",
@@ -1742,7 +1742,7 @@
     "chaos": "Ọgbaaghara",
     "cloudAgents": "Ndị nnọchi anya Cloud",
     "live": "Kpọmkwem",
-    "studio": "Studio",
+    "studio": "Ụlọ ihe nkiri",
     "aggressive": "Kpụ ọkụ n'ọnụ",
     "caveman": "Onye ọgba",
     "ccr": "CCR",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Kwe ka mgbake stream rịọ nzaghachi ahụ ọzọ ma jikọta ya mgbe byte ruterelarị client."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Mee ka ọ dị nchebe ịga n'ihu n'etiti stream mgbe a kpọrọ tool: amalitela stream e kwụsịrị mgbe ezipụchara tool call (ma ọ ka na-aga n'ihu ma ọ bụ na ọ gwụla), kwụsịkwa mgbe continuation efu mere otu ugboro kama iji retry budget niile."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Tinye field aha dị mfe igosi na nzaghachi /v1/models. Gbanyụọ nke a maka client ndị na-anabata naanị ID model."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Okirikiri Ngwaọrụ nke Sava Na-achịkwa",
         "description": "Gaa n'ihu na oku ngwaọrụ sava na-achịkwa ndị na-abụghị streaming ruo mgbe model weghachiri nzaghachi onye ahịa nwere ike iji."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Isi mmalite Retry-After",
+        "description": "Na nzaghachi 429/503 ndị agbakọtara nke na-egosi enweghị nnweta, ewepụla Retry-After mgbe a maghị kpọmkwem oge nnwale ọzọ n'ọdịnihu kama izipu 1s e chepụtara echepụta; tinye error.retry_after_provenance, ma gụọ ntụnye nnwale ọzọ ndị e dere n'ahịrịokwu n'ụzọ combo drain."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Nkwụsị Akụrụngwa nke Prioriti Echedoro dịka 502",
+        "description": "Zaghachi 502 kama 503 mgbe ebumnuche prioriti quota-only-fallback kwụsịrị combo n'ihi ihe e gosipụtara na ọ bụghị quota: provider circuit breaker mepere emepe ma ọ bụ predictive latency skip."
       }
     }
   },

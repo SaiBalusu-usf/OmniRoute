@@ -348,7 +348,7 @@
     "testDesc": "Popis testu",
     "chatDesc": "Popis chatu",
     "importSuccess": "Import bol úspešný",
-    "chat": "Chat",
+    "chat": "Čet",
     "a2aQuickStartStep1": "A2A – rýchly štart, krok 1",
     "importFailed": "Import zlyhal",
     "inputPlaceholder": "Zástupný text vstupu",
@@ -1272,7 +1272,7 @@
     "systemGroup": "Systém",
     "costsOverview": "Prehľad",
     "costsOverviewSubtitle": "Konsolidovaná analýza nákladov",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "Most agentov",
     "agentBridgeSubtitle": "Zachytávať prevádzku agentov IDE",
     "trafficInspector": "Inšpektor prevádzky",
     "trafficInspectorSubtitle": "Kontrolujte prenos požiadaviek a odpovedí z vašich aplikácií",
@@ -8991,7 +8991,7 @@
     "ideCliIntegrations": "Integrácia IDE/CLI",
     "inMemoryNote": "Poznámka: Udalosti sa ukladajú do pamäte a resetujú sa, keď sa server reštartuje.",
     "ok": "OK",
-    "errorShort": "ERR",
+    "errorShort": "CHYBA",
     "formatConverter": "Prevodník formátov",
     "formatConverterDescription": "Prilepte alebo zadajte telo požiadavky JSON. Prekladateľ automaticky rozpozná zdrojový formát a prevedie ho do cieľového formátu. Použite toto na ladenie spôsobu, akým OmniRoute prekladá požiadavky medzi formátmi (OpenAI ↔ Claude ↔ Gemini ↔ Responses API).",
     "translationPathHubSpoke": "{source} → OpenAI (stredne pokročilá) → {target}",
@@ -11019,7 +11019,7 @@
     "conversationalChat": "Konverzačný rozhovor",
     "clearChat": "Vymazať chat",
     "typeMessagePlaceholder": "Napíšte správu... (Shift+Enter pre nový riadok)",
-    "tabChat": "Chat",
+    "tabChat": "Čet",
     "tabCompare": "Porovnať",
     "tabApi": "API",
     "tabBuild": "Zostaviť",
@@ -12058,7 +12058,7 @@
     "resumeBtn": "Obnoviť",
     "clearBtn": "Vymazať",
     "exportHar": "Exportovať .har",
-    "recordSession": "REC",
+    "recordSession": "NAHR.",
     "stopSession": "Zastaviť",
     "liveBadge": "naživo",
     "offlineBadge": "offline",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Povoliť obnovenie streamu na opätovné vyžiadanie odpovede a jej spojenie po tom, čo bajty už dorazili ku klientovi."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Zabezpečte bezpečné pokračovanie volania nástroja uprostred streamu: nikdy neobnovujte prerušený stream po odoslaní volania nástroja (či už stále prebieha, alebo už bolo dokončené) a po jednom prázdnom pokračovaní sa zastavte namiesto využitia celého limitu opakovaných pokusov."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Zahrnúť polia s používateľsky prívetivými názvami v odpovediach /v1/models. Zakážte túto možnosť pre klientov, ktorí prijímajú iba ID modelov."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Nástrojová slučka riadená serverom",
         "description": "Pokračovať v nestreamovaných volaniach nástrojov riadených serverom, kým model nevráti odpoveď použiteľnú klientom."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Pôvod hodnoty Retry-After",
+        "description": "Pri agregovaných odpovediach 429/503 o nedostupnosti vynechajte Retry-After, ak nie je známy konkrétny budúci čas opakovania, namiesto odoslania syntetickej hodnoty 1 s; pridajte error.retry_after_provenance a načítavajte textové pokyny na opakovanie na cestách vyprázdňovania kombinácie."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Zastavenia infraštruktúry s chránenou prioritou ako 502",
+        "description": "Odpovedzte kódom 502 namiesto 503, keď prioritný cieľ so záložnou možnosťou iba pri vyčerpaní kvóty zastaví kombináciu z dôvodu, ktorý preukázateľne nesúvisí s kvótou: otvorený istič poskytovateľa alebo prediktívne preskočenie z dôvodu latencie."
       }
     }
   },

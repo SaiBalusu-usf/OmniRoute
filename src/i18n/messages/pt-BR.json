@@ -1008,7 +1008,7 @@
     "media": "Mídia",
     "settings": "Configurações",
     "translator": "Tradutor",
-    "playground": "Playground",
+    "playground": "Área de testes",
     "searchTools": "Ferramentas de pesquisa",
     "agents": "Agentes",
     "cloudAgents": "Agentes de nuvem",
@@ -1272,7 +1272,7 @@
     "systemGroup": "Sistema",
     "costsOverview": "Visão geral",
     "costsOverviewSubtitle": "Análise consolidada de custos",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "Ponte de agentes",
     "agentBridgeSubtitle": "Interceptar tráfego de agentes IDE",
     "trafficInspector": "Inspector de Tráfego",
     "trafficInspectorSubtitle": "Inspecione o tráfego de requisições e respostas dos seus apps",
@@ -4482,7 +4482,7 @@
       "errorFetch": "Falha ao buscar preview"
     },
     "previous": "Anterior",
-    "procedural": "Procedural",
+    "procedural": "Procedimental",
     "qdrant": {
       "title": "Qdrant (Banco de Vetores Nível 2)",
       "description": "Integração opcional com Qdrant para busca semântica escalável",
@@ -10959,7 +10959,7 @@
     "poolStrategyLabel": "Estratégia de rotação",
     "poolStrategyHint": "round-robin percorre os membros em ordem; aleatório escolhe uniformemente; fixo mantém um membro por uma janela antes de avançar.",
     "poolStrategyFailed": "Falha ao atualizar a estratégia de rotação",
-    "strategyRoundRobin": "Round-robin",
+    "strategyRoundRobin": "Alternância circular",
     "strategyRandom": "Aleatório",
     "strategySticky": "Fixo",
     "strategyLatency": "Otimizado por latência",
@@ -12061,7 +12061,7 @@
     "recordSession": "GRAV",
     "stopSession": "Parar",
     "liveBadge": "ao vivo",
-    "offlineBadge": "offline",
+    "offlineBadge": "off-line",
     "noRequests": "Nenhuma requisição capturada ainda.",
     "noRequestsDesc": "Certifique-se que o AgentBridge está ativo ou ative outro modo de captura.",
     "selectRequest": "Selecione uma requisição para inspecioná-la.",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Permite que a recuperação de stream solicite a resposta novamente e a costure depois que bytes já chegaram ao cliente."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Torne segura a continuação no meio do fluxo após chamadas de ferramenta: nunca retome um fluxo interrompido depois que uma chamada de ferramenta tiver sido enviada (ainda em andamento ou já concluída) e pare após uma continuação vazia, em vez de usar todo o limite de novas tentativas."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Inclui campos de nome amigável para exibição nas respostas de /v1/models. Desative isso para clientes que aceitam apenas IDs de modelo."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Loop de ferramentas controlado pelo servidor",
         "description": "Continue chamadas de ferramentas do servidor (server-owned) em não-streaming até que o modelo retorne uma resposta utilizável pelo cliente."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Origem do Retry-After",
+        "description": "Em respostas agregadas 429/503 de indisponibilidade, omita Retry-After quando não houver um horário futuro concreto conhecido para uma nova tentativa, em vez de enviar um valor sintético de 1s; adicione error.retry_after_provenance e leia as indicações textuais de nova tentativa nos fluxos de esgotamento do combo."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Interrupções de infraestrutura com prioridade protegida como 502",
+        "description": "Responda com 502 em vez de 503 quando um destino prioritário com fallback apenas por cota interromper o combo por uma causa comprovadamente não relacionada à cota: um disjuntor de provedor aberto ou uma omissão preditiva por latência."
       }
     }
   },
@@ -13099,7 +13110,7 @@
     "comboHealth": "Integridade do combo",
     "callLogs": "Logs de Chamadas",
     "costs": "Custos",
-    "playground": "Playground",
+    "playground": "Ambiente de testes",
     "nestedCombo": "Combo aninhado",
     "modelTarget": "Alvo de modelo",
     "weight": "peso de {value}%",
@@ -13141,7 +13152,7 @@
     "loadingUsdCosts": "Carregando custos em USD",
     "used": "Usado",
     "quotaUsed": "Cota usada",
-    "estimatedFullQuota": "Est. 100%",
+    "estimatedFullQuota": "Estim. 100%",
     "rows": "Linhas",
     "window": "Janela",
     "unknown": "desconhecido",
@@ -13964,8 +13975,8 @@
     "colMode": "Modo",
     "colRunner": "Executor",
     "colSummary": "Resumo",
-    "online": "online",
-    "offline": "offline",
+    "online": "conectado",
+    "offline": "desconectado",
     "draining": "drenando",
     "hubOffline": "Hub do Conductor fora do ar ou não configurado (CONDUCTOR_HUB_URL) — melhor nada do que dado velho.",
     "noRunners": "Nenhum runner registrado",
@@ -14035,7 +14046,7 @@
     "sourceA2A": "A2A",
     "sourceConductor": "Orquestrador",
     "sourceStale": "Sem atualização desde {since}",
-    "sourceOffline": "Offline",
+    "sourceOffline": "Desconectado",
     "sourceCollapse": "Recolher",
     "sourceExpand": "Expandir",
     "stateQueued": "Na fila",

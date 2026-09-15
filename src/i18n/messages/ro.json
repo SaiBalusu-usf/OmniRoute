@@ -1272,7 +1272,7 @@
     "systemGroup": "Sistem",
     "costsOverview": "Prezentare generală",
     "costsOverviewSubtitle": "Analiză consolidată a costurilor",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "Punte pentru agenți",
     "agentBridgeSubtitle": "Interceptează traficul agentului IDE",
     "trafficInspector": "Inspector de trafic",
     "trafficInspectorSubtitle": "Inspectează traficul de solicitări și răspunsuri din aplicațiile tale",
@@ -2207,7 +2207,7 @@
     "combo": "Combinație",
     "routeStep": "Pas",
     "tokens": "Tokenuri",
-    "notAvailable": "n/a",
+    "notAvailable": "indisponibil",
     "routeTokenCounts": "{input} intrare · {output} ieșire",
     "routeEvidence": "Dovezi",
     "routeFactors": "Factori de rutare",
@@ -4609,7 +4609,7 @@
     "popularDefaultsLabel": "Populare în mod implicit pentru furnizorul selectat:",
     "onMode": "PORNIT",
     "offMode": "OPRIT",
-    "autoMode": "AUTO",
+    "autoMode": "AUTOMAT",
     "installSkillButton": "Instalare abilitate",
     "installSkillModalTitle": "Instalare abilitate",
     "installJsonPlaceholder": "Lipiți JSON-ul manifestului abilității aici...",
@@ -6605,7 +6605,7 @@
     "semantic": "Semantic",
     "semanticDesc": "Căutare vectorială",
     "hybrid": "Hibrid",
-    "hybridDesc": "Recent + Semantic",
+    "hybridDesc": "Recent + semantic",
     "skillsTitle": "Abilități",
     "skillsDesc": "Instrumente pentru modele",
     "skillsEnabled": "Activează abilitățile",
@@ -7928,7 +7928,7 @@
     "resilienceEnableServerSideWait": "Activați așteptarea pe server",
     "resilienceMaximumRetries": "Numărul maxim de încercări",
     "resilienceMaximumWaitPerRetry": "Așteptare maximă pentru fiecare reîncercare",
-    "memorySkillsSkillsmpMarketplace": "SkillsMP Marketplace",
+    "memorySkillsSkillsmpMarketplace": "Piața SkillsMP",
     "memorySkillsFailedToSave": "Salvare eșuată",
     "memorySkillsApiKey": "Cheia API",
     "memorySkillsActiveSkillsProvider": "Furnizor activ de abilități",
@@ -8231,7 +8231,7 @@
     "modalityBridgeAudioTab": "Audio",
     "modalityBridgeVideoTab": "Video",
     "modalityBridgeSubTabsAria": "Secțiuni Pod Modality",
-    "modalityBridgeVisionTitle": "Vision Bridge",
+    "modalityBridgeVisionTitle": "Punte vizuală",
     "modalityBridgeVisionDesc": "Descrie imaginile cu un model de viziune și continuă cu modelul de text ales de utilizator.",
     "modalityBridgeMode": "Mod",
     "modalityBridgeModeAuto": "Automat (recomandat)",
@@ -10959,7 +10959,7 @@
     "poolStrategyLabel": "Strategie de rotație",
     "poolStrategyHint": "round-robin parcurge membrii în ordine; random alege uniform; sticky reține un membru pentru o fereastră de timp; latency-optimized îl alege pe cel mai rapid pe baza jurnalelor.",
     "poolStrategyFailed": "Nu s-a putut actualiza strategia de rotație",
-    "strategyRoundRobin": "Round-robin",
+    "strategyRoundRobin": "Distribuire circulară",
     "strategyRandom": "Aleatoriu",
     "strategySticky": "Persistent",
     "strategyLatency": "Optimizat pentru latență",
@@ -10976,7 +10976,7 @@
   "playground": {
     "title": "Title",
     "description": "Description",
-    "endpoint": "Endpoint",
+    "endpoint": "Punct final",
     "provider": "Furnizor",
     "model": "Model",
     "accountKey": "Account Key",
@@ -11027,7 +11027,7 @@
     "systemPrompt": "Prompt de sistem",
     "systemPromptPlaceholder": "Ești un asistent util.",
     "modelPlaceholder": "de ex. openai/gpt-4o",
-    "endpointLabel": "Endpoint",
+    "endpointLabel": "Punct final",
     "parametersLabel": "Parametri",
     "collapseConfig": "Restrânge panoul de configurare",
     "expandConfig": "Extinde panoul de configurare",
@@ -11238,7 +11238,7 @@
     "searchResultFallback": "Rezultat {number}",
     "noKeysFound": "Nu s-au găsit chei API. Adaugă una în secțiunea Chei.",
     "exampleLabel": "Exemplu",
-    "latency": "{ms}ms",
+    "latency": "{ms} ms",
     "statsLine": "{ms}ms · {tokensIn} tokeni de intrare / {tokensOut} tokeni de ieșire",
     "defaultKey": "(implicit)",
     "clear": "Curăță",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Permite recuperării fluxului să solicite din nou răspunsul și să îl îmbine după ce octeții au ajuns deja la client."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Asigură siguranța continuării în mijlocul fluxului pentru apelurile de instrumente: nu relua niciodată un flux întrerupt după trimiterea unui apel de instrument (aflat încă în desfășurare sau deja finalizat) și oprește-te după o singură continuare fără conținut, în loc să utilizezi întregul buget de reîncercări."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Include câmpuri de nume ușor de afișat în răspunsurile /v1/models. Dezactivează această opțiune pentru clienții care acceptă doar ID-uri de model."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Buclă de instrumente gestionată de server",
         "description": "Continuă apelurile nesecvențiale ale instrumentelor gestionate de server până când modelul returnează un răspuns utilizabil de client."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Proveniența Retry-After",
+        "description": "Pentru răspunsurile agregate de indisponibilitate 429/503, omite Retry-After atunci când nu este cunoscut un moment viitor concret pentru reîncercare, în loc să trimiți o valoare sintetică de 1s, adaugă error.retry_after_provenance și citește indicațiile textuale privind reîncercarea pe căile de epuizare a combinației."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Opririle de infrastructură cu prioritate protejată ca 502",
+        "description": "Răspunde cu 502 în loc de 503 atunci când o țintă prioritară cu fallback exclusiv pentru cotă oprește combinația dintr-o cauză care, în mod demonstrabil, nu ține de cotă: un întrerupător de circuit deschis al furnizorului sau o omitere predictivă bazată pe latență."
       }
     }
   },
@@ -13558,8 +13569,8 @@
       "title": "Tranziții Întrerupător",
       "window": "Fereastră",
       "window1h": "1h",
-      "window6h": "6h",
-      "window24h": "24h",
+      "window6h": "6 h",
+      "window24h": "24 h",
       "empty": "Nicio tranziție în fereastra selectată",
       "currentState": "Stare Curentă",
       "state": {
@@ -13964,8 +13975,8 @@
     "colMode": "Mod",
     "colRunner": "Agent de execuție",
     "colSummary": "Rezumat",
-    "online": "online",
-    "offline": "offline",
+    "online": "conectat",
+    "offline": "deconectat",
     "draining": "drainare",
     "hubOffline": "Hub-ul conductor offline sau neconfigurat (CONDUCTOR_HUB_URL) — nu afișează nimic în loc de date învechite.",
     "noRunners": "Niciun alergător înregistrat",
@@ -14035,7 +14046,7 @@
     "sourceA2A": "A2A",
     "sourceConductor": "Coordonator",
     "sourceStale": "Perimat din {since}",
-    "sourceOffline": "Offline",
+    "sourceOffline": "Deconectat",
     "sourceCollapse": "Restrânge",
     "sourceExpand": "Extinde",
     "stateQueued": "În așteptare",

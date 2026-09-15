@@ -10219,7 +10219,7 @@
     "mcpToolsMemoryDesc": "搜索、添加和清除持久化对话记忆条目。",
     "mcpToolsSkillsTitle": "技能",
     "mcpToolsSkillsDesc": "列出、启用、执行和监控自定义技能执行。",
-    "featureAutoComboTitle": "Auto-Combo",
+    "featureAutoComboTitle": "自动组合",
     "featureAutoComboText": "根据你连接的提供者、使用模式和模型能力，自动创建优化组合。",
     "featureSearchTitle": "网页搜索",
     "featureSearchText": "集成 5 个提供者的网页搜索（Serper、Brave、Exa、Tavily、Perplexity），并包含分析和成本跟踪。",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "允许流恢复在字节已到达客户端后重新请求响应并进行拼接。"
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "确保流中途续传的工具调用安全：发送工具调用后（无论仍在进行中还是已完成），绝不恢复被中断的流；若一次续传为空，则停止，而不是耗尽全部重试次数。"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "在 /v1/models 响应中包含易于显示的名称字段。对于仅接受模型 ID 的客户端，请禁用此项。"
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "服务器托管的工具循环",
         "description": "继续执行非流式的服务器托管工具调用，直到模型返回客户端可用的响应。"
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After 来源",
+        "description": "对于聚合的 429/503 不可用响应，如果无法确定具体的未来重试时间，则省略 Retry-After，而不是发送人为设定的 1 秒；添加 error.retry_after_provenance，并读取组合耗尽路径中的文本重试提示。"
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "受保护优先级基础设施停止返回 502",
+        "description": "当仅配额回退的优先级目标因可证实并非配额的原因（提供者断路器处于打开状态或预测性延迟跳过）而停止组合时，返回 502 而不是 503。"
       }
     }
   },

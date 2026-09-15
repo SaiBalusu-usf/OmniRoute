@@ -209,7 +209,7 @@
     "enableCloud": "Ativar Cloud",
     "expirationBannerExpiringSoon": "Banner de Expiração em Breve",
     "retry": "Tentar novamente",
-    "embeddings": "Embeddings",
+    "embeddings": "Incorporações",
     "errorCount": "Contagem de Erros",
     "backupReasonManual": "Motivo do Backup Manual",
     "safeSearchModerate": "Pesquisa Segura Moderada",
@@ -679,7 +679,7 @@
     "safeSearchOff": "Pesquisa Segura Desligada",
     "nameHint": "Dica de Nome",
     "debugToggle": "Alternar Depuração",
-    "embedding": "Embedding",
+    "embedding": "Incorporação",
     "issuesLabel": "Problemas",
     "optionAny": "Qualquer",
     "maxNestingDepth": "Profundidade Máxima de Aninhamento",
@@ -1008,7 +1008,7 @@
     "media": "Mídia",
     "settings": "Configurações",
     "translator": "Tradutor",
-    "playground": "Playground",
+    "playground": "Ambiente de testes",
     "searchTools": "Ferramentas de Pesquisa",
     "agents": "Agentes",
     "cloudAgents": "Agentes de nuvem",
@@ -7874,7 +7874,7 @@
         "description": "Compressão conservadora para saídas de ferramentas Responses suportadas."
       },
       "headroom": {
-        "label": "Headroom",
+        "label": "Margem",
         "description": "Compactação de JSON tabular."
       },
       "relevance": {
@@ -10916,7 +10916,7 @@
     "assignmentsCount": "{count} atribuições",
     "noData": "No Data",
     "testSuccess": "✓ {ip}",
-    "testLatency": "{latency}ms",
+    "testLatency": "{latency} ms",
     "testFailure": "✗ {error}",
     "repair": "Reparar",
     "relayAuthMissing": "autenticação em falta",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Permitir que a recuperação de stream solicite a resposta novamente e a junte após os bytes já terem chegado ao cliente."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Tornar segura a continuação a meio do fluxo com chamadas de ferramentas: nunca retomar um fluxo interrompido após o envio de uma chamada de ferramenta (ainda em curso ou já concluída) e parar após uma continuação vazia, em vez de utilizar todo o limite de novas tentativas."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Incluir campos de nome fáceis de ler nas respostas de /v1/models. Desative isto para clientes que aceitam apenas IDs de modelo."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Ciclo de ferramentas gerido pelo servidor",
         "description": "Continue as chamadas não transmitidas de ferramentas geridas pelo servidor até o modelo devolver uma resposta utilizável pelo cliente."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Proveniência de Retry-After",
+        "description": "Em respostas agregadas 429/503 de indisponibilidade, omitir Retry-After quando não for conhecido um momento futuro concreto para uma nova tentativa, em vez de enviar um valor sintético de 1 s, adicionar error.retry_after_provenance e interpretar indicações textuais de repetição da tentativa nos percursos de esvaziamento de combinações."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Paragens de infraestrutura com prioridade protegida como 502",
+        "description": "Responder com 502 em vez de 503 quando um destino prioritário com recurso exclusivo a quota interrompe a combinação por uma causa que comprovadamente não está relacionada com a quota: um disjuntor de fornecedor aberto ou uma omissão preditiva devido à latência."
       }
     }
   },

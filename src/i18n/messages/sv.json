@@ -1272,7 +1272,7 @@
     "systemGroup": "System",
     "costsOverview": "Översikt",
     "costsOverviewSubtitle": "Konsoliderad kostnadsanalys",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "Agentbrygga",
     "agentBridgeSubtitle": "Fånga upp IDE-agenttrafik",
     "trafficInspector": "Trafikinspektör",
     "trafficInspectorSubtitle": "Granska förfrågnings- och svarstrafik från dina appar",
@@ -8379,7 +8379,7 @@
     "qdrantCollection": "Samling"
   },
   "contextRtk": {
-    "title": "RTK Engine",
+    "title": "RTK-motor",
     "description": "Kommandomedveten komprimering för verktygsutdata, terminalloggar och byggresultat.",
     "enabled": "Aktiverat",
     "intensity": "Intensitet",
@@ -10916,7 +10916,7 @@
     "assignmentsCount": "{count} uppdrag",
     "noData": "No Data",
     "testSuccess": "✓ {ip}",
-    "testLatency": "{latency}ms",
+    "testLatency": "{latency} ms",
     "testFailure": "✗ {error}",
     "repair": "Reparera",
     "relayAuthMissing": "autentisering saknas",
@@ -11097,7 +11097,7 @@
     "ttft": "TTFT",
     "tps": "TPS",
     "metricsDisclaimer": "uppskattning på klientsidan",
-    "tokensLabel": "Tokens",
+    "tokensLabel": "Token",
     "costLabel": "Kostnad",
     "costEstimated": "(uppskattad)",
     "ttftTitle": "Tid till första token (uppskattning på klientsidan)",
@@ -11271,8 +11271,8 @@
     "shown": "Visade",
     "sortNewest": "Nyaste",
     "sortOldest": "Äldsta",
-    "sortTokensDesc": "Tokens ↓",
-    "sortTokensAsc": "Tokens ↑",
+    "sortTokensDesc": "Token ↓",
+    "sortTokensAsc": "Token ↑",
     "sortDurationDesc": "Varaktighet ↓",
     "sortDurationAsc": "Varaktighet ↑",
     "sortStatusDesc": "Status ↓",
@@ -11672,7 +11672,7 @@
     "endpointsBaseUrl": "Bas-URL",
     "endpointsCollapse": "Fäll ihop",
     "endpointsExpand": "Fäll ut",
-    "endpointsAnthropicNote": "Anthropic-native",
+    "endpointsAnthropicNote": "Anthropic-nativ",
     "endpointsResponsesNote": "OpenAI Responses — codex/github",
     "endpointsWsNote": "WebSocket — endast codex",
     "betaText": "Quota Share fungerar men buggar kan förekomma. Hittade du en? Rapportera den gärna.",
@@ -12061,7 +12061,7 @@
     "recordSession": "REC",
     "stopSession": "Stoppa",
     "liveBadge": "direkt",
-    "offlineBadge": "offline",
+    "offlineBadge": "frånkopplad",
     "noRequests": "Inga anrop har fångats än.",
     "noRequestsDesc": "Se till att AgentBridge körs eller aktivera ett annat fångstläge.",
     "selectRequest": "Välj ett anrop för att inspektera det.",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Tillåt strömåterställning att begära svaret igen och sammanfoga det efter att byte redan har nått klienten."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Gör fortsättning mitt i en ström säker vid verktygsanrop: återuppta aldrig en avbruten ström efter att ett verktygsanrop har skickats (oavsett om det fortfarande pågår eller redan har slutförts), och stoppa efter en tom fortsättning i stället för att använda hela budgeten för nya försök."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Inkludera visningsvänliga namnfält i svar från /v1/models. Inaktivera detta för klienter som endast accepterar modell-ID:n."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Serverägd verktygsloop",
         "description": "Fortsätt med icke-strömmande serverägda verktygsanrop tills modellen returnerar ett svar som klienten kan använda."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Ursprung för Retry-After",
+        "description": "För aggregerade 429/503-svar om otillgänglighet ska Retry-After utelämnas när ingen konkret framtida tidpunkt för ett nytt försök är känd, i stället för att skicka en syntetisk tid på 1 s. Lägg till error.retry_after_provenance och läs beskrivande ledtrådar om nya försök i dräneringsvägar för kombinationer."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Infrastrukturstopp med skyddad prioritet som 502",
+        "description": "Svara med 502 i stället för 503 när ett prioriterat mål med endast kvotreserv stoppar kombinationen av en orsak som bevisligen inte är kvotrelaterad: en öppen kretsbrytare hos leverantören eller ett prediktivt överhopp på grund av latens."
       }
     }
   },
@@ -13215,7 +13226,7 @@
       "down": "nere"
     },
     "severity": {
-      "info": "info",
+      "info": "information",
       "warning": "varning",
       "critical": "kritisk"
     },
@@ -14100,7 +14111,7 @@
     "trialDays": "{days, plural, one {# dag} other {# dagar}}"
   },
   "radarIntelPage": {
-    "title": "Radar Intel",
+    "title": "Radarunderrättelser",
     "subtitle": "ELO-rankningar som ägs av Radar och faktabaserade förändringar i katalogen.",
     "backToRadar": "Tillbaka till Radar",
     "loading": "Läser in information...",

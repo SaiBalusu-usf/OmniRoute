@@ -1769,7 +1769,7 @@
     "providerStats": "Provider စာရင်းအင်းများ",
     "new": "အသစ်",
     "quota": "ခွဲတမ်း",
-    "relay": "Relay",
+    "relay": "ထပ်ဆင့်ပို့စနစ်",
     "searchTools": "ရှာဖွေရေးကိရိယာများ",
     "security": "လုံခြုံရေး",
     "sidebar": "ဘေးဘက်မီနူး",
@@ -4136,7 +4136,7 @@
     "badgeInternalTooltip": "ဤသည်မှာ အတွင်းပိုင်း system endpoint ဖြစ်သည်",
     "tierAll": "အားလုံး",
     "tierAuth": "အထောက်အထားစစ်ဆေးပြီး",
-    "tierLoopback": "Loopback",
+    "tierLoopback": "ကွန်ရက်ပြန်ပတ်ချိတ်ဆက်မှု",
     "tierAlwaysProtected": "အမြဲကာကွယ်ထားသည်",
     "tierPublic": "အများသုံး",
     "hideInternal": "အတွင်းပိုင်းများကို ဝှက်ရန်",
@@ -9469,7 +9469,7 @@
     "tierPro": "Pro",
     "tierPlus": "Plus",
     "tierFree": "အခမဲ့",
-    "tierLite": "Lite",
+    "tierLite": "အပေါ့စား",
     "tierUnknown": "မသိရှိရ",
     "statTotal": "စုစုပေါင်း",
     "statCritical": "အရေးကြီး",
@@ -10068,7 +10068,7 @@
     "quickStartStep4Suffix": "provider prefix ကို အသုံးပြုပါ၊ ဥပမာ",
     "deploySetupTitle": "ထည့်သွင်းသတ်မှတ်မှု လမ်းညွှန်",
     "deploySetupText": "OmniRoute အတွက် အဆင့်ဆင့် ထည့်သွင်းခြင်း၊ environment စီစဉ်သတ်မှတ်ခြင်းနှင့် ပထမဆုံး စတင်အသုံးပြုပုံ လမ်းညွှန်။",
-    "deployElectronTitle": "Electron Desktop",
+    "deployElectronTitle": "Electron ဒက်စ်တော့",
     "deployElectronText": "OmniRoute ကို Windows၊ macOS နှင့် Linux တွင် native desktop application အဖြစ် အသုံးပြုပါ။",
     "deployDockerTitle": "Docker",
     "deployDockerText": "Docker Compose ဖြင့် containerized deployment ပြုလုပ်နိုင်ပြီး production stack များနှင့် Kubernetes အတွက် အသင့်ဖြစ်သည်။",
@@ -10397,7 +10397,7 @@
     "flowDiagramOmniRouteDesc": "တောင်းဆိုမှုကို လက်ခံပြီး target ကို ရွေးချယ်သည်",
     "flowDiagramSpawn": "Process စတင်ခြင်း",
     "flowDiagramSpawnDesc": "stdio မှတစ်ဆင့် CLI binary ကို စတင်သည်",
-    "flowDiagramCli": "CLI Agent",
+    "flowDiagramCli": "CLI အေးဂျင့်",
     "flowDiagramCliDesc": "ကိုယ်ပိုင် authentication/model ဖြင့် လုပ်ဆောင်သည်",
     "fingerprintSettingsHint": "CLI Fingerprint ကိုက်ညီမှု (တောင်းဆိုမှုများကို သီးခြား CLI tools များမှလာသကဲ့သို့ ဖုံးကွယ်ခြင်း) ကို ဤနေရာတွင် စီစဉ်သတ်မှတ်နိုင်သည် —",
     "settingsRoutingLink": "ဆက်တင်များ/လမ်းကြောင်းသတ်မှတ်ခြင်း",
@@ -10478,7 +10478,7 @@
     "statusCancelled": "ပယ်ဖျက်ပြီးသည်",
     "repositoryName": "Repository အမည်",
     "repositoryUrl": "Repository URL",
-    "branch": "Branch",
+    "branch": "ဘရန်ချ်",
     "agentDescriptions": {
       "jules": "Google ၏ အလိုအလျောက်ကုဒ်ရေးသားသည့် အေးဂျင့်",
       "devin": "Cognition ၏ AI ဆော့ဖ်ဝဲအင်ဂျင်နီယာ",
@@ -10647,7 +10647,7 @@
     "reasoningByProvider": "ဝန်ဆောင်မှုပေးသူအလိုက်",
     "reasoningByModel": "မော်ဒယ်အလိုက်",
     "reasoningRecentEntries": "မကြာသေးမီက မှတ်တမ်းများ",
-    "reasoningToolCallId": "Tool Call ID",
+    "reasoningToolCallId": "တူးလ်ခေါ်ဆိုမှု ID",
     "reasoningChars": "စာလုံးအရေအတွက်",
     "reasoningAge": "သက်တမ်း",
     "reasoningView": "ကြည့်ရန်",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Byte များ client ထံ ရောက်ရှိပြီးနောက်တွင်ပင် stream recovery က response ကို ထပ်မံတောင်းခံ၍ ဆက်စပ်ပေါင်းစည်းနိုင်ရန် ခွင့်ပြုပါ။"
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "စီးဆင်းမှုအလယ်တွင် ဆက်လက်လုပ်ဆောင်ခြင်းကို tool-call အတွက် ဘေးကင်းအောင် ပြုလုပ်ပါ။ tool call တစ်ခု ပို့ပြီးသွားပါက (လုပ်ဆောင်နေဆဲဖြစ်စေ၊ ပြီးဆုံးပြီးဖြစ်စေ) ဖြတ်တောက်သွားသော stream ကို မည်သည့်အခါမျှ ပြန်လည်မဆက်ပါနှင့်။ ထို့ပြင် retry budget အားလုံးကို အသုံးပြုမည့်အစား ဗလာ continuation တစ်ကြိမ်ပြီးနောက် ရပ်တန့်ပါ။"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models response များတွင် ဖတ်ရှုရလွယ်ကူသော name field များကို ထည့်သွင်းပါ။ Model ID များကိုသာ လက်ခံသော client များအတွက် ၎င်းကို ပိတ်ပါ။"
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Server ပိုင် Tool Loop",
         "description": "Model က client အသုံးပြုနိုင်သော response တစ်ခုကို ပြန်ပေးသည်အထိ non-streaming server-owned tool call များကို ဆက်လက်လုပ်ဆောင်ပါ။"
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After ၏ မူလရင်းမြစ်",
+        "description": "ပေါင်းစည်းထားသော 429/503 unavailable တုံ့ပြန်မှုများတွင် အနာဂတ် ပြန်လည်ကြိုးစားမည့်အချိန်ကို တိတိကျကျ မသိရပါက အတုဖန်တီးထားသော 1s ကို ပို့မည့်အစား Retry-After ကို ချန်လှပ်ပါ၊ error.retry_after_provenance ကို ထည့်ပါ၊ ထို့ပြင် combo drain လမ်းကြောင်းများရှိ စာသားဖြင့်ဖော်ပြထားသော retry အရိပ်အမြွက်များကို ဖတ်ပါ။"
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "ကာကွယ်ထားသော ဦးစားပေး အခြေခံစနစ် ရပ်တန့်မှုများကို 502 အဖြစ် သတ်မှတ်ခြင်း",
+        "description": "quota ကြောင့်သာ fallback လုပ်သည့် ဦးစားပေး target တစ်ခုက quota မဟုတ်ကြောင်း သက်သေပြနိုင်သော အကြောင်းရင်း—ဖွင့်နေသည့် provider circuit breaker သို့မဟုတ် ကြိုတင်ခန့်မှန်းထားသော latency ကြောင့် ကျော်သွားခြင်း—ကြောင့် ပေါင်းစပ်မှုကို ရပ်တန့်သည့်အခါ 503 အစား 502 ဖြင့် တုံ့ပြန်ပါ။"
       }
     }
   },

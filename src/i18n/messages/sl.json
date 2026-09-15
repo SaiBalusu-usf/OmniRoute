@@ -8229,7 +8229,7 @@
     "modalityBridgeIntro": "Pretvori večpredstavnostno vsebino v besedilo, preden doseže modele, ki podpirajo samo besedilo. Mostovi za slike, zvok in video so na voljo ter jih je mogoče konfigurirati.",
     "modalityBridgeVisionTab": "Slike",
     "modalityBridgeAudioTab": "Zvok",
-    "modalityBridgeVideoTab": "Video",
+    "modalityBridgeVideoTab": "Videoposnetek",
     "modalityBridgeSubTabsAria": "Razdelki mostov za modalnosti",
     "modalityBridgeVisionTitle": "Most za slike",
     "modalityBridgeVisionDesc": "Opiše slike z modelom za vid in nadaljuje z besedilnim modelom, ki ga je izbral uporabnik.",
@@ -11673,7 +11673,7 @@
     "endpointsCollapse": "Strni",
     "endpointsExpand": "Razširi",
     "endpointsAnthropicNote": "Izvorni Anthropic",
-    "endpointsResponsesNote": "OpenAI Responses — codex/github",
+    "endpointsResponsesNote": "Odzivi OpenAI — codex/github",
     "endpointsWsNote": "WebSocket — samo codex",
     "betaText": "Quota Share deluje, vendar lahko pričakujete napake. Ste jo našli? Prijavite jo.",
     "betaReportLink": "Prijavi težavo",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Obnovi toka omogoči, da znova zahteva odgovor in ga sestavi, potem ko so bajti že dosegli odjemalca."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Poskrbite, da bo nadaljevanje sredi toka varno za klice orodij: nikoli ne nadaljujte prekinjenega toka po poslanem klicu orodja (ki še vedno poteka ali je že končan) in se ustavite po enem praznem nadaljevanju, namesto da porabite celoten proračun ponovnih poskusov."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "V odgovore /v1/models vključi uporabniku prijazna polja z imeni. To onemogočite za odjemalce, ki sprejemajo samo ID-je modelov."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Strežniško upravljana zanka orodij",
         "description": "Nadaljuj nestreamne strežniško upravljane klice orodij, dokler model ne vrne odziva, uporabnega za odjemalca."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Izvor glave Retry-After",
+        "description": "Pri združenih odgovorih 429/503 o nerazpoložljivosti izpustite Retry-After, kadar ni znan konkreten prihodnji čas ponovnega poskusa, namesto da pošljete umetno vrednost 1s; dodajte error.retry_after_provenance in upoštevajte besedilne namige za ponovni poskus na poteh praznjenja kombinacij."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Zaustavitve infrastrukture z zaščiteno prioriteto kot 502",
+        "description": "Odgovorite s 502 namesto 503, ko prednostni cilj, ki je nadomestna možnost samo ob kvoti, ustavi kombinacijo zaradi vzroka, ki dokazljivo ni povezan s kvoto: odprtega odklopnika ponudnika ali preskoka zaradi napovedane zakasnitve."
       }
     }
   },

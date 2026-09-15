@@ -1272,7 +1272,7 @@
     "systemGroup": "Tizim",
     "costsOverview": "Umumiy koʻrinish",
     "costsOverviewSubtitle": "Umumlashtirilgan xarajatlar tahlili",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "Agent ko‘prigi",
     "agentBridgeSubtitle": "IDE agenti trafigini tutib olish",
     "trafficInspector": "Trafik inspektori",
     "trafficInspectorSubtitle": "Ilovalaringizdan keladigan soʻrov va javob trafigini tekshirish",
@@ -1742,7 +1742,7 @@
     "chaos": "Xaos",
     "cloudAgents": "Bulut agentlari",
     "live": "Jonli",
-    "studio": "Studio",
+    "studio": "Studiya",
     "aggressive": "Tajovuzkor",
     "caveman": "G‘or odami",
     "ccr": "CCR",
@@ -6475,7 +6475,7 @@
     "savedModelEndpointSettings": "Model endpointi sozlamalari saqlandi",
     "searchByModelAria": "Model boʻyicha qidirish",
     "selectSupportedEndpoint": "Kamida bitta qoʻllab-quvvatlanadigan endpointni tanlang",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Sinov vositasi / CLI"
   },
   "settings": {
     "title": "Sozlamalar",
@@ -9340,7 +9340,7 @@
     "evaluateStepDescription": "Javoblar kutilgan mezonlar bilan taqqoslanadi. Har bir holat bo‘yicha o‘tgan/o‘tmagan natijani, kechikish ko‘rsatkichlarini va batafsil fikr-mulohazalarni ko‘ring.",
     "evalsStrategyContainsLabel": "O‘z ichiga oladi",
     "evalsStrategyExactLabel": "Aniq moslik",
-    "evalsStrategyRegexLabel": "Regex",
+    "evalsStrategyRegexLabel": "Muntazam ifoda",
     "evalsStrategyCustomLabel": "Maxsus mantiq",
     "evalsStrategyContainsDescription": "LLM chiqishi kutilgan quyi satrni o‘z ichiga olishini tekshiradi.",
     "evalsStrategyExactDescription": "LLM chiqishi kutilgan qiymatga aynan mos kelishini tekshiradi.",
@@ -11672,7 +11672,7 @@
     "endpointsBaseUrl": "Asosiy URL",
     "endpointsCollapse": "Yig‘ish",
     "endpointsExpand": "Yoyish",
-    "endpointsAnthropicNote": "Anthropic-native",
+    "endpointsAnthropicNote": "Anthropic’ga xos",
     "endpointsResponsesNote": "OpenAI Responses — codex/github",
     "endpointsWsNote": "WebSocket — faqat codex",
     "betaText": "Quota Share ishlaydi, ammo xatolar bo‘lishi mumkin. Xato topdingizmi? Iltimos, xabar bering.",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Oqimni tiklashga javobni qayta soʻrash va baytlar mijozga allaqachon yetib borgandan keyin uni birlashtirishga ruxsat berish."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Oqim o‘rtasida davom ettirishni tool-call uchun xavfsiz qiling: tool-call yuborilgandan keyin (u hali bajarilayotgan yoki allaqachon tugagan bo‘lsa ham) uzilgan oqimni hech qachon davom ettirmang va qayta urinishlar limitidan to‘liq foydalanish o‘rniga bitta bo‘sh davom ettirishdan keyin to‘xtang."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models javoblariga koʻrsatish uchun qulay nom maydonlarini kiritish. Faqat model IDlarini qabul qiladigan mijozlar uchun buni oʻchiring."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Server boshqaruvidagi vositalar sikli",
         "description": "Model mijoz foydalanishi mumkin boʻlgan javobni qaytarmaguncha oqimsiz server boshqaruvidagi vosita chaqiruvlarini davom ettiring."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After kelib chiqishi",
+        "description": "Birlashtirilgan 429/503 mavjud emas javoblarida, kelajakdagi aniq qayta urinish vaqti noma’lum bo‘lsa, sun’iy 1s yuborish o‘rniga Retry-After’ni tashlab qoldiring, error.retry_after_provenance’ni qo‘shing va combo drain yo‘llaridagi matnli qayta urinish ko‘rsatmalarini o‘qing."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Himoyalangan ustuvorlik infratuzilmasi to‘xtashlari 502 sifatida",
+        "description": "Faqat kvota sababli zaxira variantga o‘tadigan ustuvor maqsad combo’ni kvotaga aloqador emasligi isbotlangan sabab — ochiq provider circuit breaker yoki bashoratli kechikish tufayli o‘tkazib yuborish — bilan to‘xtatsa, 503 o‘rniga 502 javobini bering."
       }
     }
   },

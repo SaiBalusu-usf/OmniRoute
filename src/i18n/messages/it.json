@@ -2185,7 +2185,7 @@
     "routeRuntimeScoreNow": "Punteggio di runtime attuale",
     "routeWouldSelectNow": "Selezionerebbe ora",
     "routeNoRecomputeCandidates": "Nessuna classificazione dei candidati combo può essere ricalcolata per questa richiesta.",
-    "runtime": "Runtime",
+    "runtime": "Ambiente di esecuzione",
     "routeTopNow": "Principale attuale",
     "routeFetchLogsFailed": "Impossibile recuperare i log delle richieste",
     "routeExplainFailed": "Impossibile spiegare la route",
@@ -4285,7 +4285,7 @@
     "previous": "Precedente",
     "next": "Successivo",
     "apiKeyId": "ID chiave API",
-    "offset": "Offset",
+    "offset": "Scostamento",
     "limit": "Limite",
     "tool": "Strumento"
   },
@@ -4344,7 +4344,7 @@
     "events": "Eventi",
     "artifacts": "Artefatti",
     "tablePhase": "Fase della tabella",
-    "offset": "Offset",
+    "offset": "Scostamento",
     "limit": "Limite",
     "skill": "Abilità",
     "rpcEndpoint": "POST /a2a",
@@ -4457,7 +4457,7 @@
     "noMemories": "Nessuna memoria trovata",
     "pageInfo": "Pagina {page} di {totalPages} ({total} totale)",
     "pipelineError": "Errore della pipeline",
-    "pipelineOk": "Pipeline OK ({latencyMs}ms)",
+    "pipelineOk": "Pipeline OK ({latencyMs} ms)",
     "playground": {
       "infoTitle": "Playground delle memorie",
       "infoDesc": "Simula cosa verrebbe recuperato per una determinata query. Nessuna memoria viene modificata — anteprima in sola lettura.",
@@ -4475,7 +4475,7 @@
       "resolutionStore": "Archivio vettoriale",
       "resolutionStrategy": "Strategia utilizzata",
       "rerankApplied": "Rerank applicato",
-      "fallback": "Fallback",
+      "fallback": "Ripiego",
       "noResults": "Nessuna memoria trovata per questa query.",
       "tokensUsed": "token utilizzati",
       "none": "nessuno",
@@ -4541,7 +4541,7 @@
     },
     "tabs": {
       "memories": "Memorie",
-      "playground": "Playground",
+      "playground": "Area di prova",
       "engine": "Motore"
     },
     "title": "Gestione della memoria",
@@ -8355,7 +8355,7 @@
     "routingCcBridgeCatalogName": "Bridge CC compatibile con Anthropic",
     "routingClaudeProviderName": "Claude (OAuth)",
     "routingClaudeProviderDescription": "Provider Claude nativo con token emessi da OAuth.",
-    "routingCcBridgeName": "Claude-Code Bridge",
+    "routingCcBridgeName": "Bridge Claude-Code",
     "routingCcBridgeDescription": "Endpoint di relay utilizzando le chiavi API (compatibile con anthropic-cc-*).",
     "routingCustomProviderDescription": "Fornitore personalizzato.",
     "routingUnknownOpKind": "Tipo di operazione sconosciuto: {kind}",
@@ -8379,7 +8379,7 @@
     "qdrantCollection": "Collezione"
   },
   "contextRtk": {
-    "title": "RTK Engine",
+    "title": "Motore RTK",
     "description": "Compressione basata sui comandi per l'output degli strumenti, i log del terminale e i risultati delle build.",
     "enabled": "Abilitato",
     "intensity": "Intensità",
@@ -8719,7 +8719,7 @@
     "output": "USCITA",
     "tokenCount": "{count, number} token",
     "tokenShort": "tok",
-    "provider": "Provider",
+    "provider": "Fornitore",
     "judgeModel": "Modello giudice",
     "judgeModelPlaceholder": "es. claude-haiku",
     "maxCostUsd": "Limite USD",
@@ -10893,7 +10893,7 @@
     "labelScope": "Ambito",
     "labelProxy": "Proxy",
     "scopeGlobal": "globale",
-    "scopeProvider": "provider",
+    "scopeProvider": "fornitore",
     "scopeAccount": "account",
     "scopeCombo": "combinazione",
     "bulkImportErrorMissingName": "NOME mancante",
@@ -10977,7 +10977,7 @@
     "title": "Title",
     "description": "Description",
     "endpoint": "Endpoint",
-    "provider": "Provider",
+    "provider": "Fornitore",
     "model": "Modello",
     "accountKey": "Account Key",
     "autoAccounts": "Automatico ({count} account)",
@@ -11285,7 +11285,7 @@
     "cacheSem": "SEM",
     "cacheUp": "SU",
     "semantic": "Semantica",
-    "upstream": "Upstream",
+    "upstream": "A monte",
     "semanticCacheHit": "Hit della cache semantica (servito da OmniRoute)",
     "upstreamResponse": "Risposta del provider upstream",
     "noApiKey": "Nessuna chiave API",
@@ -11301,7 +11301,7 @@
       "cacheSource": "Origine cache",
       "model": "Modello",
       "requested": "Richiesto",
-      "provider": "Provider",
+      "provider": "Fornitore",
       "protocol": "Protocollo della richiesta",
       "account": "Account",
       "apiKey": "Chiave API",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Consenti al ripristino del flusso di richiedere nuovamente la risposta e ricongiungerla dopo che i byte hanno già raggiunto il client."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Rendi sicura la continuazione a metà flusso dopo una chiamata a uno strumento: non riprendere mai un flusso interrotto dopo l'invio di una chiamata a uno strumento (ancora in corso o già terminata) e interrompi dopo una continuazione vuota anziché utilizzare l'intero numero di tentativi disponibili."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Includi campi con nomi descrittivi nelle risposte di /v1/models. Disabilita questa opzione per i client che accettano solo ID modello."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Ciclo degli strumenti gestito dal server",
         "description": "Continua le chiamate non in streaming agli strumenti gestiti dal server finché il modello non restituisce una risposta utilizzabile dal client."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Provenienza di Retry-After",
+        "description": "Nelle risposte aggregate 429/503 di indisponibilità, ometti Retry-After quando non è noto un momento futuro concreto per un nuovo tentativo, anziché inviare un valore sintetico di 1 s; aggiungi error.retry_after_provenance e leggi i suggerimenti testuali per i nuovi tentativi nei percorsi di svuotamento delle combo."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Arresti dell'infrastruttura con priorità protetta come 502",
+        "description": "Rispondi con 502 anziché 503 quando una destinazione prioritaria con fallback basato esclusivamente sulla quota interrompe la combo per una causa dimostrabilmente non correlata alla quota: un circuit breaker del provider aperto o un'esclusione predittiva dovuta alla latenza."
       }
     }
   },

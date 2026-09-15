@@ -1272,7 +1272,7 @@
     "systemGroup": "System",
     "costsOverview": "Oversikt",
     "costsOverviewSubtitle": "Konsolidert kostnadsanalyse",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "Agentbro",
     "agentBridgeSubtitle": "Avskjær IDE-agenttrafikk",
     "trafficInspector": "Trafikkinspektør",
     "trafficInspectorSubtitle": "Inspiser forespørsels- og svartrafikk fra appene dine",
@@ -2463,7 +2463,7 @@
     "videoDescription": "Lag videoer med AnimateDiff, Stable Video Diffusion via ComfyUI eller SD WebUI.",
     "musicDescription": "Komponer musikk med Stable Audio Open eller MusicGen via ComfyUI.",
     "kinds": {
-      "embedding": "Embedding",
+      "embedding": "Innebygging",
       "image": "Bilde",
       "imageToText": "Bilde til tekst",
       "tts": "Tekst til tale",
@@ -7754,7 +7754,7 @@
     "storageRetentionCleanup": "Oppbevaringsinnstillinger",
     "storageRetentionCleanupDesc": "Konfigurer oppbevaring av driftsoppføringer og opprydding av sikkerhetskopier for databasen.",
     "retentionCallDays": "Anrop {count}d",
-    "retentionAppDays": "App {count}d",
+    "retentionAppDays": "App {count} d",
     "retentionRows": "{count} rader",
     "retentionQuotaSnapshots": "Kvoteøyeblikksbilder (dager)",
     "retentionCompressionAnalytics": "Komprimeringsanalyse (dager)",
@@ -12371,7 +12371,7 @@
         "description": "Utløs systemsikkerhetskopiering, gjenopprett fra sikkerhetskopifiler og administrer livssyklusen til SQLite-databasen. Støtter eksport-, import- og trinnvise (inkrementelle) øyeblikksbildestrategier."
       },
       "omni-webhooks": {
-        "name": "Webhooks",
+        "name": "Webhooker",
         "description": "Registrer, vis, test og fjern webhook-endepunkter. Konfigurer hendelsesabonnementer (request.completed, request.failed, quota.exceeded osv.) og administrer nye leveringsforsøk."
       },
       "omni-mcp": {
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Tillat strømgjenoppretting å be om svaret på nytt og sy det sammen etter at bytes allerede har nådd klienten."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Gjør fortsettelse midt i en strøm trygg ved verktøykall: Gjenoppta aldri en avbrutt strøm etter at et verktøykall er sendt (enten det fortsatt pågår eller allerede er fullført), og stopp etter én tom fortsettelse i stedet for å bruke hele budsjettet for nye forsøk."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Inkluder visningsvennlige navnefelt i /v1/models-svar. Deaktiver dette for klienter som kun godtar modell-ID-er."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Serverstyrt verktøyløkke",
         "description": "Fortsett ikke-strømmende, serverstyrte verktøykall til modellen returnerer et svar som klienten kan bruke."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Opprinnelse for Retry-After",
+        "description": "For aggregerte 429/503-svar om utilgjengelighet skal Retry-After utelates når det ikke finnes et konkret kjent tidspunkt for et fremtidig forsøk, i stedet for å sende en syntetisk verdi på 1 s. Legg til error.retry_after_provenance, og les tekstlige hint om nye forsøk i tømmingsbaner for kombinasjoner."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Beskyttet prioritetsinfrastruktur stopper som 502",
+        "description": "Svar med 502 i stedet for 503 når et prioritetsmål med reserve kun ved kvoteproblemer stopper kombinasjonen av en årsak som beviselig ikke skyldes kvoten: en åpen effektbryter hos leverandøren eller en prediktiv forsinkelseshopp."
       }
     }
   },

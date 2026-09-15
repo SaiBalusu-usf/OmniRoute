@@ -8348,14 +8348,14 @@
     "oneproxyClearAllConfirm": "Xóa tất cả proxy 1proxy?",
     "memorySkillsSkillsmpDescription": "Kết nối với SkillsMP để khám phá và cài đặt kỹ năng từ marketplace.",
     "memorySkillsActiveProviderDescription": "Chọn nhà cung cấp mà trang Skills sử dụng để tìm kiếm và cài đặt.",
-    "memorySkillsSkillsmpProviderTitle": "SkillsMP Marketplace",
+    "memorySkillsSkillsmpProviderTitle": "Chợ SkillsMP",
     "memorySkillsSkillsmpProviderDescription": "Marketplace có xác thực (sử dụng khóa API SkillsMP của bạn).",
     "memorySkillsSkillsshProviderTitle": "Thư mục skills.sh",
     "memorySkillsSkillsshProviderDescription": "Nhà cung cấp thư mục công khai (không cần khóa API).",
     "routingCcBridgeCatalogName": "Bridge CC tương thích Anthropic",
     "routingClaudeProviderName": "Claude (OAuth)",
     "routingClaudeProviderDescription": "Nhà cung cấp Claude gốc với token được cấp qua OAuth.",
-    "routingCcBridgeName": "Claude-Code Bridge",
+    "routingCcBridgeName": "Cầu nối Claude-Code",
     "routingCcBridgeDescription": "Các endpoint relay sử dụng khóa API (anthropic-compatible-cc-*).",
     "routingCustomProviderDescription": "Nhà cung cấp tùy chỉnh.",
     "routingUnknownOpKind": "Loại thao tác không xác định: {kind}",
@@ -8379,7 +8379,7 @@
     "qdrantCollection": "Bộ Sưu Tập"
   },
   "contextRtk": {
-    "title": "RTK Engine",
+    "title": "Công cụ RTK",
     "description": "Nén nhận biết lệnh cho đầu ra của công cụ, nhật ký terminal và kết quả bản dựng.",
     "enabled": "Đã bật",
     "intensity": "Cường độ",
@@ -11126,7 +11126,7 @@
     "jsonSchemaEditor": "Trình sửa lược đồ JSON",
     "schemaValidated": "Lược đồ hợp lệ",
     "validateSchema": "Kiểm tra lược đồ",
-    "seed": "Seed",
+    "seed": "Hạt giống",
     "stopSequences": "Chuỗi dừng",
     "stopSequencesPlaceholder": "Ví dụ: \"\\n\\n\" hoặc \"END\"",
     "autoProvider": "Tự động",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Cho phép khôi phục luồng bằng cách yêu cầu lại và ghép phản hồi sau khi dữ liệu đã bắt đầu được gửi tới ứng dụng khách."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Giúp việc tiếp tục luồng giữa chừng an toàn với lệnh gọi công cụ: không bao giờ tiếp tục một luồng bị ngắt sau khi đã gửi lệnh gọi công cụ (đang xử lý hoặc đã hoàn tất), và dừng sau một lần tiếp tục rỗng thay vì dùng hết số lần thử lại."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Thêm trường tên dễ đọc vào phản hồi /v1/models. Tắt với các ứng dụng khách chỉ chấp nhận ID mô hình."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Vòng lặp công cụ do máy chủ sở hữu",
         "description": "Tiếp tục các lời gọi công cụ do máy chủ sở hữu ở chế độ không streaming cho đến khi mô hình trả về phản hồi mà máy khách dùng được."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Nguồn gốc của Retry-After",
+        "description": "Với các phản hồi không khả dụng 429/503 tổng hợp, bỏ Retry-After khi không biết thời điểm thử lại cụ thể thay vì gửi giá trị giả 1 giây, thêm error.retry_after_provenance và đọc gợi ý thử lại dạng văn bản trên các đường thoát của combo."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Dừng ưu tiên được bảo vệ do hạ tầng trả 502",
+        "description": "Trả 502 thay vì 503 khi một mục tiêu ưu tiên chỉ dự phòng theo hạn mức dừng combo vì một nguyên nhân chắc chắn không phải hạn mức: bộ ngắt mạch của nhà cung cấp đang mở hoặc bỏ qua do dự đoán độ trễ."
       }
     }
   },
@@ -13908,7 +13919,7 @@
     "time": "Thời gian",
     "latency": "Độ trễ",
     "clientIp": "IP client",
-    "proxy": "Proxy",
+    "proxy": "Máy chủ proxy",
     "direct": "Trực tiếp",
     "type": "Loại",
     "level": "Mức",

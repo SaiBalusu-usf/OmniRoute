@@ -2714,7 +2714,7 @@
     "ccOnboardingTitle": "गेटवे मोडेल खोजका लागि settings.json",
     "ccOnboardingCopy": "प्रतिलिपि गर्नुहोस्",
     "ccOnboardingCopied": "प्रतिलिपि गरियो",
-    "ccOnboardingKeyPlaceholder": "'<your OmniRoute API key>'",
+    "ccOnboardingKeyPlaceholder": "'<तपाईंको OmniRoute API कुञ्जी>'",
     "ccOnboardingWindowNote": "Claude Code ले आफूले नचिनेको कुनै पनि मोडेल id का लागि 200K कन्टेक्स्ट विन्डो मान्छ। वास्तविक विन्डो फरक भएको मोडेलका लागि, स्वतः-कम्प्याक्सन धेरै चाँडो सुरु नहोस् भनेर त्यसको ठीक तल CLAUDE_CODE_AUTO_COMPACT_WINDOW थप्नुहोस्।",
     "failedSave": "सुरक्षित गर्न असफल भयो",
     "profileSyncTitle": "CLI प्रोफाइल स्वतः-सिङ्क",
@@ -6368,11 +6368,11 @@
     "poeWebDesc": "poe.com मार्फत बहु-मोडेल च्याट",
     "veniceWebLabel": "Venice Web",
     "veniceWebDesc": "गोपनीयता-केन्द्रित AI च्याट",
-    "v0VercelWebLabel": "v0 Vercel Web",
+    "v0VercelWebLabel": "v0 Vercel वेब",
     "v0VercelWebDesc": "v0.dev मार्फत AI कोड उत्पादन",
-    "kimiWebLabel": "Kimi Web",
+    "kimiWebLabel": "Kimi वेब",
     "kimiWebDesc": "www.kimi.com मार्फत Moonshot AI उपभोक्ता च्याट (अन्तर्राष्ट्रिय, Connect-RPC API)",
-    "doubaoWebLabel": "Dola Web",
+    "doubaoWebLabel": "Dola वेब",
     "doubaoWebDesc": "dola.com मार्फत ByteDance AI च्याट",
     "overrideBaseUrlAdvanced": "उन्नत: आधार URL ओभरराइड गर्नुहोस्",
     "overrideBaseUrlHint": "उन्नत: यो अन्तर्निर्मित प्रदायकलाई आफूले चाहेको एन्डपोइन्टमा निर्देशित गर्नुहोस्। पूर्वनिर्धारित प्रयोग गर्न खाली छोड्नुहोस्।",
@@ -6453,7 +6453,7 @@
     "failedUpdateCodexServiceMode": "Codex सेवा मोड अपडेट गर्न असफल भयो",
     "filterByMedia": "मिडिया",
     "freeBadge": "निःशुल्क",
-    "kimiCodeApiKeyLabel": "Kimi Code API Key",
+    "kimiCodeApiKeyLabel": "Kimi Code API कुञ्जी",
     "modelTestFailed": "मोडेल परीक्षण असफल भयो",
     "modelTestNetworkError": "मोडेल परीक्षण गर्दा नेटवर्क त्रुटि भयो",
     "networkError": "नेटवर्क त्रुटि",
@@ -6527,7 +6527,7 @@
     "routingSummarizeDropParagraphContains": "यी समावेश भएका अनुच्छेदहरू हटाउनुहोस्: {items}",
     "routingSummarizeDropParagraphStartsWith": "यीबाट सुरु हुने अनुच्छेदहरू हटाउनुहोस्: {items}",
     "routingSummarizeReplaceText": "\"{match}\" लाई \"{replacement}\" ले प्रतिस्थापन गर्नुहोस्",
-    "routingSummarizeReplaceRegex": "regex /{pattern}/{flags} → \"{replacement}\"",
+    "routingSummarizeReplaceRegex": "रेगेक्स /{pattern}/{flags} → \"{replacement}\"",
     "routingSummarizeDropBlockContains": "यी समावेश भएका ब्लकहरू हटाउनुहोस्: {items}",
     "routingSummarizePrependSystemBlock": "ब्लक अगाडि थप्नुहोस्: \"{text}\"",
     "routingSummarizeAppendSystemBlock": "ब्लक पछाडि थप्नुहोस्: \"{text}\"",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "बाइटहरू क्लाइन्टसम्म पुगिसकेपछि पनि स्ट्रिम पुनर्प्राप्तिलाई प्रतिक्रिया पुनः अनुरोध गरेर जोड्न अनुमति दिनुहोस्।"
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "मध्य-प्रवाह निरन्तरता टुल-कललाई सुरक्षित बनाउनुहोस्: टुल कल पठाइसकेपछि (अझै प्रगतिमा रहेको वा पहिले नै समाप्त भइसकेको) काटिएको स्ट्रिम कहिल्यै पुनः सुरु नगर्नुहोस्, र पुनः प्रयासको सम्पूर्ण सीमा प्रयोग गर्नुको सट्टा एउटा खाली निरन्तरतापछि रोक्नुहोस्।"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models प्रतिक्रियाहरूमा प्रदर्शनमैत्री नाम फिल्डहरू समावेश गर्नुहोस्। मोडेल ID मात्र स्वीकार गर्ने क्लाइन्टहरूका लागि यसलाई अक्षम गर्नुहोस्।"
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "सर्भर-स्वामित्वको उपकरण लूप",
         "description": "मोडेलले क्लाइन्टले प्रयोग गर्न मिल्ने प्रतिक्रिया नफर्काएसम्म नन-स्ट्रिमिङ सर्भर-स्वामित्वका उपकरण कलहरू जारी राख्नुहोस्।"
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After को स्रोत",
+        "description": "समग्र 429/503 अनुपलब्ध प्रतिक्रियाहरूमा, पुनः प्रयास गर्ने ठोस भावी समय थाहा नभएमा कृत्रिम 1s पठाउनुको सट्टा Retry-After हटाउनुहोस्, error.retry_after_provenance थप्नुहोस्, र कम्बो ड्रेन पथहरूमा गद्यमा लेखिएका पुनः प्रयास सङ्केतहरू पढ्नुहोस्।"
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "सुरक्षित-प्राथमिकता पूर्वाधार रोकावटहरूलाई 502 का रूपमा",
+        "description": "कोटा-मात्र-वैकल्पिक प्राथमिकता लक्ष्यले कोटासँग सम्बन्धित नभएको प्रमाणित कारणले कम्बो रोक्दा 503 को सट्टा 502 उत्तर दिनुहोस्: खुला प्रदायक सर्किट ब्रेकर वा पूर्वानुमानात्मक विलम्बता स्किप।"
       }
     }
   },

@@ -1272,7 +1272,7 @@
     "systemGroup": "ስርዓት",
     "costsOverview": "አጠቃላይ እይታ",
     "costsOverviewSubtitle": "የተጠቃለለ የወጪ ትንተና",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "የወኪል ድልድይ",
     "agentBridgeSubtitle": "የIDE ወኪል ትራፊክን ጣልቃ ገብቶ ያዝ",
     "trafficInspector": "የትራፊክ መርማሪ",
     "trafficInspectorSubtitle": "ከመተግበሪያዎችዎ የሚመጣውን የጥያቄ እና የምላሽ ትራፊክ ይመርምሩ",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "ባይቶች ወደ ደንበኛው ከደረሱ በኋላም የዥረት መልሶ ማግኘት ምላሹን እንደገና እንዲጠይቅ እና እንዲያያይዘው ፍቀድ።"
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "በዥረት መሃል የሚደረግ ቀጣይነት ለመሣሪያ ጥሪ ደህንነቱ የተጠበቀ ይሁን፦ የመሣሪያ ጥሪ ከተላከ በኋላ (አሁንም በሂደት ላይ ቢሆንም ወይም ቀድሞውኑ ቢጠናቀቅም) የተቋረጠ ዥረትን ፈጽሞ አትቀጥል፤ እንዲሁም ሙሉውን የድጋሚ ሙከራ ገደብ ከመጠቀም ይልቅ አንድ ባዶ ቀጣይነት ካጋጠመ በኋላ አቁም።"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "በ/v1/models ምላሾች ውስጥ ለእይታ ምቹ የስም መስኮችን አካትት። የሞዴል ID-ዎችን ብቻ ለሚቀበሉ ደንበኞች ይህን አሰናክል።"
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "በአገልጋዩ የሚተዳደር የመሣሪያ ዑደት",
         "description": "ሞዴሉ በደንበኛው ሊጠቀምበት የሚችል ምላሽ እስኪመልስ ድረስ በአገልጋዩ የሚተዳደሩ ተከታታይ ያልሆኑ የመሣሪያ ጥሪዎችን ቀጥል።"
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "የRetry-After ምንጭ",
+        "description": "በተዋሃዱ የ429/503 አይገኝም ምላሾች ላይ፣ የተወሰነ የወደፊት ድጋሚ ሙከራ ጊዜ ካልታወቀ ሰው ሠራሽ 1 ሰከንድ ከመላክ ይልቅ Retry-Afterን አትጨምር፤ error.retry_after_provenanceን ጨምር፣ እና በcombo drain መንገዶች ላይ በጽሑፍ የተገለጹ የድጋሚ ሙከራ ፍንጮችን አንብብ።"
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "የተጠበቀ ቅድሚያ ያላቸው የመሠረተ ልማት ማቆሚያዎች እንደ 502",
+        "description": "በኮታ ብቻ የመጠባበቂያ አማራጭ የሆነ ቅድሚያ ያለው ዒላማ፣ ምክንያቱ ኮታ አለመሆኑ በእርግጠኝነት ሊረጋገጥ ለሚችል ሁኔታ—ክፍት የአቅራቢ circuit breaker ወይም ትንበያዊ የመዘግየት መዝለል—comboውን ሲያቆም፣ ከ503 ይልቅ 502 መልስ።"
       }
     }
   },

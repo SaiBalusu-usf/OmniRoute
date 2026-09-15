@@ -7934,10 +7934,10 @@
     "memorySkillsActiveSkillsProvider": "सक्रिय कौशल्य प्रदाता",
     "cliproxyapiFallback": "CLIProxyAPI फॉलबॅक",
     "cliproxyapiEnableFallback": "CLIProxyAPI फॉलबॅक सक्षम करा",
-    "cliproxyapiUrl": "CLIProxyAPI URL",
+    "cliproxyapiUrl": "CLIProxyAPI यूआरएल",
     "headroomProxyTitle": "हेडरूम प्रॉक्सी",
     "headroomProxyDesc": "पर्यायी Headroom टोकन-बचत प्रॉक्सीचा URL. रिकामे ठेवल्यास HEADROOM_URL किंवा http://localhost:8787 वापरला जातो.",
-    "headroomProxyUrl": "Headroom URL",
+    "headroomProxyUrl": "Headroom यूआरएल",
     "headroomProxyUrlHint": "लूपबॅक URL या पृष्ठावरून सुरू करता येतात. बाह्य URL ची फक्त तपासणी केली जाते.",
     "headroomProxySave": "जतन करा",
     "headroomProxyStart": "सुरू करा",
@@ -8889,7 +8889,7 @@
     "fallbackRouting": "फॉलबॅक राउटिंग",
     "fallbackRoutingDescription": "CLIProxyAPI द्वारे अयशस्वी प्रोव्हायडर विनंत्यांचा पुन्हा प्रयत्न करा",
     "enableFallback": "फॉलबॅक सक्षम करा",
-    "cliproxyUrl": "CLIProxyAPI URL",
+    "cliproxyUrl": "CLIProxyAPI यूआरएल",
     "fallbackCodes": "फॉलबॅक स्टेटस कोड (स्वल्पविरामाने विभक्त)",
     "invalidUrl": "अवैध URL — http:// किंवा https:// ने सुरू होणे आवश्यक आहे",
     "saved": "जतन केले",
@@ -10780,7 +10780,7 @@
     "saveConnection": "संपर्क जतन करा",
     "gheDescription": "तुमच्या GitHub Enterprise उदाहरणाचा बेस URL प्रविष्ट करा (उदाहरणार्थ, <code>https://ghe.yourcompany.com</code>).",
     "gheUrlPlaceholder": "https://ghe.yourcompany.com",
-    "gheUrlLabel": "GitHub Enterprise URL",
+    "gheUrlLabel": "GitHub Enterprise यूआरएल",
     "gheUrlRequired": "GitHub Enterprise URL आवश्यक आहे",
     "gitlabDuoSetupTitle": "GitLab Duo OAuth सेटअप",
     "gitlabDuoSetupMessage": "GitLab Duo OAuth कॉन्फिगर केलेले नाही. {applicationsUrl} येथे एक OAuth अनुप्रयोग नोंदणी करा ज्यामध्ये पुनर्निर्देश URI {redirectUri} आणि स्कोप्स \"{scopes}\" आहेत, नंतर {clientIdEnv} (आणि पर्यायी {clientSecretEnv}) सेट करा आणि पुन्हा सुरू करा.",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "बाइट्स आधीच क्लायंटपर्यंत पोहोचल्यानंतर प्रतिसादाची पुन्हा विनंती करण्यासाठी आणि तो जोडण्यासाठी स्ट्रीम रिकव्हरीला अनुमती द्या."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "मध्य-प्रवाह सातत्य टूल-कॉलसाठी सुरक्षित करा: टूल कॉल पाठवल्यानंतर (तो अद्याप सुरू असो किंवा आधीच पूर्ण झालेला असो) खंडित झालेला प्रवाह कधीही पुन्हा सुरू करू नका आणि संपूर्ण पुनर्प्रयत्न मर्यादा वापरण्याऐवजी एका रिकाम्या सातत्यानंतर थांबा."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models प्रतिसादांमध्ये प्रदर्शनासाठी अनुकूल नाव फील्ड समाविष्ट करा. केवळ मॉडेल आयडी स्वीकारणाऱ्या क्लायंटसाठी हे अक्षम करा."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "सर्व्हरच्या मालकीचे टूल लूप",
         "description": "मॉडेल क्लायंटसाठी वापरण्यायोग्य प्रतिसाद देईपर्यंत नॉन-स्ट्रीमिंग, सर्व्हरच्या मालकीचे टूल कॉल सुरू ठेवा."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After चा उगम",
+        "description": "एकत्रित 429/503 अनुपलब्ध प्रतिसादांमध्ये, भविष्यातील पुनर्प्रयत्नाची ठोस वेळ माहीत नसल्यास कृत्रिम 1s पाठवण्याऐवजी Retry-After वगळा, error.retry_after_provenance जोडा आणि कॉम्बो ड्रेन मार्गांवरील मजकूररूपी पुनर्प्रयत्न सूचना वाचा."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "संरक्षित-प्राधान्य इन्फ्रा थांबे 502 म्हणून",
+        "description": "केवळ-कोटा-फॉलबॅक प्राधान्य लक्ष्याने निश्चितपणे कोटाशी संबंधित नसलेल्या कारणामुळे कॉम्बो थांबवल्यास 503 ऐवजी 502 उत्तर द्या: उघडा प्रोव्हायडर सर्किट ब्रेकर किंवा पूर्वानुमानित विलंब वगळणे."
       }
     }
   },

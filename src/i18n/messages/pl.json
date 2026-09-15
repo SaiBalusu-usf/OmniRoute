@@ -1002,7 +1002,7 @@
     "analytics": "Analityka",
     "costs": "Koszty",
     "health": "Stan",
-    "proxy": "Proxy",
+    "proxy": "Serwer proxy",
     "limits": "Limity quota",
     "cliTools": "Narzędzia CLI",
     "media": "Multimedia",
@@ -1105,7 +1105,7 @@
     "contextUltra": "Ultra",
     "contextOmniglyph": "OmniGlyph",
     "contextSettings": "Ustawienia kompresji",
-    "contextHeadroom": "Headroom",
+    "contextHeadroom": "Zapas",
     "contextSessionDedup": "Deduplikacja sesji",
     "contextCcr": "CCR",
     "contextLlmlingua": "LLMLingua",
@@ -1190,7 +1190,7 @@
     "gamificationGroup": "Grywalizacja",
     "toolsGroup": "Narzędzia",
     "integrationsGroup": "Integracje",
-    "proxyGroup": "Proxy",
+    "proxyGroup": "Serwer proxy",
     "costsParametersGroup": "Parametry kosztów",
     "auditGroup": "Audyt",
     "batchGroup": "Przetwarzanie wsadowe",
@@ -7075,7 +7075,7 @@
     "stickyLimitDesc": "Liczba wywołań na konto przed przełączeniem, gdy globalny fallback kont używa Round Robin",
     "routingStrategyTitle": "Strategia routingu",
     "routingStrategySubtitle": "Zgodność z 9router: round-robin kont, sticky limits i rotacja combo",
-    "accountRoundRobin": "Round Robin",
+    "accountRoundRobin": "Cyklicznie",
     "accountRoundRobinDesc": "Cykliczne przechodzenie przez konta w celu dystrybucji obciążenia",
     "comboRoundRobin": "Round Robin kombinacji",
     "comboRoundRobinDesc": "Cykliczne przechodzenie przez cele combo zamiast ciągłego rozpoczynania od pierwszego",
@@ -9860,7 +9860,7 @@
     "methodManualDescription": "Usuń hasło z bazy danych i ustaw nowe przy uruchomieniu:",
     "setPasswordInYour": "Ustaw nowe hasło w swoim",
     "fileLabelSuffix": "pliku:",
-    "newPasswordPlaceholder": "your_new_password",
+    "newPasswordPlaceholder": "twoje_nowe_hasło",
     "deleteSettingsFile": "Usuń",
     "orRemovePasswordHashField": "lub usuń pole passwordHash",
     "restartServerWithNewPassword": "Uruchom ponownie serwer - użyje on nowego hasła",
@@ -11283,7 +11283,7 @@
     "refresh": "Odśwież",
     "columnsLabel": "Kolumny",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "AKTYWNY",
     "semantic": "Semantyczne",
     "upstream": "Nadrzędny",
     "semanticCacheHit": "Trafienie w cache semantycznym (obsłużone przez OmniRoute)",
@@ -11428,7 +11428,7 @@
     "filterSuccess": "Sukces",
     "filterTimeout": "Przekroczenie limitu czasu",
     "colStatus": "Stan",
-    "colProxy": "Proxy",
+    "colProxy": "Serwer proxy",
     "colTls": "TLS",
     "colType": "Typ",
     "colLevel": "Poziom",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Zezwalaj na odzyskiwanie strumienia w celu ponownego zażądania odpowiedzi i połączenia jej po tym, jak bajty dotarły już do klienta."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Zapewnij bezpieczeństwo wywołań narzędzi podczas kontynuacji w trakcie strumienia: nigdy nie wznawiaj przerwanego strumienia po wysłaniu wywołania narzędzia (nadal trwającego lub już zakończonego) i zatrzymaj się po jednej pustej kontynuacji zamiast wykorzystywać cały limit ponownych prób."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Dołączaj przyjazne do wyświetlania pola nazw w odpowiedziach /v1/models. Wyłącz tę opcję dla klientów, którzy akceptują tylko identyfikatory modeli."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Pętla narzędzi zarządzana przez serwer",
         "description": "Kontynuuj niewykorzystujące strumieniowania wywołania narzędzi zarządzane przez serwer, dopóki model nie zwróci odpowiedzi możliwej do użycia przez klienta."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Pochodzenie Retry-After",
+        "description": "W zagregowanych odpowiedziach o niedostępności 429/503 pomijaj Retry-After, gdy nie jest znany konkretny przyszły termin ponowienia, zamiast wysyłać sztuczną wartość 1 s; dodaj error.retry_after_provenance oraz odczytuj opisowe wskazówki dotyczące ponowienia na ścieżkach opróżniania combo."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Zatrzymania infrastruktury o chronionym priorytecie jako 502",
+        "description": "Zwracaj 502 zamiast 503, gdy priorytetowy cel z mechanizmem rezerwowym wyłącznie na wypadek wyczerpania limitu zatrzymuje combo z przyczyny, która w sposób możliwy do udowodnienia nie jest związana z limitem: otwarty wyłącznik obwodu dostawcy lub predykcyjne pominięcie z powodu opóźnienia."
       }
     }
   },
@@ -14006,7 +14017,7 @@
     "title": "Orkiestracja",
     "description": "Wszystko, co OmniRoute obecnie uruchamia — agenci, flota i routing",
     "tabAgents": "Agenci",
-    "tabRouting": "Routing",
+    "tabRouting": "Trasowanie",
     "tabOverview": "Przegląd",
     "tabHistory": "Historia",
     "historyEmpty": "Brak zakończonych uruchomień w tym zakresie",

@@ -12058,7 +12058,7 @@
     "resumeBtn": "ਮੁੜ ਸ਼ੁਰੂ ਕਰੋ",
     "clearBtn": "ਸਾਫ਼ ਕਰੋ",
     "exportHar": ".har ਐਕਸਪੋਰਟ ਕਰੋ",
-    "recordSession": "REC",
+    "recordSession": "ਰਿਕਾਰਡ",
     "stopSession": "ਰੋਕੋ",
     "liveBadge": "ਲਾਈਵ",
     "offlineBadge": "ਆਫ਼ਲਾਈਨ",
@@ -12536,7 +12536,7 @@
     "categoryConfig": "ਕੌਂਫਿਗ",
     "filterAll": "ਸਾਰੇ",
     "coverageLabel": "ਕਵਰੇਜ",
-    "mcpUrl": "MCP URL",
+    "mcpUrl": "MCP ਯੂਆਰਐਲ",
     "a2aLink": "A2A",
     "mcpPrompt": "ਆਪਣੇ ਏਜੰਟ ਨੂੰ 37 OmniRoute ਟੂਲ ਦੇਣ ਲਈ ਇਹ MCP ਐਂਡਪੌਇੰਟ ਸ਼ਾਮਲ ਕਰੋ।",
     "a2aPrompt": "A2A ਟਾਸਕ ਡੈਲੀਗੇਸ਼ਨ ਸਮਰੱਥ ਕਰਨ ਲਈ ਇਸ Agent Card ਨੂੰ ਆਪਣੇ ਆਰਕੈਸਟਰੇਟਰ ਨਾਲ ਰਜਿਸਟਰ ਕਰੋ।",
@@ -12848,7 +12848,7 @@
       "network": "ਨੈੱਟਵਰਕ",
       "policies": "ਨੀਤੀਆਂ",
       "runtime": "ਰਨਟਾਈਮ",
-      "cli": "CLI",
+      "cli": "ਕਮਾਂਡ ਲਾਈਨ ਇੰਟਰਫੇਸ",
       "health": "ਸਿਹਤ",
       "requiresRestart": "ਮੁੜ ਚਾਲੂ ਕਰਨ ਦੀ ਲੋੜ ਹੈ"
     },
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "ਬਾਈਟਾਂ ਦੇ ਕਲਾਇੰਟ ਤੱਕ ਪਹੁੰਚ ਜਾਣ ਤੋਂ ਬਾਅਦ ਵੀ ਸਟ੍ਰੀਮ ਰਿਕਵਰੀ ਨੂੰ ਜਵਾਬ ਦੁਬਾਰਾ ਮੰਗਣ ਅਤੇ ਉਸਨੂੰ ਜੋੜਨ ਦੀ ਇਜਾਜ਼ਤ ਦਿਓ।"
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "ਮੱਧ-ਸਟ੍ਰੀਮ ਜਾਰੀਕਰਨ ਨੂੰ ਟੂਲ-ਕਾਲ ਲਈ ਸੁਰੱਖਿਅਤ ਬਣਾਓ: ਟੂਲ-ਕਾਲ ਭੇਜੇ ਜਾਣ ਤੋਂ ਬਾਅਦ ਕਦੇ ਵੀ ਕੱਟੀ ਹੋਈ ਸਟ੍ਰੀਮ ਨੂੰ ਮੁੜ ਸ਼ੁਰੂ ਨਾ ਕਰੋ (ਭਾਵੇਂ ਇਹ ਹਾਲੇ ਜਾਰੀ ਹੋਵੇ ਜਾਂ ਪਹਿਲਾਂ ਹੀ ਮੁਕੰਮਲ ਹੋ ਚੁੱਕੀ ਹੋਵੇ), ਅਤੇ ਪੂਰਾ ਮੁੜ-ਕੋਸ਼ਿਸ਼ ਬਜਟ ਵਰਤਣ ਦੀ ਬਜਾਏ ਇੱਕ ਖਾਲੀ ਜਾਰੀਕਰਨ ਤੋਂ ਬਾਅਦ ਰੁਕ ਜਾਓ।"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models ਜਵਾਬਾਂ ਵਿੱਚ ਪ੍ਰਦਰਸ਼ਨ-ਅਨੁਕੂਲ ਨਾਮ ਫੀਲਡਾਂ ਸ਼ਾਮਲ ਕਰੋ। ਸਿਰਫ਼ ਮਾਡਲ IDs ਸਵੀਕਾਰ ਕਰਨ ਵਾਲੇ ਕਲਾਇੰਟਾਂ ਲਈ ਇਸਨੂੰ ਅਸਮਰੱਥ ਕਰੋ।"
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "ਸਰਵਰ-ਮਲਕੀਅਤ ਵਾਲਾ ਟੂਲ ਲੂਪ",
         "description": "ਸਰਵਰ-ਮਲਕੀਅਤ ਵਾਲੀਆਂ ਗੈਰ-ਸਟ੍ਰੀਮਿੰਗ ਟੂਲ ਕਾਲਾਂ ਨੂੰ ਉਦੋਂ ਤੱਕ ਜਾਰੀ ਰੱਖੋ ਜਦੋਂ ਤੱਕ ਮਾਡਲ ਕਲਾਇੰਟ ਲਈ ਵਰਤਣਯੋਗ ਜਵਾਬ ਨਾ ਦੇਵੇ।"
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After ਦਾ ਮੂਲ",
+        "description": "ਇਕੱਠੇ ਕੀਤੇ 429/503 ਅਣਉਪਲਬਧ ਜਵਾਬਾਂ ਉੱਤੇ, ਜਦੋਂ ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰਨ ਦਾ ਕੋਈ ਠੋਸ ਭਵਿੱਖੀ ਸਮਾਂ ਪਤਾ ਨਾ ਹੋਵੇ ਤਾਂ ਬਣਾਵਟੀ 1s ਭੇਜਣ ਦੀ ਬਜਾਏ Retry-After ਨੂੰ ਛੱਡ ਦਿਓ, error.retry_after_provenance ਸ਼ਾਮਲ ਕਰੋ, ਅਤੇ combo drain ਪਾਥਾਂ ਉੱਤੇ ਗੱਦ-ਰੂਪੀ ਮੁੜ-ਕੋਸ਼ਿਸ਼ ਸੰਕੇਤ ਪੜ੍ਹੋ।"
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "ਸੁਰੱਖਿਅਤ-ਤਰਜੀਹ ਵਾਲਾ ਬੁਨਿਆਦੀ ਢਾਂਚਾ 502 ਵਜੋਂ ਰੁਕ ਜਾਂਦਾ ਹੈ",
+        "description": "ਜਦੋਂ ਸਿਰਫ਼-ਕੋਟਾ-ਫਾਲਬੈਕ ਤਰਜੀਹੀ ਟਾਰਗੇਟ ਕਿਸੇ ਅਜਿਹੇ ਕਾਰਨ ਕਰਕੇ ਕੌਂਬੋ ਨੂੰ ਰੋਕਦਾ ਹੈ ਜੋ ਸਾਬਤ ਤੌਰ 'ਤੇ ਕੋਟਾ ਨਹੀਂ ਹੈ, ਤਾਂ 503 ਦੀ ਬਜਾਏ 502 ਨਾਲ ਜਵਾਬ ਦਿਓ: ਇੱਕ ਖੁੱਲ੍ਹਾ ਪ੍ਰਦਾਤਾ ਸਰਕਿਟ ਬ੍ਰੇਕਰ ਜਾਂ ਪੂਰਵ-ਅਨੁਮਾਨਿਤ ਲੇਟੈਂਸੀ ਸਕਿਪ।"
       }
     }
   },
@@ -13589,7 +13600,7 @@
       "remaining": "ਬਾਕੀ",
       "noLockouts": "ਕੋਈ ਸਰਗਰਮ ਲਾਕਆਊਟ ਨਹੀਂ",
       "provider": "ਪ੍ਰਦਾਤਾ",
-      "id": "ID",
+      "id": "ਆਈਡੀ",
       "authType": "ਪ੍ਰਮਾਣੀਕਰਨ ਕਿਸਮ",
       "priority": "ਤਰਜੀਹ",
       "isActive": "ਸਰਗਰਮ",
@@ -13775,7 +13786,7 @@
   "kiroAuthModal": {
     "title": "{providerLabel} ਨਾਲ ਕਨੈਕਟ ਕਰੋ",
     "chooseMethod": "ਆਪਣਾ ਪ੍ਰਮਾਣੀਕਰਨ ਤਰੀਕਾ ਚੁਣੋ:",
-    "builderId": "AWS Builder ID",
+    "builderId": "AWS ਬਿਲਡਰ ID",
     "builderDescription": "ਜ਼ਿਆਦਾਤਰ ਵਰਤੋਂਕਾਰਾਂ ਲਈ ਸਿਫ਼ਾਰਸ਼ੀ। {providerLabel} ਨਾਲ ਲਿੰਕ ਕੀਤੇ AWS ਖਾਤੇ ਰਾਹੀਂ ਸਾਈਨ ਇਨ ਕਰੋ।",
     "organization": "ਤੁਹਾਡੀ ਸੰਸਥਾ (AWS IAM Identity Center)",
     "organizationDescription": "ਆਪਣੀ ਕੰਪਨੀ ਦਾ SSO ਸ਼ੁਰੂਆਤੀ URL ਵਰਤੋ (ਉਦਾਹਰਨ: {url})।",
@@ -13958,7 +13969,7 @@
     "runners": "ਰਨਰ",
     "tasks": "ਟਾਸਕ",
     "colName": "ਨਾਮ",
-    "colClis": "CLIs",
+    "colClis": "ਕਮਾਂਡ-ਲਾਈਨ ਇੰਟਰਫੇਸਾਂ",
     "colStatus": "ਸਥਿਤੀ",
     "colTask": "ਟਾਸਕ",
     "colMode": "ਮੋਡ",
@@ -14100,7 +14111,7 @@
     "trialDays": "{days, plural, one {# ਦਿਨ} other {# ਦਿਨ}}"
   },
   "radarIntelPage": {
-    "title": "Radar Intel",
+    "title": "ਰਾਡਾਰ ਜਾਣਕਾਰੀ",
     "subtitle": "Radar ਦੀ ਮਲਕੀਅਤ ਵਾਲੀਆਂ ELO ਦਰਜਾਬੰਦੀਆਂ ਅਤੇ ਤੱਥ-ਆਧਾਰਿਤ ਕੈਟਾਲਾਗ ਤਬਦੀਲੀਆਂ।",
     "backToRadar": "Radar 'ਤੇ ਵਾਪਸ ਜਾਓ",
     "loading": "Intel ਲੋਡ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ...",

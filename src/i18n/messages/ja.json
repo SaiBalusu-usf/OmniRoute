@@ -162,7 +162,7 @@
     "effortMax": "最大",
     "effortUltra": "ウルトラ",
     "reasoningEffort": "推論の取り組み",
-    "wireApi": "Wire API",
+    "wireApi": "ワイヤーAPI",
     "modelAliases": "モデルのエイリアス",
     "combos": "コンボ",
     "noModelsFound": "モデルが見つかりません",
@@ -1272,9 +1272,9 @@
     "systemGroup": "システム",
     "costsOverview": "概要",
     "costsOverviewSubtitle": "統合コスト分析",
-    "agentBridge": "Agent Bridge",
+    "agentBridge": "エージェントブリッジ",
     "agentBridgeSubtitle": "IDEエージェントのトラフィックをインターセプト",
-    "trafficInspector": "Traffic Inspector",
+    "trafficInspector": "トラフィックインスペクター",
     "trafficInspectorSubtitle": "アプリからのリクエストとレスポンスの通信を検査",
     "trafficInspectorPurpose": "アプリケーションがAIプロバイダーに送信する内容と、AIプロバイダーから受信する内容を正確に確認できます。OpenAI互換のあらゆるクライアントで動作します。",
     "cliCode": "CLIコード",
@@ -1758,7 +1758,7 @@
     "quotaShare": "クォータ共有",
     "discovery": "ディスカバリー",
     "freeProviderRankings": "無料プロバイダーランキング",
-    "radar": "Radar",
+    "radar": "レーダー",
     "setup": "セットアップ",
     "freeTiers": "無料枠",
     "gamification": "ゲーミフィケーション",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "バイトがすでにクライアントに到達した後でも、ストリーム復旧でレスポンスを再リクエストし、結合できるようにします。"
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "ストリーム途中の継続をツール呼び出しに対して安全にします。ツール呼び出しが送信された後は（まだ進行中でも、すでに完了していても）、途切れたストリームを再開せず、再試行回数をすべて使い切るのではなく、空の継続が1回発生した時点で停止します。"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/modelsのレスポンスに表示用の名前フィールドを含めます。モデルIDのみを受け付けるクライアントでは無効にしてください。"
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "サーバー所有ツールループ",
         "description": "モデルがクライアントで使用可能なレスポンスを返すまで、非ストリーミングのサーバー所有ツール呼び出しを継続します。"
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After の根拠",
+        "description": "集約された 429/503 利用不可レスポンスでは、具体的な将来の再試行時刻が不明な場合、人工的な1秒を送信する代わりに Retry-After を省略し、error.retry_after_provenance を追加して、コンボのドレイン処理パスで文章形式の再試行ヒントを読み取ります。"
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "保護された優先度インフラ停止を 502 として処理",
+        "description": "クォータのみをフォールバック条件とする優先度ターゲットが、クォータ以外であることが明確に証明できる原因（プロバイダーのサーキットブレーカーが開いている、または予測レイテンシによるスキップ）でコンボを停止した場合、503 ではなく 502 を返します。"
       }
     }
   },

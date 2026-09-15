@@ -7475,7 +7475,7 @@
     "compressionGuidanceHide": "隱藏詳細資訊",
     "compressionGuidanceSafeDefault": "安全預設",
     "compressionGuidanceCacheImpact": "快取影響",
-    "tokenSaverTitle": "Token Saver",
+    "tokenSaverTitle": "權杖節省器",
     "tokenSaverSubtitle": "讓每次請求消耗更少 token。",
     "tokenSaverToolOutput": "工具輸出",
     "tokenSaverToolOutputDesc": "在傳送給提供者前清理 git、grep、ls、tree 和日誌輸出。",
@@ -8877,7 +8877,7 @@
     "providerExposureHint": "啟用後，發現的模型會出現在 OmniRoute 各處的提供者選擇器中。",
     "providerExposureUpdateFailed": "更新失敗（HTTP {status}）",
     "providerExposureNetworkFailed": "網路錯誤 — 無法更新提供者曝光設定",
-    "webUi": "9Router Web UI",
+    "webUi": "9Router 網頁介面",
     "openNewTab": "在新分頁中開啟",
     "filterLogs": "篩選日誌…",
     "resume": "繼續",
@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "允許串流復原在位元組已到達用戶端後再次請求回應並將其拼接。"
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "確保串流中途接續的工具呼叫安全：傳送工具呼叫後（無論仍在進行中或已完成），絕不恢復遭中斷的串流，並在一次空白接續後停止，而非用盡整個重試額度。"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "在 /v1/models 回應中包含顯示友善的名稱欄位。對於僅接受模型 ID 的用戶端請停用此項。"
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "伺服器端工具迴圈",
         "description": "持續執行由伺服器端管理的非串流工具呼叫，直到模型傳回用戶端可用的回應。"
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Retry-After 來源",
+        "description": "對彙總的 429/503 無法使用回應，若無法得知明確的未來重試時間，則省略 Retry-After，而非傳送虛構的 1 秒；新增 error.retry_after_provenance，並讀取組合排空路徑上的文字重試提示。"
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "受保護優先級基礎設施停止時回傳 502",
+        "description": "當僅限配額備援的優先目標因可證明並非配額的原因（提供者斷路器開啟或預測性延遲略過）而停止組合時，回應 502 而非 503。"
       }
     }
   },

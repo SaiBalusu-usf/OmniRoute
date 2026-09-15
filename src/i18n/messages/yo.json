@@ -12985,6 +12985,9 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Gba ìmúpadàbọ̀ stream láàyè láti tún béèrè fún ìdáhùn náà kí ó sì so ó pọ̀ lẹ́yìn tí àwọn byte ti dé ọ̀dọ̀ client."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "Mú kí ìtẹ̀síwájú láàárín ṣiṣan jẹ́ àìléwu fún ìpè irinṣẹ́: má ṣe tẹ̀síwájú ṣiṣan tí a gé lẹ́yìn tí a bá ti fi ìpè irinṣẹ́ ránṣẹ́ (yálà ó ṣì ń lọ tàbí ó ti parí), kí o sì dá dúró lẹ́yìn ìtẹ̀síwájú òfo kan dípò lílo gbogbo iye ìgbìyànjú-àtúnṣe."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Fi àwọn field orúkọ tó rọrùn láti fi hàn sínú àwọn ìdáhùn /v1/models. Pa èyí fún àwọn client tí wọ́n gba ID àwòṣe nìkan."
       },
@@ -13021,6 +13024,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Àyíká Irinṣẹ́ Tí Sáfà Ń Ṣàkóso",
         "description": "Tẹ̀síwájú pẹ̀lú àwọn ìpè irinṣẹ́ tí sáfà ń ṣàkóso tí kì í sanwọ́ títí àwòṣe yóò fi dá ìdáhùn tí oníbàárà lè lò padà."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "Ìpilẹ̀ṣẹ̀ Retry-After",
+        "description": "Lórí àwọn ìdáhùn àpapọ̀ 429/503 pé iṣẹ́ kò sí, má ṣe fi Retry-After kún un nígbà tí a kò mọ àkókò ìgbìyànjú-àtúnṣe ọjọ́ iwájú tó dájú, dípò fífi 1s àròsọ ránṣẹ́; fi error.retry_after_provenance kún un, kí o sì ka àwọn ìtọ́kasí ìgbìyànjú-àtúnṣe inú ọ̀rọ̀ lórí àwọn ọ̀nà ìsọfo combo."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "Àwọn Ìdádúró Amáyédẹrùn Tó Ní Ààyò Ààbò Gẹ́gẹ́ Bí 502",
+        "description": "Dáhùn pẹ̀lú 502 dípò 503 nígbà tí ibi-àfojúsùn tó ní ààyò, tí ìfàsẹ́yìn rẹ̀ jẹ́ fún quota nìkan, bá dá combo dúró nítorí ohun tí a lè fi ẹ̀rí hàn pé kì í ṣe quota: olùdáwọ́lé àyíká olupèsè tó ṣí tàbí fífo ìdádúró asọtẹ́lẹ̀."
       }
     }
   },
