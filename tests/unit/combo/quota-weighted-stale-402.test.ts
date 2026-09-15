@@ -357,7 +357,7 @@ function attemptDeps(response: () => Response) {
     body: { messages: [{ role: "user", content: "hi" }] },
     startTime: Date.now(),
     releaseStickyPinOnFailure() {},
-    async clearStaleLKGP() {},
+    clearStaleLKGP() {},
   };
 }
 

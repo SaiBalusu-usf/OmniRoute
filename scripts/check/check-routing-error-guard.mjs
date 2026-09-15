@@ -1,112 +1,50 @@
 #!/usr/bin/env node
 // scripts/check/check-routing-error-guard.mjs
-// Gate: swallowed `catch` blocks and fire-and-forget `void (async ...)`
-// on routing paths (open-sse/services/combo.ts + open-sse/services/combo/).
+// Gate: swallowed `catch` blocks and fire-and-forget `void (async ...)` on routing
+// paths (open-sse/services/combo.ts + open-sse/services/combo/).
 //
-// Rule A: a `catch` block without a `throw` and without an inline
-// `// no-effect: <motif>` marker for intentional no-op catches
-// is a violation, unless suppressed by KNOWN_SWALLOWED_CATCH. Chained
-// `.catch(...)` promise handlers are ignored by construction (accepted risk:
-// promise-method rejections flagging them would forbid a legitimate idiom).
-// Rule B: `void (async` is a violation unless matched by an allowlist entry
-// (file + anchor substring, reason mandatory). Stale entries fail in both
-// directions. Mirrors the skeleton, exit codes, and `file:line :: rule :: hint`
-// format of scripts/check/check-error-helper.mjs.
+// Run with `npm run check:routing-error-guard`. It is NOT wired into CI; run it when
+// touching routing error handling.
+//
+// Rule A (swallowed-catch): a `catch` block with no `throw` and no inline
+// `// no-effect: <motif>` marker is a violation unless frozen in
+// scripts/check/allowlist-routing-swallowed-catch.json. Entries are keyed by file +
+// the normalized catch-body snippet (never by line number, so unrelated edits that
+// shift lines do not break the gate) with a `count` for identical bodies in one file.
+// More live catches than the frozen count → violation; fewer → stale entry (anti-rot:
+// lower the count or remove the entry). Chained `.catch(...)` promise handlers are
+// ignored by construction.
+//
+// Rule B (void-async): `void (async` is a violation unless an entry in
+// scripts/check/allowlist-void-async.json names the file and an `anchor` substring
+// found within the next VOID_ASYNC_ANCHOR_WINDOW lines of that site; a `reason` is
+// mandatory and entries matching no site are stale.
+//
+// Output mirrors scripts/check/check-error-helper.mjs: `file:line :: rule :: hint`.
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { assertNoStale, reportStaleEntries } from "./lib/allowlist.mjs";
 
 const cwd = process.cwd();
 
 const SCOPE_FILES = [path.join(cwd, "open-sse/services/combo.ts")];
 const SCOPE_DIRS = [path.join(cwd, "open-sse/services/combo")];
-const ALLOWLIST_PATH = path.join(cwd, "scripts/check/allowlist-void-async.json");
-
-// Pre-existing swallowed catches frozen so the gate is green now and blocks
-// only NEW swallows. Each entry carries an anchor `path :: line-motif` plus an
-// English one-line motif; remove the entry once the site is cleaned up.
-// Do NOT add new entries without a justification — that defeats the gate.
-export const KNOWN_SWALLOWED_CATCH = new Set([
-  "open-sse/services/combo.ts :: 326 stats fallback to defaults, auto path uses runtime signals",
-  "open-sse/services/combo.ts :: 355 pool counts fallback to empty lists",
-  "open-sse/services/combo.ts :: 403 cost fallback to default pricing",
-  "open-sse/services/combo.ts :: 623 logged at debug, undefined fallback",
-  "open-sse/services/combo/applyStrategyOrdering.ts :: 118 logged, best-effort provider read fallback",
-  "open-sse/services/combo/applyStrategyOrdering.ts :: 192 logged, manifest routing fallback",
-  "open-sse/services/combo/autoStrategy.ts :: 270 logged, tag routing connections fallback",
-  "open-sse/services/combo/autoStrategy.ts :: 534 expanded targets fallback, abort-safe",
-  "open-sse/services/combo/autoStrategy.ts :: 561 null fallback, best-effort expansion",
-  "open-sse/services/combo/comboAttemptLoop.ts :: 252 logged, speculative task error captured",
-  "open-sse/services/combo/comboPredicates.ts :: 600 null fallback, DB read failure",
-  "open-sse/services/combo/concurrencyCaps.ts :: 32 null fallback, fail-open routing",
-  "open-sse/services/combo/connectionAwareExpansion.ts :: 148 logged, fail-open expansion",
-  "open-sse/services/combo/dispatchPrelude.ts :: 187 false fallback, pinned dispatch check",
-  "open-sse/services/combo/dispatchPrelude.ts :: 231 pinned clone fallback, release on failure",
-  "open-sse/services/combo/dispatchPrelude.ts :: 344 logged, pinned model fallthrough",
-  "open-sse/services/combo/executeTargetAttempt.ts :: 383 clone fallback to original response",
-  "open-sse/services/combo/executeTargetAttempt.ts :: 711 nested clone-parse fallback, error text preserved",
-  "open-sse/services/combo/executeTargetAttempt.ts :: 714 clone fallback, error parse skipped",
-  "open-sse/services/combo/executeTargetAttempt.ts :: 730 stringify fallback to String()",
-  "open-sse/services/combo/failureTracker.ts :: 117 counter kept, retry on next threshold",
-  "open-sse/services/combo/failureTracker.ts :: 123 zeroed streak fallback",
-  "open-sse/services/combo/failureTracker.ts :: 139 fail-open tracker state fallback",
-  "open-sse/services/combo/failureTracker.ts :: 155 zero fallback, fail-open counter",
-  "open-sse/services/combo/nativeCodexTurnPin.ts :: 41 undefined fallback, best-effort pin",
-  "open-sse/services/combo/promptCacheAffinity.ts :: 42 empty-string fallback",
-  "open-sse/services/combo/promptCacheAffinity.ts :: 207 connections fallback to empty list",
-  "open-sse/services/combo/providerWildcard.ts :: 203 model list fallback",
-  "open-sse/services/combo/quotaExhaustion.ts :: 38 status preserved, cloned text fallback",
-  "open-sse/services/combo/quotaExhaustion.ts :: 41 status preserved, error read fallback",
-  "open-sse/services/combo/quotaExhaustionCutoff.ts :: 114 undefined connection fallback",
-  "open-sse/services/combo/quotaExhaustionCutoff.ts :: 140 fail-open, blocked false",
-  "open-sse/services/combo/quotaShareConcurrency.ts :: 65 fail-open, proceed without a slot",
-  "open-sse/services/combo/quotaStrategies.ts :: 108 logged, quota-aware connections fallback",
-  "open-sse/services/combo/quotaStrategies.ts :: 387 logged, reset-aware quota fetch fallback",
-  "open-sse/services/combo/quotaStrategies.ts :: 423 cached previous reset-aware value kept",
-  "open-sse/services/combo/quotaStrategies.ts :: 708 logged, headroom ordering kept",
-  "open-sse/services/combo/resolveAutoStrategy.ts :: 299 logged, provider read best-effort",
-  "open-sse/services/combo/resolveAutoStrategy.ts :: 390 logged, auto strategy rules fallback",
-  "open-sse/services/combo/roundRobinCombo.ts :: 128 undefined fallback, quota path unaffected",
-  "open-sse/services/combo/roundRobinCombo.ts :: 670 best-effort quota reserve only",
-  "open-sse/services/combo/roundRobinCombo.ts :: 680 clone fallback to original",
-  "open-sse/services/combo/roundRobinCombo.ts :: 681 clone fallback to original",
-  "open-sse/services/combo/roundRobinCombo.ts :: 829 clone-parse fallback, error text preserved",
-  "open-sse/services/combo/roundRobinCombo.ts :: 830 clone-parse fallback, error text preserved",
-  "open-sse/services/combo/roundRobinCombo.ts :: 832 clone fallback, error parse skipped",
-  "open-sse/services/combo/roundRobinCombo.ts :: 833 clone fallback, error parse skipped",
-  "open-sse/services/combo/roundRobinCombo.ts :: 862 stringify fallback to String()",
-  "open-sse/services/combo/roundRobinCombo.ts :: 863 stringify fallback to String()",
-  "open-sse/services/combo/roundRobinCombo.ts :: 1091 logged at error, 500 response surfaced",
-  "open-sse/services/combo/roundRobinCombo.ts :: 1092 logged at error, 500 response surfaced",
-  "open-sse/services/combo/sessionStickiness.ts :: 158 undefined fallback, sticky read best-effort",
-  "open-sse/services/combo/sessionStickiness.ts :: 219 false fallback, sticky write best-effort",
-  "open-sse/services/combo/sessionStickiness.ts :: 248 undefined fallback, cooldown read",
-  "open-sse/services/combo/sessionStickiness.ts :: 544 no-op fallback, fail-open stickiness",
-  "open-sse/services/combo/runtimeUnits.ts :: 313 clone fallback to original response",
-  "open-sse/services/combo/targetSorters.ts :: 78 infinite-cost fallback",
-  "open-sse/services/combo/targetSorters.ts :: 85 original order fallback",
-  "open-sse/services/combo/shadowRouting.ts :: 78 best-effort shadow drain only",
-  "open-sse/services/combo/shadowRouting.ts :: 122 logged, shadow body clone skipped",
-  "open-sse/services/combo/shadowRouting.ts :: 169 combo shadow request recorded as failed",
-  "open-sse/services/combo/targetResolution.ts :: 375 logged, pipeline fallthrough to null",
-  "open-sse/services/combo/targetTimeoutRunner.ts :: 86 diagnostic logging failed",
-  "open-sse/services/combo/validateQuality.ts :: 289 null fallback, quality check skipped",
-  "open-sse/services/combo/validateQuality.ts :: 488 controller closed, stream cleanup",
-  "open-sse/services/combo/validateQuality.ts :: 627 invalid fallback, unverifiable stream",
-  "open-sse/services/combo/validateQuality.ts :: 656 valid fallback, probe stream",
-  "open-sse/services/combo/validateQuality.ts :: 663 valid fallback, teardown race",
-  "open-sse/services/combo/validateQuality.ts :: 674 comment-line SSE frame skipped",
-]);
+const VOID_ASYNC_ALLOWLIST_PATH = path.join(cwd, "scripts/check/allowlist-void-async.json");
+const SWALLOWED_CATCH_ALLOWLIST_PATH = path.join(
+  cwd,
+  "scripts/check/allowlist-routing-swallowed-catch.json"
+);
 
 const NO_EFFECT_MARKER = /\/\/\s*no-effect\s*:/;
 const THROW_PATTERN = /\bthrow\b/;
 const VOID_ASYNC_PATTERN = /\bvoid\s*\(\s*async\b/;
+export const SNIPPET_MAX_LENGTH = 120;
+export const VOID_ASYNC_ANCHOR_WINDOW = 25;
 
 function stripStringsAndComments(source) {
   // Length-preserving mask: every string/comment char becomes a space (newlines
-  // kept) so offsets and line numbers survive. Keyword scans use the masked
-  // copy; marker reads use the raw slice at the same offsets.
+  // kept) so offsets and line numbers survive. Keyword scans use the masked copy;
+  // marker reads and snippets use the raw slice at the same offsets.
   const chars = source.split("");
   const blank = (from, to) => {
     for (let i = from; i < to; i++) if (chars[i] !== "\n") chars[i] = " ";
@@ -138,6 +76,19 @@ function stripStringsAndComments(source) {
   return chars.join("");
 }
 
+function skipBalanced(masked, i, open, close) {
+  let depth = 0;
+  while (i < masked.length) {
+    if (masked[i] === open) depth++;
+    else if (masked[i] === close) {
+      depth--;
+      if (depth === 0) return i;
+    }
+    i++;
+  }
+  return -1;
+}
+
 function findCatchBlocks(source) {
   const masked = stripStringsAndComments(source);
   const blocks = [];
@@ -148,107 +99,121 @@ function findCatchBlocks(source) {
     let i = match.index + 5;
     while (i < masked.length && /\s/.test(masked[i])) i++;
     if (masked[i] === "(") {
-      let depth = 0;
-      while (i < masked.length) {
-        if (masked[i] === "(") depth++;
-        else if (masked[i] === ")") {
-          depth--;
-          if (depth === 0) {
-            i++;
-            break;
-          }
-        }
-        i++;
-      }
+      const closeParen = skipBalanced(masked, i, "(", ")");
+      if (closeParen === -1) continue;
+      i = closeParen + 1;
     }
     while (i < masked.length && /\s/.test(masked[i])) i++;
     if (masked[i] !== "{") continue;
-    const start = i;
-    let depth = 0;
-    let j = start;
-    while (j < masked.length) {
-      if (masked[j] === "{") depth++;
-      else if (masked[j] === "}") {
-        depth--;
-        if (depth === 0) break;
-      }
-      j++;
-    }
-    if (depth !== 0) continue;
-    const line = source.slice(0, match.index).split("\n").length;
+    const end = skipBalanced(masked, i, "{", "}");
+    if (end === -1) continue;
     blocks.push({
-      line,
-      body: source.slice(start + 1, j),
-      maskedBody: masked.slice(start + 1, j),
+      line: source.slice(0, match.index).split("\n").length,
+      body: source.slice(i + 1, end),
+      maskedBody: masked.slice(i + 1, end),
     });
-    catchKeyword.lastIndex = j + 1;
+    catchKeyword.lastIndex = end + 1;
   }
   return blocks;
 }
 
-export function findSwallowedCatches(files, frozen = KNOWN_SWALLOWED_CATCH) {
-  const violations = [];
+/** Line-independent identity of a catch body: whitespace-collapsed raw text, truncated. */
+export function catchSnippet(body) {
+  return body.replace(/\s+/g, " ").trim().slice(0, SNIPPET_MAX_LENGTH);
+}
+
+/** Every catch that neither rethrows nor carries a `// no-effect:` marker. */
+export function collectSwallowedCatches(files) {
+  const swallowed = [];
   for (const { path: rel, source } of files) {
     for (const block of findCatchBlocks(source)) {
       if (THROW_PATTERN.test(block.maskedBody)) continue;
       if (NO_EFFECT_MARKER.test(block.body)) continue;
-      const motif = block.body
-        .trim()
-        .split("\n")
-        .map((line) => line.trim().replace(/\s+/g, " "))
-        .filter(Boolean)
-        .slice(0, 2)
-        .join(" | ")
-        .slice(0, 120);
-      const anchor = `${rel} :: ${block.line}`;
-      if (frozen.has(anchor) || [...frozen].some((entry) => entry.startsWith(`${anchor} `))) {
-        continue;
-      }
+      swallowed.push({ file: rel, line: block.line, snippet: catchSnippet(block.body) });
+    }
+  }
+  return swallowed;
+}
+
+const entryKey = (file, snippet) => `${file} :: ${snippet}`;
+
+/**
+ * Compare live swallowed catches against the frozen allowlist.
+ * @returns {{ violations: string[], stale: string[] }}
+ */
+export function evaluateSwallowedCatches(files, frozenEntries = []) {
+  const allowed = new Map();
+  for (const entry of frozenEntries) {
+    allowed.set(entryKey(entry.file, entry.snippet), entry);
+  }
+  const live = new Map();
+  for (const hit of collectSwallowedCatches(files)) {
+    const key = entryKey(hit.file, hit.snippet);
+    if (!live.has(key)) live.set(key, []);
+    live.get(key).push(hit);
+  }
+
+  const violations = [];
+  for (const [key, hits] of live) {
+    const entry = allowed.get(key);
+    const frozenCount = entry ? Number(entry.count ?? 1) : 0;
+    if (entry && !String(entry.reason ?? "").trim()) {
+      violations.push(`${hits[0].file}:${hits[0].line} :: swallowed-catch :: entry needs a reason`);
+    }
+    for (const hit of hits.slice(frozenCount)) {
       violations.push(
-        `${rel}:${block.line} :: swallowed-catch :: add 'throw' or '// no-effect: <motif>'` +
-          (motif ? ` (body: ${motif})` : "")
+        `${hit.file}:${hit.line} :: swallowed-catch :: add 'throw' or '// no-effect: <motif>'` +
+          (hit.snippet ? ` (body: ${hit.snippet})` : " (empty body)")
       );
     }
   }
-  return violations;
+
+  const stale = [];
+  for (const [key, entry] of allowed) {
+    const liveCount = live.get(key)?.length ?? 0;
+    const frozenCount = Number(entry.count ?? 1);
+    if (liveCount < frozenCount) {
+      stale.push(`${key} (frozen ${frozenCount}, live ${liveCount})`);
+    }
+  }
+  return { violations, stale };
 }
 
-export function findVoidAsyncSites(files, allowlist) {
+/**
+ * Rule B. An allowlist entry covers a `void (async` site only when its anchor appears
+ * within VOID_ASYNC_ANCHOR_WINDOW lines of that site in the same file.
+ * @returns {{ violations: string[], stale: string[] }}
+ */
+export function evaluateVoidAsyncSites(files, allowlist = []) {
   const violations = [];
+  const used = new Set();
   for (const { path: rel, source } of files) {
     const lines = source.split("\n");
     for (let i = 0; i < lines.length; i++) {
       if (!VOID_ASYNC_PATTERN.test(lines[i])) continue;
+      const window = lines.slice(i, i + VOID_ASYNC_ANCHOR_WINDOW).join("\n");
       const entry = allowlist.find(
-        (candidate) => candidate.file === rel && source.includes(candidate.anchor)
+        (candidate) => candidate.file === rel && window.includes(candidate.anchor)
       );
       if (!entry) {
         violations.push(
-          `${rel}:${i + 1} :: void-async :: await the async work or add an allowlist entry`
+          `${rel}:${i + 1} :: void-async :: await the async work, attach a .catch, or add an allowlist entry`
         );
         continue;
       }
-      if (!entry.reason || !String(entry.reason).trim()) {
+      used.add(entry);
+      if (!String(entry.reason ?? "").trim()) {
         violations.push(`${rel}:${i + 1} :: void-async :: allowlist entry needs a reason`);
       }
     }
   }
-  return violations;
+  const stale = allowlist
+    .filter((entry) => !used.has(entry))
+    .map((entry) => `${entry.file} :: ${entry.anchor}`);
+  return { violations, stale };
 }
 
-export function findStaleVoidAsyncEntries(allowlist, files) {
-  return reportStaleEntries(
-    allowlist.map((entry) => `${entry.file} :: ${entry.anchor}`),
-    files.flatMap(({ path: rel, source }) =>
-      allowlist
-        .filter((entry) => entry.file === rel && source.includes(entry.anchor))
-        .map((entry) => `${entry.file} :: ${entry.anchor}`)
-    ),
-    "check-routing-error-guard"
-  );
-}
-
-export function loadVoidAsyncAllowlist(allowlistPath = ALLOWLIST_PATH) {
+function loadEntries(allowlistPath) {
   const raw = JSON.parse(fs.readFileSync(allowlistPath, "utf8"));
   return raw.entries ?? raw;
 }
@@ -278,63 +243,31 @@ function collectFiles() {
 
 function main() {
   const files = collectFiles();
-  const allowlist = loadVoidAsyncAllowlist();
+  const catchEntries = loadEntries(SWALLOWED_CATCH_ALLOWLIST_PATH);
+  const voidEntries = loadEntries(VOID_ASYNC_ALLOWLIST_PATH);
+  const catches = evaluateSwallowedCatches(files, catchEntries);
+  const voids = evaluateVoidAsyncSites(files, voidEntries);
 
-  const liveSwallows = findSwallowedCatches(files, new Set());
-  const liveSwallowKeys = liveSwallows.map((violation) => {
-    const at = violation.indexOf(" :: swallowed-catch");
-    return at === -1 ? violation : violation.slice(0, at);
-  });
-  const liveSwallowSet = new Set(liveSwallowKeys);
-  const frozenHits = new Set(
-    [...KNOWN_SWALLOWED_CATCH]
-      .map((entry) => entry.slice(0, entry.lastIndexOf(" :: ")))
-      .filter((key) => {
-        if (liveSwallowSet.has(key)) return true;
-        const cut = key.lastIndexOf(" :: ");
-        const alt = `${key.slice(0, cut)} :: ${Number(key.slice(cut + 4)) + 1}`;
-        return liveSwallowSet.has(alt);
-      })
-  );
-  // Anti-rot: a seed entry is stale only when its pinned line no longer matches
-  // a live swallow AND no live swallow exists for the same file at all — the
-  // whole violation was fixed, not shifted. Line drift alone stays silent
-  // (the line anchor is advisory; the motif plus completion enforcement — the
-  // gate fails on any unknown swallow — carry the signal instead).
-  const liveSwallowFiles = new Set(liveSwallowKeys.map((key) => key.split(":")[0]));
-  const shiftedStale = [...KNOWN_SWALLOWED_CATCH].filter((entry) => {
-    const key = entry.slice(0, entry.lastIndexOf(" :: "));
-    if (frozenHits.has(key)) return false;
-    const file = key.slice(0, key.lastIndexOf(" :: "));
-    return !liveSwallowFiles.has(file);
-  });
-  assertNoStale(KNOWN_SWALLOWED_CATCH, new Set(shiftedStale), "check-routing-error-guard");
-  const swallows = findSwallowedCatches(files, KNOWN_SWALLOWED_CATCH);
-
-  const liveVoidSites = files.flatMap(({ path: rel, source }) =>
-    source
-      .split("\n")
-      .map((line, i) => ({ rel, line, i }))
-      .filter(({ line }) => VOID_ASYNC_PATTERN.test(line))
-      .map(({ rel: r, i }) => `${r}:${i + 1}`)
-  );
-  void liveVoidSites;
-  const voidAsync = findVoidAsyncSites(files, allowlist);
-  const stale = findStaleVoidAsyncEntries(allowlist, files);
-  if (stale.length > 0) process.exitCode = 1;
-
-  const violations = [...swallows, ...voidAsync];
+  const violations = [...catches.violations, ...voids.violations];
+  const stale = [...catches.stale, ...voids.stale];
   if (violations.length) {
     console.error(
       `[check-routing-error-guard] ${violations.length} violation(s) on routing paths:\n` +
         violations.map((v) => `  ✗ ${v}`).join("\n")
     );
+  }
+  if (stale.length) {
+    console.error(
+      `[check-routing-error-guard] ${stale.length} stale allowlist entr(y/ies) — the site was fixed or changed; shrink or remove the entry:\n` +
+        stale.map((s) => `  ✗ ${s}`).join("\n")
+    );
+  }
+  if (violations.length || stale.length) {
     process.exitCode = 1;
     return;
   }
-  if (process.exitCode === 1) return;
   console.log(
-    `[check-routing-error-guard] OK (${files.length} files scanned, ${KNOWN_SWALLOWED_CATCH.size} frozen catches, ${allowlist.length} void-async entries)`
+    `[check-routing-error-guard] OK (${files.length} files scanned, ${catchEntries.length} frozen catch entries, ${voidEntries.length} void-async entries)`
   );
 }
 

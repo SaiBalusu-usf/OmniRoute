@@ -128,6 +128,7 @@ import { resolveComboTargetPipeline } from "./combo/targetResolution.ts";
 import { dispatchWithCooldownRetry } from "./combo/comboAttemptLoop.ts";
 import { evaluateExecuteTargetGates } from "./combo/executeTargetGates.ts";
 import { executeTargetAttempt } from "./combo/executeTargetAttempt.ts";
+import { clearStaleLKGP } from "./combo/staleLkgpClear.ts";
 import type { AttemptLoopDeps, AttemptLoopState } from "./combo/attemptLoopTypes.ts";
 
 export { RESET_WINDOW_NAMES, QUOTA_SOFT_DEPRIORITIZE_FACTOR, setCandidateQuotaSoftPenalty };
@@ -175,43 +176,8 @@ export function releaseStickyPinOnFailure(
   clearStickyBinding(messageHash);
 }
 
-// Counters: in-memory equivalent of the (absent) executions ledger.
-let staleLKGPClearAttempted = 0;
-let staleLKGPClearFailed = 0;
-export function getStaleLKGPClearStats(): { attempted: number; failed: number } {
-  return { attempted: staleLKGPClearAttempted, failed: staleLKGPClearFailed };
-}
-export function resetStaleLKGPClearStats(): void {
-  staleLKGPClearAttempted = 0;
-  staleLKGPClearFailed = 0;
-}
-
-/**
- * Clear persisted LKGP pins when a target fails or is skipped due to
- * exhaustion, cooldown, or unavailability (#11911 #919).
- */
-export async function clearStaleLKGP(
-  comboName: string,
-  executionKey?: string | null,
-  comboId?: string | null,
-  log?: { warn?: (tag: string, msg: string, data?: unknown) => void } | null,
-  tag: string = "COMBO",
-  // test-only injection: the routing path always resolves clearLKGP from settings
-  deps?: { clearLKGP?: (combo: string, model: string) => Promise<void> }
-): Promise<void> {
-  staleLKGPClearAttempted++;
-  try {
-    const clearLKGP = deps?.clearLKGP ?? (await import("@/lib/db/settings")).clearLKGP;
-    const keys = [comboId || comboName, ...(executionKey ? [executionKey] : [])];
-    await Promise.all(keys.map((k) => clearLKGP(comboName, k)));
-  } catch (err) {
-    // no-effect: logged + counted
-    staleLKGPClearFailed++;
-    log?.warn?.(tag, "Failed to clear Last Known Good Provider. This is non-fatal.", {
-      err,
-    });
-  }
-}
+// #11911 #919: non-blocking stale-pin clear whose failures log with combo context.
+export { clearStaleLKGP };
 
 const DEFAULT_MODEL_P95_MS: Record<string, number> = {
   "grok-4-fast-non-reasoning": 1143,
