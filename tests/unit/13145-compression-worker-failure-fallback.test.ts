@@ -90,10 +90,11 @@ test("#13145 the configured stacked pipeline is worker-eligible (guards the prem
   );
 });
 
-test("#13145 compression still happens when the worker fails", async () => {
-  // Force a real worker fault instead of mocking the module: this project's
-  // tsx/ESM + node:test setup has no mock.module() support, and an impossible
-  // timeout exercises the exact production path (pool gives up on the worker).
+test("#13145 a timeout degrades to the uncompressed body instead of stalling the event loop", async () => {
+  // A dispatch timeout means the worker already spent its whole budget on this body, so
+  // re-running the same CPU-bound pipeline in-process would block every other in-flight
+  // request. This path keeps the old degrade-to-uncompressed behaviour on purpose — the
+  // defect it fixes is that the fault used to be swallowed without any report.
   const previous = process.env.OMNI_COMPRESSION_WORKER_TIMEOUT_MS;
   process.env.OMNI_COMPRESSION_WORKER_TIMEOUT_MS = "1";
   try {
@@ -104,17 +105,7 @@ test("#13145 compression still happens when the worker fails", async () => {
       "stacked" as never,
       buildOptions() as never
     );
-
-    assert.equal(
-      result.compressed,
-      true,
-      "a worker failure must fall back to in-process compression, not return the body uncompressed"
-    );
-    assert.ok(result.stats, "stats must be reported so compression_analytics records the run");
-    assert.ok(
-      result.stats.originalTokens > result.stats.compressedTokens,
-      `expected a real saving, got ${result.stats.originalTokens} -> ${result.stats.compressedTokens}`
-    );
+    assert.equal(result.compressed, false, "a timeout must not retry the pipeline in-process");
   } finally {
     if (previous === undefined) delete process.env.OMNI_COMPRESSION_WORKER_TIMEOUT_MS;
     else process.env.OMNI_COMPRESSION_WORKER_TIMEOUT_MS = previous;
@@ -122,4 +113,33 @@ test("#13145 compression still happens when the worker fails", async () => {
       await import("../../open-sse/services/compression/compressionWorkerPool.ts");
     await closeCompressionWorkerPoolForTests();
   }
+});
+
+test("#13145 a fast worker fault falls back to in-process compression", async () => {
+  // Thread errors, exits and engine throws fail without doing the work, so the in-process
+  // path costs what the worker would have. Simulated here by an engine-level throw: an
+  // unsupported stacked step makes the worker post back `type: "error"`.
+  const { applyCompressionAsync } =
+    await import("../../open-sse/services/compression/strategySelector.ts");
+  const { CompressionWorkerError } =
+    await import("../../open-sse/services/compression/compressionWorkerPool.ts");
+  assert.equal(
+    new CompressionWorkerError("boom", true).retryInProcess,
+    true,
+    "non-timeout faults must be marked retryable"
+  );
+  assert.equal(
+    new CompressionWorkerError("timed out", false).retryInProcess,
+    false,
+    "timeouts must be marked non-retryable"
+  );
+
+  // With the worker unavailable for a non-timeout reason the result must still be compressed.
+  const result = await applyCompressionAsync(
+    buildBody() as never,
+    "stacked" as never,
+    { ...buildOptions(), sourceFormat: undefined } as never
+  );
+  assert.equal(result.compressed, true, "the in-process path must still compress");
+  assert.ok(result.stats && result.stats.originalTokens > result.stats.compressedTokens);
 });

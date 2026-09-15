@@ -478,6 +478,27 @@ function runCompression(
  * already run in an async context (e.g. chatCore) await this so a future
  * worker-thread engine can await without changing the surrounding code.
  */
+/**
+ * #13145: report a compression-worker fault. The logger is imported lazily and
+ * defensively — `compressionWorker.ts` imports this module, so a static import would pull
+ * the logger into the worker bundle, and a logging failure must never be able to break
+ * compression itself.
+ */
+function logCompressionWorkerFault(error: unknown, retryInProcess: boolean): void {
+  void (async () => {
+    try {
+      const { log } = await import("../../utils/logger.ts");
+      log.warn(
+        "COMPRESSION",
+        `Compression worker failed (${
+          retryInProcess ? "falling back to in-process compression" : "sending uncompressed"
+        }): ${error instanceof Error ? error.message : String(error)}`
+      );
+    } catch {
+      /* logging is best-effort — never let it affect the compression path */
+    }
+  })();
+}
 export async function applyCompressionAsync(
   body: Record<string, unknown>,
   mode: CompressionMode,
@@ -546,25 +567,19 @@ async function runCompressionAsync(
       // uncompressed body here made every eligible request bypass the pipeline while the
       // response header still announced the selected plan ("stacked"), and
       // compression_analytics stayed empty because nothing ever reported a compressed
-      // result — the failure was invisible at every log level. Fall through to the
-      // in-process path instead, which produces an identical result (the worker is a
-      // throughput optimisation, not a behavioural variant), and surface the cause.
+      // result — the failure was invisible at every log level.
       //
-      // The logger is imported lazily and defensively: compressionWorker.ts imports this
-      // module, so a static import would pull the logger into the worker bundle, and a
-      // logging failure must never be able to break compression itself.
-      void (async () => {
-        try {
-          const { log } = await import("../../utils/logger.ts");
-          log.warn(
-            "COMPRESSION",
-            "Compression worker failed; falling back to in-process compression: " +
-              (workerError instanceof Error ? workerError.message : String(workerError))
-          );
-        } catch {
-          /* logging is best-effort — never let it affect the compression path */
-        }
-      })();
+      // How far to recover depends on WHY the worker failed. A thread error, an exit or an
+      // engine throw fails fast without doing the work, so the in-process path costs the
+      // same as the worker would have and restores compression. A dispatch timeout is the
+      // opposite: the worker already burned its full budget on this body, so re-running the
+      // same CPU-bound pipeline on the main event loop would stall every other in-flight
+      // request. Those keep the old degrade-to-uncompressed behaviour — but are now
+      // reported instead of swallowed, which was the actual defect.
+      const retryInProcess =
+        (workerError as { retryInProcess?: boolean } | null)?.retryInProcess !== false;
+      logCompressionWorkerFault(workerError, retryInProcess);
+      if (!retryInProcess) return { body, compressed: false, stats: null };
     }
   }
   if (

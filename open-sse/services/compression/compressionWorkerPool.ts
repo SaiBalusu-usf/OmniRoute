@@ -80,6 +80,24 @@ export function resolveWorkerFile(): string {
 function unchanged(body: Record<string, unknown>): CompressionResult {
   return { body, compressed: false, stats: null };
 }
+/**
+ * #13145: why a worker fault happened decides what the caller may do about it.
+ *
+ * `retryInProcess: false` marks a fault whose work is *provably expensive* — a dispatch
+ * timeout means the worker already spent its whole budget without finishing, so re-running
+ * the same CPU-bound pipeline on the main event loop would stall every other in-flight
+ * request. Those degrade to the uncompressed body, as before, but are now reported instead
+ * of being swallowed. Every other fault (thread error, exit, engine throw) fails fast
+ * without doing the work, so retrying in-process is cheap and restores compression.
+ */
+export class CompressionWorkerError extends Error {
+  readonly retryInProcess: boolean;
+  constructor(message: string, retryInProcess: boolean) {
+    super(message);
+    this.name = "CompressionWorkerError";
+    this.retryInProcess = retryInProcess;
+  }
+}
 interface PendingJob extends CompressionWorkerJob {
   originalBody: Record<string, unknown>;
   resolve: (result: CompressionResult) => void;
@@ -167,11 +185,20 @@ export class CompressionWorkerPool {
       if (!job) return;
       slot.job = job;
       slot.timeout = setTimeout(
-        () => this.fail(slot!, `compression worker timed out after ${this.timeoutMs}ms`),
+        () => this.fail(slot!, `compression worker timed out after ${this.timeoutMs}ms`, false),
         this.timeoutMs
       );
       slot.timeout.unref();
-      const { originalBody: _body, resolve: _resolve, onEngineStep: _step, ...wireJob } = job;
+      // `reject` must be stripped alongside the other non-cloneable fields: postMessage
+      // uses structured clone, and leaking any function into the wire job throws
+      // DataCloneError before the worker ever sees it.
+      const {
+        originalBody: _body,
+        resolve: _resolve,
+        reject: _reject,
+        onEngineStep: _step,
+        ...wireJob
+      } = job;
       slot.worker.postMessage(wireJob);
     }
   }
@@ -192,7 +219,10 @@ export class CompressionWorkerPool {
     }
     // #13145: the worker reported a thrown engine error. Surface it instead of quietly
     // handing back the uncompressed body — the caller falls back to in-process compression.
-    this.abort(slot, new Error(`compression worker error: ${message.error}`));
+    this.abort(
+      slot,
+      new CompressionWorkerError(`compression worker error: ${message.error}`, true)
+    );
   }
   private finish(slot: PoolWorker, result: CompressionResult): void {
     const job = slot.job;
@@ -208,13 +238,17 @@ export class CompressionWorkerPool {
     slot.idle.unref();
     this.dispatch();
   }
-  private fail(slot: PoolWorker, reason = "compression worker failed or timed out"): void {
-    this.abort(slot, new Error(reason));
+  private fail(
+    slot: PoolWorker,
+    reason = "compression worker failed or timed out",
+    retryInProcess = true
+  ): void {
+    this.abort(slot, new CompressionWorkerError(reason, retryInProcess));
   }
   /** #13145: release a slot and report the failure to the caller so it can fall back to
    *  in-process compression. Previously this resolved with the uncompressed body, which
    *  turned every worker fault into a silent, unlogged no-op. */
-  private abort(slot: PoolWorker, error: Error): void {
+  private abort(slot: PoolWorker, error: CompressionWorkerError): void {
     const job = slot.job;
     if (slot.timeout) clearTimeout(slot.timeout);
     slot.timeout = null;
