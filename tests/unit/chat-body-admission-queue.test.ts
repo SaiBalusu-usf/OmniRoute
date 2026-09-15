@@ -555,3 +555,52 @@ test("aborting the signal cancels a structural queue-wait", async () => {
   held.release();
   assert.equal(controller.activeHeavy, 0);
 });
+
+// Ported from #13675 (Co-authored-by: oyi77), with queueMs derived from
+// DEFAULT_REQUEST_QUEUE_MAX_WAIT_MS instead of a hardcoded 15_000 so the
+// end-to-end proof cannot drift out of sync with the resilience layer's
+// default the way the doc references in #13676 briefly did.
+test("#13648: a resilience-scale occupancy bridges the default queue instead of self-shedding", async () => {
+  // The reported failure: a single large-context agent holds the one heavyweight
+  // slot for the resilience layer's default turn budget while its own aux call
+  // arrives — with the old fixed 2s default the aux call always shed
+  // `queue_timeout` and the session died. The default queue must bridge a full
+  // resilience-scale occupancy, whatever that default currently is.
+  const controller = new ChatAdmissionController(1);
+  const held = controller.tryAcquireHeavy();
+  assert.ok(held);
+
+  const queueMs = DEFAULT_REQUEST_QUEUE_MAX_WAIT_MS;
+  const pending = admitChatStructure(
+    {
+      messages: [
+        { role: "user", content: "one" },
+        { role: "user", content: "two" },
+      ],
+    },
+    null,
+    {
+      controller,
+      maxMessages: 10,
+      heavyMessages: 2,
+      heavyTools: 10,
+      heavyTokens: 10_000,
+      queueMs,
+      heapPressureCheck: () => true,
+    }
+  );
+
+  let settled = false;
+  void pending.then(() => {
+    settled = true;
+  });
+  // Old default (2s) would have shed by now; the bridged wait must still park.
+  await new Promise((resolve) => setTimeout(resolve, 2_500));
+  assert.equal(settled, false, "aux call must still wait past the old 2s shed point");
+
+  held.release();
+  const result = await pending;
+  assert.equal(result.admit, true, "aux call acquires the freed slot instead of self-shedding");
+  if (result.admit) result.lease?.release();
+  assert.equal(controller.activeHeavy, 0);
+});
