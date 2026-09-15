@@ -25,6 +25,7 @@ export function protectedPriorityStopStatus(cause?: ProtectedPriorityStopCause):
   try {
     return isFeatureFlagEnabled("PROTECTED_PRIORITY_INFRA_502_ENABLED") ? 502 : 503;
   } catch {
+    // no-effect: an unreadable flag store keeps the legacy 503
     return 503;
   }
 }
