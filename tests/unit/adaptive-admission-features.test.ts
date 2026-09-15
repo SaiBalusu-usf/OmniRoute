@@ -146,7 +146,10 @@ describe("bounded request feature extraction", () => {
   it("bounds tool scans and never touches entries beyond the budget (conservative count)", () => {
     // Huge leading string makes estimateSizeFast byte-exit before walking tools,
     // so only countTools can touch the tools proxy — proving its scan bound alone.
-    const sizePad = "x".repeat(300_000);
+    // Pad must clear the active cost config's implied byte-exit ceiling
+    // (bodyBytesPerUnit * maxRequestCost, ~16MB by default — see #13164), not the
+    // old fixed 256 KiB default, or this stops isolating what it says it isolates.
+    const sizePad = "x".repeat(17_000_000);
 
     let accesses = 0;
     const tools = new Proxy([] as unknown[], {

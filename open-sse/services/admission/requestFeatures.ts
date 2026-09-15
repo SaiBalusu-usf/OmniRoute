@@ -4,11 +4,18 @@
  */
 
 import { estimateSizeFast } from "../../utils/estimateSize.ts";
-import type { AdmissionCostFeatures } from "./types.ts";
+import { resolveCostConfig } from "./cost.ts";
+import type { AdmissionCostConfig, AdmissionCostFeatures } from "./types.ts";
 
 export type AdmissionFeatureExtractionContext = {
   /** When set, wins over any body/wrapped stream field. */
   streaming?: boolean;
+  /**
+   * Active cost quanta (or override). Threaded through so the body-size
+   * early-exit tracks `bodyBytesPerUnit * maxRequestCost` instead of the
+   * generic 256 KiB default — see #13164.
+   */
+  cost?: Partial<AdmissionCostConfig>;
 };
 
 /**
@@ -159,7 +166,9 @@ export function extractAdmissionCostFeatures(
   body: unknown,
   context?: AdmissionFeatureExtractionContext
 ): AdmissionCostFeatures {
-  const bodyBytes = estimateSizeFast(body);
+  const costConfig = resolveCostConfig(context?.cost);
+  const bodyByteLimit = costConfig.bodyBytesPerUnit * costConfig.maxRequestCost;
+  const bodyBytes = estimateSizeFast(body, bodyByteLimit);
   const layers = featureLayers(body);
   const draft: FeatureDraft = {
     messageCount: 0,

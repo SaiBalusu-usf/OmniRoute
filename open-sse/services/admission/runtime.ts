@@ -5,6 +5,7 @@
 
 import { AdaptiveAdmissionController } from "./controller.ts";
 import { validateConfig } from "./config.ts";
+import { resolveCostConfig } from "./cost.ts";
 import { extractAdmissionCostFeatures } from "./requestFeatures.ts";
 import {
   type AdaptiveAdmissionConfig,
@@ -323,6 +324,7 @@ function classifyHttpOutcome(status: number, signal?: AbortSignal): AdmissionRel
 
 class AdaptiveAdmissionRuntimeImpl implements AdaptiveAdmissionRuntime {
   private readonly controller: AdaptiveAdmissionController;
+  private readonly costConfig: ReturnType<typeof resolveCostConfig>;
   private readonly checkResourcePressure: () => ResourcePressureGuardResult | null;
   private readonly getResourcePressureObservation: () => ResourcePressureObservation;
   private readonly onPressureObserved?: (pressure: AdmissionPressure) => void;
@@ -338,6 +340,10 @@ class AdaptiveAdmissionRuntimeImpl implements AdaptiveAdmissionRuntime {
 
   constructor(options: AdaptiveAdmissionRuntimeOptions, config: AdaptiveAdmissionConfig) {
     this.controller = new AdaptiveAdmissionController(config, options.clock);
+    // Resolved the same way validateConfig() resolves it for the controller, so the
+    // body-size early-exit tracks whatever cost quanta (including a runtime override)
+    // are actually active instead of the generic 256 KiB default — see #13164.
+    this.costConfig = resolveCostConfig(config.cost);
     this.checkResourcePressure = options.checkResourcePressure ?? checkResourcePressureGuard;
     this.getResourcePressureObservation =
       options.getResourcePressureObservation ?? getResourcePressureObservation;
@@ -370,10 +376,10 @@ class AdaptiveAdmissionRuntimeImpl implements AdaptiveAdmissionRuntime {
       };
     }
 
-    const features = extractAdmissionCostFeatures(
-      input.body,
-      input.streaming === undefined ? undefined : { streaming: input.streaming }
-    );
+    const features = extractAdmissionCostFeatures(input.body, {
+      ...(input.streaming === undefined ? {} : { streaming: input.streaming }),
+      cost: this.costConfig,
+    });
     let result: AdmissionAcquireResult;
     try {
       result = await this.controller.acquire({

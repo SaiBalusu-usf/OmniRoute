@@ -1,0 +1,1 @@
+- **fix(admission):** stop admission cost from flattening every request body above 256 KiB to the same size, so a 2 MB and an 8 MB request are priced differently again (#13164) — thanks @datrixlab
