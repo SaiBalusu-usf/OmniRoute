@@ -30,7 +30,10 @@ import {
 } from "./accountRotation.ts";
 import { isOpencodeGeoBlocked, proxyKeyOf } from "./opencodeGeoBlock.ts";
 import { isRetriableUpstreamFailure } from "./opencodeTransientFailure.ts";
-import { isNetworkRotationSharedEgressGuardEnabled } from "@/shared/utils/featureFlags";
+import {
+  isNetworkRotationSharedEgressGuardEnabled,
+  isOpencodeResponsesStallRotationEnabled,
+} from "@/shared/utils/featureFlags";
 import { getResponsesFirstByteTimeoutMs } from "@/shared/utils/runtimeTimeouts";
 import {
   guardResponsesStreamFirstByte,
@@ -357,21 +360,32 @@ export class OpencodeExecutor extends BaseExecutor {
   }
 
   /**
-   * A streamed Responses reply opens with `response.created` before any generation, so a 2xx
-   * Responses stream that stays silent past the window is stalled, not thinking. Chat Completions
-   * streams are left alone: gateways may legitimately hold them until the answer is ready.
-   * Throws a RESPONSES_FIRST_BYTE_TIMEOUT error that the rotation loop treats like a network error.
+   * First-byte window for this request's Responses stream, or 0 when the stall guard does not
+   * apply. A streamed Responses reply opens with `response.created` before any generation, so a
+   * 2xx Responses stream that stays silent past the window is stalled, not thinking. Chat
+   * Completions streams are left alone: gateways may legitimately hold them until the answer is
+   * ready. Opt-in via OPENCODE_RESPONSES_STALL_ROTATION (#13484): with the flag off this returns 0
+   * and every dispatch keeps today's path (the stream readiness timeout is the only bound).
+   */
+  private resolveResponsesStallWindowMs(input: ExecuteInput): number {
+    if (!input.stream || this._requestFormat !== "openai-responses") return 0;
+    if (!isOpencodeResponsesStallRotationEnabled()) return 0;
+    return getResponsesFirstByteTimeoutMs();
+  }
+
+  /**
+   * Returns `result` untouched when `windowMs` is 0 or the response is not a 2xx body; otherwise
+   * resolves once the first body byte arrives, or throws RESPONSES_FIRST_BYTE_TIMEOUT.
    */
   private async guardResponsesFirstByte<T extends { response: Response }>(
     input: ExecuteInput,
-    result: T
+    result: T,
+    windowMs: number
   ): Promise<T> {
-    if (!input.stream || this._requestFormat !== "openai-responses") return result;
+    if (windowMs <= 0) return result;
     const { response } = result;
     if (!response.ok || !response.body) return result;
-    const timeoutMs = getResponsesFirstByteTimeoutMs();
-    if (timeoutMs <= 0) return result;
-    const guarded = await guardResponsesStreamFirstByte(response, timeoutMs, input.signal);
+    const guarded = await guardResponsesStreamFirstByte(response, windowMs, input.signal);
     return { ...result, response: guarded };
   }
 
@@ -542,6 +556,8 @@ export class OpencodeExecutor extends BaseExecutor {
       const cid = input.correlationId ? `correlationId=${input.correlationId} ` : "";
 
       const hasProxies = this.accounts.some((a) => a.proxy !== null);
+      // 0 unless OPENCODE_RESPONSES_STALL_ROTATION is on for a streamed Responses request.
+      const stallWindowMs = this.resolveResponsesStallWindowMs(input);
       // Fast path: no multi-account proxy wiring configured → original behavior,
       // plus exactly ONE bounded retry when the upstream answers a 400 empty
       // rejection (same predicate and logging as the rotation loop). Everything
@@ -558,7 +574,8 @@ export class OpencodeExecutor extends BaseExecutor {
           input,
           (await (hasAmbientProxyContext()
             ? dispatch()
-            : runWithDirectFetchContext(dispatch))) as HttpExecuteResult
+            : runWithDirectFetchContext(dispatch))) as HttpExecuteResult,
+          stallWindowMs
         );
         if (single.response.status === 400) {
           let bodyText: string | null = null;
@@ -578,7 +595,8 @@ export class OpencodeExecutor extends BaseExecutor {
                 input,
                 await this.guardResponsesFirstByte(
                   input,
-                  (await super.execute(input)) as HttpExecuteResult
+                  (await super.execute(input)) as HttpExecuteResult,
+                  stallWindowMs
                 )
               );
             }
@@ -619,6 +637,7 @@ export class OpencodeExecutor extends BaseExecutor {
       let directTried = false;
       // A Responses stream that stalls before its first byte gets one rotation; a second stall
       // means the upstream itself is wedged, so fail fast instead of walking every account.
+      // Only ever incremented when OPENCODE_RESPONSES_STALL_ROTATION is on (stallWindowMs > 0).
       let stalledAttempts = 0;
 
       for (let attempt = 0; attempt < this.accounts.length + emptyRejectionBudget; attempt++) {
@@ -696,17 +715,27 @@ export class OpencodeExecutor extends BaseExecutor {
             input,
             (await runWithProxyContext(account.proxy, () =>
               super.execute({ ...input, skipUpstreamRetry: true })
-            )) as HttpExecuteResult
+            )) as HttpExecuteResult,
+            stallWindowMs
           );
         } catch (err) {
           const reason = err instanceof Error ? err.message : String(err);
-          if (isResponsesFirstByteTimeout(err) && ++stalledAttempts > 1) {
+          // Stall guard (opt-in): headers arrived, so this account's egress works — the stall is
+          // never a shared-egress outage, and proxy-less accounts rotate exactly like proxied
+          // ones. One rotation, then fail fast; a client abort during the wait never rotates.
+          if (stallWindowMs > 0 && (isResponsesFirstByteTimeout(err) || input.signal?.aborted)) {
+            if (input.signal?.aborted) throw err;
             this.markCooldown(account);
+            const stallKey = proxyKeyOf(account.proxy);
+            if (stallKey !== null) geoTriedProxyKeys.add(stallKey);
+            else directTried = true;
+            const rotate = ++stalledAttempts <= 1;
             log?.warn?.(
               "OPENCODE",
-              `${cid}Responses stream stalled again on account ${masked}, not rotating further (${reason})`
+              `${cid}Responses stream stalled before its first byte on account ${masked} (proxy ${stallKey ?? "direct"}), ${rotate ? "rotating to next…" : "not rotating further"} (${reason})`
             );
-            throw err;
+            if (!rotate) throw err;
+            continue;
           }
           // A network exception (timeout, connection refused/reset) is only
           // account-scoped when this account has its OWN egress (a configured
@@ -838,7 +867,8 @@ export class OpencodeExecutor extends BaseExecutor {
         lastResult ??
           (await this.guardResponsesFirstByte(
             input,
-            (await super.execute(input)) as HttpExecuteResult
+            (await super.execute(input)) as HttpExecuteResult,
+            stallWindowMs
           ))
       );
     } finally {

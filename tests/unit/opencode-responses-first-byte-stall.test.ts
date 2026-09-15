@@ -8,6 +8,11 @@ import {
 import type { ExecutorLog, ProviderCredentials } from "../../open-sse/executors/base.ts";
 import { resolveProxyForRequest } from "../../open-sse/utils/proxyFetch.ts";
 import { RESPONSES_FIRST_BYTE_TIMEOUT_CODE } from "../../open-sse/utils/firstByteWatchdog.ts";
+import { resetDbInstance } from "../../src/lib/db/core.ts";
+
+// OPENCODE_RESPONSES_STALL_ROTATION gates the whole guard (#13484 rework): the flag is read at
+// the decision point through resolveFeatureFlag (DB override > env > default "false").
+const FLAG = "OPENCODE_RESPONSES_STALL_ROTATION";
 
 const log: ExecutorLog = { debug() {}, info() {}, warn() {}, error() {} };
 const RESPONSES_MODEL = "muse-spark-1.2-contributor-free";
@@ -30,7 +35,10 @@ before(async () => {
   }
 });
 
-after(() => servers.forEach((s) => s.close()));
+after(() => {
+  servers.forEach((s) => s.close());
+  resetDbInstance();
+});
 
 function proxiedCredentials(count: number): ProviderCredentials {
   const fingerprints = FPS.slice(0, count);
@@ -55,6 +63,16 @@ const directCredentials: ProviderCredentials = {
   providerSpecificData: {},
 };
 
+// Several accounts, none with a dedicated proxy: every dispatch shares the default egress.
+function proxylessCredentials(count: number): ProviderCredentials {
+  return {
+    apiKey: null,
+    accessToken: null,
+    connectionId: "noauth",
+    providerSpecificData: { fingerprints: FPS.slice(0, count) },
+  };
+}
+
 type Step = "stall" | "ok" | "429" | "throw";
 
 function silentBody(): ReadableStream<Uint8Array> {
@@ -75,12 +93,15 @@ function sseBody(): ReadableStream<Uint8Array> {
 describe("OpencodeExecutor Responses first-byte stall", () => {
   let originalFetch: typeof globalThis.fetch;
   let priorTimeout: string | undefined;
+  let priorFlag: string | undefined;
   let calls: string[];
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
     priorTimeout = process.env.RESPONSES_FIRST_BYTE_TIMEOUT_MS;
+    priorFlag = process.env[FLAG];
     process.env.RESPONSES_FIRST_BYTE_TIMEOUT_MS = "60";
+    process.env[FLAG] = "true";
     calls = [];
   });
 
@@ -88,6 +109,8 @@ describe("OpencodeExecutor Responses first-byte stall", () => {
     globalThis.fetch = originalFetch;
     if (priorTimeout === undefined) delete process.env.RESPONSES_FIRST_BYTE_TIMEOUT_MS;
     else process.env.RESPONSES_FIRST_BYTE_TIMEOUT_MS = priorTimeout;
+    if (priorFlag === undefined) delete process.env[FLAG];
+    else process.env[FLAG] = priorFlag;
   });
 
   function installFetch(plan: Step[]) {
@@ -108,12 +131,18 @@ describe("OpencodeExecutor Responses first-byte stall", () => {
     }) as typeof globalThis.fetch;
   }
 
-  function run(exec: OpencodeExecutor, model: string, creds: ProviderCredentials, stream = true) {
+  function run(
+    exec: OpencodeExecutor,
+    model: string,
+    creds: ProviderCredentials,
+    stream = true,
+    signal: AbortSignal | null = null
+  ) {
     return exec.execute({
       model,
       body: { input: [{ role: "user", content: "hi" }], stream },
       stream,
-      signal: null,
+      signal,
       credentials: creds,
       log,
     }) as Promise<{ response: Response }>;
@@ -220,5 +249,78 @@ describe("OpencodeExecutor Responses first-byte stall", () => {
     assert.equal(result.response.status, 200);
     assert.equal(calls.length, 3);
     await result.response.body?.cancel();
+  });
+  it(
+    "flag off: a silent Responses stream is returned untouched (no guard, no rotation)",
+    {
+      timeout: 5000,
+    },
+    async () => {
+      delete process.env[FLAG];
+      const exec = new OpencodeExecutor("opencode-zen");
+      installFetch(["stall", "ok"]);
+      const started = Date.now();
+      const result = await run(exec, RESPONSES_MODEL, proxiedCredentials(2));
+      assert.equal(result.response.status, 200);
+      assert.deepEqual(calls, [String(ports[0])], "no second account is dispatched");
+      assert.deepEqual(cooledDown(exec), [], "no account is cooled down");
+      assert.ok(Date.now() - started < 1000, "the executor itself never waits on the body");
+      await result.response.body?.cancel();
+    }
+  );
+
+  it(
+    "flag off: the single direct account path never throws on a stall",
+    {
+      timeout: 5000,
+    },
+    async () => {
+      process.env[FLAG] = "false";
+      const exec = new OpencodeExecutor("opencode-zen");
+      installFetch(["stall"]);
+      const result = await run(exec, RESPONSES_MODEL, directCredentials);
+      assert.equal(result.response.status, 200);
+      assert.deepEqual(calls, ["direct"]);
+      await result.response.body?.cancel();
+    }
+  );
+
+  it(
+    "rotates once across proxy-less accounts (shared egress) instead of throwing",
+    {
+      timeout: 5000,
+    },
+    async () => {
+      const exec = new OpencodeExecutor("opencode-zen");
+      installFetch(["stall", "ok"]);
+      const result = await run(exec, RESPONSES_MODEL, proxylessCredentials(3));
+      assert.equal(result.response.status, 200);
+      assert.deepEqual(calls, ["direct", "direct"]);
+      assert.equal(cooledDown(exec).length, 1, "only the stalled account is cooled down");
+      await result.response.body?.cancel();
+    }
+  );
+
+  it("proxy-less fleet: the second stall fails fast", { timeout: 5000 }, async () => {
+    const exec = new OpencodeExecutor("opencode-zen");
+    installFetch(["stall", "stall", "ok"]);
+    await assert.rejects(run(exec, RESPONSES_MODEL, proxylessCredentials(3)), (err: unknown) => {
+      assert.equal((err as { code?: string }).code, RESPONSES_FIRST_BYTE_TIMEOUT_CODE);
+      return true;
+    });
+    assert.equal(calls.length, 2);
+  });
+
+  it("a client abort during the first-byte wait never rotates", { timeout: 5000 }, async () => {
+    process.env.RESPONSES_FIRST_BYTE_TIMEOUT_MS = "10000";
+    const exec = new OpencodeExecutor("opencode-zen");
+    installFetch(["stall", "ok"]);
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 30);
+    await assert.rejects(
+      run(exec, RESPONSES_MODEL, proxiedCredentials(2), true, controller.signal)
+    );
+    assert.equal(calls.length, 1, "no dispatch after the client went away");
+    assert.deepEqual(cooledDown(exec), [], "an abort is not the account's fault");
   });
 });
