@@ -29,8 +29,23 @@ import {
   extractChatcmplId,
 } from "./accountRotation.ts";
 import { isOpencodeGeoBlocked, proxyKeyOf } from "./opencodeGeoBlock.ts";
+import {
+  guardResponsesStall,
+  isResponsesFirstByteTimeout,
+  resolveResponsesStallWindowMs,
+} from "./opencodeResponsesStall.ts";
 import { isRetriableUpstreamFailure } from "./opencodeTransientFailure.ts";
-import { isNetworkRotationSharedEgressGuardEnabled } from "@/shared/utils/featureFlags";
+import {
+  hasProxyRefusals,
+  isProxyAvoided,
+  noteProxyRefusal,
+  noteProxyServed,
+  proxyEgressKey,
+} from "../utils/proxyRefusalMemory.ts";
+import {
+  isNetworkRotationSharedEgressGuardEnabled,
+  isProxySkipRecentlyFailedEnabled,
+} from "@/shared/utils/featureFlags";
 
 /**
  * The main OpenCode Zen host, shared by the `opencode` and `opencode-zen`
@@ -352,6 +367,9 @@ export class OpencodeExecutor extends BaseExecutor {
 
   private markSuccess(account: OpencodeAccountState): void {
     markAccountSuccess(account);
+    // A response came back through this proxy: it is usable again for every refusal kind.
+    // Nothing is held unless PROXY_SKIP_RECENTLY_FAILED was on, so this costs no flag read.
+    if (hasProxyRefusals()) noteProxyServed(proxyEgressKey(account.proxy));
   }
 
   /**
@@ -521,6 +539,9 @@ export class OpencodeExecutor extends BaseExecutor {
       const cid = input.correlationId ? `correlationId=${input.correlationId} ` : "";
 
       const hasProxies = this.accounts.some((a) => a.proxy !== null);
+      // Opt-in Responses first-byte stall guard (#13484); a no-op when the window is 0.
+      const stallWindowMs = resolveResponsesStallWindowMs(input.stream, this._requestFormat);
+      const guardStall = <T>(r: T) => guardResponsesStall(r, stallWindowMs, input.signal);
       // Fast path: no multi-account proxy wiring configured → original behavior,
       // plus exactly ONE bounded retry when the upstream answers a 400 empty
       // rejection (same predicate and logging as the rotation loop). Everything
@@ -533,9 +554,9 @@ export class OpencodeExecutor extends BaseExecutor {
         // Only pin direct egress when no such context exists; otherwise let the
         // ambient proxy stand instead of clobbering it with the direct sentinel.
         const dispatch = () => super.execute(input);
-        const single = (await (hasAmbientProxyContext()
-          ? dispatch()
-          : runWithDirectFetchContext(dispatch))) as HttpExecuteResult;
+        const single = (await guardStall(
+          await (hasAmbientProxyContext() ? dispatch() : runWithDirectFetchContext(dispatch))
+        )) as HttpExecuteResult;
         if (single.response.status === 400) {
           let bodyText: string | null = null;
           try {
@@ -550,7 +571,10 @@ export class OpencodeExecutor extends BaseExecutor {
                 "OPENCODE",
                 `${cid}upstream empty rejection on direct account (${chatcmplId}), retrying once…`
               );
-              return this.normalizeMuseSparkResponse(input, await super.execute(input));
+              return this.normalizeMuseSparkResponse(
+                input,
+                await guardStall(await super.execute(input))
+              );
             }
             log?.debug?.(
               "OPENCODE",
@@ -586,7 +610,12 @@ export class OpencodeExecutor extends BaseExecutor {
       // model (geo-blocked, or transient 5xx). Request-local only — nothing
       // persists past execute().
       const geoTriedProxyKeys = new Set<string>();
+      // Opt-in (PROXY_SKIP_RECENTLY_FAILED, default off): members the provider just refused
+      // (received refusal or refused TCP probe) are skipped. Off = plain rotation.
+      const skipRecentlyFailed = isProxySkipRecentlyFailedEnabled();
       let directTried = false;
+      // Stalls before the first Responses byte: one rotation, then fail fast.
+      let stalledAttempts = 0;
 
       for (let attempt = 0; attempt < this.accounts.length + emptyRejectionBudget; attempt++) {
         const isProxiedCandidate = (a: OpencodeAccountState): boolean => {
@@ -594,6 +623,7 @@ export class OpencodeExecutor extends BaseExecutor {
           // Without any geo evidence this pass, every cooldown-ready account
           // stays eligible (preserves the plain round-robin first pick).
           if (a.proxy === null) return !directTried || geoTriedProxyKeys.size === 0;
+          if (skipRecentlyFailed && isProxyAvoided(proxyEgressKey(a.proxy))) return false;
           const k = proxyKeyOf(a.proxy);
           return k !== null && !geoTriedProxyKeys.has(k);
         };
@@ -659,11 +689,29 @@ export class OpencodeExecutor extends BaseExecutor {
           // super.execute() here always dispatches the HTTP path (opencode is an
           // OpenAI-compatible API, never the web/scraping bare-Response arm) —
           // see base.ts:290-294.
-          result = (await runWithProxyContext(account.proxy, () =>
-            super.execute({ ...input, skipUpstreamRetry: true })
+          result = (await guardStall(
+            await runWithProxyContext(account.proxy, () =>
+              super.execute({ ...input, skipUpstreamRetry: true })
+            )
           )) as HttpExecuteResult;
         } catch (err) {
           const reason = err instanceof Error ? err.message : String(err);
+          // Stall guard: headers arrived, so the egress works — never a shared-egress
+          // outage; proxied and proxy-less accounts rotate alike. A client abort never rotates.
+          if (stallWindowMs > 0 && (isResponsesFirstByteTimeout(err) || input.signal?.aborted)) {
+            if (input.signal?.aborted) throw err;
+            this.markCooldown(account);
+            const stallKey = proxyKeyOf(account.proxy);
+            if (stallKey !== null) geoTriedProxyKeys.add(stallKey);
+            else directTried = true;
+            const rotate = ++stalledAttempts === 1;
+            log?.warn?.(
+              "OPENCODE",
+              `${cid}Responses stream stalled on account ${masked}, ${rotate ? "rotating to next…" : "not rotating again"} (${reason})`
+            );
+            if (!rotate) throw err;
+            continue;
+          }
           // A network exception (timeout, connection refused/reset) is only
           // account-scoped when this account has its OWN egress (a configured
           // proxy) — that's the case a dead/unreachable proxy justifies rotating
@@ -699,9 +747,16 @@ export class OpencodeExecutor extends BaseExecutor {
         const status = result.response.status;
         if (status === 429) {
           this.markCooldown(account);
+          // The provider refused through this member: set it aside beyond the account
+          // cooldown. A direct account has a null key and is never set aside.
+          const setAsideMs = skipRecentlyFailed
+            ? noteProxyRefusal(proxyEgressKey(account.proxy), "ip_quota_429")
+            : null;
           log?.warn?.(
             "OPENCODE",
-            `${cid}Rate limited (429) on account ${masked}, rotating to next…`
+            `${cid}Rate limited (429) on account ${masked}` +
+              (setAsideMs ? `, member set aside for ${Math.round(setAsideMs / 1000)}s` : "") +
+              ", rotating to next…"
           );
           continue;
         }
@@ -789,7 +844,10 @@ export class OpencodeExecutor extends BaseExecutor {
       }
 
       // All accounts returned 429 (or errored) — surface the last response.
-      return this.normalizeMuseSparkResponse(input, lastResult ?? (await super.execute(input)));
+      return this.normalizeMuseSparkResponse(
+        input,
+        lastResult ?? (await guardStall(await super.execute(input)))
+      );
     } finally {
       this._requestFormat = null;
     }
