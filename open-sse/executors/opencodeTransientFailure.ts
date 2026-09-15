@@ -16,31 +16,53 @@ export function isRetriableUpstreamFailure(status: number, bodyText?: string): b
   return isEmptyUpstreamRejection(status, bodyText);
 }
 
-// Fixed inter-slot pause after a transient upstream failure (#12975).
-// Deliberately flat: rotation already spreads load across accounts (#9611).
-export const TRANSIENT_RETRY_DELAY_MS = 1500; // = WAF_RETRY_CONFIG.delayMs, by value only
+// ── Failover pause after repeated transient failures (#13615, opt-in) ──────
+// Gated by OPENCODE_TRANSIENT_FAILOVER_BACKOFF (default off). The first retry
+// after a transient failure stays immediate (a distinct egress already guards
+// a one-off flap); from the second consecutive transient failure on, the loop
+// waits before the next account so a briefly overloaded upstream can recover.
 
-// Fixed delay before the next account after a transient failure.
-// Parameterized by attempt so a future ramp needs no loop change.
-export function transientRetryDelayMs(attempt: number): number {
-  void attempt;
-  return TRANSIENT_RETRY_DELAY_MS;
+/** Consecutive transient failures before the first pause. */
+export const TRANSIENT_PAUSE_STREAK = 2;
+/** First pause, same magnitude as BaseExecutor.WAF_RETRY_CONFIG.delayMs. */
+export const TRANSIENT_RETRY_BASE_DELAY_MS = 1500;
+/** Upper bound of a single pause. */
+export const TRANSIENT_RETRY_MAX_DELAY_MS = 6000;
+/** Upper bound of all pauses in one request. */
+export const TRANSIENT_RETRY_TOTAL_BUDGET_MS = 10_000;
+
+/**
+ * Pause before the next dispatch after `consecutiveFailures` transient failures
+ * in a row, given `pausedMs` already spent this request. 0 means dispatch now.
+ * Doubles per further failure (1.5s, 3s, 6s, 6s…) and never exceeds the
+ * per-pause cap or what is left of the per-request budget.
+ */
+export function transientRetryDelayMs(consecutiveFailures: number, pausedMs = 0): number {
+  if (!Number.isFinite(consecutiveFailures) || consecutiveFailures < TRANSIENT_PAUSE_STREAK) {
+    return 0;
+  }
+  const step = Math.min(consecutiveFailures - TRANSIENT_PAUSE_STREAK, 16);
+  const delay = Math.min(TRANSIENT_RETRY_BASE_DELAY_MS * 2 ** step, TRANSIENT_RETRY_MAX_DELAY_MS);
+  const left = TRANSIENT_RETRY_TOTAL_BUDGET_MS - Math.max(0, pausedMs);
+  return Math.max(0, Math.min(delay, left));
 }
 
-// Sleep resolving false early on abort (listener removed either way).
-// Null/absent signal degrades to a plain sleep.
+/**
+ * Sleep that resolves `false` as soon as `signal` aborts (or immediately when it
+ * already has), `true` once `ms` elapsed. The listener and timer are always
+ * released.
+ */
 export function sleepAbortable(ms: number, signal?: AbortSignal | null): Promise<boolean> {
   if (signal?.aborted) return Promise.resolve(false);
-  if (signal == null) return new Promise((resolve) => setTimeout(() => resolve(true), ms));
   return new Promise((resolve) => {
-    const timer = setTimeout(() => {
-      signal.removeEventListener("abort", onAbort);
-      resolve(true);
-    }, ms);
     const onAbort = () => {
       clearTimeout(timer);
       resolve(false);
     };
-    signal.addEventListener("abort", onAbort, { once: true });
+    const timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve(true);
+    }, ms);
+    signal?.addEventListener("abort", onAbort, { once: true });
   });
 }

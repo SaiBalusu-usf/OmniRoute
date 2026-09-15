@@ -5,78 +5,56 @@ import { OpencodeExecutor } from "../../open-sse/executors/opencode.ts";
 import { BaseExecutor } from "../../open-sse/executors/base.ts";
 import type { ExecutorLog, ProviderCredentials } from "../../open-sse/executors/base.ts";
 import {
-  TRANSIENT_RETRY_DELAY_MS,
+  TRANSIENT_RETRY_BASE_DELAY_MS,
+  TRANSIENT_RETRY_MAX_DELAY_MS,
+  TRANSIENT_RETRY_TOTAL_BUDGET_MS,
   transientRetryDelayMs,
   sleepAbortable,
 } from "../../open-sse/executors/opencodeTransientFailure.ts";
 import { resolveProxyForRequest } from "../../open-sse/utils/proxyFetch.ts";
+import { resetDbInstance } from "../../src/lib/db/core.ts";
 
+// #13615 rework: the failover pause is opt-in (OPENCODE_TRANSIENT_FAILOVER_BACKOFF,
+// default off), bounded (per-pause cap + per-request budget), honors the client
+// abort signal and releases the failed body before waiting. The executor's sleep
+// is injected, so no test waits on a real 1.5s timer.
+const FLAG = "OPENCODE_TRANSIENT_FAILOVER_BACKOFF";
 const log: ExecutorLog = { debug() {}, info() {}, warn() {}, error() {} };
+const FPS = ["a", "b", "c", "d", "e", "f", "g"].map((c) => c.repeat(32));
 
-const FP_A = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-const FP_B = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
-const FP_C = "cccccccccccccccccccccccccccccccc";
-const FP_D = "dddddddddddddddddddddddddddddddd";
-const FP_E = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
-
-let serverA: net.Server;
-let serverB: net.Server;
-let serverC: net.Server;
-let serverD: net.Server;
-let serverE: net.Server;
-let portA = 0;
-let portB = 0;
-let portC = 0;
-let portD = 0;
-let portE = 0;
+const servers: net.Server[] = [];
+const ports: number[] = [];
 
 function listen(server: net.Server): Promise<number> {
   return new Promise((resolve) => {
-    server.listen(0, "127.0.0.1", () => {
-      resolve((server.address() as net.AddressInfo).port);
-    });
+    server.listen(0, "127.0.0.1", () => resolve((server.address() as net.AddressInfo).port));
   });
 }
 
 before(async () => {
-  serverA = net.createServer((s) => s.destroy());
-  serverB = net.createServer((s) => s.destroy());
-  serverC = net.createServer((s) => s.destroy());
-  serverD = net.createServer((s) => s.destroy());
-  serverE = net.createServer((s) => s.destroy());
-  portA = await listen(serverA);
-  portB = await listen(serverB);
-  portC = await listen(serverC);
-  portD = await listen(serverD);
-  portE = await listen(serverE);
+  for (let i = 0; i < FPS.length; i++) {
+    const server = net.createServer((s) => s.destroy());
+    servers.push(server);
+    ports.push(await listen(server));
+  }
 });
 
 after(() => {
-  serverA?.close();
-  serverB?.close();
-  serverC?.close();
-  serverD?.close();
-  serverE?.close();
+  servers.forEach((s) => s.close());
+  resetDbInstance();
 });
 
-function portFor(fp: string): number {
-  if (fp === FP_A) return portA;
-  if (fp === FP_B) return portB;
-  if (fp === FP_C) return portC;
-  if (fp === FP_D) return portD;
-  return portE;
-}
-
-function credentialsFor(fingerprints: string[]): ProviderCredentials {
+function credentialsFor(count: number): ProviderCredentials {
+  const fingerprints = FPS.slice(0, count);
   return {
     apiKey: null,
     accessToken: null,
     connectionId: "noauth",
     providerSpecificData: {
       fingerprints,
-      accountProxies: fingerprints.map((fp) => ({
+      accountProxies: fingerprints.map((fp, i) => ({
         fingerprint: fp,
-        proxy: { type: "http", host: "127.0.0.1", port: portFor(fp) },
+        proxy: { type: "http", host: "127.0.0.1", port: ports[i] },
       })),
     },
   };
@@ -89,19 +67,60 @@ const GEO_BODY = JSON.stringify({
 const EMPTY_BODY =
   '{"id":"chatcmpl_44fn2g6e7kk","object":"chat.completion","created":1787419957,"model":"muse-spark-1.2-contributor-free","choices":[{"index":0,"message":{"role":"assistant"},"finish_reason":null}]}';
 
-describe("opencode transient retry delay", () => {
+describe("transient failover pause helpers", () => {
+  it("uses its argument: nothing before the second failure, then bounded doubling", () => {
+    assert.strictEqual(TRANSIENT_RETRY_BASE_DELAY_MS, BaseExecutor.WAF_RETRY_CONFIG.delayMs);
+    assert.strictEqual(transientRetryDelayMs(0), 0);
+    assert.strictEqual(transientRetryDelayMs(1), 0);
+    assert.strictEqual(transientRetryDelayMs(2), 1500);
+    assert.strictEqual(transientRetryDelayMs(3), 3000);
+    assert.strictEqual(transientRetryDelayMs(4), TRANSIENT_RETRY_MAX_DELAY_MS);
+    assert.strictEqual(transientRetryDelayMs(50), TRANSIENT_RETRY_MAX_DELAY_MS);
+    assert.strictEqual(transientRetryDelayMs(Number.NaN), 0);
+  });
+
+  it("never exceeds what is left of the per-request budget", () => {
+    assert.strictEqual(transientRetryDelayMs(4, TRANSIENT_RETRY_TOTAL_BUDGET_MS - 1000), 1000);
+    assert.strictEqual(transientRetryDelayMs(4, TRANSIENT_RETRY_TOTAL_BUDGET_MS), 0);
+    assert.strictEqual(transientRetryDelayMs(2, TRANSIENT_RETRY_TOTAL_BUDGET_MS + 5), 0);
+  });
+
+  it("sleepAbortable resolves true after the delay and false on abort", async () => {
+    assert.strictEqual(await sleepAbortable(5), true);
+    assert.strictEqual(await sleepAbortable(5, new AbortController().signal), true);
+    const controller = new AbortController();
+    const pending = sleepAbortable(60_000, controller.signal);
+    controller.abort();
+    assert.strictEqual(await pending, false);
+    const aborted = new AbortController();
+    aborted.abort();
+    assert.strictEqual(await sleepAbortable(60_000, aborted.signal), false);
+  });
+});
+
+describe("opencode rotation with OPENCODE_TRANSIENT_FAILOVER_BACKOFF", () => {
   let originalFetch: typeof globalThis.fetch;
+  let priorFlag: string | undefined;
   let observed: string[];
-  let dispatchAt: number[];
+  let upstream: Response[];
+  let sleeps: number[];
+  // Filled per test: what each dispatched attempt answers.
+  let events: string[];
 
   beforeEach(() => {
     originalFetch = globalThis.fetch;
+    priorFlag = process.env[FLAG];
+    process.env[FLAG] = "true";
     observed = [];
-    dispatchAt = [];
+    upstream = [];
+    sleeps = [];
+    events = [];
   });
 
   afterEach(() => {
     globalThis.fetch = originalFetch;
+    if (priorFlag === undefined) delete process.env[FLAG];
+    else process.env[FLAG] = priorFlag;
   });
 
   function installFetch(plan: Array<{ status: number; body?: string }>) {
@@ -111,246 +130,170 @@ describe("opencode transient retry delay", () => {
         typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
       const resolved = resolveProxyForRequest(url);
       observed.push(resolved.proxyUrl ? new URL(resolved.proxyUrl).port : "direct");
-      dispatchAt.push(Date.now());
       const step = plan[Math.min(call, plan.length - 1)];
       call++;
-      return new Response(step.body ?? JSON.stringify({ ok: step.status === 200 }), {
+      events.push(`dispatch:${step.status}`);
+      const response = new Response(step.body ?? JSON.stringify({ ok: step.status === 200 }), {
         status: step.status,
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-upstream-call": String(call) },
       });
+      upstream.push(response);
+      return response;
     }) as typeof globalThis.fetch;
   }
 
-  function run(
-    exec: OpencodeExecutor,
-    creds: ProviderCredentials,
-    signal: AbortSignal | null = null
-  ) {
-    return exec.execute({
+  function newExecutor(onSleep?: (ms: number) => boolean): OpencodeExecutor {
+    const exec = new OpencodeExecutor("opencode-zen");
+    exec.transientPauseSleep = async (ms, signal) => {
+      sleeps.push(ms);
+      events.push(`sleep:${ms}`);
+      if (signal?.aborted) return false;
+      return onSleep ? onSleep(ms) : true;
+    };
+    return exec;
+  }
+
+  async function run(exec: OpencodeExecutor, count: number, signal: AbortSignal | null = null) {
+    const result = (await exec.execute({
       model: "muse-spark-1.3-contributor-free",
       body: { messages: [{ role: "user", content: "hi" }], stream: false },
       stream: false,
       signal,
-      credentials: creds,
+      credentials: credentialsFor(count),
       log,
-    });
+    })) as { response: Response };
+    return result.response;
   }
 
-  // Wrap setTimeout to record armed delays (assert our own delay never appears,
-  // regardless of ambient timers from the polyfill/test setup).
-  async function collectDelays<T>(fn: () => Promise<T>): Promise<{ result: T; delays: number[] }> {
-    const real = globalThis.setTimeout;
-    const delays: number[] = [];
-    (globalThis as Record<string, unknown>).setTimeout = ((
-      ...args: [handler: () => void, ms?: number, ...rest: unknown[]]
-    ) => {
-      delays.push(typeof args[1] === "number" ? args[1] : 0);
-      return (real as (...a: unknown[]) => unknown)(...args);
-    }) as typeof setTimeout;
-    try {
-      const result = await fn();
-      return { result, delays };
-    } finally {
-      globalThis.setTimeout = real;
-    }
-  }
+  it("flag off: failover stays immediate even after a long transient streak", async () => {
+    delete process.env[FLAG];
+    const exec = newExecutor();
+    installFetch([{ status: 500 }, { status: 502 }, { status: 503 }, { status: 200 }]);
 
-  function ownSleeps(delays: number[]): number[] {
-    return delays.filter((d) => d === TRANSIENT_RETRY_DELAY_MS);
-  }
+    const response = await run(exec, 4);
 
-  describe("pure helpers", () => {
-    it("delay matches the intra-URL retry pause by value, parameterized by attempt", () => {
-      assert.strictEqual(TRANSIENT_RETRY_DELAY_MS, 1500);
-      assert.strictEqual(transientRetryDelayMs(1), BaseExecutor.WAF_RETRY_CONFIG.delayMs);
-      assert.strictEqual(transientRetryDelayMs(5), TRANSIENT_RETRY_DELAY_MS);
-    });
-
-    it("sleepAbortable resolves true after the delay without a signal", async () => {
-      assert.strictEqual(await sleepAbortable(20), true);
-    });
-
-    it("sleepAbortable resolves false on mid-sleep abort and cleans up", async () => {
-      const controller = new AbortController();
-      const pending = sleepAbortable(10_000, controller.signal);
-      setTimeout(() => controller.abort(), 20);
-      assert.strictEqual(await pending, false);
-      controller.abort(); // second abort must be a no-op, never a throw
-    });
-
-    it("sleepAbortable resolves false without arming a timer when already aborted", async () => {
-      const controller = new AbortController();
-      controller.abort();
-      const { result, delays } = await collectDelays(() =>
-        sleepAbortable(TRANSIENT_RETRY_DELAY_MS, controller.signal)
-      );
-      assert.strictEqual(result, false);
-      assert.deepStrictEqual(ownSleeps(delays), []);
-    });
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(observed.length, 4);
+    assert.deepStrictEqual(sleeps, [], "no pause without the flag");
+    assert.strictEqual(upstream[0].bodyUsed, false, "flag off never touches failed bodies");
+    await response.body?.cancel();
   });
 
-  describe("rotation loop", () => {
-    it("attempt 0 pauses nothing (no delay armed on the first slot)", async () => {
-      const exec = new OpencodeExecutor("opencode-zen");
-      installFetch([{ status: 500 }, { status: 200 }]);
-      const { result, delays } = await collectDelays(() =>
-        run(exec, credentialsFor([FP_A, FP_B]))
-      );
-      assert.strictEqual((result as { response: Response }).response.status, 200);
-      assert.deepStrictEqual(ownSleeps(delays), []);
-    });
+  it("the first retry after one transient failure is immediate", async () => {
+    const exec = newExecutor();
+    installFetch([{ status: 500 }, { status: 200 }]);
 
-    it("first retry after a 500 is immediate (no pause before slot 2)", async () => {
-      const exec = new OpencodeExecutor("opencode-zen");
-      installFetch([{ status: 500 }, { status: 200 }]);
-      const result = await run(exec, credentialsFor([FP_A, FP_B]));
-      assert.strictEqual((result as { response: Response }).response.status, 200);
-      assert.strictEqual(dispatchAt.length, 2);
-      assert.ok(
-        dispatchAt[1] - dispatchAt[0] < TRANSIENT_RETRY_DELAY_MS,
-        `first retry must stay immediate, got ${dispatchAt[1] - dispatchAt[0]}ms`
-      );
-    });
+    const response = await run(exec, 2);
 
-    it("pauses before slot 3 after two consecutive 500s", async () => {
-      const exec = new OpencodeExecutor("opencode-zen");
-      installFetch([{ status: 500 }, { status: 500 }, { status: 200 }]);
-      const result = await run(exec, credentialsFor([FP_A, FP_B, FP_C]));
-      assert.strictEqual((result as { response: Response }).response.status, 200);
-      assert.strictEqual(dispatchAt.length, 3);
-      assert.ok(
-        dispatchAt[1] - dispatchAt[0] < TRANSIENT_RETRY_DELAY_MS,
-        `slot 2 must stay immediate, got ${dispatchAt[1] - dispatchAt[0]}ms`
-      );
-      assert.ok(
-        dispatchAt[2] - dispatchAt[1] >= TRANSIENT_RETRY_DELAY_MS,
-        `expected >= 1500ms pause before slot 3, got ${dispatchAt[2] - dispatchAt[1]}ms`
-      );
-    });
+    assert.strictEqual(response.status, 200);
+    assert.deepStrictEqual(sleeps, []);
+    await response.body?.cancel();
+  });
 
-    it("persists the pause on a longer run (slots 3 and 4 both wait)", async () => {
-      const exec = new OpencodeExecutor("opencode-zen");
-      installFetch([{ status: 500 }, { status: 500 }, { status: 500 }, { status: 200 }]);
-      const result = await run(exec, credentialsFor([FP_A, FP_B, FP_C, FP_D]));
-      assert.strictEqual((result as { response: Response }).response.status, 200);
-      assert.strictEqual(dispatchAt.length, 4);
-      assert.ok(
-        dispatchAt[2] - dispatchAt[1] >= TRANSIENT_RETRY_DELAY_MS,
-        `slot 3 must wait, got ${dispatchAt[2] - dispatchAt[1]}ms`
-      );
-      assert.ok(
-        dispatchAt[3] - dispatchAt[2] >= TRANSIENT_RETRY_DELAY_MS,
-        `slot 4 must wait again, got ${dispatchAt[3] - dispatchAt[2]}ms`
-      );
-    });
+  it("pauses before the third account, after releasing the failed body", async () => {
+    const exec = newExecutor();
+    installFetch([{ status: 500 }, { status: 500 }, { status: 200 }]);
 
-    it("mixed consecutive transients (500 then empty-400) pause before slot 3", async () => {
-      const exec = new OpencodeExecutor("opencode-zen");
-      installFetch([{ status: 500 }, { status: 400, body: EMPTY_BODY }, { status: 200 }]);
-      const result = await run(exec, credentialsFor([FP_A, FP_B, FP_C]));
-      assert.strictEqual((result as { response: Response }).response.status, 200);
-      assert.strictEqual(dispatchAt.length, 3);
-      assert.ok(
-        dispatchAt[2] - dispatchAt[1] >= TRANSIENT_RETRY_DELAY_MS,
-        `mixed streak must pause, got ${dispatchAt[2] - dispatchAt[1]}ms`
-      );
-    });
+    const response = await run(exec, 3);
 
-    it("429 resets the streak, rebuilt streak pauses again (slot 5)", async () => {
-      const exec = new OpencodeExecutor("opencode-zen");
-      installFetch([
-        { status: 500 },
-        { status: 429 },
-        { status: 500 },
-        { status: 500 },
-        { status: 200 },
-      ]);
-      const result = await run(exec, credentialsFor([FP_A, FP_B, FP_C, FP_D, FP_E]));
-      assert.strictEqual((result as { response: Response }).response.status, 200);
-      assert.strictEqual(dispatchAt.length, 5);
-      for (const i of [1, 2, 3]) {
-        assert.ok(
-          dispatchAt[i] - dispatchAt[i - 1] < TRANSIENT_RETRY_DELAY_MS,
-          `slots 2-4 stay immediate, gap ${i} got ${dispatchAt[i] - dispatchAt[i - 1]}ms`
-        );
-      }
-      assert.ok(
-        dispatchAt[4] - dispatchAt[3] >= TRANSIENT_RETRY_DELAY_MS,
-        `rebuilt streak must pause before slot 5, got ${dispatchAt[4] - dispatchAt[3]}ms`
-      );
-    });
+    assert.strictEqual(response.status, 200);
+    assert.deepStrictEqual(events, ["dispatch:500", "dispatch:500", "sleep:1500", "dispatch:200"]);
+    assert.strictEqual(upstream[1].bodyUsed, true, "the failed body is cancelled before sleeping");
+    await response.body?.cancel();
+  });
 
-    it("abort mid-pause serves the last 500 with no further dispatch", async () => {
-      const exec = new OpencodeExecutor("opencode-zen");
-      installFetch([{ status: 500 }, { status: 500 }, { status: 200 }]);
-      const controller = new AbortController();
-      setTimeout(() => controller.abort(), 100);
-      const startedAt = Date.now();
-      const result = await run(
-        exec,
-        credentialsFor([FP_A, FP_B, FP_C]),
-        controller.signal
-      );
-      const elapsed = Date.now() - startedAt;
-      assert.strictEqual((result as { response: Response }).response.status, 500);
-      assert.strictEqual(observed.length, 2, "no third dispatch after abort");
-      assert.ok(elapsed < TRANSIENT_RETRY_DELAY_MS, `broke early (${elapsed}ms)`);
-      const state = (exec as unknown as { accounts: Array<{ cooldownUntil: number }> }).accounts;
-      for (const a of state) assert.strictEqual(a.cooldownUntil, 0, "no marking on abort");
-    });
+  it("backs off with its argument, bounded by the per-request budget", async () => {
+    const exec = newExecutor();
+    installFetch([
+      { status: 500 },
+      { status: 500 },
+      { status: 500 },
+      { status: 500 },
+      { status: 200 },
+    ]);
 
-    it("pre-aborted signal pauses nothing and serves the last failure", async () => {
-      const exec = new OpencodeExecutor("opencode-zen");
-      installFetch([{ status: 500 }, { status: 500 }, { status: 200 }]);
-      const controller = new AbortController();
+    const response = await run(exec, 5);
+
+    assert.strictEqual(response.status, 200);
+    assert.deepStrictEqual(sleeps, [1500, 3000, 5500], "1.5s, 3s, then the 10s budget remainder");
+    await response.body?.cancel();
+  });
+
+  it("stops pausing once the per-request budget is spent", async () => {
+    const exec = newExecutor();
+    installFetch([
+      { status: 500 },
+      { status: 500 },
+      { status: 500 },
+      { status: 500 },
+      { status: 500 },
+      { status: 500 },
+      { status: 200 },
+    ]);
+
+    const response = await run(exec, 7);
+
+    assert.strictEqual(response.status, 200);
+    assert.strictEqual(observed.length, 7);
+    assert.strictEqual(
+      sleeps.reduce((a, b) => a + b, 0),
+      TRANSIENT_RETRY_TOTAL_BUDGET_MS,
+      "total pause time is bounded"
+    );
+    await response.body?.cancel();
+  });
+
+  it("a mixed streak (500 then empty 400) pauses; a 429 or geo 403 resets it", async () => {
+    const mixed = newExecutor();
+    installFetch([{ status: 500 }, { status: 400, body: EMPTY_BODY }, { status: 200 }]);
+    const mixedResponse = await run(mixed, 3);
+    assert.strictEqual(mixedResponse.status, 200);
+    assert.deepStrictEqual(sleeps, [1500]);
+    await mixedResponse.body?.cancel();
+
+    for (const breaker of [{ status: 429 }, { status: 403, body: GEO_BODY }]) {
+      sleeps = [];
+      events = [];
+      const exec = newExecutor();
+      installFetch([{ status: 500 }, breaker, { status: 500 }, { status: 200 }]);
+      const response = await run(exec, 4);
+      assert.strictEqual(response.status, 200);
+      assert.deepStrictEqual(sleeps, [], `${breaker.status} breaks the streak`);
+      await response.body?.cancel();
+    }
+  });
+
+  it("a client abort during the pause dispatches nothing more", async () => {
+    const controller = new AbortController();
+    const exec = newExecutor(() => {
       controller.abort();
-      const { result, delays } = await collectDelays(() =>
-        run(exec, credentialsFor([FP_A, FP_B, FP_C]), controller.signal)
-      );
-      // Slots 1-2 dispatch (streak builds), slot 3 sees the abort and breaks.
-      assert.strictEqual((result as { response: Response }).response.status, 500);
-      assert.strictEqual(observed.length, 2);
-      assert.deepStrictEqual(ownSleeps(delays), []);
+      return false;
     });
+    installFetch([{ status: 500 }, { status: 500 }, { status: 200 }]);
 
-    it("fast path never pauses", async () => {
-      const exec = new OpencodeExecutor("opencode-zen");
-      installFetch([{ status: 500 }]);
-      const creds = credentialsFor([FP_A]);
-      (creds.providerSpecificData as Record<string, unknown>).accountProxies = [];
-      const { result, delays } = await collectDelays(() => run(exec, creds));
-      assert.strictEqual((result as { response: Response }).response.status, 500);
-      assert.strictEqual(observed.length, 1);
-      assert.deepStrictEqual(ownSleeps(delays), []);
-    });
+    const response = await run(exec, 3, controller.signal);
 
-    it("429 breaks the streak (no pause anywhere)", async () => {
-      const exec = new OpencodeExecutor("opencode-zen");
-      installFetch([{ status: 500 }, { status: 429 }, { status: 200 }]);
-      const result = await run(exec, credentialsFor([FP_A, FP_B, FP_C]));
-      assert.strictEqual((result as { response: Response }).response.status, 200);
-      assert.strictEqual(dispatchAt.length, 3);
-      for (let i = 1; i < dispatchAt.length; i++) {
-        assert.ok(
-          dispatchAt[i] - dispatchAt[i - 1] < TRANSIENT_RETRY_DELAY_MS,
-          `429 breaks the streak, gap ${i} must not pause`
-        );
-      }
-    });
+    assert.strictEqual(observed.length, 2, "no third dispatch after the abort");
+    assert.strictEqual(response.status, 500, "the last failure status is surfaced");
+    assert.strictEqual(response.headers.get("x-upstream-call"), "2", "its headers are kept");
+  });
 
-    it("geo-403 keeps its timing and breaks the streak", async () => {
-      assert.strictEqual(transientRetryDelayMs(1), BaseExecutor.WAF_RETRY_CONFIG.delayMs);
-      const exec = new OpencodeExecutor("opencode-zen");
-      installFetch([{ status: 500 }, { status: 403, body: GEO_BODY }, { status: 200 }]);
-      const result = await run(exec, credentialsFor([FP_A, FP_B, FP_C]));
-      assert.strictEqual((result as { response: Response }).response.status, 200);
-      assert.strictEqual(dispatchAt.length, 3);
-      for (let i = 1; i < dispatchAt.length; i++) {
-        assert.ok(
-          dispatchAt[i] - dispatchAt[i - 1] < TRANSIENT_RETRY_DELAY_MS,
-          `geo-403 must not pause, gap ${i} got ${dispatchAt[i] - dispatchAt[i - 1]}ms`
-        );
-      }
-    });
+  it("an already-aborted signal skips the pause and the dispatch", async () => {
+    const controller = new AbortController();
+    const exec = newExecutor();
+    installFetch([{ status: 500 }, { status: 500 }, { status: 200 }]);
+    let calls = 0;
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (...args: Parameters<typeof fetch>) => {
+      calls++;
+      const response = await realFetch(...args);
+      if (calls === 2) controller.abort();
+      return response;
+    }) as typeof globalThis.fetch;
+
+    const response = await run(exec, 3, controller.signal);
+
+    assert.strictEqual(calls, 2);
+    assert.strictEqual(response.status, 500);
   });
 });
