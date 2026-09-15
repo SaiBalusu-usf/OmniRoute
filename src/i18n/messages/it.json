@@ -2305,7 +2305,7 @@
     "autoResolveDesc": "Risolve automaticamente i nomi di modello ambigui associandoli al provider nativo per questa chiave API.",
     "streamDefaultMode": "Compatibilità predefinita dello streaming",
     "streamDefaultModeDesc": "Controlla i flag `stream` omessi per questa chiave. La modalità JSON restituisce risposte non in streaming a meno che il client non richieda esplicitamente SSE.",
-    "streamDefaultLegacy": "Legacy",
+    "streamDefaultLegacy": "Precedente",
     "streamDefaultJson": "Compatibile con JSON",
     "streamDefaultBadge": "Predefinito stream JSON",
     "keyActive": "Chiave attiva",
@@ -7192,7 +7192,7 @@
     "contextRelayDesc": "Hands off context between providers with automatic summarization",
     "maxRetriesLabel": "Numero massimo di tentativi",
     "retryDelayLabel": "Ritardo tentativi (ms)",
-    "timeoutLabel": "Timeout (ms)",
+    "timeoutLabel": "Tempo limite (ms)",
     "healthCheck": "Controllo dello stato di salute",
     "healthCheckDesc": "Verifica preventiva la disponibilità del fornitore",
     "trackMetrics": "Tieni traccia delle metriche",
@@ -7457,7 +7457,7 @@
     "blacklist": "Elenco bloccati",
     "pricingSourceModelsDev": "Pricing Source Models Dev",
     "syncedModels": "Modelli sincronizzati",
-    "budget": "Budget",
+    "budget": "Economico",
     "pricingSyncTitle": "Pricing Sync Title",
     "pricingResetFailedWithReason": "Impossibile reimpostare i prezzi: {reason}",
     "tab": "Scheda",
@@ -7698,7 +7698,7 @@
     "visionBridgePrompt": "Suggerimento del ponte",
     "visionBridgePromptPlaceholder": "Descrivi questa immagine in modo conciso.",
     "visionBridgePromptHint": "Inviato al modello di visione prima che la descrizione estratta venga reinserita nella richiesta originale.",
-    "visionBridgeTimeoutMs": "Timeout (ms)",
+    "visionBridgeTimeoutMs": "Tempo limite (ms)",
     "visionBridgeMaxImagesPerRequest": "Numero massimo di immagini per richiesta",
     "resilienceMaxBackoffSteps": "Numero massimo di passaggi di backoff",
     "resilienceProviderBreakerTitle": "Circuit breaker per provider",
@@ -8246,7 +8246,7 @@
     "modalityBridgeTaskAwareDesc": "Includi la domanda dell'utente come focus in modo che il modello visivo descriva ciò che conta e trascriva il testo visibile.",
     "modalityBridgePrompt": "Descrizione prompt",
     "modalityBridgeAdvanced": "Avanzato",
-    "modalityBridgeTimeoutMs": "Timeout (ms)",
+    "modalityBridgeTimeoutMs": "Tempo limite (ms)",
     "modalityBridgeMaxImages": "Max immagini per richiesta",
     "visionMaxCharsLabel": "Caratteri massimi per la descrizione",
     "visionMaxCharsHint": "Limita la lunghezza della descrizione del modello di visione. 0 = illimitato — aumenta per compiti OCR ricchi di dettagli.",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Rendi sicura la continuazione a metà flusso dopo una chiamata a uno strumento: non riprendere mai un flusso interrotto dopo l'invio di una chiamata a uno strumento (ancora in corso o già terminata) e interrompi dopo una continuazione vuota anziché utilizzare l'intero numero di tentativi disponibili."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Esegui un solo failover verso una connessione sorella quando uno stream si chiude prima di emettere qualsiasi frame utile e il nuovo tentativo limitato sulla stessa connessione è esaurito. Senza una connessione sorella utilizzabile viene restituito l'errore early-EOF originale. Disattivato: early-EOF resta terminale dopo il nuovo tentativo."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Includi campi con nomi descrittivi nelle risposte di /v1/models. Disabilita questa opzione per i client che accettano solo ID modello."

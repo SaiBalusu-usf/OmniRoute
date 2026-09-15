@@ -12053,7 +12053,7 @@
     "profileAll": "Hamısı",
     "filterHost": "Hostu filtrlə…",
     "filterAgent": "Agent",
-    "filterStatus": "Status",
+    "filterStatus": "Vəziyyət",
     "pauseBtn": "Fasilə ver",
     "resumeBtn": "Davam et",
     "clearBtn": "Təmizlə",
@@ -12124,7 +12124,7 @@
     "timingTotalLatency": "Ümumi gecikmə",
     "timingTimestamp": "Zaman damğası",
     "timingMethod": "Metod",
-    "timingStatus": "Status",
+    "timingStatus": "Vəziyyət",
     "timingRequestSize": "Sorğu ölçüsü",
     "timingResponseSize": "Cavab ölçüsü",
     "pausedNewBadge": "{count} yeni",
@@ -12583,7 +12583,7 @@
     "configuredOnly": "Yalnız Konfiqurasiya Edilmişlər",
     "configuredOnlyHint": "Yalnız aktiv qoşulmaları olan provayderləri göstər",
     "noConfiguredProviders": "Konfiqurasiya edilmiş provayder tapılmadı. Əvvəlcə provayder qoşulması əlavə edin.",
-    "colConfigured": "Status",
+    "colConfigured": "Vəziyyət",
     "typeAll": "Bütün növlər",
     "typeNoauth": "Qeydiyyatsız",
     "typeOauth": "OAuth ilə giriş",
@@ -12988,6 +12988,9 @@
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Axının ortasında davam etməni alət çağırışları üçün təhlükəsiz edin: alət çağırışı göndərildikdən sonra (hələ davam edirsə və ya artıq tamamlanıbsa) kəsilmiş axını heç vaxt bərpa etməyin və bütün təkrar cəhd limitindən istifadə etmək əvəzinə bir boş davam cəhdindən sonra dayandırın."
       },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Axın heç bir faydalı çərçivə göndərmədən bağlandıqda və eyni bağlantıda məhdud təkrar cəhd tükəndikdə bir dəfə qardaş bağlantıya keçin. Uyğun qardaş bağlantı yoxdursa, ilkin early-EOF xətası qaytarılır. Söndürülüb: early-EOF təkrar cəhddən sonra son nəticə olaraq qalır."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models cavablarına göstərilməsi asan olan ad sahələrini daxil edin. Bunu yalnız model ID-lərini qəbul edən müştərilər üçün sıradan çıxarın."
       },
@@ -13207,7 +13210,7 @@
     "actionApplied": "{action} tətbiq edildi.",
     "actionFailed": "Avtopilot əməliyyatı uğursuz oldu",
     "refresh": "Yenilə",
-    "status": "Status",
+    "status": "Vəziyyət",
     "issues": "Problemlər",
     "actions": "Əməliyyatlar",
     "connections": "Bağlantılar",
@@ -13548,7 +13551,7 @@
       "lockedOut": "Diqqətinizi tələb edir"
     },
     "table": {
-      "status": "Status",
+      "status": "Vəziyyət",
       "provider": "Provayder",
       "connectionId": "Bağlantı",
       "authType": "Autentifikasiya",

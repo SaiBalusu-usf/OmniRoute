@@ -8991,7 +8991,7 @@
     "ideCliIntegrations": "IDE/CLI-integraatiot",
     "inMemoryNote": "Huomautus: Tapahtumat tallennetaan muistiin ja nollataan, kun palvelin käynnistyy uudelleen.",
     "ok": "OK",
-    "errorShort": "ERR",
+    "errorShort": "VIRHE",
     "formatConverter": "Muotomuunnin",
     "formatConverterDescription": "Liitä tai kirjoita JSON-pyynnön leipäteksti. Kääntäjä tunnistaa automaattisesti lähdemuodon ja muuntaa sen kohdemuotoon. Käytä tätä virheenkorjaukseen, kuinka OmniRoute kääntää pyynnöt muotojen välillä (OpenAI ↔ Claude ↔ Gemini ↔ Responses API).",
     "translationPathHubSpoke": "{source} → OpenAI (keskitaso) → {target}",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Tee kesken suoratoiston jatkamisesta turvallista työkalukutsujen kannalta: älä koskaan jatka katkennutta suoratoistoa sen jälkeen, kun työkalukutsu on lähetetty (se on yhä käynnissä tai jo valmistunut), ja lopeta yhden tyhjän jatkoyrityksen jälkeen sen sijaan, että käyttäisit koko uudelleenyritysbudjetin."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Siirry kerran rinnakkaisyhteyteen, kun virta sulkeutuu ennen yhdenkään hyödyllisen kehyksen lähettämistä ja saman yhteyden rajattu uusintayritys on käytetty. Jos käyttökelpoista rinnakkaisyhteyttä ei ole, palautetaan alkuperäinen early-EOF-virhe. Pois: early-EOF on lopullinen uusintayrityksen jälkeen."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Sisällytä näyttöystävälliset nimikentät /v1/models-vastauksiin. Poista tämä käytöstä asiakkaille, jotka hyväksyvät vain mallitunnuksia."

@@ -9669,7 +9669,7 @@
     "budgetColumnKey": "Klucz",
     "budgetColumnToday": "Dzisiaj",
     "budgetColumnMonth": "Miesiąc",
-    "budgetColumnStatus": "Status",
+    "budgetColumnStatus": "Stan",
     "budgetSearchKeysPlaceholder": "Szukaj kluczy...",
     "budgetSortPctUsed": "Sortowanie: % zużycia ↓",
     "budgetSortTodayDollar": "Sortowanie: Dzisiaj $ ↓",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Zapewnij bezpieczeństwo wywołań narzędzi podczas kontynuacji w trakcie strumienia: nigdy nie wznawiaj przerwanego strumienia po wysłaniu wywołania narzędzia (nadal trwającego lub już zakończonego) i zatrzymaj się po jednej pustej kontynuacji zamiast wykorzystywać cały limit ponownych prób."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Jednorazowo przełącz na siostrzane połączenie, gdy strumień zamknie się przed wysłaniem jakiejkolwiek użytecznej ramki, a ograniczona ponowna próba na tym samym połączeniu została wykorzystana. Bez użytecznego siostrzanego połączenia zwracany jest pierwotny błąd early-EOF. Wyłączone: early-EOF pozostaje ostateczny po ponownej próbie."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Dołączaj przyjazne do wyświetlania pola nazw w odpowiedziach /v1/models. Wyłącz tę opcję dla klientów, którzy akceptują tylko identyfikatory modeli."

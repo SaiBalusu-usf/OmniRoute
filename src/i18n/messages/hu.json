@@ -5500,7 +5500,7 @@
     "targetFormatHint": "A felsőbb szintű átviteli formátum felülírása. Használja az 'Anthropic Messages' beállítást az OpenAI-kompatibilis szolgáltatók (pl. opencode-go) /v1/messages végponton keresztüli átirányításához.",
     "targetFormatAuto": "Alapértelmezett (automatikus)",
     "targetFormatGemini": "Gemini",
-    "targetFormatAntigravity": "Antigravity",
+    "targetFormatAntigravity": "Antigravitáció",
     "contextWindowOverrideLabel": "Kontextusablak felülírása",
     "contextWindowOverridePlaceholder": "pl. 131072",
     "contextWindowOverrideHint": "Állítsa be manuálisan a modell valós kontextusablakát (tokenekben), ha a szolgáltató hibásan jelenti azt. Elsőbbséget élvez az automatikusan észlelt/katalógusértékekkel szemben, és megakadályozza, hogy a kombinált útvonalválasztás eldobja a modellt.",
@@ -8997,7 +8997,7 @@
     "translationPathHubSpoke": "{source} → OpenAI (középfok) → {target}",
     "translationPathDirect": "{source} → {target} (közvetlen fordító)",
     "translationPathPassthrough": "Ugyanaz a formátum – nincs szükség fordításra",
-    "openaiIntermediatePanel": "OpenAI Intermediate",
+    "openaiIntermediatePanel": "OpenAI köztes",
     "autoFeaturesTitle": "Mit csinál az OmniRoute automatikusan",
     "autoFeaturesCount": "8 jellemző",
     "featureReasoningCache": "Érvelési gyorsítótár",
@@ -9134,7 +9134,7 @@
     "clientRequestDescription": "A kérés szerve, ahogyan az Ön ügyfele küldené",
     "formatDetected": "Formátum észlelve",
     "formatDetectedDescription": "Az OmniRoute automatikusan észleli az API-formátumot a kérésstruktúrából",
-    "openaiIntermediate": "OpenAI Intermediate",
+    "openaiIntermediate": "OpenAI köztes",
     "openaiIntermediateDescription": "Minden formátum először OpenAI formátumra (az univerzális hídra) normalizálódik.",
     "providerFormat": "Szolgáltatói formátum",
     "providerFormatDescription": "Az OpenAI formátumot lefordítják a szolgáltató natív formátumára",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "A folyamat közbeni folytatás biztonságossá tétele eszközhívások esetén: soha ne folytasson egy megszakadt streamet egy elküldött eszközhívás után (akár még folyamatban van, akár már befejeződött), és egyetlen üres folytatás után álljon le a teljes újrapróbálkozási keret felhasználása helyett."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Egyszeri átállás egy testvérkapcsolatra, ha az adatfolyam még az első hasznos keret előtt lezárul, és az ugyanazon a kapcsolaton végzett korlátozott újrapróbálkozás elfogyott. Használható testvérkapcsolat hiányában az eredeti early-EOF hiba kerül visszaadásra. Kikapcsolva: az early-EOF az újrapróbálkozás után végleges marad."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Megjelenítésbarát névmezők szerepeltetése a /v1/models válaszokban. Tiltsa le ezt azon ügyfelek esetében, amelyek csak modell-azonosítókat fogadnak el."

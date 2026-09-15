@@ -526,7 +526,7 @@
     "invalidFileType": "Ogiltig filtyp",
     "monitoredProviders": "Övervakade leverantörer",
     "errors": "Fel",
-    "heap": "Heap",
+    "heap": "Minneshög",
     "chatCompletions": "Chattkompletteringar",
     "exampleTemplatesHint": "Tips för exempelmallar",
     "retryDelayLabel": "Etikett för fördröjning före nytt försök",
@@ -1026,7 +1026,7 @@
     "embeddedServices": "Inbäddade Tjänster",
     "embeddedServicesSubtitle": "Hantera lokala proxytjänster",
     "logs": "Loggar",
-    "webhooks": "Webhooks",
+    "webhooks": "Webhookar",
     "webhooksSubtitle": "Få besked om händelser",
     "logExport": "Loggexport",
     "logExportSubtitle": "Skicka ut anropsloggar",
@@ -1315,7 +1315,7 @@
     "noResults": "Inga resultat"
   },
   "webhooks": {
-    "title": "Webhooks",
+    "title": "Webhookar",
     "description": "Konfigurera HTTP-återuppringningar för systemhändelser.",
     "configuredWebhooks": "Konfigurerade Webhooks",
     "configuredWebhooksDesc": "Hantera leveransslutpunkter, prenumererade händelser, status och testsändningar.",
@@ -1722,7 +1722,7 @@
     "costs": "Kostnader",
     "health": "Hälsa",
     "runtime": "Körtid",
-    "webhooks": "Webhooks",
+    "webhooks": "Webhookar",
     "home": "Hem",
     "activity": "Aktivitet",
     "agentSkills": "AgentSkills",
@@ -4129,7 +4129,7 @@
     "vscodeAliasModelsLabel": "VS Code-modeller",
     "vscodeAliasChatLabel": "VS Code-chatt",
     "localServer": "Lokal server",
-    "cloudOmniroute": "Cloud OmniRoute",
+    "cloudOmniroute": "OmniRoute i molnet",
     "copyUrl": "Kopiera URL",
     "badgeLoopbackTooltip": "Denna slutpunkt är endast tillgänglig lokalt (endast loopback)",
     "badgeAlwaysProtectedTooltip": "Denna slutpunkt är alltid skyddad och kräver auktorisering",
@@ -9257,7 +9257,7 @@
     "tokens": "token",
     "pauseAutoRefresh": "Pausa automatisk uppdatering",
     "resumeAutoRefresh": "Återuppta automatisk uppdatering",
-    "live": "Live",
+    "live": "Direkt",
     "copyInput": "Kopiera indata",
     "copyOutput": "Kopiera utdata",
     "streamTransformFailed": "Misslyckades med att transformera strömmen"
@@ -9781,7 +9781,7 @@
     "systemMonitor": {
       "metricsAriaLabel": "Systemmetrik",
       "memory": "Minne",
-      "memoryShort": "mem",
+      "memoryShort": "minne",
       "uptime": "Drifttid",
       "ariaLabel": "Systemövervakning",
       "title": "Systemövervakning",
@@ -10068,7 +10068,7 @@
     "quickStartStep4Suffix": "Använd till exempel leverantörsprefix",
     "deploySetupTitle": "Installationsguide",
     "deploySetupText": "Steg-för-steg-installation, miljökonfiguration och första genomgång för OmniRoute.",
-    "deployElectronTitle": "Electron Desktop",
+    "deployElectronTitle": "Electron-skrivbord",
     "deployElectronText": "Kör OmniRoute som ett inbyggt skrivbordsprogram på Windows, macOS och Linux.",
     "deployDockerTitle": "Hamnarbetare",
     "deployDockerText": "Containeriserad distribution med Docker Compose; redo för produktionsstackar och Kubernetes.",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Gör fortsättning mitt i en ström säker vid verktygsanrop: återuppta aldrig en avbruten ström efter att ett verktygsanrop har skickats (oavsett om det fortfarande pågår eller redan har slutförts), och stoppa efter en tom fortsättning i stället för att använda hela budgeten för nya försök."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Växla en gång över till en syskonanslutning när en ström stängs innan den har skickat någon användbar ram och det begränsade nya försöket på samma anslutning är förbrukat. Utan en användbar syskonanslutning returneras det ursprungliga early-EOF-felet. Av: early-EOF förblir slutgiltigt efter det nya försöket."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Inkludera visningsvänliga namnfält i svar från /v1/models. Inaktivera detta för klienter som endast accepterar modell-ID:n."

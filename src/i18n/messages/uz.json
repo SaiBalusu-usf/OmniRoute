@@ -12536,7 +12536,7 @@
     "categoryConfig": "Sozlamalar",
     "filterAll": "Barchasi",
     "coverageLabel": "Qamrov",
-    "mcpUrl": "MCP URL",
+    "mcpUrl": "MCP URL manzili",
     "a2aLink": "A2A",
     "mcpPrompt": "Agentingizga 37 ta OmniRoute vositasini taqdim etish uchun ushbu MCP endpointini qo‘shing.",
     "a2aPrompt": "A2A vazifalarini delegatsiya qilishni yoqish uchun ushbu Agent Card’ni orkestratoringizda ro‘yxatdan o‘tkazing.",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Oqim o‘rtasida davom ettirishni tool-call uchun xavfsiz qiling: tool-call yuborilgandan keyin (u hali bajarilayotgan yoki allaqachon tugagan bo‘lsa ham) uzilgan oqimni hech qachon davom ettirmang va qayta urinishlar limitidan to‘liq foydalanish o‘rniga bitta bo‘sh davom ettirishdan keyin to‘xtang."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Oqim birorta ham foydali freym chiqarmasdan yopilsa va ayni ulanish uchun cheklangan qayta urinishlar tugasa, bir marta boshqa teng ulanishga o‘tiladi. Foydalanish mumkin bo‘lgan boshqa ulanish bo‘lmasa, dastlabki erta EOF xatosi qaytariladi. O‘chiq: qayta urinishdan so‘ng erta EOF yakuniy xato bo‘lib qoladi."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models javoblariga koʻrsatish uchun qulay nom maydonlarini kiritish. Faqat model IDlarini qabul qiladigan mijozlar uchun buni oʻchiring."
@@ -14044,7 +14047,7 @@
     "clearFilters": "Filtrlarni tozalash",
     "sourceCloudAgent": "Bulut agenti",
     "sourceA2A": "A2A",
-    "sourceConductor": "Conductor",
+    "sourceConductor": "Boshqaruvchi",
     "sourceStale": "{since}dan beri eskirgan",
     "sourceOffline": "Oflayn",
     "sourceCollapse": "Yigʻish",
@@ -14111,7 +14114,7 @@
     "trialDays": "{days, plural, one {# kun} other {# kun}}"
   },
   "radarIntelPage": {
-    "title": "Radar Intel",
+    "title": "Radar maʼlumotlari",
     "subtitle": "Radar’ga tegishli ELO reytinglari va katalogdagi faktik o‘zgarishlar.",
     "backToRadar": "Radar sahifasiga qaytish",
     "loading": "Intel yuklanmoqda...",

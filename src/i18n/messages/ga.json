@@ -6475,7 +6475,7 @@
     "savedModelEndpointSettings": "Sábháladh socruithe críochphointe an mhúnla",
     "searchByModelAria": "Cuardaigh de réir mhúnla",
     "selectSupportedEndpoint": "Roghnaigh ar a laghad ceannphointe tacaithe",
-    "antigravityClientProfileHarness": "Harness / CLI"
+    "antigravityClientProfileHarness": "Úim / CLI"
   },
   "settings": {
     "title": "Socruithe",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Déan leanúint ar aghaidh i lár srutha sábháilte do ghlaonna uirlise: ná hathchrom riamh ar shruth gearrtha tar éis glao uirlise a bheith seolta (bíodh sé fós ar bun nó críochnaithe cheana féin), agus stad tar éis aon leanúint fholamh amháin in ionad an buiséad iomlán atrialacha a úsáid."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Aistrigh uair amháin chuig nasc deirfiúr nuair a dhúntar sruth sula seoltar fráma úsáideach ar bith agus nuair atá an athiarracht theoranta ar an nasc céanna ídithe. Mura bhfuil nasc deirfiúr inúsáidte ann, seoltar an earráid early-EOF bhunaidh ar ais. As: fanann early-EOF críochnaitheach tar éis na hathiarrachta."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Cuir réimsí ainmneacha atá cairdiúil don taispeáint san áireamh i bhfreagraí /v1/models. Díchumasaigh é seo do chliaint a ghlacann le haitheantóirí múnla amháin."

@@ -1746,7 +1746,7 @@
     "aggressive": "Agressivo",
     "caveman": "Caveman",
     "ccr": "CCR",
-    "headroom": "Headroom",
+    "headroom": "Margem",
     "lite": "Lite",
     "llmlingua": "LLMLingua",
     "omniglyph": "OmniGlyph",
@@ -11238,7 +11238,7 @@
     "searchResultFallback": "Resultado {number}",
     "noKeysFound": "Nenhuma chave de API encontrada. Adicione uma na secção Chaves.",
     "exampleLabel": "Exemplo",
-    "latency": "{ms}ms",
+    "latency": "{ms} ms",
     "statsLine": "{ms}ms · {tokensIn} tokens de entrada / {tokensOut} de saída",
     "defaultKey": "(predefinido)",
     "clear": "Limpar",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Tornar segura a continuação a meio do fluxo com chamadas de ferramentas: nunca retomar um fluxo interrompido após o envio de uma chamada de ferramenta (ainda em curso ou já concluída) e parar após uma continuação vazia, em vez de utilizar todo o limite de novas tentativas."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Fazer failover uma única vez para uma ligação irmã quando um stream fecha antes de emitir qualquer frame útil e a nova tentativa limitada na mesma ligação já foi usada. Sem ligação irmã utilizável, é devolvido o erro early-EOF original. Desligado: o early-EOF mantém-se terminal após a nova tentativa."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Incluir campos de nome fáceis de ler nas respostas de /v1/models. Desative isto para clientes que aceitam apenas IDs de modelo."

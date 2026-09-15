@@ -10699,7 +10699,7 @@
     "password": "ពាក្យសម្ងាត់",
     "passwordPlaceholder": "ពាក្យសម្ងាត់",
     "connected": "បានតភ្ជាប់",
-    "ip": "IP:",
+    "ip": "IP៖",
     "connectionFailed": "ការតភ្ជាប់បានបរាជ័យ",
     "testConnection": "សាកល្បងការតភ្ជាប់",
     "clear": "សម្អាត",
@@ -10773,7 +10773,7 @@
     "devinDesktopPasteDescription": "ផ្តល់ Devin API key ដែលមានស្រាប់ពីសម័យ Devin ដែលបានផ្ទៀងផ្ទាត់។ លទ្ធភាពនៃការនាំចេញ key និងជំហានអនុវត្តអាស្រ័យលើកំណែ Devin និងគណនី។",
     "devinPasteDescription": "ផ្តល់ WINDSURF_API_KEY របស់អ្នក (ទទួលបានតាមរយៈ `devin auth login` ឬតាមរយៈពាក្យបញ្ជា \"Windsurf: Provide Auth Token\" ក្នុង Windsurf IDE)។",
     "grokAuthJsonPlaceholder": "{\"https://auth.x.ai::clientId\": {\"key\": \"eyJ...\", \"refresh_token\": \"...\"}}",
-    "grokAuthJsonLabel": "Grok Build auth.json",
+    "grokAuthJsonLabel": "auth.json របស់ Grok Build",
     "apiTokenPlaceholder": "ws-...",
     "apiKeyTokenLabel": "សោ API / ថូខិន",
     "saving": "កំពុងរក្សាទុក…",
@@ -11672,7 +11672,7 @@
     "endpointsBaseUrl": "URL មូលដ្ឋាន",
     "endpointsCollapse": "បង្រួម",
     "endpointsExpand": "ពង្រីក",
-    "endpointsAnthropicNote": "Anthropic-native",
+    "endpointsAnthropicNote": "Anthropic-ដើម",
     "endpointsResponsesNote": "OpenAI Responses — codex/github",
     "endpointsWsNote": "WebSocket — សម្រាប់តែ codex",
     "betaText": "ការចែករំលែកកូតាអាចប្រើបាន ប៉ុន្តែអាចមានកំហុស។ ប្រទះឃើញកំហុសមួយមែនទេ? សូមរាយការណ៍វា។",
@@ -11730,7 +11730,7 @@
     "verified": "បានផ្ទៀងផ្ទាត់",
     "install": "ដំឡើង",
     "installedFromMarketplace": "បានដំឡើងកម្មវិធីជំនួយ {name}!",
-    "hooks": "Hooks"
+    "hooks": "ហ៊ុក"
   },
   "quotaPlans": {
     "title": "គម្រោង និងកូតា",
@@ -12371,7 +12371,7 @@
         "description": "ចាប់ផ្តើមការបម្រុងទុកប្រព័ន្ធ ស្ដារពីឯកសារបម្រុងទុក និងគ្រប់គ្រងវដ្តជីវិតមូលដ្ឋានទិន្នន័យ SQLite។ គាំទ្រយុទ្ធសាស្ត្រនាំចេញ នាំចូល និងរូបថតស្ថានភាពជាបន្តបន្ទាប់។"
       },
       "omni-webhooks": {
-        "name": "Webhooks",
+        "name": "វេបហ៊ុក",
         "description": "ចុះឈ្មោះ រាយបញ្ជី សាកល្បង និងលុប endpoint របស់ webhook។ កំណត់រចនាសម្ព័ន្ធការជាវព្រឹត្តិការណ៍ (request.completed, request.failed, quota.exceeded, etc.) និងគ្រប់គ្រងការព្យាយាមបញ្ជូនម្ដងទៀត។"
       },
       "omni-mcp": {
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "ធ្វើឱ្យការបន្តពាក់កណ្តាលស្ទ្រីមមានសុវត្ថិភាពសម្រាប់ការហៅឧបករណ៍៖ កុំបន្តស្ទ្រីមដែលត្រូវបានកាត់ផ្តាច់ បន្ទាប់ពីការហៅឧបករណ៍ត្រូវបានផ្ញើរួច (កំពុងដំណើរការ ឬបានបញ្ចប់រួចហើយ) ហើយបញ្ឈប់បន្ទាប់ពីការបន្តទទេមួយដង ជំនួសឱ្យការប្រើប្រាស់កូតាសាកល្បងឡើងវិញទាំងមូល។"
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "ប្តូរទៅការតភ្ជាប់បងប្អូនម្តងគត់ នៅពេល stream បិទមុនពេលបញ្ចេញ frame ដែលមានប្រយោជន៍ណាមួយ ហើយការព្យាយាមឡើងវិញដែលមានកំណត់លើការតភ្ជាប់ដដែលត្រូវបានប្រើអស់ហើយ។ បើគ្មានការតភ្ជាប់បងប្អូនដែលអាចប្រើបាន កំហុស early-EOF ដើមនឹងត្រូវបានត្រឡប់មកវិញ។ បិទ៖ early-EOF នៅតែជាចុងក្រោយបន្ទាប់ពីការព្យាយាមឡើងវិញ។"
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "រួមបញ្ចូលវាលឈ្មោះដែលងាយស្រួលបង្ហាញក្នុង response របស់ /v1/models។ បិទវាសម្រាប់ clients ដែលទទួលយកតែ model IDs ប៉ុណ្ណោះ។"

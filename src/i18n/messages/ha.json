@@ -11444,7 +11444,7 @@
     "allLevels": "Duk Matakai",
     "allProviders": "Duk Masu Bayarwa",
     "total": "jimilla",
-    "ok": "OK",
+    "ok": "Yayi",
     "err": "KUSKURE",
     "timeoutShort": "LOKACI YA ƘARE",
     "direct": "kai tsaye",
@@ -12371,7 +12371,7 @@
         "description": "Ƙaddamar da kwafin madadin na tsarin, maidowa daga fayilolin madadin, da sarrafa zagayowar rayuwar ma'ajiyar bayanan SQLite. Yana goyon bayan fitarwa, shigarwa, da dabarun hoton bayanai na ƙari-ƙari."
       },
       "omni-webhooks": {
-        "name": "Webhooks",
+        "name": "Ƙugiyoyin yanar gizo",
         "description": "Yi rajista, jera, gwada, da cire wuraren ƙarshen webhook. Saita biyan kuɗin abubuwan da suka faru (request.completed, request.failed, quota.exceeded, da sauransu) kuma sarrafa sake yunƙurin isarwa."
       },
       "omni-mcp": {
@@ -12443,7 +12443,7 @@
         "description": "Yi hulɗa da sabar OmniRoute A2A daga CLI. Aika ayyuka, bincika tarihin aiwatar da ƙwarewa, da gwada ka'idar sadarwar agent-to-agent ta JSON-RPC 2.0 ta hanyar hulɗa."
       },
       "cli-tunnel": {
-        "name": "CLI: Tunnels",
+        "name": "CLI: Ramuka",
         "description": "Fara da dakatar da haɗin tunnel (ngrok, Cloudflare, custom) daga CLI. Bincika URLs na tunnels masu aiki, saita tantancewa, da gwada yiwuwar isa daga waje."
       },
       "cli-backup-sync": {
@@ -12459,7 +12459,7 @@
         "description": "Ƙaddamar da sa ido kan batch inference jobs daga CLI. Loda da sarrafa files don batch processing, samo sakamako, da haɗa batch pipelines da ayyukan CI/CD."
       },
       "cli-eval": {
-        "name": "CLI: Evals",
+        "name": "CLI: Kimantawa",
         "description": "Ƙirƙira da gudanar da evaluation suites, kalli ci gaban benchmark kai tsaye, duba scorecards, kwatanta aikin samfura, da haɗa eval runs da ayyukan CI daga CLI."
       },
       "cli-plugins-skills": {
@@ -12659,7 +12659,7 @@
     "add": "Ƙara",
     "manualApiKey": "Yi amfani da API key na hannu",
     "createDahlTokenFailed": "An kasa ƙirƙirar Dahl token",
-    "providerProxy": "Proxy",
+    "providerProxy": "Wakili",
     "providerProxyConfigureHint": "Saita proxy",
     "providerProxyTitleConfigured": "An saita proxy: {host}"
   },
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Tabbatar da ci gaba a tsakiyar kwarara bayan kiran kayan aiki yana da aminci: kada a taɓa ci gaba da kwararar da aka katse bayan an aika kiran kayan aiki (ko har yanzu yana gudana ko ya riga ya ƙare), sannan a dakata bayan ci gaba mara komai guda ɗaya maimakon amfani da duk kasafin sake gwadawa."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Canja sau ɗaya zuwa wani haɗin na rukuni ɗaya idan rafi ya rufe kafin ya fitar da kowane firam mai amfani, kuma an ƙare iyakantaccen sake gwadawa na wannan haɗin. Idan babu wani haɗin da za a iya amfani da shi, za a mayar da kuskuren early-EOF na asali. A kashe: early-EOF zai kasance na ƙarshe bayan sake gwadawar."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Haɗa filayen suna masu sauƙin nunawa a cikin martanin /v1/models. Kashe wannan ga abokan cinikin da ke karɓar IDs na samfuri kawai."
@@ -13919,7 +13922,7 @@
     "time": "Lokaci",
     "latency": "Jinkiri",
     "clientIp": "IP na Abokin Ciniki",
-    "proxy": "Proxy",
+    "proxy": "Proksi",
     "direct": "Kai tsaye",
     "type": "Nau'i",
     "level": "Mataki",
@@ -13958,7 +13961,7 @@
   "metadata": {
     "compressionTitle": "Matsewa",
     "compressionDescription": "Saita ƙa'idodin matse mahallin don rage amfani da token da kuɗaɗe.",
-    "relayTitle": "OmniRoute — Relay Proxies",
+    "relayTitle": "OmniRoute — Proksocin Relay",
     "relayDescription": "Wuraren ƙarshen relay proxy marasa sabar don ababen more rayuwa na AI ɗinku",
     "trafficInspectorTitle": "Mai Binciken Zirga-zirga — OmniRoute",
     "trafficInspectorDescription": "Sa ido kan kiran LLM + gyara matsalolin zirga-zirgar HTTPS ta kowace manhaja"

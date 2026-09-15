@@ -162,7 +162,7 @@
     "effortMax": "Máximo",
     "effortUltra": "Ultra",
     "reasoningEffort": "Esforço de raciocínio",
-    "wireApi": "Wire API",
+    "wireApi": "API Wire",
     "modelAliases": "Aliases de modelo",
     "combos": "Combinações",
     "noModelsFound": "Nenhum modelo encontrado",
@@ -348,7 +348,7 @@
     "testDesc": "Descrição do teste",
     "chatDesc": "Descrição do chat",
     "importSuccess": "Importação bem-sucedida",
-    "chat": "Chat",
+    "chat": "Bate-papo",
     "a2aQuickStartStep1": "Etapa 1 do início rápido do A2A",
     "importFailed": "Falha na importação",
     "inputPlaceholder": "Placeholder de entrada",
@@ -2807,7 +2807,7 @@
       "low": "Baixo",
       "medium": "Médio",
       "high": "Alto",
-      "xhigh": "XHigh"
+      "xhigh": "Muito alta"
     },
     "howItWorks": "Como funciona:",
     "antigravityHowWorksDesc": "O Antigravity envia requisições para o endpoint do Google. O MITM intercepta e redireciona para o OmniRoute.",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Torne segura a continuação no meio do fluxo após chamadas de ferramenta: nunca retome um fluxo interrompido depois que uma chamada de ferramenta tiver sido enviada (ainda em andamento ou já concluída) e pare após uma continuação vazia, em vez de usar todo o limite de novas tentativas."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Faz failover uma única vez para uma conexão irmã quando um stream fecha antes de emitir qualquer frame útil e a nova tentativa limitada na mesma conexão já foi usada. Sem conexão irmã utilizável, o erro early-EOF original é retornado. Desligado: o early-EOF continua terminal após a nova tentativa."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Inclui campos de nome amigável para exibição nas respostas de /v1/models. Desative isso para clientes que aceitam apenas IDs de modelo."

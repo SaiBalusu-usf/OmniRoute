@@ -2740,7 +2740,7 @@
     "effortExtraHigh": "Sangat tinggi",
     "effortMax": "Maks",
     "effortUltra": "Ultra",
-    "wireApi": "Wire API",
+    "wireApi": "API Wire",
     "modelAliases": "Alias model",
     "addModel": "Tambah model",
     "routeModelPlaceholder": "Hala {model} ke...",
@@ -6364,13 +6364,13 @@
     "checkWebToken": "Semak token",
     "huggingchatLabel": "HuggingChat (Percuma)",
     "huggingchatDesc": "Sembang LLM percuma melalui huggingface.co/chat",
-    "poeWebLabel": "Poe Web",
+    "poeWebLabel": "Web Poe",
     "poeWebDesc": "Sembang pelbagai model melalui poe.com",
-    "veniceWebLabel": "Venice Web",
+    "veniceWebLabel": "Web Venice",
     "veniceWebDesc": "Sembang AI berfokuskan privasi",
-    "v0VercelWebLabel": "v0 Vercel Web",
+    "v0VercelWebLabel": "Web v0 Vercel",
     "v0VercelWebDesc": "Penjanaan kod AI melalui v0.dev",
-    "kimiWebLabel": "Kimi Web",
+    "kimiWebLabel": "Web Kimi",
     "kimiWebDesc": "Sembang pengguna Moonshot AI melalui www.kimi.com (antarabangsa, API Connect-RPC)",
     "doubaoWebLabel": "Doubao Web",
     "doubaoWebDesc": "Sembang AI ByteDance melalui doubao.com",
@@ -7874,7 +7874,7 @@
         "description": "Pemampatan konservatif untuk output alat Responses yang disokong."
       },
       "headroom": {
-        "label": "Headroom",
+        "label": "Ruang lebihan",
         "description": "Pemadatan JSON berjadual."
       },
       "relevance": {
@@ -11283,7 +11283,7 @@
     "refresh": "Muat semula",
     "columnsLabel": "Lajur",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "AKTIF",
     "semantic": "Semantik",
     "upstream": "Huluan",
     "semanticCacheHit": "Padanan cache semantik (disediakan oleh OmniRoute)",
@@ -12988,6 +12988,9 @@
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Jadikan panggilan alat sambungan pertengahan strim selamat: jangan sekali-kali sambung semula strim yang terputus selepas panggilan alat dihantar (masih berlangsung atau sudah selesai), dan hentikan selepas satu sambungan kosong dan bukannya menggunakan keseluruhan had percubaan semula."
       },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Tukar sekali ke sambungan adik-beradik apabila strim ditutup sebelum menghantar sebarang bingkai berguna dan cubaan semula terhad pada sambungan yang sama telah habis. Tanpa sambungan adik-beradik yang boleh digunakan, ralat early-EOF asal dikembalikan. Mati: early-EOF kekal muktamad selepas cubaan semula."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Sertakan medan nama mesra paparan dalam respons /v1/models. Nyahdayakan ini untuk pelanggan yang hanya menerima ID model."
       },
@@ -13294,7 +13297,7 @@
     "combo": "Kombo",
     "priorityShort": "keutamaan {value}",
     "toggleAria": "Dayakan {name}",
-    "edit": "Edit",
+    "edit": "Sunting",
     "delete": "Padam",
     "name": "Nama",
     "description": "Penerangan",
@@ -14111,7 +14114,7 @@
     "trialDays": "{days, plural, one {# hari} other {# hari}}"
   },
   "radarIntelPage": {
-    "title": "Radar Intel",
+    "title": "Perisikan Radar",
     "subtitle": "Kedudukan ELO milik Radar dan pergerakan katalog berdasarkan fakta.",
     "backToRadar": "Kembali ke Radar",
     "loading": "Memuatkan Intel...",

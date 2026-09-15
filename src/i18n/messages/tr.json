@@ -9469,7 +9469,7 @@
     "tierPro": "Profesyonel",
     "tierPlus": "Artı",
     "tierFree": "Ücretsiz",
-    "tierLite": "Lite",
+    "tierLite": "Hafif",
     "tierUnknown": "Bilinmiyor",
     "statTotal": "Toplam",
     "statCritical": "Kritik",
@@ -12988,6 +12988,9 @@
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Akış ortasında devam etmeyi araç çağrıları açısından güvenli hâle getirin: Bir araç çağrısı gönderildikten sonra (hâlâ devam ediyor veya tamamlanmış olsa bile) kesilmiş bir akışı asla sürdürmeyin ve tüm yeniden deneme bütçesini kullanmak yerine tek bir boş devamdan sonra durun."
       },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Akış herhangi bir yararlı çerçeve göndermeden kapandığında ve aynı bağlantıdaki sınırlı yeniden deneme tükendiğinde bir kez kardeş bağlantıya geçiş yapın. Kullanılabilir kardeş bağlantı yoksa özgün early-EOF hatası döndürülür. Kapalı: early-EOF yeniden denemeden sonra nihai kalır."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models yanıtlarına görüntüleme dostu ad alanlarını dahil edin. Yalnızca model kimliklerini kabul eden istemciler için bunu devre dışı bırakın."
       },
@@ -13919,7 +13922,7 @@
     "time": "Zaman",
     "latency": "Gecikme",
     "clientIp": "İstemci IP",
-    "proxy": "Proxy",
+    "proxy": "Vekil Sunucu",
     "direct": "Doğrudan",
     "type": "Türü",
     "level": "Seviye",

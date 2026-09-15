@@ -10773,7 +10773,7 @@
     "devinDesktopPasteDescription": "הדבק מפתח API קיים של Devin מתוך סשן מאומת של Devin. זמינות ייצוא המפתח וצעדיו משתנים לפי גרסת Devin וחשבון.",
     "devinPasteDescription": "ספק את ה-WINDSURF_API_KEY שלך (שהושג באמצעות `devin auth login`, או באמצעות הפקודה \"Windsurf: Provide Auth Token\" ב-Windsurf IDE).",
     "grokAuthJsonPlaceholder": "{\"https://auth.x.ai::clientId\": {\"key\": \"eyJ...\", \"refresh_token\": \"...\"}}",
-    "grokAuthJsonLabel": "Grok Build auth.json",
+    "grokAuthJsonLabel": "auth.json של Grok Build",
     "apiTokenPlaceholder": "ws-...",
     "apiKeyTokenLabel": "מפתח API / טוקן",
     "saving": "שומר…",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "הפיכת המשך באמצע זרם לבטוח עבור קריאות לכלים: לעולם אין לחדש זרם שנקטע לאחר שנשלחה קריאה לכלי (בין שהיא עדיין מתבצעת ובין שכבר הסתיימה), ויש לעצור לאחר ניסיון המשך ריק אחד במקום לנצל את כל מכסת הניסיונות החוזרים."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "מעבר חד-פעמי לחיבור אח כאשר זרם נסגר לפני ששלח מסגרת שימושית כלשהי והניסיון החוזר המוגבל באותו חיבור מוצה. אם אין חיבור אח שמיש, מוחזרת שגיאת early-EOF המקורית. כבוי: early-EOF נשאר סופי לאחר הניסיון החוזר."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "הכללת שדות שם ידידותיים לתצוגה בתגובות של /v1/models. השבת זאת עבור לקוחות המקבלים מזהי מודל בלבד."

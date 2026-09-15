@@ -11238,7 +11238,7 @@
     "searchResultFallback": "Résultat {number}",
     "noKeysFound": "Aucune clé API trouvée. Ajoutez-en une dans la section Clés.",
     "exampleLabel": "Exemple",
-    "latency": "{ms}ms",
+    "latency": "{ms} ms",
     "statsLine": "{ms}ms · {tokensIn} jetons d'entrée / {tokensOut} jetons de sortie",
     "defaultKey": "(par défaut)",
     "clear": "Effacer",
@@ -11283,7 +11283,7 @@
     "refresh": "Actualiser",
     "columnsLabel": "Colonnes",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "ACTIF",
     "semantic": "Sémantique",
     "upstream": "Fournisseur en amont",
     "semanticCacheHit": "Résultat trouvé dans le cache sémantique (fourni par OmniRoute)",
@@ -11445,7 +11445,7 @@
     "allProviders": "Tous les fournisseurs",
     "total": "total",
     "ok": "OK",
-    "err": "ERR",
+    "err": "ERREUR",
     "timeoutShort": "EXP",
     "direct": "direct",
     "newest": "Plus récent",
@@ -11686,7 +11686,7 @@
     "dismiss": "Fermer"
   },
   "plugins": {
-    "title": "Plugins",
+    "title": "Extensions",
     "description": "Installez et gérez des plugins pour étendre les fonctionnalités d’OmniRoute",
     "loading": "Chargement des plugins...",
     "scanning": "Analyse en cours...",
@@ -12054,7 +12054,7 @@
     "filterHost": "Filtrer l'hôte…",
     "filterAgent": "Agent",
     "filterStatus": "Statut",
-    "pauseBtn": "Pause",
+    "pauseBtn": "Mettre en pause",
     "resumeBtn": "Reprendre",
     "clearBtn": "Effacer",
     "exportHar": "Exporter .har",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Sécuriser les appels d’outils lors d’une continuation en cours de flux : ne jamais reprendre un flux interrompu après l’envoi d’un appel d’outil (qu’il soit toujours en cours ou déjà terminé), et s’arrêter après une continuation vide au lieu d’utiliser tout le quota de nouvelles tentatives."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Basculer une seule fois vers une connexion sœur lorsqu'un flux se ferme avant d'émettre la moindre trame utile et que la nouvelle tentative limitée sur la même connexion est épuisée. Sans connexion sœur utilisable, l'erreur early-EOF d'origine est renvoyée. Désactivé : early-EOF reste terminal après la nouvelle tentative."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Inclure des champs de nom conviviaux pour l'affichage dans les réponses /v1/models. Désactivez cette option pour les clients qui n'acceptent que les ID de modèle."

@@ -12988,6 +12988,9 @@
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Mee ka ọ dị nchebe ịga n'ihu n'etiti stream mgbe a kpọrọ tool: amalitela stream e kwụsịrị mgbe ezipụchara tool call (ma ọ ka na-aga n'ihu ma ọ bụ na ọ gwụla), kwụsịkwa mgbe continuation efu mere otu ugboro kama iji retry budget niile."
       },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Gafee otu ugboro gaa na njikọ ibe mgbe stream mechiri tupu o zipụta frame ọ bụla bara uru, ma nnwale ọzọ e nyere oke n'otu njikọ ahụ agwụla. Ọ bụrụ na enweghị njikọ ibe a pụrụ iji, a ga-eweghachi njehie early-EOF mbụ ahụ. Gbanyụọ: early-EOF ga-anọgide bụrụ njedebe mgbe nnwale ọzọ gasịrị."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Tinye field aha dị mfe igosi na nzaghachi /v1/models. Gbanyụọ nke a maka client ndị na-anabata naanị ID model."
       },
@@ -13864,7 +13867,7 @@
     "bizUserId": "ID onye ọrụ azụmahịa",
     "userUniqueId": "ID pụrụ iche nke onye ọrụ",
     "scope": "Oke",
-    "tenant": "Tenant",
+    "tenant": "Onye mgbazinye",
     "region": "Mpaghara",
     "importing": "Na-ebubata…",
     "importToken": "Bubata Token",

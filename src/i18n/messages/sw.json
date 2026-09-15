@@ -10773,7 +10773,7 @@
     "devinDesktopPasteDescription": "Pasta funguo ya API ya Devin iliyopo kutoka kwa kikao cha Devin kilichothibitishwa. Upatikanaji wa usafirishaji wa funguo na hatua zinatofautiana kulingana na toleo la Devin na akaunti.",
     "devinPasteDescription": "Toa WINDSURF_API_KEY yako (iliyopatikana kupitia `devin auth login`, au kupitia amri ya Windsurf IDE \"Windsurf: Provide Auth Token\").",
     "grokAuthJsonPlaceholder": "{\"https://auth.x.ai::clientId\": {\"key\": \"eyJ...\", \"refresh_token\": \"...\"}}",
-    "grokAuthJsonLabel": "Grok Build auth.json",
+    "grokAuthJsonLabel": "auth.json ya Grok Build",
     "apiTokenPlaceholder": "ws-...",
     "apiKeyTokenLabel": "Funguo la API / Token",
     "saving": "Inahifadhi…",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Fanya mwendelezo wa katikati ya mtiririko baada ya wito wa zana uwe salama: usiwahi kuendelea na mtiririko uliokatika baada ya wito wa zana kutumwa (ukiwa bado unaendelea au tayari umekamilika), na usitishe baada ya mwendelezo mmoja mtupu badala ya kutumia bajeti yote ya majaribio upya."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Hamia mara moja kwenye muunganisho ndugu wakati mkondo unafungwa kabla ya kutuma fremu yoyote yenye manufaa na jaribio la marudio lenye kikomo kwenye muunganisho uleule limekwisha. Bila muunganisho ndugu unaoweza kutumika, hitilafu asili ya early-EOF hurejeshwa. Imezimwa: early-EOF inabaki ya mwisho baada ya jaribio la marudio."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Jumuisha sehemu za majina rahisi kuonyeshwa katika majibu ya /v1/models. Zima hii kwa wateja wanaokubali vitambulisho vya mfano pekee."

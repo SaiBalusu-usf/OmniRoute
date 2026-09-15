@@ -9185,7 +9185,7 @@
     "conceptHeadline": "Vaša aplikácia hovorí „jazykom“ jedného API. Prekladač ho skonvertuje tak, aby používal iného poskytovateľa.",
     "conceptDiagramAppLabel": "Vaša aplikácia",
     "conceptDiagramSourceLabel": "Zdrojový formát",
-    "conceptDiagramHubLabel": "OpenAI (hub)",
+    "conceptDiagramHubLabel": "OpenAI (centrum)",
     "conceptDiagramTargetLabel": "Cieľový poskytovateľ",
     "conceptDiagramExampleApp": "napr. Anthropic SDK",
     "conceptDiagramExampleSource": "claude",
@@ -9462,7 +9462,7 @@
     "noQuotaDataAvailable": "Nie sú k dispozícii žiadne údaje o kvóte",
     "noAccountsForTierFilter": "Pre filter úrovne sa nenašli žiadne účty",
     "tierAll": "Všetky",
-    "tierEnterprise": "Enterprise",
+    "tierEnterprise": "Podnikový",
     "tierTeam": "Tím",
     "tierBusiness": "Podnikanie",
     "tierUltra": "Ultra",
@@ -11238,7 +11238,7 @@
     "searchResultFallback": "Výsledok {number}",
     "noKeysFound": "Nenašli sa žiadne kľúče API. Pridajte kľúč v sekcii Kľúče.",
     "exampleLabel": "Príklad",
-    "latency": "{ms}ms",
+    "latency": "{ms} ms",
     "statsLine": "{ms}ms · {tokensIn} vstupných / {tokensOut} výstupných tokenov",
     "defaultKey": "(predvolené)",
     "clear": "Vymazať",
@@ -11283,7 +11283,7 @@
     "refresh": "Obnoviť",
     "columnsLabel": "Stĺpce",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "V PREVÁDZKE",
     "semantic": "Sémantická",
     "upstream": "Nadradený server",
     "semanticCacheHit": "Zásah sémantickej vyrovnávacej pamäte (obslúžené službou OmniRoute)",
@@ -11464,7 +11464,7 @@
     "speech": "Reč",
     "search": "Vyhľadávanie",
     "images": "Obrázky",
-    "chat": "Chat",
+    "chat": "Čet",
     "music": "Hudba",
     "responses": "Odpovede",
     "rerank": "Preusporiadanie",
@@ -12411,7 +12411,7 @@
         "description": "Dopytujte dostupné modely AI, zobrazujte zoznam aliasov modelov a prehliadajte celý katalóg modelov z CLI. Filtrujte podľa poskytovateľa, vyhľadávajte podľa schopností a riešte varianty názvov modelov."
       },
       "cli-chat": {
-        "name": "CLI: Chat",
+        "name": "CLI: Čet",
         "description": "Odosielajte dopĺňania chatu, streamujte odpovede a spustite interaktívnu reláciu REPL z CLI. Podporuje všetkých poskytovateľov OmniRoute, kombinované smerovanie a konfiguráciu systémových výziev."
       },
       "cli-routing": {
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Zabezpečte bezpečné pokračovanie volania nástroja uprostred streamu: nikdy neobnovujte prerušený stream po odoslaní volania nástroja (či už stále prebieha, alebo už bolo dokončené) a po jednom prázdnom pokračovaní sa zastavte namiesto využitia celého limitu opakovaných pokusov."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Jednorazovo prepnúť na sesterské pripojenie, keď sa stream zatvorí pred odoslaním akéhokoľvek užitočného rámca a obmedzený opakovaný pokus na tom istom pripojení je vyčerpaný. Ak nie je k dispozícii použiteľné sesterské pripojenie, vráti sa pôvodná chyba early-EOF. Vypnuté: early-EOF zostáva po opakovanom pokuse konečný."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Zahrnúť polia s používateľsky prívetivými názvami v odpovediach /v1/models. Zakážte túto možnosť pre klientov, ktorí prijímajú iba ID modelov."

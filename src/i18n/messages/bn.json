@@ -11672,7 +11672,7 @@
     "endpointsBaseUrl": "বেস URL",
     "endpointsCollapse": "সংকুচিত করুন",
     "endpointsExpand": "প্রসারিত করুন",
-    "endpointsAnthropicNote": "Anthropic-native",
+    "endpointsAnthropicNote": "Anthropic-নেটিভ",
     "endpointsResponsesNote": "OpenAI রেসপন্স — codex/github",
     "endpointsWsNote": "WebSocket — শুধুমাত্র codex",
     "betaText": "কোটা শেয়ার কার্যকরী তবে বাগ প্রত্যাশিত। একটি পেয়েছেন? অনুগ্রহ করে রিপোর্ট করুন।",
@@ -12988,6 +12988,9 @@
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "স্ট্রিমের মাঝপথে ধারাবাহিকতাকে টুল-কলের জন্য নিরাপদ করুন: কোনো টুল কল পাঠানোর পর কেটে যাওয়া স্ট্রিম কখনো পুনরায় চালু করবেন না (তা এখনও চলমান থাকুক বা ইতিমধ্যে শেষ হয়ে থাকুক), এবং সম্পূর্ণ পুনঃচেষ্টা বাজেট ব্যবহার করার পরিবর্তে একটি খালি ধারাবাহিকতার পর থামুন।"
       },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "স্ট্রিম কোনো উপযোগী ফ্রেম পাঠানোর আগেই বন্ধ হলে এবং একই সংযোগে সীমিত পুনঃচেষ্টা শেষ হয়ে গেলে একবার একটি সহোদর সংযোগে ফেইলওভার করুন। ব্যবহারযোগ্য সহোদর সংযোগ না থাকলে মূল early-EOF ত্রুটি ফেরত দেওয়া হয়। বন্ধ থাকলে: পুনঃচেষ্টার পরে early-EOF চূড়ান্ত থাকে।"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models প্রতিক্রিয়াগুলিতে প্রদর্শন-বান্ধব নামের ক্ষেত্রগুলি অন্তর্ভুক্ত করুন। শুধুমাত্র মডেল ID গ্রহণ করে এমন ক্লায়েন্টদের জন্য এটি নিষ্ক্রিয় করুন।"
       },
@@ -14111,7 +14114,7 @@
     "trialDays": "{days, plural, one {# দিন} other {# দিন}}"
   },
   "radarIntelPage": {
-    "title": "Radar Intel",
+    "title": "রাডার ইন্টেলিজেন্স",
     "subtitle": "Radar-এর নিজস্ব ELO র্যাঙ্কিং এবং ক্যাটালগের তথ্যভিত্তিক পরিবর্তন।",
     "backToRadar": "Radar-এ ফিরে যান",
     "loading": "ইন্টেল লোড হচ্ছে...",

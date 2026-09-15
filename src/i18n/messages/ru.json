@@ -6527,7 +6527,7 @@
     "routingSummarizeDropParagraphContains": "удалить абзацы, содержащие: {items}",
     "routingSummarizeDropParagraphStartsWith": "удалить абзацы, начинающиеся с: {items}",
     "routingSummarizeReplaceText": "заменить \"{match}\" → \"{replacement}\"",
-    "routingSummarizeReplaceRegex": "regex /{pattern}/{flags} → \"{replacement}\"",
+    "routingSummarizeReplaceRegex": "регулярное выражение /{pattern}/{flags} → \"{replacement}\"",
     "routingSummarizeDropBlockContains": "удалить блоки, содержащие: {items}",
     "routingSummarizePrependSystemBlock": "добавить блок: \"{text}\"",
     "routingSummarizeAppendSystemBlock": "добавить блок: \"{text}\"",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Сделать продолжение прерванного потока безопасным для вызова инструмента: никогда не возобновлять прерванный поток после отправки вызова инструмента (ещё выполняющегося или уже завершённого) и останавливаться после одного пустого продолжения вместо использования всего лимита повторных попыток."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Однократно переключиться на соседнее подключение, если поток закрылся, не отправив ни одного полезного фрейма, а ограниченная повторная попытка на том же подключении исчерпана. Если подходящего соседнего подключения нет, возвращается исходная ошибка early-EOF. Выкл.: early-EOF остаётся окончательным после повторной попытки."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Включать удобные для отображения поля имён в ответы /v1/models. Отключите этот параметр для клиентов, принимающих только идентификаторы моделей."

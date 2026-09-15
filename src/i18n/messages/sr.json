@@ -6527,7 +6527,7 @@
     "routingSummarizeDropParagraphContains": "одбаци параграфе који садрже: {items}",
     "routingSummarizeDropParagraphStartsWith": "одбаци параграфе који почињу са: {items}",
     "routingSummarizeReplaceText": "замени \"{match}\" → \"{replacement}\"",
-    "routingSummarizeReplaceRegex": "regex /{pattern}/{flags} → \"{replacement}\"",
+    "routingSummarizeReplaceRegex": "регуларни израз /{pattern}/{flags} → \"{replacement}\"",
     "routingSummarizeDropBlockContains": "одбаци блокове који садрже: {items}",
     "routingSummarizePrependSystemBlock": "додај блок на почетак: \"{text}\"",
     "routingSummarizeAppendSystemBlock": "додај блок на крај: \"{text}\"",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Омогућите безбедан наставак позива алатке усред тока: никада не настављајте прекинути ток након што је позив алатке послат (било да је још у току или је већ завршен) и зауставите се након једног празног наставка уместо коришћења целокупног броја покушаја."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Једном пребаци на сродну везу када се ток затвори пре слања иједног корисног оквира, а ограничени поновни покушај на истој вези је искоришћен. Ако нема употребљиве сродне везе, враћа се изворна early-EOF грешка. Искључено: early-EOF остаје коначан након поновног покушаја."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Укључи поља са именом прилагођеним за приказ у одговорима /v1/models. Онемогући ово за клијенте који прихватају само ID-ове модела."

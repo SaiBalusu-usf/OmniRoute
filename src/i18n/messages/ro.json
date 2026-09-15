@@ -1166,7 +1166,7 @@
     "settingsSecurity": "Securitate",
     "settingsAccessTokens": "Tokenuri de acces",
     "settingsFeatureFlags": "Caracteristici Steaguri",
-    "settingsCache": "Cache",
+    "settingsCache": "Memorie cache",
     "settingsAuthz": "Autorizare",
     "settingsRouting": "Rutare",
     "settingsResilience": "Reziliență",
@@ -2179,7 +2179,7 @@
     "routeWhyTarget": "De ce această țintă?",
     "routeWhyTargetSubtitle": "Metadate exacte de runtime plus reluare doar în citire a scorului",
     "routeExactRuntimeLog": "Jurnal exact de runtime",
-    "routeCallLogsExact": "call_logs exact",
+    "routeCallLogsExact": "call_logs exacte",
     "routeReadOnlyRecompute": "Recalculare doar în citire",
     "routeRuntimeRankNow": "Rang runtime actual",
     "routeRuntimeScoreNow": "Scor runtime actual",
@@ -6600,7 +6600,7 @@
     "memoryTokenCostWarning": "Atenție: cu memoria activată, OmniRoute injectează până la {tokens} tokenuri de context preluat în fiecare solicitare de chat — acest lucru crește utilizarea de tokenuri și costul. Pentru a omite injectarea pentru o solicitare specifică, trimiteți antetul \"x-omniroute-no-memory: true\".",
     "maxTokens": "Număr maxim de tokenuri",
     "retentionDays": "Păstrare",
-    "recent": "Recent",
+    "recent": "Recente",
     "recentDesc": "Fereastră cronologică",
     "semantic": "Semantic",
     "semanticDesc": "Căutare vectorială",
@@ -11369,7 +11369,7 @@
       "payloadMissing": "Artifactul detaliat al payload-ului nu mai este disponibil pentru această intrare de jurnal.",
       "payloadCorrupt": "Artifactul detaliat al payload-ului nu a putut fi analizat.",
       "notAvailable": "N/A",
-      "semanticCache": "Semantic (OmniRoute)",
+      "semanticCache": "Semantică (OmniRoute)",
       "upstreamCache": "Upstream (Furnizor)",
       "ariaLabel": "Detalii jurnal solicitare",
       "completed": "Finalizat",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Asigură siguranța continuării în mijlocul fluxului pentru apelurile de instrumente: nu relua niciodată un flux întrerupt după trimiterea unui apel de instrument (aflat încă în desfășurare sau deja finalizat) și oprește-te după o singură continuare fără conținut, în loc să utilizezi întregul buget de reîncercări."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Comută o singură dată pe o conexiune soră când un flux se închide înainte de a emite vreun cadru util și reîncercarea limitată pe aceeași conexiune a fost consumată. Fără o conexiune soră utilizabilă, se returnează eroarea early-EOF originală. Dezactivat: early-EOF rămâne final după reîncercare."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Include câmpuri de nume ușor de afișat în răspunsurile /v1/models. Dezactivează această opțiune pentru clienții care acceptă doar ID-uri de model."

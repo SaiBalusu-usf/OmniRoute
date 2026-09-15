@@ -1125,7 +1125,7 @@
     "compressionStudioSubtitle": "Live-Engine-Kaskade",
     "compressionExclusionsSubtitle": "Pro-Modell/Endpoint-Umgehung",
     "chaosConfigSubtitle": "Parallele Ausführung mehrerer Modelle",
-    "routingSection": "Routing",
+    "routingSection": "Weiterleitung",
     "protocolsSection": "Protokolle",
     "agentsAiSection": "Agenten & KI",
     "cacheContextSection": "Cache & Kontext",
@@ -1168,7 +1168,7 @@
     "settingsFeatureFlags": "Feature-Flags",
     "settingsCache": "Cache",
     "settingsAuthz": "Autorisierung",
-    "settingsRouting": "Routing",
+    "settingsRouting": "Weiterleitung",
     "settingsResilience": "Ausfallsicherheit",
     "modelLockout": "Modellsperre",
     "settingsAdvanced": "Erweitert",
@@ -1192,7 +1192,7 @@
     "integrationsGroup": "Integrationen",
     "proxyGroup": "Proxy",
     "costsParametersGroup": "Kostenparameter",
-    "auditGroup": "Audit",
+    "auditGroup": "Prüfung",
     "batchGroup": "Stapelverarbeitung",
     "homeSubtitle": "Dashboard-Übersicht",
     "providersSubtitle": "KI-Anbieter verwalten",
@@ -2519,7 +2519,7 @@
     "maskImage": "Maskenbild",
     "maskImageHint": "Optional. Wird von Inpaint-Modellen verwendet, die Masken unterstützen.",
     "text": "Text",
-    "promptOptional": "Prompt (optional)",
+    "promptOptional": "Eingabeaufforderung (optional)",
     "enhancementInstructionsPlaceholder": "Optionale Verbesserungsanweisungen...",
     "synthesizing": "Synthetisiere...",
     "transcribing": "Transkribiere...",
@@ -8905,7 +8905,7 @@
     "save": "Speichern"
   },
   "contextCaveman": {
-    "title": "Caveman Engine",
+    "title": "Caveman-Engine",
     "description": "Regelbasierte Nachrichtenkomprimierung, Sprachpakete, Analysen und Steuerung des Ausgabemodus.",
     "advancedConfig": "Erweiterte Konfiguration",
     "advancedConfigDesc": "Optimieren Sie das Komprimierungsverhalten",
@@ -8991,7 +8991,7 @@
     "ideCliIntegrations": "IDE/CLI-Integrationen",
     "inMemoryNote": "Hinweis: Ereignisse werden im Speicher gespeichert und beim Neustart des Servers zurückgesetzt.",
     "ok": "Okay",
-    "errorShort": "ERR",
+    "errorShort": "FEHLER",
     "formatConverter": "Formatkonverter",
     "formatConverterDescription": "Fügen Sie einen JSON-Anfragetext ein oder geben Sie ihn ein. Der Übersetzer erkennt das Quellformat automatisch und konvertiert es in das Zielformat. Verwenden Sie dies, um zu debuggen, wie OmniRoute Anfragen zwischen Formaten übersetzt (OpenAI ↔ Claude ↔ Gemini ↔ Responses API).",
     "translationPathHubSpoke": "{source} → OpenAI (mittel) → {target}",
@@ -9340,7 +9340,7 @@
     "evaluateStepDescription": "Die Antworten werden mit den erwarteten Kriterien verglichen. Sehen Sie sich für jeden Fall das Bestehen/Nichtbestehen mit Latenzmetriken und detailliertem Feedback an.",
     "evalsStrategyContainsLabel": "Enthält",
     "evalsStrategyExactLabel": "Genaue Übereinstimmung",
-    "evalsStrategyRegexLabel": "Regex",
+    "evalsStrategyRegexLabel": "Regulärer Ausdruck",
     "evalsStrategyCustomLabel": "Benutzerdefinierte Logik",
     "evalsStrategyContainsDescription": "Prüft, ob die LLM-Ausgabe die erwartete Teilzeichenfolge enthält.",
     "evalsStrategyExactDescription": "Prüft, ob die LLM-Ausgabe genau mit dem erwarteten Wert übereinstimmt.",
@@ -9597,7 +9597,7 @@
     "suiteBuilderCaseTagsPlaceholder": "z. B. Programmierung, Python",
     "targetTypeCombo": "Kombination",
     "scorecardPassed": "Bestanden",
-    "suiteBuilderCaseTagsLabel": "Tags",
+    "suiteBuilderCaseTagsLabel": "Schlagwörter",
     "suiteBuilderNewSuite": "Neue Suite",
     "notifyEvalLoadFailed": "Evaluierungsdaten konnten nicht geladen werden",
     "notConfigured": "Nicht konfiguriert",
@@ -11208,7 +11208,7 @@
     "play": "Abspielen",
     "query": "Abfrage",
     "numResults": "Maximale Ergebnisse",
-    "prompt": "Prompt",
+    "prompt": "Eingabeaufforderung",
     "size": "Größe",
     "duration": "Dauer",
     "question": "Frage",
@@ -12988,6 +12988,9 @@
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Fortsetzungen mitten im Stream für Tool-Aufrufe sicher gestalten: Einen unterbrochenen Stream nie fortsetzen, nachdem ein Tool-Aufruf gesendet wurde (noch in Bearbeitung oder bereits abgeschlossen), und nach einer leeren Fortsetzung abbrechen, anstatt das gesamte Wiederholungsbudget auszuschöpfen."
       },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Einmaliger Failover auf eine Geschwisterverbindung, wenn ein Stream schließt, bevor er einen nützlichen Frame gesendet hat, und der begrenzte Wiederholungsversuch auf derselben Verbindung aufgebraucht ist. Ohne nutzbare Geschwisterverbindung wird der ursprüngliche early-EOF-Fehler zurückgegeben. Aus: early-EOF bleibt nach dem Wiederholungsversuch endgültig."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Benutzerfreundliche Namensfelder in /v1/models-Antworten einschließen. Deaktivieren Sie dies für Clients, die nur Modell-IDs akzeptieren."
       },
@@ -13568,7 +13571,7 @@
     "timeline": {
       "title": "Schalterübergänge",
       "window": "Zeitfenster",
-      "window1h": "1h",
+      "window1h": "1 Std.",
       "window6h": "6 Std.",
       "window24h": "24 Std.",
       "empty": "Keine Übergänge im ausgewählten Zeitfenster",

@@ -2714,7 +2714,7 @@
     "ccOnboardingTitle": "ଗେଟୱେ ମଡେଲ୍ ଆବିଷ୍କାର ପାଇଁ settings.json",
     "ccOnboardingCopy": "କପି କରନ୍ତୁ",
     "ccOnboardingCopied": "କପି ହୋଇଛି",
-    "ccOnboardingKeyPlaceholder": "'<your OmniRoute API key>'",
+    "ccOnboardingKeyPlaceholder": "'<ଆପଣଙ୍କ OmniRoute API କୀ>'",
     "ccOnboardingWindowNote": "Claude Code ଚିହ୍ନିପାରୁ ନଥିବା ଯେକୌଣସି ମଡେଲ୍ ID ପାଇଁ 200K କଣ୍ଟେକ୍ସ୍ଟ ୱିଣ୍ଡୋ ଅଛି ବୋଲି ଧରିନିଏ। ଭିନ୍ନ ବାସ୍ତବ ୱିଣ୍ଡୋ ଥିବା ମଡେଲ୍ ପାଇଁ, ତାହାର ଠିକ୍ ତଳେ CLAUDE_CODE_AUTO_COMPACT_WINDOW ଯୋଡ଼ନ୍ତୁ, ଯାହାଦ୍ୱାରା ସ୍ୱୟଂ-କମ୍ପାକ୍ସନ୍ ଅତି ଶୀଘ୍ର ସକ୍ରିୟ ହେବ ନାହିଁ।",
     "failedSave": "ସେଭ୍ କରିବାରେ ବିଫଳ",
     "profileSyncTitle": "CLI ପ୍ରୋଫାଇଲ୍ ସ୍ୱୟଂ-ସିଙ୍କ୍",
@@ -10780,7 +10780,7 @@
     "saveConnection": "ସଂଯୋଗ ସଂରକ୍ଷଣ କରନ୍ତୁ",
     "gheDescription": "ଆପଣଙ୍କ GitHub Enterprise ଇନ୍ଷ୍ଟାନ୍ସର ମୂଳ URL ପ୍ରବେଶ କରନ୍ତୁ (ଯଥା <code>https://ghe.yourcompany.com</code>)।",
     "gheUrlPlaceholder": "https://ghe.yourcompany.com",
-    "gheUrlLabel": "GitHub Enterprise URL",
+    "gheUrlLabel": "GitHub ଏଣ୍ଟରପ୍ରାଇଜ୍ URL",
     "gheUrlRequired": "GitHub Enterprise URL ଆବଶ୍ୟକ",
     "gitlabDuoSetupTitle": "GitLab Duo OAuth ସେଟଅପ୍",
     "gitlabDuoSetupMessage": "GitLab Duo OAuth ବିନ୍ୟାସ କରାଯାଇନାହିଁ। {applicationsUrl}ରେ ରିଡାଇରେକ୍ଟ URI {redirectUri} ଏବଂ ସ୍କୋପ୍ \"{scopes}\" ସହିତ ଏକ OAuth ଆପ୍ଲିକେସନ୍ ପଞ୍ଜୀକରଣ କରନ୍ତୁ, ତା’ପରେ {clientIdEnv} (ଏବଂ ଇଚ୍ଛାନୁସାରେ {clientSecretEnv}) ସେଟ୍ କରି ପୁନଃଚାଳନ କରନ୍ତୁ।",
@@ -11673,7 +11673,7 @@
     "endpointsCollapse": "ସଙ୍କୁଚିତ କରନ୍ତୁ",
     "endpointsExpand": "ବିସ୍ତାର କରନ୍ତୁ",
     "endpointsAnthropicNote": "Anthropic-ନେଟିଭ୍",
-    "endpointsResponsesNote": "OpenAI Responses — codex/github",
+    "endpointsResponsesNote": "OpenAI ପ୍ରତିକ୍ରିୟାଗୁଡ଼ିକ — codex/github",
     "endpointsWsNote": "WebSocket — କେବଳ codex",
     "betaText": "କୋଟା ସେୟାର୍ କାର୍ଯ୍ୟକ୍ଷମ ଅଛି, କିନ୍ତୁ ତ୍ରୁଟି ଥିବାର ଆଶଙ୍କା ରହିଛି। କୌଣସି ତ୍ରୁଟି ମିଳିଲା କି? ଦୟାକରି ଏହାକୁ ରିପୋର୍ଟ କରନ୍ତୁ।",
     "betaReportLink": "ଏକ ସମସ୍ୟା ରିପୋର୍ଟ କରନ୍ତୁ",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "ମଧ୍ୟ-ଷ୍ଟ୍ରିମ୍ ଅବ୍ୟାହତିକୁ ଟୁଲ୍-କଲ୍ ପାଇଁ ସୁରକ୍ଷିତ କରନ୍ତୁ: ଏକ ଟୁଲ୍ କଲ୍ ପଠାଯିବା ପରେ (ଏବେ ମଧ୍ୟ ଚାଲିଥାଉ କିମ୍ବା ପୂର୍ବରୁ ସମାପ୍ତ ହୋଇଥାଉ) କଟିଯାଇଥିବା ଷ୍ଟ୍ରିମ୍କୁ କେବେବି ପୁନଃଆରମ୍ଭ କରନ୍ତୁ ନାହିଁ, ଏବଂ ସମ୍ପୂର୍ଣ୍ଣ ପୁନଃପ୍ରୟାସ ବଜେଟ୍ ବ୍ୟବହାର କରିବା ପରିବର୍ତ୍ତେ ଗୋଟିଏ ଖାଲି ଅବ୍ୟାହତି ପରେ ବନ୍ଦ କରନ୍ତୁ।"
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "ଷ୍ଟ୍ରିମ୍ କୌଣସି ଉପଯୋଗୀ ଫ୍ରେମ୍ ପଠାଇବା ପୂର୍ବରୁ ବନ୍ଦ ହେଲେ ଏବଂ ସେହି ସଂଯୋଗରେ ସୀମିତ ପୁନଃପ୍ରଚେଷ୍ଟା ଶେଷ ହୋଇଗଲେ ଥରେ ଏକ ସହୋଦର ସଂଯୋଗକୁ ଫେଲଓଭର କରନ୍ତୁ। ବ୍ୟବହାରଯୋଗ୍ୟ ସହୋଦର ସଂଯୋଗ ନଥିଲେ ମୂଳ early-EOF ତ୍ରୁଟି ଫେରାଇ ଦିଆଯାଏ। ବନ୍ଦ: ପୁନଃପ୍ରଚେଷ୍ଟା ପରେ early-EOF ଅନ୍ତିମ ରହେ।"
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models ପ୍ରତିକ୍ରିୟାଗୁଡ଼ିକରେ ପ୍ରଦର୍ଶନ-ଅନୁକୂଳ ନାମ ଫିଲ୍ଡଗୁଡ଼ିକୁ ସାମିଲ କରନ୍ତୁ। କେବଳ ମଡେଲ୍ ID ଗ୍ରହଣ କରୁଥିବା କ୍ଲାଏଣ୍ଟମାନଙ୍କ ପାଇଁ ଏହାକୁ ଅକ୍ଷମ କରନ୍ତୁ।"

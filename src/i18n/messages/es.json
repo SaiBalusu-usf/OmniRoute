@@ -209,7 +209,7 @@
     "enableCloud": "Habilitar la nube",
     "expirationBannerExpiringSoon": "Aviso de caducidad próxima",
     "retry": "Reintentar",
-    "embeddings": "Embeddings",
+    "embeddings": "Representaciones vectoriales",
     "errorCount": "Número de errores",
     "backupReasonManual": "Motivo de la copia de seguridad: manual",
     "safeSearchModerate": "Búsqueda segura moderada",
@@ -679,7 +679,7 @@
     "safeSearchOff": "Búsqueda segura desactivada",
     "nameHint": "Sugerencia de nombre",
     "debugToggle": "Selector de depuración",
-    "embedding": "Embedding",
+    "embedding": "Representación vectorial",
     "issuesLabel": "Etiqueta de problemas",
     "optionAny": "Opción cualquiera",
     "maxNestingDepth": "Profundidad máxima de anidamiento",
@@ -2661,7 +2661,7 @@
     "httpError": "Error {status}",
     "failed": "Fallido",
     "requestFailed": "La solicitud ha fallado",
-    "embedding": "Embedding",
+    "embedding": "Incrustación",
     "embeddingSample": "¡Hola, mundo!",
     "image": "Imagen",
     "imageSample": "Un paisaje sereno con montañas al atardecer",
@@ -5886,7 +5886,7 @@
     "tierOverrideAuto": "Automático (el enrutamiento decide)",
     "tierOverrideFree": "Gratis",
     "tierOverrideCheap": "Económico",
-    "tierOverridePremium": "Premium",
+    "tierOverridePremium": "Prémium",
     "tierOverrideHelpText": "Fija este proveedor a un nivel de enrutamiento en lugar de permitir que OmniRoute lo deduzca a partir del precio del modelo.",
     "museSparkWebCookieHint": "Sugerencia de la cookie web de Muse Spark",
     "museSparkWebCookiePlaceholder": "Marcador de posición de la cookie web de Muse Spark",
@@ -11283,7 +11283,7 @@
     "refresh": "Actualizar",
     "columnsLabel": "Columnas",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "ACTIVO",
     "semantic": "Semántica",
     "upstream": "Proveedor de origen",
     "semanticCacheHit": "Acierto de caché semántica (servido por OmniRoute)",
@@ -11673,7 +11673,7 @@
     "endpointsCollapse": "Contraer",
     "endpointsExpand": "Expandir",
     "endpointsAnthropicNote": "Nativo de Anthropic",
-    "endpointsResponsesNote": "OpenAI Responses — codex/github",
+    "endpointsResponsesNote": "Respuestas de OpenAI — codex/github",
     "endpointsWsNote": "WebSocket — solo codex",
     "betaText": "Quota Share funciona, pero es posible que haya errores. ¿Has encontrado uno? Informa de ello.",
     "betaReportLink": "Informar de un problema",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Hacer que la continuación a mitad del flujo sea segura para las llamadas a herramientas: nunca reanudar un flujo interrumpido después de que se haya enviado una llamada a una herramienta (tanto si sigue en curso como si ya ha finalizado) y detenerse después de una continuación vacía en lugar de agotar todo el límite de reintentos."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Conmutar una sola vez a una conexión hermana cuando un stream se cierra antes de emitir cualquier trama útil y se agotó el reintento limitado en la misma conexión. Si no hay una conexión hermana utilizable, se devuelve el error early-EOF original. Desactivado: early-EOF sigue siendo terminal tras el reintento."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Incluye campos de nombre fáciles de visualizar en las respuestas de /v1/models. Deshabilita esta opción para los clientes que solo aceptan identificadores de modelo."

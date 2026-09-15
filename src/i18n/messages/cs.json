@@ -3137,7 +3137,7 @@
     "hermesRoleGoalJudgeDesc": "Hodnocení dokončení cíle",
     "hermesRoleCurator": "Kurátor",
     "hermesRoleCuratorDesc": "Kurace dovedností a paměti",
-    "hermesRoleMonitor": "Monitor",
+    "hermesRoleMonitor": "Monitorování",
     "hermesRoleMonitorDesc": "Sledování na pozadí",
     "hermesRoleBackgroundReview": "Pozadí Kontroly",
     "hermesRoleBackgroundReviewDesc": "Kontrola kódu na pozadí",
@@ -11283,7 +11283,7 @@
     "refresh": "Obnovit",
     "columnsLabel": "Sloupce",
     "cacheSem": "SEM",
-    "cacheUp": "UP",
+    "cacheUp": "NAHORU",
     "semantic": "Sémantická",
     "upstream": "Nadřazený server",
     "semanticCacheHit": "Shoda v sémantické mezipaměti (obslouženo službou OmniRoute)",
@@ -12058,7 +12058,7 @@
     "resumeBtn": "Obnovit",
     "clearBtn": "Vymazat",
     "exportHar": "Exportovat .har",
-    "recordSession": "REC",
+    "recordSession": "NAHR.",
     "stopSession": "Zastavit",
     "liveBadge": "živě",
     "offlineBadge": "offline",
@@ -12092,7 +12092,7 @@
     "llmApiKind": "Typ API",
     "llmModel": "Model",
     "llmMessages": "Zprávy",
-    "llmStream": "Stream",
+    "llmStream": "Streamování",
     "llmMappedTo": "Mapováno na",
     "llmCostEstimate": "Odhad nákladů",
     "systemProxyExitWarning": "Systémová proxy je stále aktivní – přesto opustit stránku?",
@@ -12536,7 +12536,7 @@
     "categoryConfig": "Konfigurace",
     "filterAll": "Vše",
     "coverageLabel": "Pokrytí",
-    "mcpUrl": "MCP URL",
+    "mcpUrl": "URL MCP",
     "a2aLink": "A2A",
     "mcpPrompt": "Přidejte tento koncový bod MCP svému agentovi a poskytněte mu 37 nástrojů OmniRoute.",
     "a2aPrompt": "Zaregistrujte tuto Agent Card u svého orchestrátoru pro povolení delegování úkolů A2A.",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Zajistit bezpečné pokračování volání nástroje uprostřed streamu: nikdy neobnovovat přerušený stream poté, co bylo odesláno volání nástroje (ať už stále probíhá, nebo již skončilo), a skončit po jednom prázdném pokračování namísto vyčerpání celého limitu opakovaných pokusů."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Jednorázově přepnout na sesterské připojení, když se stream uzavře před odesláním jakéhokoli užitečného rámce a omezený opakovaný pokus na stejném připojení je vyčerpán. Pokud není k dispozici použitelné sesterské připojení, vrátí se původní chyba early-EOF. Vypnuto: early-EOF zůstává po opakovaném pokusu konečný."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Zahrnout uživatelsky přívětivá pole názvů v odpovědích /v1/models. Zakažte to pro klienty, kteří přijímají pouze ID modelů."

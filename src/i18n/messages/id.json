@@ -10496,7 +10496,7 @@
   },
   "templateNames": {
     "simple-chat": "Obrolan Sederhana",
-    "streaming": "Streaming",
+    "streaming": "Pengaliran",
     "system-prompt": "Prompt Sistem",
     "thinking": "Penalaran",
     "tool-calling": "Pemanggilan Alat",
@@ -10946,7 +10946,7 @@
     "batchSelectedCount": "{count} dipilih",
     "batchDeleteSelected": "Hapus {count} yang dipilih",
     "batchActivateSelected": "Aktifkan {count} yang dipilih",
-    "testPassed": "✓ OK",
+    "testPassed": "✓ Oke",
     "close": "Tutup",
     "managePool": "Kelola Pool",
     "poolTitle": "Pool & Rotasi Proksi",
@@ -12695,7 +12695,7 @@
     },
     "tierLabel": "Tingkat: {tier}",
     "dayStreak": "Streak {count} hari",
-    "levelProgress": "Level {current} → {next}",
+    "levelProgress": "Tingkat {current} → {next}",
     "totalXpEarned": "Total {count} XP diperoleh",
     "maintainStreak": "Terus gunakan OmniRoute setiap hari untuk mempertahankan streak Anda!",
     "badgesTitle": "Lencana ({earned}/{total})",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Amankan pemanggilan alat saat melanjutkan streaming di tengah proses: jangan pernah melanjutkan stream yang terputus setelah pemanggilan alat dikirim (masih berlangsung atau sudah selesai), dan hentikan setelah satu kelanjutan kosong alih-alih menggunakan seluruh jatah percobaan ulang."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Alihkan sekali ke koneksi saudara ketika stream tertutup sebelum mengirim frame yang berguna dan percobaan ulang terbatas pada koneksi yang sama sudah habis. Jika tidak ada koneksi saudara yang dapat digunakan, error early-EOF asli dikembalikan. Nonaktif: early-EOF tetap final setelah percobaan ulang."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Sertakan bidang nama yang mudah dibaca dalam respons /v1/models. Nonaktifkan ini untuk klien yang hanya menerima ID model."
@@ -13294,7 +13297,7 @@
     "combo": "Kombinasi",
     "priorityShort": "prioritas {value}",
     "toggleAria": "Aktifkan {name}",
-    "edit": "Edit",
+    "edit": "Ubah",
     "delete": "Hapus",
     "name": "Nama",
     "description": "Deskripsi",
@@ -13482,7 +13485,7 @@
     "campaignsValidUntil": "Berlaku hingga {date}",
     "colActions": "Tindakan",
     "localBadge": "lokal",
-    "editModel": "Edit",
+    "editModel": "Ubah",
     "saveModel": "Simpan",
     "cancelEdit": "Batal",
     "resetModel": "Atur ulang perubahan lokal",

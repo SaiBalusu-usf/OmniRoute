@@ -12988,6 +12988,9 @@
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "스트림 중간 이어가기를 도구 호출에 안전하도록 개선: 도구 호출이 전송된 후에는 호출이 아직 진행 중이거나 이미 완료되었는지와 관계없이 중단된 스트림을 절대 재개하지 않으며, 전체 재시도 한도를 사용하는 대신 빈 이어가기 한 번 후 중지합니다."
       },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "스트림이 유용한 프레임을 보내기 전에 닫히고 같은 연결에서의 제한된 재시도도 소진되면 형제 연결로 한 번만 페일오버합니다. 사용할 수 있는 형제 연결이 없으면 원래의 early-EOF 오류를 반환합니다. 끄기: 재시도 후 early-EOF는 그대로 종료로 처리됩니다."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models 응답에 표시용 이름 필드를 포함합니다. 모델 ID만 허용하는 클라이언트의 경우 이 설정을 비활성화하세요."
       },

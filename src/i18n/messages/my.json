@@ -10477,7 +10477,7 @@
     "statusFailed": "မအောင်မြင်ပါ",
     "statusCancelled": "ပယ်ဖျက်ပြီးသည်",
     "repositoryName": "Repository အမည်",
-    "repositoryUrl": "Repository URL",
+    "repositoryUrl": "သိုလှောင်ရုံ URL",
     "branch": "ဘရန်ချ်",
     "agentDescriptions": {
       "jules": "Google ၏ အလိုအလျောက်ကုဒ်ရေးသားသည့် အေးဂျင့်",
@@ -11673,7 +11673,7 @@
     "endpointsCollapse": "ခေါက်သိမ်းရန်",
     "endpointsExpand": "ဖြန့်ရန်",
     "endpointsAnthropicNote": "Anthropic မူရင်းပုံစံ",
-    "endpointsResponsesNote": "OpenAI Responses — codex/github",
+    "endpointsResponsesNote": "OpenAI တုံ့ပြန်မှုများ — codex/github",
     "endpointsWsNote": "WebSocket — codex အတွက်သာ",
     "betaText": "Quota Share ကို အသုံးပြုနိုင်သော်လည်း ချို့ယွင်းချက်များ ရှိနိုင်ပါသည်။ တစ်ခုခုတွေ့ပါသလား။ ကျေးဇူးပြု၍ အစီရင်ခံပါ။",
     "betaReportLink": "ပြဿနာတစ်ခုကို အစီရင်ခံရန်",
@@ -12988,6 +12988,9 @@
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "စီးဆင်းမှုအလယ်တွင် ဆက်လက်လုပ်ဆောင်ခြင်းကို tool-call အတွက် ဘေးကင်းအောင် ပြုလုပ်ပါ။ tool call တစ်ခု ပို့ပြီးသွားပါက (လုပ်ဆောင်နေဆဲဖြစ်စေ၊ ပြီးဆုံးပြီးဖြစ်စေ) ဖြတ်တောက်သွားသော stream ကို မည်သည့်အခါမျှ ပြန်လည်မဆက်ပါနှင့်။ ထို့ပြင် retry budget အားလုံးကို အသုံးပြုမည့်အစား ဗလာ continuation တစ်ကြိမ်ပြီးနောက် ရပ်တန့်ပါ။"
       },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "stream သည် အသုံးဝင်သော frame တစ်ခုမျှ မထုတ်မီ ပိတ်သွားပြီး ချိတ်ဆက်မှုတစ်ခုတည်းပေါ်ရှိ ကန့်သတ်ထားသော ပြန်လည်ကြိုးစားမှုလည်း ကုန်သွားပါက ညီအစ်ကိုချိတ်ဆက်မှုသို့ တစ်ကြိမ်သာ failover လုပ်ပါ။ အသုံးပြုနိုင်သော ညီအစ်ကိုချိတ်ဆက်မှု မရှိပါက မူလ early-EOF အမှားကို ပြန်ပေးပါသည်။ ပိတ်ထားလျှင်: ပြန်လည်ကြိုးစားပြီးနောက် early-EOF သည် နောက်ဆုံးအဖြစ် ရှိနေပါသည်။"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models response များတွင် ဖတ်ရှုရလွယ်ကူသော name field များကို ထည့်သွင်းပါ။ Model ID များကိုသာ လက်ခံသော client များအတွက် ၎င်းကို ပိတ်ပါ။"
       },
@@ -14042,7 +14045,7 @@
     "filterSources": "ရင်းမြစ်များ",
     "filterProviders": "ဝန်ဆောင်မှုပေးသူများ",
     "clearFilters": "စစ်ထုတ်မှုများကို ရှင်းရန်",
-    "sourceCloudAgent": "Cloud Agent",
+    "sourceCloudAgent": "Cloud အေးဂျင့်",
     "sourceA2A": "A2A",
     "sourceConductor": "စီမံထိန်းချုပ်သူ",
     "sourceStale": "{since} မှစ၍ အပ်ဒိတ်မရှိပါ",

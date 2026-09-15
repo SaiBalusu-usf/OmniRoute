@@ -7934,10 +7934,10 @@
     "memorySkillsActiveSkillsProvider": "主动技能供应商",
     "cliproxyapiFallback": "CLIProxyAPI 后备",
     "cliproxyapiEnableFallback": "启用 CLIProxyAPI 回退",
-    "cliproxyapiUrl": "CLIProxyAPI URL",
+    "cliproxyapiUrl": "CLIProxyAPI 网址",
     "headroomProxyTitle": "Headroom 代理",
     "headroomProxyDesc": "可选 Headroom 令牌节省代理的 URL。留空时使用 HEADROOM_URL 或 http://localhost:8787。",
-    "headroomProxyUrl": "Headroom URL",
+    "headroomProxyUrl": "Headroom 网址",
     "headroomProxyUrlHint": "可以从此页面启动回环 URL。外部 URL 仅会被探测。",
     "headroomProxySave": "保存",
     "headroomProxyStart": "启动",
@@ -8889,7 +8889,7 @@
     "fallbackRouting": "回退路由",
     "fallbackRoutingDescription": "通过 CLIProxyAPI 重试失败的服务商请求",
     "enableFallback": "启用回退",
-    "cliproxyUrl": "CLIProxyAPI URL",
+    "cliproxyUrl": "CLIProxyAPI 网址",
     "fallbackCodes": "回退状态码（逗号分隔）",
     "invalidUrl": "无效的 URL — 必须以 http:// 或 https:// 开头",
     "saved": "已保存",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "确保流中途续传的工具调用安全：发送工具调用后（无论仍在进行中还是已完成），绝不恢复被中断的流；若一次续传为空，则停止，而不是耗尽全部重试次数。"
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "当流在发出任何有用帧之前关闭，且同一连接上的有限重试已用尽时，故障转移一次到同级连接。若没有可用的同级连接，则返回原始的 early-EOF 错误。关闭：重试后 early-EOF 仍为终止结果。"
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "在 /v1/models 响应中包含易于显示的名称字段。对于仅接受模型 ID 的客户端，请禁用此项。"

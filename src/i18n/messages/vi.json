@@ -1658,9 +1658,9 @@
     "featureFlagsCategoryRuntime": "Thời gian chạy",
     "featureFlagsCategoryCli": "CLI",
     "featureFlagsCategoryHealth": "Sức khỏe",
-    "featureFlagsSourceDb": "DB",
-    "featureFlagsSourceEnv": "ENV",
-    "featureFlagsSourceDefault": "DEF",
+    "featureFlagsSourceDb": "CSDL",
+    "featureFlagsSourceEnv": "MÔI TRƯỜNG",
+    "featureFlagsSourceDefault": "MẶC ĐỊNH",
     "featureFlagsReset": "Đặt lại",
     "featureFlagsResetAll": "Đặt lại tất cả các ghi đè",
     "featureFlagsResetAllConfirm": "Bạn có chắc chắn muốn đặt lại tất cả các ghi đè cờ tính năng không? Điều này sẽ khôi phục tất cả các cờ về giá trị ENV hoặc mặc định của chúng.",
@@ -4896,7 +4896,7 @@
     "status": "Trạng thái",
     "resourceType": "Loại tài nguyên",
     "totalEntries": "Tổng số mục",
-    "tab": "Tab",
+    "tab": "Thẻ",
     "auditModalSubtitle": "Chi tiết sự kiện và siêu dữ liệu",
     "close": "Đóng",
     "runningRequests": "Yêu cầu đang hoạt động",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Giúp việc tiếp tục luồng giữa chừng an toàn với lệnh gọi công cụ: không bao giờ tiếp tục một luồng bị ngắt sau khi đã gửi lệnh gọi công cụ (đang xử lý hoặc đã hoàn tất), và dừng sau một lần tiếp tục rỗng thay vì dùng hết số lần thử lại."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Chuyển dự phòng một lần sang kết nối anh em khi luồng dừng trước khi phát bất kỳ khung hữu ích nào và lần thử lại có giới hạn trên cùng kết nối đã cạn. Nếu không có kết nối anh em dùng được, lỗi early-EOF ban đầu sẽ được trả về. Tắt: early-EOF vẫn kết thúc sau lần thử lại."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Thêm trường tên dễ đọc vào phản hồi /v1/models. Tắt với các ứng dụng khách chỉ chấp nhận ID mô hình."

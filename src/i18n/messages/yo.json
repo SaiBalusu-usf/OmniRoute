@@ -702,8 +702,8 @@
     "flaggedAnomalies": "Àwọn Ohun Àjèjì Tí A Ṣàmì Sí",
     "noAnomaliesDetected": "A kò ṣàwárí ohun àjèjì kankan",
     "apiKey": "Kọ́kọ́rọ́ API",
-    "xpLastHour": "XP (1h)",
-    "zScore": "Z-Score",
+    "xpLastHour": "XP (wákàtí 1)",
+    "zScore": "Àmì-Z",
     "suspicious": "Ó Fura",
     "tokensCommunityServers": "Àwọn Sẹ́fà Àwùjọ",
     "tokensServerNamePlaceholder": "Orúkọ sẹ́fà",
@@ -1097,12 +1097,12 @@
     "faviconPreview": "Àwòtẹ́lẹ̀ Favicon",
     "changelog": "Àkọsílẹ̀ Àwọn Àyípadà",
     "contextSection": "Àyíká-ọ̀rọ̀ àti Kaṣe",
-    "contextCaveman": "Caveman",
+    "contextCaveman": "Ènìyàn ihò",
     "contextRtk": "RTK",
     "contextCombos": "Àwọn Àkópọ̀ Ẹ́ńjìnnì",
-    "contextLite": "Lite",
+    "contextLite": "Fúyẹ́",
     "contextAggressive": "Kíkankíkan",
-    "contextUltra": "Ultra",
+    "contextUltra": "Gíga jù",
     "contextOmniglyph": "OmniGlyph",
     "contextSettings": "Àwọn Ètò Ìfúnpọ̀",
     "contextHeadroom": "Àlàfo Àfikún",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Mú kí ìtẹ̀síwájú láàárín ṣiṣan jẹ́ àìléwu fún ìpè irinṣẹ́: má ṣe tẹ̀síwájú ṣiṣan tí a gé lẹ́yìn tí a bá ti fi ìpè irinṣẹ́ ránṣẹ́ (yálà ó ṣì ń lọ tàbí ó ti parí), kí o sì dá dúró lẹ́yìn ìtẹ̀síwájú òfo kan dípò lílo gbogbo iye ìgbìyànjú-àtúnṣe."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Yí padà lẹ́ẹ̀kan sí ìsopọ̀ mìíràn tó jọra nígbà tí ṣiṣan kan bá ti pa kí ó tó fi férémù tó wúlò kankan jáde, tí àtúnṣègbìyànjú tó ní ààlà lórí ìsopọ̀ kan náà sì ti tán. Bí kò bá sí ìsopọ̀ mìíràn tó ṣeé lò, àṣìṣe early-EOF àkọ́kọ́ ni a ó dá padà. Pípa: early-EOF yóò ṣì jẹ́ ìkẹyìn lẹ́yìn àtúnṣègbìyànjú náà."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Fi àwọn field orúkọ tó rọrùn láti fi hàn sínú àwọn ìdáhùn /v1/models. Pa èyí fún àwọn client tí wọ́n gba ID àwòṣe nìkan."

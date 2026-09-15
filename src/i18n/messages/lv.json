@@ -12988,6 +12988,9 @@
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Padariet turpināšanu plūsmas vidū drošu rīka izsaukumiem: nekad neatsāciet pārtrauktu plūsmu pēc rīka izsaukuma nosūtīšanas (kamēr tas vēl tiek izpildīts vai jau ir pabeigts) un pārtrauciet pēc viena tukša turpinājuma, nevis izmantojiet visu atkārtoto mēģinājumu limitu."
       },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Vienreiz pārslēgties uz radniecīgu savienojumu, ja straume aizveras, pirms nosūtīts kāds noderīgs kadrs, un ierobežotais atkārtotais mēģinājums tajā pašā savienojumā ir izlietots. Ja nav izmantojama radniecīga savienojuma, tiek atgriezta sākotnējā early-EOF kļūda. Izslēgts: early-EOF pēc atkārtotā mēģinājuma paliek galīgs."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Iekļaut lietotājam draudzīga attēlojamā nosaukuma laukus /v1/models atbildēs. Atspējojiet šo opciju klientiem, kas pieņem tikai modeļu ID."
       },

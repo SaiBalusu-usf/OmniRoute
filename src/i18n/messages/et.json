@@ -7377,7 +7377,7 @@
     "customPricingNote": "Saate konkreetsete mudelite vaikehinnastuse alistada. Kohandatud alistused on automaatselt tuvastatud hinnastusest kõrgema prioriteediga.",
     "editPricing": "Muuda hinnastust",
     "viewFullDetails": "Kuva täielikud üksikasjad",
-    "themeCoral": "Coral",
+    "themeCoral": "Korall",
     "adaptiveVolumeRouting": "Kohanduv mahupõhine marsruutimine",
     "adaptiveVolumeRoutingDesc": "Skaleerige ühendusi dünaamiliselt päringuandmete mahu ja läbilaskevõime surve põhjal.",
     "lkgpToggleTitle": "Viimane teadaolev toimiv teenusepakkuja (LKGP)",
@@ -12987,6 +12987,9 @@
       },
       "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
         "description": "Muuda voo keskel jätkamine tööriistakutse korral ohutuks: ära jätka kunagi katkestatud voogu pärast tööriistakutse saatmist (olenemata sellest, kas see on veel pooleli või juba lõpetatud) ning lõpeta pärast üht tühja jätkamist, selle asemel et kasutada ära kogu korduskatsete limiit."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Lülitu üks kord ümber sõsarühendusele, kui voog sulgub enne ühegi kasuliku kaadri saatmist ja sama ühenduse piiratud kordusproov on ära kasutatud. Kasutatava sõsarühenduse puudumisel tagastatakse algne early-EOF viga. Väljas: early-EOF jääb pärast kordusproovi lõplikuks."
       },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Kaasa /v1/models vastustesse kuvamiseks sobivad nimeväljad. Keela see klientide puhul, mis aktsepteerivad ainult mudeli-ID-sid."
