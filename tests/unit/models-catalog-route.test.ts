@@ -1093,8 +1093,6 @@ test("v1 models catalog does not duplicate custom Jina specialty models", async 
 
   assert.equal(response.status, 200);
   assert.equal(visibleJinaEmbeddingRows.length, 1);
-  // Custom rows keep the connection's provider id as the prefix; only the synced
-  // rows above resolve through the `jina` alias (#13403 flipped this by mistake).
   assert.equal(visibleJinaEmbeddingRows[0].id, "jina-ai/jina-embeddings-v5-text-small");
   assert.equal(visibleJinaRerankRows.length, 1);
   assert.equal(visibleJinaRerankRows[0].id, "jina-ai/jina-reranker-v3");

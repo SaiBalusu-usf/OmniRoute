@@ -1,0 +1,1 @@
+- **fix(ci):** allowlist the Uzbek `outputTokenDesc` translation ("Yakunlash/javob tokenlari") in `.gitleaks.toml`; the `generic-api-key` rule read the `...TokenDesc` key as a token assignment once #13727 added the locale, which the secrets ratchet reported as a new finding ([#12732](https://github.com/diegosouzapw/OmniRoute/issues/12732))
