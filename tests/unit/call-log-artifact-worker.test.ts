@@ -7,8 +7,13 @@ import path from "node:path";
 const TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "omniroute-call-log-worker-"));
 process.env.DATA_DIR = TEST_DATA_DIR;
 
-const { writeCallArtifactAsync, closeCallLogArtifactWriter, resolveCallLogArtifactWorker } =
-  await import("../../src/lib/usage/callLogArtifactWriter.ts");
+const {
+  writeCallArtifactAsync,
+  closeCallLogArtifactWriter,
+  getCallLogArtifactQueueStats,
+  resetCallLogArtifactWriterForTest,
+  resolveCallLogArtifactWorker,
+} = await import("../../src/lib/usage/callLogArtifactWriter.ts");
 
 test.after(async () => {
   await closeCallLogArtifactWriter();
@@ -52,6 +57,32 @@ function buildArtifact(id: string) {
     error: null,
   };
 }
+
+test("artifact queue fails open before retaining payloads above its byte budget", async () => {
+  const originalLimit = process.env.CALL_LOG_ARTIFACT_MAX_QUEUED_BYTES;
+  process.env.CALL_LOG_ARTIFACT_MAX_QUEUED_BYTES = "2048";
+
+  try {
+    const oversized = {
+      ...buildArtifact("queue-byte-overflow"),
+      requestBody: { content: "x".repeat(4096) },
+    };
+
+    assert.equal(await writeCallArtifactAsync(oversized), null);
+    assert.deepEqual(getCallLogArtifactQueueStats(), {
+      queuedJobs: 0,
+      activeJobs: 0,
+      queuedBytes: 0,
+      maxQueuedJobs: 128,
+      maxQueuedBytes: 2048,
+      closing: false,
+      hasActiveWorker: false,
+    });
+  } finally {
+    if (originalLimit === undefined) delete process.env.CALL_LOG_ARTIFACT_MAX_QUEUED_BYTES;
+    else process.env.CALL_LOG_ARTIFACT_MAX_QUEUED_BYTES = originalLimit;
+  }
+});
 
 test("worker resolution covers npm, standalone, source, and missing layouts", () => {
   const layoutRoot = fs.mkdtempSync(path.join(os.tmpdir(), "omniroute-worker-layout-"));
@@ -147,6 +178,9 @@ test("async worker writes call-log artifact and returns matching metadata", asyn
 });
 
 test("bounded queue fails open and rate-limits saturation warnings", async () => {
+  const originalLimit = process.env.CALL_LOG_ARTIFACT_MAX_QUEUED_BYTES;
+  delete process.env.CALL_LOG_ARTIFACT_MAX_QUEUED_BYTES;
+  resetCallLogArtifactWriterForTest();
   const originalWarn = console.warn;
   let warningCount = 0;
   console.warn = () => {
@@ -164,5 +198,7 @@ test("bounded queue fails open and rate-limits saturation warnings", async () =>
     assert.ok(results.every((result) => result === null));
   } finally {
     console.warn = originalWarn;
+    if (originalLimit === undefined) delete process.env.CALL_LOG_ARTIFACT_MAX_QUEUED_BYTES;
+    else process.env.CALL_LOG_ARTIFACT_MAX_QUEUED_BYTES = originalLimit;
   }
 });

@@ -3,9 +3,13 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { Worker } from "node:worker_threads";
 
+import { estimateSizeFast } from "@omniroute/open-sse/utils/estimateSize.ts";
+import { isAutomatedTestProcess } from "@/shared/utils/testProcess";
 import type { CallLogArtifact, CallLogArtifactWriteResult } from "./callLogArtifacts.ts";
+import { parseFileSize } from "../logEnv.ts";
 
 const MAX_QUEUED_JOBS = 128;
+export const DEFAULT_MAX_QUEUED_BYTES = 64 * 1024 * 1024;
 const IDLE_TIMEOUT_MS = 30_000;
 const CLOSE_TIMEOUT_MS = 2_000;
 const WARNING_INTERVAL_MS = 30_000;
@@ -18,6 +22,7 @@ type WorkerReply = {
 type QueueItem = {
   id: number;
   artifact: CallLogArtifact;
+  estimatedBytes: number;
   environment: {
     pipelineMaxSizeKb?: string;
     chatDebugFile?: string;
@@ -29,6 +34,7 @@ type QueueItem = {
 let worker: Worker | null = null;
 let active: QueueItem | null = null;
 const queue: QueueItem[] = [];
+let queuedBytes = 0;
 let nextId = 1;
 let idleTimer: NodeJS.Timeout | null = null;
 let closing = false;
@@ -82,6 +88,13 @@ export function resolveCallLogArtifactWorker(context: WorkerResolutionContext = 
   return { workerFile: entryJs ?? cwdJs, execArgv: [] };
 }
 
+function getMaxQueuedBytes(): number {
+  const raw = process.env.CALL_LOG_ARTIFACT_MAX_QUEUED_BYTES;
+  if (!raw) return DEFAULT_MAX_QUEUED_BYTES;
+  const parsed = parseFileSize(raw);
+  return parsed > 0 ? parsed : DEFAULT_MAX_QUEUED_BYTES;
+}
+
 function clearIdleTimer(): void {
   if (!idleTimer) return;
   clearTimeout(idleTimer);
@@ -121,6 +134,7 @@ function failOpen(warn = false): void {
   const failed = active ? [active, ...queue] : [...queue];
   active = null;
   queue.length = 0;
+  queuedBytes = 0;
   terminateWorker();
   for (const item of failed) item.resolve(null);
   notifyCloseWaiters();
@@ -138,6 +152,7 @@ function ensureWorker(): Worker {
     if (!active || reply.id !== active.id) return;
     const completed = active;
     active = null;
+    queuedBytes = Math.max(0, queuedBytes - completed.estimatedBytes);
     completed.resolve(reply.result);
     pump();
   });
@@ -176,15 +191,25 @@ function pump(): void {
 export function writeCallArtifactAsync(
   artifact: CallLogArtifact
 ): Promise<CallLogArtifactWriteResult | null> {
-  if (closing || queue.length >= MAX_QUEUED_JOBS) {
+  const maxQueuedBytes = getMaxQueuedBytes();
+  let estimatedBytes: number;
+  try {
+    estimatedBytes = estimateSizeFast(artifact, maxQueuedBytes + 1);
+  } catch {
+    warnRateLimited("[callLogs] Call-log artifact size estimation failed; detail omitted.");
+    return Promise.resolve(null);
+  }
+  if (closing || queue.length >= MAX_QUEUED_JOBS || estimatedBytes > maxQueuedBytes - queuedBytes) {
     warnRateLimited("[callLogs] Call-log artifact queue unavailable; detail omitted.");
     return Promise.resolve(null);
   }
 
+  queuedBytes += estimatedBytes;
   return new Promise((resolve) => {
     const item = {
       id: nextId++,
       artifact,
+      estimatedBytes,
       environment: {
         pipelineMaxSizeKb: process.env.CALL_LOG_PIPELINE_MAX_SIZE_KB,
         chatDebugFile: process.env.CHAT_DEBUG_FILE,
@@ -199,26 +224,49 @@ export function writeCallArtifactAsync(
 
 export async function closeCallLogArtifactWriter(timeoutMs = CLOSE_TIMEOUT_MS): Promise<void> {
   closing = true;
-  if (!active && queue.length === 0) {
-    terminateWorker();
-    return;
-  }
+  try {
+    if (!active && queue.length === 0) {
+      terminateWorker();
+      return;
+    }
 
-  if (timeoutMs <= 0) {
-    failOpen();
-    terminateWorker();
-    return;
-  }
+    if (timeoutMs <= 0) {
+      failOpen();
+      terminateWorker();
+      return;
+    }
 
-  let timeout: NodeJS.Timeout | undefined;
-  await Promise.race([
-    new Promise<void>((resolve) => closeWaiters.push(resolve)),
-    new Promise<void>((resolve) => {
-      timeout = setTimeout(resolve, timeoutMs);
-      timeout.unref?.();
-    }),
-  ]);
-  if (timeout) clearTimeout(timeout);
-  if (active || queue.length > 0) failOpen();
-  terminateWorker();
+    let timeout: NodeJS.Timeout | undefined;
+    await Promise.race([
+      new Promise<void>((resolve) => closeWaiters.push(resolve)),
+      new Promise<void>((resolve) => {
+        timeout = setTimeout(resolve, timeoutMs);
+        timeout.unref?.();
+      }),
+    ]);
+    if (timeout) clearTimeout(timeout);
+    if (active || queue.length > 0) failOpen();
+    terminateWorker();
+  } finally {
+    closing = false;
+  }
+}
+
+export function resetCallLogArtifactWriterForTest(): void {
+  if (!isAutomatedTestProcess()) return;
+  failOpen();
+  closing = false;
+  lastWarningAt = 0;
+}
+
+export function getCallLogArtifactQueueStats() {
+  return {
+    queuedJobs: queue.length,
+    activeJobs: active ? 1 : 0,
+    queuedBytes,
+    maxQueuedJobs: MAX_QUEUED_JOBS,
+    maxQueuedBytes: getMaxQueuedBytes(),
+    closing,
+    hasActiveWorker: Boolean(worker),
+  };
 }
