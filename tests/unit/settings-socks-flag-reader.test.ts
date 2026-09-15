@@ -1,52 +1,98 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { isSocks5ProxyEnabled } from "@omniroute/open-sse/utils/proxyDispatcher";
+import os from "node:os";
+import path from "node:path";
 
-// The two settings routes must share the single flag reader instead of
-// duplicating the opt-out formula. Static checks pin the two owned paths
-// only — sibling sites (agent goal policy, outbound url guard, dashboard
-// modal) carry the same list under distinct opt-in semantics, out of scope.
-const ROUTES = ["src/app/api/settings/proxies/route.ts", "src/app/api/settings/proxy/route.ts"];
+const TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "omniroute-socks-flag-routes-"));
+process.env.DATA_DIR = TEST_DATA_DIR;
+process.env.API_KEY_SECRET = process.env.API_KEY_SECRET || "test-secret";
 
-const FLAG_LIST = '["false", "0", "no", "off"]';
+const core = await import("../../src/lib/db/core.ts");
+const { isSocks5ProxyEnabled } = await import("../../open-sse/utils/proxyDispatcher.ts");
+const proxiesRoute = await import("../../src/app/api/settings/proxies/route.ts");
+const proxyRoute = await import("../../src/app/api/settings/proxy/route.ts");
 
+// ENABLE_SOCKS5_PROXY is opt-out: only an explicit falsey value disables SOCKS5.
 const MATRIX: Array<[string | undefined, boolean]> = [
+  [undefined, true],
+  ["", true],
+  ["true", true],
+  ["1", true],
+  ["yes", true],
   ["false", false],
   ["0", false],
   ["no", false],
   ["off", false],
   [" OFF ", false],
   ["False", false],
-  [undefined, true],
 ];
 
-test("flag reader honors the opt-out matrix (unset defaults ON)", () => {
-  const saved: Record<string, string | undefined> = {
-    ENABLE_SOCKS5_PROXY: process.env.ENABLE_SOCKS5_PROXY,
-  };
+async function withSocksFlag<T>(value: string | undefined, fn: () => Promise<T> | T): Promise<T> {
+  const previous = process.env.ENABLE_SOCKS5_PROXY;
+  if (value === undefined) delete process.env.ENABLE_SOCKS5_PROXY;
+  else process.env.ENABLE_SOCKS5_PROXY = value;
   try {
-    for (const [value, expected] of MATRIX) {
-      if (value === undefined) {
-        delete process.env.ENABLE_SOCKS5_PROXY;
-      } else {
-        process.env.ENABLE_SOCKS5_PROXY = value;
-      }
-      assert.equal(isSocks5ProxyEnabled(), expected, `value: ${String(value)}`);
-    }
+    return await fn();
   } finally {
-    if (saved.ENABLE_SOCKS5_PROXY === undefined) {
-      delete process.env.ENABLE_SOCKS5_PROXY;
-    } else {
-      process.env.ENABLE_SOCKS5_PROXY = saved.ENABLE_SOCKS5_PROXY;
-    }
+    if (previous === undefined) delete process.env.ENABLE_SOCKS5_PROXY;
+    else process.env.ENABLE_SOCKS5_PROXY = previous;
+  }
+}
+
+function putProxy(body: unknown) {
+  return proxyRoute.PUT(
+    new Request("http://localhost/api/settings/proxy", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    })
+  );
+}
+
+test.before(() => {
+  delete process.env.INITIAL_PASSWORD;
+  core.resetDbInstance();
+});
+
+test.after(() => {
+  core.resetDbInstance();
+  fs.rmSync(TEST_DATA_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+});
+
+test("flag reader honors the opt-out matrix (unset defaults ON)", async () => {
+  for (const [value, expected] of MATRIX) {
+    await withSocksFlag(value, () => {
+      assert.equal(isSocks5ProxyEnabled(), expected, `ENABLE_SOCKS5_PROXY=${String(value)}`);
+    });
   }
 });
 
-for (const route of ROUTES) {
-  test(`${route} shares the flag reader (no local opt-out list)`, () => {
-    const content = fs.readFileSync(route, "utf8");
-    assert.ok(!content.includes(FLAG_LIST), `${route} must not duplicate the opt-out list`);
-    assert.ok(content.includes("isSocks5ProxyEnabled"), `${route} must use the shared flag reader`);
-  });
-}
+test("GET /api/settings/proxies reports socks5Enabled exactly as the flag reader", async () => {
+  for (const [value, expected] of MATRIX) {
+    await withSocksFlag(value, async () => {
+      const response = await proxiesRoute.GET(new Request("http://localhost/api/settings/proxies"));
+      assert.equal(response.status, 200);
+      const body = (await response.json()) as { socks5Enabled: boolean };
+      assert.equal(body.socks5Enabled, expected, `ENABLE_SOCKS5_PROXY=${String(value)}`);
+    });
+  }
+});
+
+test("PUT /api/settings/proxy accepts or rejects socks5 following the flag", async () => {
+  for (const [value, expected] of MATRIX) {
+    await withSocksFlag(value, async () => {
+      const response = await putProxy({
+        level: "global",
+        proxy: { type: "socks5", host: "127.0.0.1", port: 1080 },
+      });
+      const body = (await response.json()) as { error?: { message?: string } };
+      if (expected) {
+        assert.equal(response.status, 200, `ENABLE_SOCKS5_PROXY=${String(value)}`);
+      } else {
+        assert.equal(response.status, 400, `ENABLE_SOCKS5_PROXY=${String(value)}`);
+        assert.match(body.error?.message ?? "", /SOCKS5 proxy is disabled/);
+      }
+    });
+  }
+});
