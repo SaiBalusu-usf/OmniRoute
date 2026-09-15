@@ -993,6 +993,8 @@
   "featureFlagNoThinkingAliasEnabledDescription": "no-think/&lt;provider&gt;/&lt;model&gt; गेटवे एलियसहरूका लागि मुख्य स्विच। अन (पूर्वनिर्धारित): /v1/models ले हरेक योग्य सोच्न-सक्षम Claude मोडेलका लागि सोचाइ-विहीन भेरियन्ट देखाउँछ, र अनुरोधमा पठाइएको no-think/ id वास्तविक मोडेलमा फर्केर रिजोल्भ हुन्छ र रिजनिङ दबाइन्छ। अफ: कुनै पनि भेरियन्ट देखाइँदैन र no-think/ id लाई अन्य कुनै अज्ञात मोडेल id सरह व्यवहार गरिन्छ। यो अन हुँदा पनि प्रत्येक मोडेलको ModelSpec.noThinkingAlias अप्ट-इन/अप्ट-आउट लागू हुन्छ।",
   "featureFlagChatVirtualLanesEnabledDescription": "प्रदायक डिस्प्याच (#9654) का लागि प्रत्येक टेनेन्टअनुसार अनुकूल हुने भर्चुअल एडमिसन लेनहरू सक्षम गर्नुहोस्: अब एउटा टेनेन्टको अचानक बढेको ट्राफिकले अर्कोलाई 503 गराउँदैन। OMNIROUTE_CHAT_VIRTUAL_LANES env var ले यस ड्यासबोर्ड ओभरराइडभन्दा प्राथमिकता पाउँछ; परिवर्तनहरू सर्भर पुनः सुरु भएपछि लागू हुन्छन्।",
   "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "Dashboard provider pages: show the Free badge only on signals the provider honors — drops the display-name heuristic, non-boolean free fields and :free suffixes on registered providers without a documented free tier. Off keeps the historical badge rule.",
+  "featureFlagProxySkipRecentlyFailedDescription": "__MISSING__:Proxy pools and the per-account rotation of opencode stop re-serving a proxy that just failed (refused TCP probe, or a 429 received through it) for a per-process period that doubles on each repeat, up to a cap. No proxy status is written; with every candidate set aside the choice is unchanged. Off by default: selection order is exactly the plain rotation.",
+  "featureFlagProxySkipRecentlyFailedDescription": "__MISSING__:Proxy pools and the per-account rotation of opencode stop re-serving a proxy that just failed (refused TCP probe, or a 429 received through it) for a per-process period that doubles on each repeat, up to a cap. No proxy status is written; with every candidate set aside the choice is unchanged. Off by default: selection order is exactly the plain rotation.",
   "sidebar": {
     "home": "गृहपृष्ठ",
     "dashboard": "ड्यासबोर्ड",
@@ -12985,6 +12987,12 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "बाइटहरू क्लाइन्टसम्म पुगिसकेपछि पनि स्ट्रिम पुनर्प्राप्तिलाई प्रतिक्रिया पुनः अनुरोध गरेर जोड्न अनुमति दिनुहोस्।"
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "__MISSING__:Make mid-stream continuation tool-call safe: never resume a cut stream after a tool call was sent (still in progress or already finished), and stop after one empty continuation instead of using the whole retry budget."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "स्ट्रिमले कुनै उपयोगी फ्रेम पठाउनुअघि नै बन्द भएमा र उही जडानमा सीमित पुनःप्रयास सकिएमा एक पटक सहोदर जडानमा फेलओभर गर्नुहोस्। प्रयोगयोग्य सहोदर जडान नभएमा मूल early-EOF त्रुटि फिर्ता गरिन्छ। बन्द: पुनःप्रयासपछि early-EOF अन्तिम रहन्छ।"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models प्रतिक्रियाहरूमा प्रदर्शनमैत्री नाम फिल्डहरू समावेश गर्नुहोस्। मोडेल ID मात्र स्वीकार गर्ने क्लाइन्टहरूका लागि यसलाई अक्षम गर्नुहोस्।"
       },
@@ -13021,6 +13029,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "सर्भर-स्वामित्वको उपकरण लूप",
         "description": "मोडेलले क्लाइन्टले प्रयोग गर्न मिल्ने प्रतिक्रिया नफर्काएसम्म नन-स्ट्रिमिङ सर्भर-स्वामित्वका उपकरण कलहरू जारी राख्नुहोस्।"
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "__MISSING__:Retry-After Provenance",
+        "description": "__MISSING__:On aggregated 429/503 unavailable responses, omit Retry-After when no concrete future retry time is known instead of sending a synthetic 1s, add error.retry_after_provenance, and read prose retry hints on combo drain paths."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "__MISSING__:Protected-Priority Infra Stops as 502",
+        "description": "__MISSING__:Answer 502 instead of 503 when a quota-only-fallback priority target stops the combo for a cause that is provably not quota: an open provider circuit breaker or a predictive latency skip."
       }
     }
   },

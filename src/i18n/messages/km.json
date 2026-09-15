@@ -993,6 +993,8 @@
   "featureFlagNoThinkingAliasEnabledDescription": "កុងតាក់មេសម្រាប់ gateway aliases របស់ no-think/&lt;provider&gt;/&lt;model&gt;។ បើក (លំនាំដើម)៖ /v1/models ផ្សព្វផ្សាយវ៉ារ្យ៉ង់មិនគិតសម្រាប់គ្រប់ម៉ូដែល Claude ដែលមានសមត្ថភាពគិត និងមានលក្ខណៈសម្បត្តិគ្រប់គ្រាន់ ហើយ no-think/ id ដែលបានផ្ញើក្នុងសំណើ នឹងត្រូវដោះស្រាយត្រឡប់ទៅម៉ូដែលពិត ដោយបិទការវែកញែក។ បិទ៖ គ្មានវ៉ារ្យ៉ង់ណាមួយត្រូវបានផ្សព្វផ្សាយទេ ហើយ no-think/ id ត្រូវបានចាត់ទុកដូចជា model id មិនស្គាល់ផ្សេងទៀត។ ការជ្រើសរើសបើក/បិទ ModelSpec.noThinkingAlias សម្រាប់ម៉ូដែលនីមួយៗ នៅតែអនុវត្ត ខណៈដែលវាត្រូវបានបើក។",
   "featureFlagChatVirtualLanesEnabledDescription": "បើកផ្លូវចូលនិម្មិតដែលសម្របខ្លួនតាម tenant នីមួយៗ សម្រាប់ការបញ្ជូនទៅ provider (#9654)៖ ការកើនឡើងខ្លាំងភ្លាមៗរបស់ tenant មួយ នឹងលែងបណ្ដាលឱ្យ tenant មួយទៀតទទួល 503។ env var OMNIROUTE_CHAT_VIRTUAL_LANES មានអាទិភាពលើការកំណត់ជំនួសពី dashboard នេះ ហើយការផ្លាស់ប្ដូរនឹងមានប្រសិទ្ធភាពនៅពេលចាប់ផ្ដើម server ឡើងវិញ។",
   "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "Dashboard provider pages: show the Free badge only on signals the provider honors — drops the display-name heuristic, non-boolean free fields and :free suffixes on registered providers without a documented free tier. Off keeps the historical badge rule.",
+  "featureFlagProxySkipRecentlyFailedDescription": "__MISSING__:Proxy pools and the per-account rotation of opencode stop re-serving a proxy that just failed (refused TCP probe, or a 429 received through it) for a per-process period that doubles on each repeat, up to a cap. No proxy status is written; with every candidate set aside the choice is unchanged. Off by default: selection order is exactly the plain rotation.",
+  "featureFlagProxySkipRecentlyFailedDescription": "__MISSING__:Proxy pools and the per-account rotation of opencode stop re-serving a proxy that just failed (refused TCP probe, or a 429 received through it) for a per-process period that doubles on each repeat, up to a cap. No proxy status is written; with every candidate set aside the choice is unchanged. Off by default: selection order is exactly the plain rotation.",
   "sidebar": {
     "home": "ទំព័រដើម",
     "dashboard": "ផ្ទាំងគ្រប់គ្រង",
@@ -12985,6 +12987,12 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "អនុញ្ញាតឱ្យការសង្គ្រោះ stream ស្នើសុំ response ម្តងទៀត និងភ្ជាប់វាបន្ត បន្ទាប់ពី bytes បានទៅដល់ client រួចហើយ។"
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "__MISSING__:Make mid-stream continuation tool-call safe: never resume a cut stream after a tool call was sent (still in progress or already finished), and stop after one empty continuation instead of using the whole retry budget."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "ប្តូរទៅការតភ្ជាប់បងប្អូនម្តងគត់ នៅពេល stream បិទមុនពេលបញ្ចេញ frame ដែលមានប្រយោជន៍ណាមួយ ហើយការព្យាយាមឡើងវិញដែលមានកំណត់លើការតភ្ជាប់ដដែលត្រូវបានប្រើអស់ហើយ។ បើគ្មានការតភ្ជាប់បងប្អូនដែលអាចប្រើបាន កំហុស early-EOF ដើមនឹងត្រូវបានត្រឡប់មកវិញ។ បិទ៖ early-EOF នៅតែជាចុងក្រោយបន្ទាប់ពីការព្យាយាមឡើងវិញ។"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "រួមបញ្ចូលវាលឈ្មោះដែលងាយស្រួលបង្ហាញក្នុង response របស់ /v1/models។ បិទវាសម្រាប់ clients ដែលទទួលយកតែ model IDs ប៉ុណ្ណោះ។"
       },
@@ -13021,6 +13029,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "រង្វិលជុំ Tool ដែលគ្រប់គ្រងដោយ Server",
         "description": "បន្តការហៅ tool ដែលគ្រប់គ្រងដោយ server ដោយមិនប្រើ streaming រហូតដល់ model ត្រឡប់ response ដែល client អាចប្រើបាន។"
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "__MISSING__:Retry-After Provenance",
+        "description": "__MISSING__:On aggregated 429/503 unavailable responses, omit Retry-After when no concrete future retry time is known instead of sending a synthetic 1s, add error.retry_after_provenance, and read prose retry hints on combo drain paths."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "__MISSING__:Protected-Priority Infra Stops as 502",
+        "description": "__MISSING__:Answer 502 instead of 503 when a quota-only-fallback priority target stops the combo for a cause that is provably not quota: an open provider circuit breaker or a predictive latency skip."
       }
     }
   },

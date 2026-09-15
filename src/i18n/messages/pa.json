@@ -993,6 +993,8 @@
   "featureFlagNoThinkingAliasEnabledDescription": "no-think/&lt;provider&gt;/&lt;model&gt; ਗੇਟਵੇ ਉਪਨਾਮਾਂ ਲਈ ਮੁੱਖ ਸਵਿੱਚ। ਚਾਲੂ (ਡਿਫਾਲਟ): /v1/models ਹਰ ਯੋਗ, ਸੋਚਣ-ਸਮਰੱਥ Claude ਮਾਡਲ ਲਈ ਇੱਕ ਬਿਨਾਂ-ਸੋਚ ਵਾਲਾ ਰੂਪ ਦਰਸਾਉਂਦਾ ਹੈ, ਅਤੇ ਬੇਨਤੀ ਵਿੱਚ ਭੇਜਿਆ ਗਿਆ no-think/ ID ਤਰਕ ਨੂੰ ਦਬਾ ਕੇ ਮੁੜ ਅਸਲ ਮਾਡਲ ਵਿੱਚ ਹੱਲ ਹੁੰਦਾ ਹੈ। ਬੰਦ: ਕੋਈ ਰੂਪ ਦਰਸਾਏ ਨਹੀਂ ਜਾਂਦੇ ਅਤੇ no-think/ ID ਨੂੰ ਕਿਸੇ ਹੋਰ ਅਣਜਾਣ ਮਾਡਲ ID ਵਾਂਗ ਮੰਨਿਆ ਜਾਂਦਾ ਹੈ। ਜਦੋਂ ਇਹ ਚਾਲੂ ਹੋਵੇ, ਤਾਂ ਪ੍ਰਤੀ-ਮਾਡਲ ModelSpec.noThinkingAlias ਔਪਟ-ਇਨ/ਔਪਟ-ਆਉਟ ਫਿਰ ਵੀ ਲਾਗੂ ਹੁੰਦਾ ਹੈ।",
   "featureFlagChatVirtualLanesEnabledDescription": "ਪ੍ਰਦਾਤਾ ਡਿਸਪੈਚ (#9654) ਲਈ ਪ੍ਰਤੀ-ਟੈਨੈਂਟ ਅਨੁਕੂਲ ਵਰਚੁਅਲ ਐਡਮਿਸ਼ਨ ਲੇਨ ਸਮਰੱਥ ਕਰੋ: ਹੁਣ ਇੱਕ ਟੈਨੈਂਟ ਦਾ ਅਚਾਨਕ ਵਧਿਆ ਲੋਡ ਦੂਜੇ ਲਈ 503 ਪੈਦਾ ਨਹੀਂ ਕਰੇਗਾ। OMNIROUTE_CHAT_VIRTUAL_LANES env var ਨੂੰ ਇਸ ਡੈਸ਼ਬੋਰਡ ਓਵਰਰਾਈਡ ਉੱਤੇ ਤਰਜੀਹ ਮਿਲਦੀ ਹੈ; ਤਬਦੀਲੀਆਂ ਸਰਵਰ ਮੁੜ ਚਾਲੂ ਹੋਣ 'ਤੇ ਲਾਗੂ ਹੁੰਦੀਆਂ ਹਨ।",
   "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "Dashboard provider pages: show the Free badge only on signals the provider honors — drops the display-name heuristic, non-boolean free fields and :free suffixes on registered providers without a documented free tier. Off keeps the historical badge rule.",
+  "featureFlagProxySkipRecentlyFailedDescription": "__MISSING__:Proxy pools and the per-account rotation of opencode stop re-serving a proxy that just failed (refused TCP probe, or a 429 received through it) for a per-process period that doubles on each repeat, up to a cap. No proxy status is written; with every candidate set aside the choice is unchanged. Off by default: selection order is exactly the plain rotation.",
+  "featureFlagProxySkipRecentlyFailedDescription": "__MISSING__:Proxy pools and the per-account rotation of opencode stop re-serving a proxy that just failed (refused TCP probe, or a 429 received through it) for a per-process period that doubles on each repeat, up to a cap. No proxy status is written; with every candidate set aside the choice is unchanged. Off by default: selection order is exactly the plain rotation.",
   "sidebar": {
     "home": "ਮੁੱਖ ਪੰਨਾ",
     "dashboard": "ਡੈਸ਼ਬੋਰਡ",
@@ -12985,6 +12987,12 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "ਬਾਈਟਾਂ ਦੇ ਕਲਾਇੰਟ ਤੱਕ ਪਹੁੰਚ ਜਾਣ ਤੋਂ ਬਾਅਦ ਵੀ ਸਟ੍ਰੀਮ ਰਿਕਵਰੀ ਨੂੰ ਜਵਾਬ ਦੁਬਾਰਾ ਮੰਗਣ ਅਤੇ ਉਸਨੂੰ ਜੋੜਨ ਦੀ ਇਜਾਜ਼ਤ ਦਿਓ।"
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "__MISSING__:Make mid-stream continuation tool-call safe: never resume a cut stream after a tool call was sent (still in progress or already finished), and stop after one empty continuation instead of using the whole retry budget."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "ਜਦੋਂ ਸਟ੍ਰੀਮ ਕੋਈ ਉਪਯੋਗੀ ਫ੍ਰੇਮ ਭੇਜਣ ਤੋਂ ਪਹਿਲਾਂ ਬੰਦ ਹੋ ਜਾਵੇ ਅਤੇ ਉਸੇ ਕਨੈਕਸ਼ਨ 'ਤੇ ਸੀਮਤ ਮੁੜ-ਕੋਸ਼ਿਸ਼ ਖਤਮ ਹੋ ਜਾਵੇ, ਤਾਂ ਇੱਕ ਵਾਰ ਸਹੋਦਰ ਕਨੈਕਸ਼ਨ 'ਤੇ ਫੇਲਓਵਰ ਕਰੋ। ਵਰਤੋਂਯੋਗ ਸਹੋਦਰ ਕਨੈਕਸ਼ਨ ਨਾ ਹੋਣ 'ਤੇ ਮੂਲ early-EOF ਗਲਤੀ ਵਾਪਸ ਕੀਤੀ ਜਾਂਦੀ ਹੈ। ਬੰਦ: ਮੁੜ-ਕੋਸ਼ਿਸ਼ ਤੋਂ ਬਾਅਦ early-EOF ਅੰਤਿਮ ਰਹਿੰਦਾ ਹੈ।"
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "/v1/models ਜਵਾਬਾਂ ਵਿੱਚ ਪ੍ਰਦਰਸ਼ਨ-ਅਨੁਕੂਲ ਨਾਮ ਫੀਲਡਾਂ ਸ਼ਾਮਲ ਕਰੋ। ਸਿਰਫ਼ ਮਾਡਲ IDs ਸਵੀਕਾਰ ਕਰਨ ਵਾਲੇ ਕਲਾਇੰਟਾਂ ਲਈ ਇਸਨੂੰ ਅਸਮਰੱਥ ਕਰੋ।"
       },
@@ -13021,6 +13029,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "ਸਰਵਰ-ਮਲਕੀਅਤ ਵਾਲਾ ਟੂਲ ਲੂਪ",
         "description": "ਸਰਵਰ-ਮਲਕੀਅਤ ਵਾਲੀਆਂ ਗੈਰ-ਸਟ੍ਰੀਮਿੰਗ ਟੂਲ ਕਾਲਾਂ ਨੂੰ ਉਦੋਂ ਤੱਕ ਜਾਰੀ ਰੱਖੋ ਜਦੋਂ ਤੱਕ ਮਾਡਲ ਕਲਾਇੰਟ ਲਈ ਵਰਤਣਯੋਗ ਜਵਾਬ ਨਾ ਦੇਵੇ।"
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "__MISSING__:Retry-After Provenance",
+        "description": "__MISSING__:On aggregated 429/503 unavailable responses, omit Retry-After when no concrete future retry time is known instead of sending a synthetic 1s, add error.retry_after_provenance, and read prose retry hints on combo drain paths."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "__MISSING__:Protected-Priority Infra Stops as 502",
+        "description": "__MISSING__:Answer 502 instead of 503 when a quota-only-fallback priority target stops the combo for a cause that is provably not quota: an open provider circuit breaker or a predictive latency skip."
       }
     }
   },

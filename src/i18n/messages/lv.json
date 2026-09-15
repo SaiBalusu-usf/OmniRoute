@@ -993,6 +993,8 @@
   "featureFlagNoThinkingAliasEnabledDescription": "Galvenais slēdzis no-think/&lt;provider&gt;&lt;model&gt; vārtejas aizstājvārdiem. Iesl. (pēc noklusējuma): /v1/models izziņo bezdomāšanas variantu katram atbilstošajam domāšanas spējīgajam Claude modelim, un no-think/ ID, kas nosūtīts pieprasījumā, tiek atrisināts atpakaļ uz reālo modeli ar apspiestu argumentāciju. Izsl.: nekādi varianti netiek izziņoti, un no-think/ ID tiek uzskatīts par jebkuru citu nezināmu modeļa ID. Modeļa ModelSpec.noThinkingAlias iekļaušanās/izslēgšanās iespēja joprojām darbojas, kamēr šis ir iespējots.",
   "featureFlagChatVirtualLanesEnabledDescription": "Iespējot katra nomnieka adaptīvas virtuālās uzņemšanas joslas nodrošinātāju izsūtīšanai (#9654): viena nomnieka slodzes lēciens vairs neizraisa 503 kļūdu citam. OMNIROUTE_CHAT_VIRTUAL_LANES vides mainīgais ir prioritārāks par šo paneļa iestatījumu; izmaiņas stājas spēkā pēc servera pārstartēšanas.",
   "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "Dashboard provider pages: show the Free badge only on signals the provider honors — drops the display-name heuristic, non-boolean free fields and :free suffixes on registered providers without a documented free tier. Off keeps the historical badge rule.",
+  "featureFlagProxySkipRecentlyFailedDescription": "__MISSING__:Proxy pools and the per-account rotation of opencode stop re-serving a proxy that just failed (refused TCP probe, or a 429 received through it) for a per-process period that doubles on each repeat, up to a cap. No proxy status is written; with every candidate set aside the choice is unchanged. Off by default: selection order is exactly the plain rotation.",
+  "featureFlagProxySkipRecentlyFailedDescription": "__MISSING__:Proxy pools and the per-account rotation of opencode stop re-serving a proxy that just failed (refused TCP probe, or a 429 received through it) for a per-process period that doubles on each repeat, up to a cap. No proxy status is written; with every candidate set aside the choice is unchanged. Off by default: selection order is exactly the plain rotation.",
   "sidebar": {
     "home": "Sākums",
     "dashboard": "Panelis",
@@ -12985,6 +12987,12 @@
       "STREAM_RECOVERY_MIDSTREAM_ENABLED": {
         "description": "Ļaut straumes atkopšanai atkārtoti pieprasīt atbildi un pievienot to straumei pēc tam, kad baiti jau ir sasnieguši klientu."
       },
+      "STREAM_RECOVERY_TOOLCALL_ORDER_FIX": {
+        "description": "__MISSING__:Make mid-stream continuation tool-call safe: never resume a cut stream after a tool call was sent (still in progress or already finished), and stop after one empty continuation instead of using the whole retry budget."
+      },
+      "STREAM_EARLY_EOF_SIBLING_FAILOVER_ENABLED": {
+        "description": "Vienreiz pārslēgties uz radniecīgu savienojumu, ja straume aizveras, pirms nosūtīts kāds noderīgs kadrs, un ierobežotais atkārtotais mēģinājums tajā pašā savienojumā ir izlietots. Ja nav izmantojama radniecīga savienojuma, tiek atgriezta sākotnējā early-EOF kļūda. Izslēgts: early-EOF pēc atkārtotā mēģinājuma paliek galīgs."
+      },
       "MODEL_CATALOG_INCLUDE_NAMES": {
         "description": "Iekļaut lietotājam draudzīga attēlojamā nosaukuma laukus /v1/models atbildēs. Atspējojiet šo opciju klientiem, kas pieņem tikai modeļu ID."
       },
@@ -13021,6 +13029,14 @@
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
         "label": "Servera pārvaldīta rīku izsaukumu cilpa",
         "description": "Turpināt servera pārvaldītos rīku izsaukumus bez straumēšanas, līdz modelis atgriež klientam izmantojamu atbildi."
+      },
+      "RETRY_AFTER_PROVENANCE_ENABLED": {
+        "label": "__MISSING__:Retry-After Provenance",
+        "description": "__MISSING__:On aggregated 429/503 unavailable responses, omit Retry-After when no concrete future retry time is known instead of sending a synthetic 1s, add error.retry_after_provenance, and read prose retry hints on combo drain paths."
+      },
+      "PROTECTED_PRIORITY_INFRA_502_ENABLED": {
+        "label": "__MISSING__:Protected-Priority Infra Stops as 502",
+        "description": "__MISSING__:Answer 502 instead of 503 when a quota-only-fallback priority target stops the combo for a cause that is provably not quota: an open provider circuit breaker or a predictive latency skip."
       }
     }
   },
