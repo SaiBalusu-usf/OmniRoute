@@ -277,7 +277,7 @@ describe("DELETE /api/v1/batches/delete-completed — caller scope (GHSA-wvxc-jp
 
   it("rejects an unauthenticated request with 401 and deletes nothing", async () => {
     const keyB = await createApiKey("wvxc-route-401-b", "machine-wvxc-401", []);
-    const seeded = seedCompletedBatch(keyB.id, "wvxc-route-401");
+    const seeded = seedCompletedBatch(keyB.id, "route401");
 
     const { res, body } = await callDelete({});
 
@@ -290,7 +290,7 @@ describe("DELETE /api/v1/batches/delete-completed — caller scope (GHSA-wvxc-jp
 
   it("returns a sanitized 500 (no stack trace, no raw SQLite message) when the sweep throws, and deletes nothing", async () => {
     const keyA = await createApiKey("wvxc-route-500-a", "machine-wvxc-500", []);
-    const own = seedCompletedBatch(keyA.id, "wvxc-route-500");
+    const own = seedCompletedBatch(keyA.id, "route500");
     const db = getDbInstance();
 
     db.exec(
@@ -312,7 +312,7 @@ describe("DELETE /api/v1/batches/delete-completed — caller scope (GHSA-wvxc-jp
     assert.ok(getBatch(own.batch.id), "a failed sweep leaves the batch row in place");
     assert.strictEqual(
       getFileContent(own.file.id)?.toString(),
-      "wvxc-route-500",
+      "route500",
       "a failed sweep rolls the file content back"
     );
   });
