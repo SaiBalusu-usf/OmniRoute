@@ -7,7 +7,8 @@ import { randomUUID } from "node:crypto";
 
 // A pool's member count says nothing about how many egress IPs really served it. These
 // tests pin the observation read from the proxy log: numbers only, the scope normalized
-// the same way the pool itself is read, and any failure isolated as null.
+// the same way the pool itself is read, and any failure isolated as null. The observation is
+// opt-in (PROXY_POOL_EGRESS_OBSERVATION feature flag, default off): tests opt in explicitly.
 
 const TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "omniroute-pool-egress-obs-"));
 process.env.DATA_DIR = TEST_DATA_DIR;
@@ -28,11 +29,12 @@ function resetStorage() {
 }
 
 test.beforeEach(() => {
-  delete process.env.PROXY_POOL_EGRESS_OBSERVATION;
+  process.env.PROXY_POOL_EGRESS_OBSERVATION = "true";
   resetStorage();
 });
 
 test.after(() => {
+  delete process.env.PROXY_POOL_EGRESS_OBSERVATION;
   core.resetDbInstance();
   fs.rmSync(TEST_DATA_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
@@ -163,13 +165,23 @@ test("any SQL failure yields null and is not cached", async () => {
   assert.equal(observation.readPoolEgressObservation("provider", "openai")?.connections, 1);
 });
 
-test("the kill switch turns the observation off", async () => {
+test("the observation stays off unless the feature flag is on", async () => {
   const member = await poolMember("provider", "openai");
   logRow(member, "203.0.113.1", "c1");
-  for (const value of ["false", "0", "no", "off", " OFF "]) {
+  delete process.env.PROXY_POOL_EGRESS_OBSERVATION;
+  assert.equal(observation.readPoolEgressObservation("provider", "openai"), null, "default");
+  for (const value of ["false", "0", "no", "off"]) {
     process.env.PROXY_POOL_EGRESS_OBSERVATION = value;
     assert.equal(observation.readPoolEgressObservation("provider", "openai"), null, value);
   }
   process.env.PROXY_POOL_EGRESS_OBSERVATION = "true";
   assert.equal(observation.readPoolEgressObservation("provider", "openai")?.connections, 1);
+});
+
+test("a DB override turning the flag off wins over the environment", async () => {
+  const flagsDb = await import("../../src/lib/db/featureFlags.ts");
+  const member = await poolMember("provider", "openai");
+  logRow(member, "203.0.113.1", "c1");
+  flagsDb.setFeatureFlagOverride("PROXY_POOL_EGRESS_OBSERVATION", "false");
+  assert.equal(observation.readPoolEgressObservation("provider", "openai"), null);
 });

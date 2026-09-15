@@ -1,8 +1,9 @@
 /**
  * Observed egress spread of a proxy pool, for the dashboard pool editor. Read-only and
  * never on the routing path: a failure returns null so it cannot break the pool screen.
- * The scope is normalized exactly like the pool read (key -> account, global ->
- * "__global__"), and a result is cached for 30 seconds per normalized scope.
+ * Opt-in through the PROXY_POOL_EGRESS_OBSERVATION feature flag (default off: null, the
+ * line stays hidden). The scope is normalized exactly like the pool read (key -> account,
+ * global -> "__global__"), and a result is cached for 30 seconds per normalized scope.
  */
 import {
   EGRESS_IP_LOOKUP_WINDOW_MS,
@@ -11,20 +12,14 @@ import {
 } from "@/lib/db/proxyLogs";
 import { normalizeAssignmentScopeId, normalizeScope } from "@/lib/db/proxies/mappers";
 import { flushProxyLogsSync } from "@/lib/proxyLogger";
+import { isPoolEgressObservationEnabled } from "@/shared/utils/featureFlags";
 
 export type PoolEgressObservation = PoolEgressObservationCounts & { windowHours: number };
 
 const CACHE_TTL_MS = 30_000;
 const CACHE_MAX_ENTRIES = 200;
-const DISABLED_VALUES = ["false", "0", "no", "off"];
 
 const cache = new Map<string, { at: number; value: PoolEgressObservation }>();
-
-/** On unless PROXY_POOL_EGRESS_OBSERVATION is false, 0, no or off. */
-export function isPoolEgressObservationEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
-  const raw = (env.PROXY_POOL_EGRESS_OBSERVATION ?? "").trim().toLowerCase();
-  return !DISABLED_VALUES.includes(raw);
-}
 
 export function readPoolEgressObservation(
   scope: string,
