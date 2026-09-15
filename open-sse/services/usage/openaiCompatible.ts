@@ -34,6 +34,14 @@
 
 import { type UsageQuota, createQuotaFromUsage } from "./quota.ts";
 
+/**
+ * Operator-configured endpoints can point at anything, including a host that
+ * never responds. Same bound as `open-sse/services/grokResetCredits.ts`'s
+ * `FETCH_TIMEOUT_MS`, so one unreachable connection can never hang the whole
+ * Provider Limits sync.
+ */
+const QUOTA_ENDPOINT_TIMEOUT_MS = 15_000;
+
 export interface OpenAiCompatibleQuotaMapping {
   used?: string;
   total?: string;
@@ -145,6 +153,7 @@ export async function getOpenAiCompatibleUsage(
     const response = await fetch(endpoint.url, {
       method: endpoint.method ?? "GET",
       headers: buildAuthHeaders(endpoint, apiKey),
+      signal: AbortSignal.timeout(QUOTA_ENDPOINT_TIMEOUT_MS),
     });
     if (!response.ok) {
       return { message: `Quota endpoint returned HTTP ${response.status}.` };
