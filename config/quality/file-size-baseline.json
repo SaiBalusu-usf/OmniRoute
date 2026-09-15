@@ -1,4 +1,5 @@
 {
+  "_rebaseline_2026_09_15_13439_combined_growth": "Combined growth of the 2026-09-15 maxmad64bis uplift batch (each PR rebaselined its own growth; the merged sum is larger): open-sse/services/combo/executeTargetAttempt.ts->1228. Every hunk is flag-gated or a verified fix covered by that PR's tests; see the batch report.",
   "_rebaseline_2026_09_15_13672_combined_growth": "Combined growth of the 2026-09-15 maxmad64bis uplift batch (each PR rebaselined its own growth; the merged sum is larger): open-sse/services/combo/executeTargetAttempt.ts->1223; open-sse/services/combo/roundRobinCombo.ts->1213. Every hunk is flag-gated or a verified fix covered by that PR's tests; see the batch report.",
   "_rebaseline_2026_09_15_13441_combined_growth": "Combined growth of the 2026-09-15 maxmad64bis uplift batch (each PR rebaselined its own growth; the merged sum is larger): src/lib/db/core.ts->1770. Every hunk is flag-gated or a verified fix covered by that PR's tests; see the batch report.",
   "_rebaseline_2026_09_14_13547_noauth_model_lockout": "PR #13547 own growth: src/sse/services/auth.ts 3542->3556 (+14). The synthetic noauth connection short-circuited before the per-connection status pass, so a recorded model-only lockout was never enforced and the locked model was retried on every request. Irreducible at the early-return site. Covered by tests/unit/noauth-model-lockout.test.ts (carried from #13527).",
@@ -450,7 +451,7 @@
     "open-sse/services/accountFallback.ts": 2493,
     "open-sse/services/adobeFireflyBrowserLogin.ts": 1401,
     "open-sse/services/combo.ts": 4080,
-    "open-sse/services/combo/executeTargetAttempt.ts": 1223,
+    "open-sse/services/combo/executeTargetAttempt.ts": 1228,
     "open-sse/translator/response/openai-responses.ts": 1466,
     "open-sse/utils/cursorAgentProtobuf.ts": 1547,
     "open-sse/utils/proxyFetch.ts": 1271,
