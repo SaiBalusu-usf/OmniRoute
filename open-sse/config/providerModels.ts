@@ -211,6 +211,12 @@ export function findModelName(aliasOrId: string, modelId: string): string {
   return found?.name || modelId;
 }
 
+// OpenCode's Muse Spark family is Responses-only. Keep this rule provider-scoped
+// and version-agnostic so a newly published Muse Spark model is routed correctly
+// before the static catalog is refreshed.
+const OPENCODE_MUSE_SPARK_ALIASES = new Set(["oc", "opencode-zen", "opencode-go"]);
+const MUSE_SPARK_MODEL_PATTERN = /^muse-spark(?:-|$)/i;
+
 export function getModelTargetFormat(aliasOrId: string, modelId: string): string | null {
   // Accept either the public alias ("cmd") or the raw provider id ("command-code"),
   // mirroring getProviderModels (same pattern as #2798/#3870).
@@ -221,6 +227,9 @@ export function getModelTargetFormat(aliasOrId: string, modelId: string): string
   const bareModelId = prefix ? modelId.slice(prefix.length) : modelId;
   const found = PROVIDER_MODELS[alias]?.find((m) => m.id === bareModelId);
   if (found?.targetFormat) return found.targetFormat;
+  if (OPENCODE_MUSE_SPARK_ALIASES.has(alias) && MUSE_SPARK_MODEL_PATTERN.test(bareModelId)) {
+    return "openai-responses";
+  }
   // #5842: OpenAI "*-pro" reasoning models (o1-pro, gpt-5.x-pro) are only served by
   // the native /v1/responses endpoint — /v1/chat/completions 404s ("only supported
   // in v1/responses"). Curated catalog entries are tagged explicitly; this heuristic

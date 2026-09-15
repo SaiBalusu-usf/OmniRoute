@@ -6,7 +6,7 @@ import {
   type ProviderCredentials,
 } from "./base.ts";
 import { PROVIDERS } from "../config/constants.ts";
-import { getModelTargetFormat, PROVIDER_ID_TO_ALIAS } from "../config/providerModels.ts";
+import { getModelTargetFormat } from "../config/providerModels.ts";
 import {
   injectReasoningContentForThinkingModel,
   isThinkingMessageModel,
@@ -157,11 +157,12 @@ export function isPremiumOpencodeModel(model: string, provider: string): boolean
  * translation (correctly aliased) still switched to the Responses API shape for
  * `targetFormat:"openai-responses"` models — sending a Responses-shaped body to
  * the `/chat/completions` URL this executor's own `buildUrl()` kept selecting.
+ * The shared lookup also applies provider-scoped family rules, so passthrough
+ * models added upstream do not need an executor change for each new version.
  * Exported for testability.
  */
 export function resolveOpencodeTargetFormat(provider: string, model: string): string {
-  const alias = PROVIDER_ID_TO_ALIAS[provider] || provider;
-  return getModelTargetFormat(alias, model) || "openai";
+  return getModelTargetFormat(provider, model) || "openai";
 }
 
 /**
