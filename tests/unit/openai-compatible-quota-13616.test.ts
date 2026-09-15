@@ -138,6 +138,32 @@ test("the upstream URL never reaches the message on a transport failure", async 
   }
 });
 
+test("a quota endpoint that never answers is aborted instead of hanging the sync", async () => {
+  // The endpoint is operator-configured and can point at a host that accepts
+  // the connection and then goes silent; without a bound, fetch() waits forever.
+  const original = globalThis.fetch;
+  let signal: AbortSignal | undefined;
+  globalThis.fetch = ((_url: string, init: RequestInit) => {
+    signal = init?.signal ?? undefined;
+    return new Promise<Response>((_resolve, reject) => {
+      signal?.addEventListener("abort", () => reject(signal?.reason));
+    });
+  }) as typeof fetch;
+  try {
+    const pending = getOpenAiCompatibleUsage("sk", { quotaEndpoint: ENDPOINT });
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.ok(signal instanceof AbortSignal, "the quota fetch must carry an abort signal");
+    // Fire the bound now rather than waiting the real 15s.
+    (signal as AbortSignal & { dispatchEvent: (e: Event) => boolean }).dispatchEvent(
+      new Event("abort")
+    );
+    const r = (await pending) as { message: string };
+    assert.match(r.message, /unreachable/i);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
 test("the gate follows the connection, not the provider id", () => {
   const id = "openai-compatible-chat-abc123";
   assert.equal(
