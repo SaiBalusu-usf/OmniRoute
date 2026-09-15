@@ -62,6 +62,13 @@ async function sessionCookie(): Promise<string> {
   return `auth_token=${jwt}`;
 }
 
+/**
+ * `label` names the seeded batch's `.jsonl` file. Keep it word-shaped or under 10 chars: the
+ * gitleaks generic-api-key rule reports a literal of 10+ chars with Shannon entropy >= 3.5 that
+ * sits right after a `key*.id` argument (the argument supplies the rule's "key" keyword).
+ * `wvxc-route-401` did (entropy 3.66) and became `route401` in #13729; the word-shaped
+ * `wvxc-route-<scenario>` siblings stay under the entropy floor and are clean.
+ */
 function seedCompletedBatch(apiKeyId: string | null, label: string) {
   const file = createFile({
     bytes: 8,
@@ -277,8 +284,7 @@ describe("DELETE /api/v1/batches/delete-completed — caller scope (GHSA-wvxc-jp
 
   it("rejects an unauthenticated request with 401 and deletes nothing", async () => {
     const keyB = await createApiKey("wvxc-route-401-b", "machine-wvxc-401", []);
-    // Short label on purpose: a 10+ char literal right after `keyB.id,` trips the gitleaks
-    // generic-api-key rule (the argument supplies its "key" keyword) — renamed in #13729.
+    // short label: see the seedCompletedBatch docblock (#13729)
     const seeded = seedCompletedBatch(keyB.id, "route401");
 
     const { res, body } = await callDelete({});
@@ -292,7 +298,7 @@ describe("DELETE /api/v1/batches/delete-completed — caller scope (GHSA-wvxc-jp
 
   it("returns a sanitized 500 (no stack trace, no raw SQLite message) when the sweep throws, and deletes nothing", async () => {
     const keyA = await createApiKey("wvxc-route-500-a", "machine-wvxc-500", []);
-    // Short label on purpose — same gitleaks reason as "route401" above (#13729).
+    // short label: see the seedCompletedBatch docblock (#13729)
     const own = seedCompletedBatch(keyA.id, "route500");
     const db = getDbInstance();
 
