@@ -29,16 +29,13 @@ import {
   extractChatcmplId,
 } from "./accountRotation.ts";
 import { isOpencodeGeoBlocked, proxyKeyOf } from "./opencodeGeoBlock.ts";
-import { isRetriableUpstreamFailure } from "./opencodeTransientFailure.ts";
 import {
-  isNetworkRotationSharedEgressGuardEnabled,
-  isOpencodeResponsesStallRotationEnabled,
-} from "@/shared/utils/featureFlags";
-import { getResponsesFirstByteTimeoutMs } from "@/shared/utils/runtimeTimeouts";
-import {
-  guardResponsesStreamFirstByte,
+  guardResponsesStall,
   isResponsesFirstByteTimeout,
-} from "../utils/firstByteWatchdog.ts";
+  resolveResponsesStallWindowMs,
+} from "./opencodeResponsesStall.ts";
+import { isRetriableUpstreamFailure } from "./opencodeTransientFailure.ts";
+import { isNetworkRotationSharedEgressGuardEnabled } from "@/shared/utils/featureFlags";
 
 /**
  * The main OpenCode Zen host, shared by the `opencode` and `opencode-zen`
@@ -360,36 +357,6 @@ export class OpencodeExecutor extends BaseExecutor {
   }
 
   /**
-   * First-byte window for this request's Responses stream, or 0 when the stall guard does not
-   * apply. A streamed Responses reply opens with `response.created` before any generation, so a
-   * 2xx Responses stream that stays silent past the window is stalled, not thinking. Chat
-   * Completions streams are left alone: gateways may legitimately hold them until the answer is
-   * ready. Opt-in via OPENCODE_RESPONSES_STALL_ROTATION (#13484): with the flag off this returns 0
-   * and every dispatch keeps today's path (the stream readiness timeout is the only bound).
-   */
-  private resolveResponsesStallWindowMs(input: ExecuteInput): number {
-    if (!input.stream || this._requestFormat !== "openai-responses") return 0;
-    if (!isOpencodeResponsesStallRotationEnabled()) return 0;
-    return getResponsesFirstByteTimeoutMs();
-  }
-
-  /**
-   * Returns `result` untouched when `windowMs` is 0 or the response is not a 2xx body; otherwise
-   * resolves once the first body byte arrives, or throws RESPONSES_FIRST_BYTE_TIMEOUT.
-   */
-  private async guardResponsesFirstByte<T extends { response: Response }>(
-    input: ExecuteInput,
-    result: T,
-    windowMs: number
-  ): Promise<T> {
-    if (windowMs <= 0) return result;
-    const { response } = result;
-    if (!response.ok || !response.body) return result;
-    const guarded = await guardResponsesStreamFirstByte(response, windowMs, input.signal);
-    return { ...result, response: guarded };
-  }
-
-  /**
    * Rewrite muse-spark's bogus `finish_reason:"length"` (see the
    * normalizeMuseSparkFinishReason note) to `"stop"` on both streaming and
    * non-streaming success responses. Non-muse-spark models pass through
@@ -556,8 +523,9 @@ export class OpencodeExecutor extends BaseExecutor {
       const cid = input.correlationId ? `correlationId=${input.correlationId} ` : "";
 
       const hasProxies = this.accounts.some((a) => a.proxy !== null);
-      // 0 unless OPENCODE_RESPONSES_STALL_ROTATION is on for a streamed Responses request.
-      const stallWindowMs = this.resolveResponsesStallWindowMs(input);
+      // Opt-in Responses first-byte stall guard (#13484); a no-op when the window is 0.
+      const stallWindowMs = resolveResponsesStallWindowMs(input.stream, this._requestFormat);
+      const guardStall = <T>(r: T) => guardResponsesStall(r, stallWindowMs, input.signal);
       // Fast path: no multi-account proxy wiring configured → original behavior,
       // plus exactly ONE bounded retry when the upstream answers a 400 empty
       // rejection (same predicate and logging as the rotation loop). Everything
@@ -570,13 +538,9 @@ export class OpencodeExecutor extends BaseExecutor {
         // Only pin direct egress when no such context exists; otherwise let the
         // ambient proxy stand instead of clobbering it with the direct sentinel.
         const dispatch = () => super.execute(input);
-        const single = await this.guardResponsesFirstByte(
-          input,
-          (await (hasAmbientProxyContext()
-            ? dispatch()
-            : runWithDirectFetchContext(dispatch))) as HttpExecuteResult,
-          stallWindowMs
-        );
+        const single = (await guardStall(
+          await (hasAmbientProxyContext() ? dispatch() : runWithDirectFetchContext(dispatch))
+        )) as HttpExecuteResult;
         if (single.response.status === 400) {
           let bodyText: string | null = null;
           try {
@@ -593,11 +557,7 @@ export class OpencodeExecutor extends BaseExecutor {
               );
               return this.normalizeMuseSparkResponse(
                 input,
-                await this.guardResponsesFirstByte(
-                  input,
-                  (await super.execute(input)) as HttpExecuteResult,
-                  stallWindowMs
-                )
+                await guardStall(await super.execute(input))
               );
             }
             log?.debug?.(
@@ -635,9 +595,7 @@ export class OpencodeExecutor extends BaseExecutor {
       // persists past execute().
       const geoTriedProxyKeys = new Set<string>();
       let directTried = false;
-      // A Responses stream that stalls before its first byte gets one rotation; a second stall
-      // means the upstream itself is wedged, so fail fast instead of walking every account.
-      // Only ever incremented when OPENCODE_RESPONSES_STALL_ROTATION is on (stallWindowMs > 0).
+      // Stalls before the first Responses byte: one rotation, then fail fast.
       let stalledAttempts = 0;
 
       for (let attempt = 0; attempt < this.accounts.length + emptyRejectionBudget; attempt++) {
@@ -711,28 +669,25 @@ export class OpencodeExecutor extends BaseExecutor {
           // super.execute() here always dispatches the HTTP path (opencode is an
           // OpenAI-compatible API, never the web/scraping bare-Response arm) —
           // see base.ts:290-294.
-          result = await this.guardResponsesFirstByte(
-            input,
-            (await runWithProxyContext(account.proxy, () =>
+          result = (await guardStall(
+            await runWithProxyContext(account.proxy, () =>
               super.execute({ ...input, skipUpstreamRetry: true })
-            )) as HttpExecuteResult,
-            stallWindowMs
-          );
+            )
+          )) as HttpExecuteResult;
         } catch (err) {
           const reason = err instanceof Error ? err.message : String(err);
-          // Stall guard (opt-in): headers arrived, so this account's egress works — the stall is
-          // never a shared-egress outage, and proxy-less accounts rotate exactly like proxied
-          // ones. One rotation, then fail fast; a client abort during the wait never rotates.
+          // Stall guard: headers arrived, so the egress works — never a shared-egress
+          // outage; proxied and proxy-less accounts rotate alike. A client abort never rotates.
           if (stallWindowMs > 0 && (isResponsesFirstByteTimeout(err) || input.signal?.aborted)) {
             if (input.signal?.aborted) throw err;
             this.markCooldown(account);
             const stallKey = proxyKeyOf(account.proxy);
             if (stallKey !== null) geoTriedProxyKeys.add(stallKey);
             else directTried = true;
-            const rotate = ++stalledAttempts <= 1;
+            const rotate = ++stalledAttempts === 1;
             log?.warn?.(
               "OPENCODE",
-              `${cid}Responses stream stalled before its first byte on account ${masked} (proxy ${stallKey ?? "direct"}), ${rotate ? "rotating to next…" : "not rotating further"} (${reason})`
+              `${cid}Responses stream stalled on account ${masked}, ${rotate ? "rotating to next…" : "not rotating again"} (${reason})`
             );
             if (!rotate) throw err;
             continue;
@@ -864,12 +819,7 @@ export class OpencodeExecutor extends BaseExecutor {
       // All accounts returned 429 (or errored) — surface the last response.
       return this.normalizeMuseSparkResponse(
         input,
-        lastResult ??
-          (await this.guardResponsesFirstByte(
-            input,
-            (await super.execute(input)) as HttpExecuteResult,
-            stallWindowMs
-          ))
+        lastResult ?? (await guardStall(await super.execute(input)))
       );
     } finally {
       this._requestFormat = null;
