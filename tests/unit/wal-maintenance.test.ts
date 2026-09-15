@@ -194,107 +194,140 @@ test("loadPersistedBusyTotal reads the key, falls back to 0", async () => {
   assert.equal(loadPersistedBusyTotal(db as never), 0);
 });
 
-test("recordBusy increments memory first, persists +1 atomically", async () => {
-  const { recordBusy, getWalMaintenanceState, __resetForTests } = await import(
-    "../../src/lib/db/walMaintenance.ts"
-  );
-  __resetForTests();
-  let stored = "10";
+test("flushBusyTotal is a no-op with nothing pending or no open handle", async () => {
+  const { flushBusyTotal } = await import("../../src/lib/db/walMaintenance.ts");
+  let prepared = 0;
   const db = {
-    pragma: () => [{ busy: 0, log: 0, checkpointed: 0 }],
-    prepare: (sql: string) => ({
-      get: () => ({ value: stored }),
-      run: () => {
-        assert.match(sql, /ON CONFLICT/i);
-        stored = String(Number(stored) + 1);
-      },
-    }),
+    open: true,
+    prepare: () => {
+      prepared++;
+      return { run: () => {} };
+    },
   };
-  recordBusy(db as never);
-  assert.equal(getWalMaintenanceState().busyTotal, 1);
-  assert.equal(stored, "11");
-  __resetForTests();
+  assert.equal(flushBusyTotal(db as never), false);
+  assert.equal(flushBusyTotal(null), false);
+  assert.equal(prepared, 0);
 });
 
-test("sequential increments from two handles sum up (real adapters)", async (t) => {
-  const { recordBusy, loadPersistedBusyTotal, __resetForTests } = await import(
-    "../../src/lib/db/walMaintenance.ts"
-  );
-  const { tryOpenSync } = await import("../../src/lib/db/adapters/driverFactory.ts");
+/**
+ * The scheduler is gated off inside test runners (isAutomatedTestProcess), so the real boot
+ * wiring runs in a child Node process that is not a test process. It drives the actual
+ * startWalMaintenance()/stopWalMaintenance() against a real SQLite file; only the checkpoint
+ * pragma result is scripted (busy vs clean) so contention can be produced on demand. Module
+ * paths travel through env vars so no argv token makes the child look like a test runner.
+ */
+const CHILD_SCRIPT = `
+const { startWalMaintenance, stopWalMaintenance, getWalMaintenanceState } = await import(process.env.WAL_MODULE_URL);
+const { tryOpenSync } = await import(process.env.DRIVER_MODULE_URL);
+const file = process.env.WAL_DB_FILE;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const real = tryOpenSync(file);
+if (!real) { console.log("WALCHILD " + JSON.stringify({ skipped: true })); process.exit(0); }
+let mode = "busy";
+const writes = [];
+const db = {
+  get open() { return real.open; },
+  pragma: (s, o) => s.startsWith("wal_checkpoint")
+    ? [mode === "busy" ? { busy: 1, log: 5, checkpointed: 0 } : { busy: 0, log: 0, checkpointed: 0 }]
+    : real.pragma(s, o),
+  prepare: (sql) => { if (/INSERT/i.test(sql)) writes.push(mode); return real.prepare(sql); },
+  exec: (sql) => real.exec(sql),
+  close: () => real.close(),
+};
+const persisted = () => Number(real.prepare("SELECT value FROM key_value WHERE namespace='walMaintenance' AND key='busyTotal'").get()?.value ?? 0);
+const env = { OMNIROUTE_WAL_TRUNCATE_INTERVAL_MS: "60", OMNIROUTE_WAL_PASSIVE_INTERVAL_MS: "0" };
+const out = {};
+startWalMaintenance(db, file, env);
+out.restoredAtBoot = getWalMaintenanceState().busyTotal;
+await sleep(400);
+out.afterBusy = { total: getWalMaintenanceState().busyTotal, persisted: persisted(), writes: writes.length };
+mode = "ok";
+await sleep(300);
+out.afterOkTick = { total: getWalMaintenanceState().busyTotal, persisted: persisted(), busyWrites: writes.filter((m) => m === "busy").length };
+mode = "busy";
+await sleep(300);
+out.beforeStop = { total: getWalMaintenanceState().busyTotal, persisted: persisted() };
+mode = "stopping";
+stopWalMaintenance();
+out.afterStop = { persisted: persisted(), busyWrites: writes.filter((m) => m === "busy").length, stopWrites: writes.filter((m) => m === "stopping").length };
+startWalMaintenance(db, file, env);
+out.restoredAfterRestart = getWalMaintenanceState().busyTotal;
+stopWalMaintenance();
+real.close();
+console.log("WALCHILD " + JSON.stringify(out));
+process.exit(0);
+`;
+
+test("boot wiring: restores the persisted total, never writes on a busy tick, flushes on a clean tick and at stop", async (t) => {
+  const { spawnSync } = await import("node:child_process");
   const fs = await import("node:fs");
   const os = await import("node:os");
   const path = await import("node:path");
-  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "omniroute-wal-busy-")), "t.db");
-  const a = tryOpenSync(file);
-  const b = tryOpenSync(file);
-  if (!a || !b) {
-    if (a) a.close();
-    t.skip("no sync SQLite driver available for shared-file test");
-    fs.rmSync(path.dirname(file), { recursive: true, force: true });
+  const { pathToFileURL } = await import("node:url");
+  const { tryOpenSync } = await import("../../src/lib/db/adapters/driverFactory.ts");
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "omniroute-wal-boot-"));
+  const file = path.join(dir, "storage.sqlite");
+  const seed = tryOpenSync(file);
+  if (!seed) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    t.skip("no sync SQLite driver available");
     return;
   }
   try {
-    __resetForTests();
-    a.exec("CREATE TABLE IF NOT EXISTS key_value (namespace TEXT, key TEXT, value TEXT, PRIMARY KEY (namespace, key))");
-    for (let i = 0; i < 5; i++) recordBusy(a);
-    for (let i = 0; i < 7; i++) recordBusy(b);
-    assert.equal(loadPersistedBusyTotal(a), 12);
+    seed.exec(
+      "CREATE TABLE IF NOT EXISTS key_value (namespace TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY (namespace, key))"
+    );
+    seed
+      .prepare(
+        "INSERT INTO key_value (namespace, key, value) VALUES ('walMaintenance', 'busyTotal', '41')"
+      )
+      .run();
+    seed.close();
+
+    const repoRoot = path.resolve(import.meta.dirname, "../..");
+    const env: NodeJS.ProcessEnv = {
+      ...process.env,
+      WAL_MODULE_URL: pathToFileURL(path.join(repoRoot, "src/lib/db/walMaintenance.ts")).href,
+      DRIVER_MODULE_URL: pathToFileURL(path.join(repoRoot, "src/lib/db/adapters/driverFactory.ts"))
+        .href,
+      WAL_DB_FILE: file,
+      NODE_ENV: "production",
+    };
+    delete env.VITEST;
+    delete env.NODE_TEST_CONTEXT;
+    const child = spawnSync(
+      process.execPath,
+      ["--import", "tsx/esm", "--input-type=module", "-e", CHILD_SCRIPT],
+      { cwd: repoRoot, env, encoding: "utf8", timeout: 120_000 }
+    );
+    const line = (child.stdout || "").split("\n").find((l) => l.startsWith("WALCHILD "));
+    assert.ok(line, `child produced no result (status ${child.status}): ${child.stderr}`);
+    const out = JSON.parse(line.slice("WALCHILD ".length));
+    if (out.skipped) {
+      t.skip("child could not open a sync SQLite driver");
+      return;
+    }
+
+    assert.equal(out.restoredAtBoot, 41, "boot restores the persisted counter");
+    assert.ok(out.afterBusy.total > 41, "busy ticks are counted in memory");
+    assert.equal(out.afterBusy.writes, 0, "no database write on the busy path");
+    assert.equal(out.afterBusy.persisted, 41, "persisted value untouched while contended");
+
+    assert.equal(out.afterOkTick.busyWrites, 0);
+    assert.equal(
+      out.afterOkTick.persisted,
+      out.afterOkTick.total,
+      "a clean tick flushes the delta"
+    );
+
+    assert.ok(out.beforeStop.total > out.afterOkTick.total, "more busy ticks after the flush");
+    assert.equal(out.beforeStop.persisted, out.afterOkTick.total, "still no write while busy");
+    assert.equal(out.afterStop.busyWrites, 0);
+    assert.equal(out.afterStop.stopWrites, 1, "exactly one flush at stop");
+    assert.equal(out.afterStop.persisted, out.beforeStop.total, "stop flushes the remaining delta");
+    assert.equal(out.restoredAfterRestart, out.beforeStop.total, "restart restores the full total");
   } finally {
-    a.close();
-    b.close();
-    __resetForTests();
-    fs.rmSync(path.dirname(file), { recursive: true, force: true });
+    fs.rmSync(dir, { recursive: true, force: true });
   }
-});
-
-test("recordBusy with throwing prepare keeps memory coherent", async () => {
-  const { recordBusy, getWalMaintenanceState, __resetForTests } = await import(
-    "../../src/lib/db/walMaintenance.ts"
-  );
-  __resetForTests();
-  const db = {
-    pragma: () => [{ busy: 0, log: 0, checkpointed: 0 }],
-    prepare: (_sql: string) => ({
-      get: () => undefined,
-      run: () => {
-        throw new Error("database is locked");
-      },
-    }),
-  };
-  recordBusy(db as never);
-  assert.equal(getWalMaintenanceState().busyTotal, 1);
-  __resetForTests();
-});
-
-test("restart sequence composes: prior captured, stop zeroes, merge restores", async () => {
-  const { recordBusy, getWalMaintenanceState, loadPersistedBusyTotal, mergeBusyTotal, __resetForTests } = await import(
-    "../../src/lib/db/walMaintenance.ts"
-  );
-  __resetForTests();
-  const store = new Map<string, string>();
-  const db = {
-    pragma: () => [{ busy: 0, log: 0, checkpointed: 0 }],
-    prepare: (sql: string) => ({
-      get: () => {
-        const v = store.get("walMaintenance/busyTotal");
-        return v === undefined ? undefined : { value: v };
-      },
-      run: () => {
-        if (/ON CONFLICT/i.test(sql)) {
-          store.set("walMaintenance/busyTotal", String(Number(store.get("walMaintenance/busyTotal") ?? "0") + 1));
-        }
-      },
-    }),
-  };
-  recordBusy(db as never);
-  recordBusy(db as never);
-  recordBusy(db as never);
-  const prior = getWalMaintenanceState().busyTotal;
-  assert.equal(prior, 3);
-  __resetForTests(); // simulates stopWalMaintenance() at restart: zeroes session state
-  assert.equal(getWalMaintenanceState().busyTotal, 0);
-  const restored = mergeBusyTotal(prior, loadPersistedBusyTotal(db as never));
-  assert.equal(restored, 3);
-  assert.equal(getWalMaintenanceState().busyStreak, 0);
-  __resetForTests();
 });

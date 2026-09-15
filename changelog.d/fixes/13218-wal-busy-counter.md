@@ -1,1 +1,1 @@
-- **fix(db):** persist WAL busy counter across restarts ([#13218](https://github.com/diegosouzapw/OmniRoute/pull/13218)) — thanks @maxmad64bis
+- **fix(db):** the WAL checkpoint busy counter reported by `/api/monitoring/health` now survives restarts — busy checkpoints are counted in memory and persisted from the next clean maintenance tick or at shutdown, never with a write while the database is contended ([#13218](https://github.com/diegosouzapw/OmniRoute/pull/13218)) — thanks @maxmad64bis
