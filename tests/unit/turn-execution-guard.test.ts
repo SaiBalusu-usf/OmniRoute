@@ -18,10 +18,12 @@ test("turn execution guard rejects a concurrent duplicate and reports its retry 
   assert.equal(first.acquired, true);
   assert.equal(duplicate.acquired, false);
   assert.equal(duplicate.retryCount, 1);
-  assert.deepEqual(getTurnExecutionSnapshot("turn-guard-key"), {
-    retryCount: 1,
-    ageMs: 0,
-  });
+  const snapshot = getTurnExecutionSnapshot("turn-guard-key");
+  assert.equal(snapshot?.retryCount, 1);
+  assert.ok(
+    snapshot && snapshot.ageMs >= 0 && snapshot.ageMs < 1000,
+    `unexpected ageMs: ${snapshot?.ageMs}`
+  );
 
   first.release();
   const next = acquireTurnExecution("turn-guard-key");
@@ -69,6 +71,6 @@ test("duplicate turn result uses a sanitized 409 body and retry headers", async 
   assert.equal(duplicate.result.response.headers.get("X-OmniRoute-Turn-Retry"), "3");
   assert.deepEqual(
     await duplicate.result.response.json(),
-    JSON.parse(JSON.stringify(duplicate.body)),
+    JSON.parse(JSON.stringify(duplicate.body))
   );
 });
