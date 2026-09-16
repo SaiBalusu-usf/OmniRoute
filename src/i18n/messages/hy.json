@@ -1274,7 +1274,7 @@
     "costsOverviewSubtitle": "Ծախսերի համախմբված վերլուծություն",
     "agentBridge": "Agent Bridge",
     "agentBridgeSubtitle": "Ընդհատել IDE գործակալի թրաֆիկը",
-    "trafficInspector": "Երթևեկության տեսուչ",
+    "trafficInspector": "Traffic Inspector",
     "trafficInspectorSubtitle": "Ստուգել ձեր հավելվածներից եկող հարցումների և պատասխանների թրաֆիկը",
     "trafficInspectorPurpose": "Տեսեք, թե ձեր հավելվածն ինչ է ուղարկում AI մատակարարներին և ինչ է ստանում նրանցից։ Աշխատում է OpenAI-ի հետ համատեղելի ցանկացած կլիենտի հետ։",
     "cliCode": "CLI կոդ",

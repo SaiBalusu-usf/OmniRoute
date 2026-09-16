@@ -1277,7 +1277,7 @@
     "trafficInspector": "အသွားအလာ စစ်ဆေးကိရိယာ",
     "trafficInspectorSubtitle": "သင့်အက်ပ်များမှ တောင်းဆိုချက်နှင့် တုံ့ပြန်ချက် အသွားအလာကို စစ်ဆေးရန်",
     "trafficInspectorPurpose": "သင့်အပလီကေးရှင်းက AI ဝန်ဆောင်မှုပေးသူများထံ ပေးပို့သည့်အရာနှင့် ၎င်းတို့ထံမှ လက်ခံရရှိသည့်အရာကို အတိအကျ ကြည့်ရှုပါ။ OpenAI နှင့် ကိုက်ညီသော မည်သည့် client နှင့်မဆို အလုပ်လုပ်ပါသည်။",
-    "cliCode": "CLI ကုဒ်",
+    "cliCode": "CLI Code",
     "cliCodeSubtitle": "OmniRoute ကို ညွှန်ထားသော ကုဒ်ကိရိယာများ",
     "cliAgents": "CLI အေးဂျင့်များ",
     "cliAgentsSubtitle": "အလိုအလျောက် လုပ်ဆောင်သော CLI agent များ",

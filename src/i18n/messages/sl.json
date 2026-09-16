@@ -1274,7 +1274,7 @@
     "costsOverviewSubtitle": "Konsolidirana analiza stroškov",
     "agentBridge": "Most za agente",
     "agentBridgeSubtitle": "Prestrezanje prometa agentov IDE",
-    "trafficInspector": "Pregledovalnik prometa",
+    "trafficInspector": "Traffic Inspector",
     "trafficInspectorSubtitle": "Pregled prometa zahtev in odgovorov iz vaših aplikacij",
     "trafficInspectorPurpose": "Oglejte si natančno, kaj vaša aplikacija pošilja ponudnikom umetne inteligence in kaj od njih prejema. Deluje s katerim koli odjemalcem, združljivim z OpenAI.",
     "cliCode": "Koda CLI",

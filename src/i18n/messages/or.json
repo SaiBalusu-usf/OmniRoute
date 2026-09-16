@@ -1274,7 +1274,7 @@
     "costsOverviewSubtitle": "ଏକୀକୃତ ଖର୍ଚ୍ଚ ବିଶ୍ଳେଷଣ",
     "agentBridge": "ଏଜେଣ୍ଟ ବ୍ରିଜ୍",
     "agentBridgeSubtitle": "IDE ଏଜେଣ୍ଟ ଟ୍ରାଫିକ୍କୁ ଇଣ୍ଟରସେପ୍ଟ କରନ୍ତୁ",
-    "trafficInspector": "ଟ୍ରାଫିକ୍ ଇନ୍ସପେକ୍ଟର୍",
+    "trafficInspector": "Traffic Inspector",
     "trafficInspectorSubtitle": "ଆପଣଙ୍କ ଆପ୍ଗୁଡ଼ିକର ଅନୁରୋଧ ଏବଂ ପ୍ରତିକ୍ରିୟା ଟ୍ରାଫିକ୍ ଯାଞ୍ଚ କରନ୍ତୁ",
     "trafficInspectorPurpose": "ଆପଣଙ୍କ ଆପ୍ଲିକେସନ୍ AI ପ୍ରଦାନକାରୀଙ୍କୁ କ’ଣ ପଠାଏ ଏବଂ ସେମାନଙ୍କଠାରୁ କ’ଣ ଗ୍ରହଣ କରେ, ଠିକ୍ ସେହିପରି ଦେଖନ୍ତୁ। ଏହା ଯେକୌଣସି OpenAI-ସୁସଙ୍ଗତ କ୍ଲାଏଣ୍ଟ ସହ କାମ କରେ।",
     "cliCode": "CLI କୋଡ୍",

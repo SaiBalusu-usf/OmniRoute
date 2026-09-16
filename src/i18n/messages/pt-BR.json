@@ -1101,17 +1101,17 @@
     "contextRtk": "RTK",
     "contextCombos": "Combos de Engines",
     "contextLite": "Lite",
-    "contextAggressive": "Agressivo",
+    "contextAggressive": "Aggressive",
     "contextUltra": "Ultra",
     "contextOmniglyph": "OmniGlyph",
     "contextSettings": "Configurações de compressão",
-    "contextHeadroom": "Margem de segurança",
-    "contextSessionDedup": "Desduplicação de sessão",
+    "contextHeadroom": "Headroom",
+    "contextSessionDedup": "Session Dedup",
     "contextCcr": "CCR",
     "contextLlmlingua": "LLMLingua",
     "combosLive": "Combo Studio",
     "combosLiveSubtitle": "Cascata de roteamento em tempo real",
-    "compressionStudio": "Estúdio de compressão",
+    "compressionStudio": "Compression Studio",
     "compressionExclusions": "Exclusões",
     "contextSettingsSubtitle": "Padrões globais",
     "contextHeadroomSubtitle": "Compactação tabular",
@@ -13025,7 +13025,7 @@
         "description": "Ativa o acesso à rede no sandbox de skills."
       },
       "SERVER_OWNED_TOOL_LOOP_ENABLED": {
-        "label": "Loop de ferramentas controlado pelo servidor",
+        "label": "Server-Owned Tool Loop",
         "description": "Continue chamadas de ferramentas do servidor (server-owned) em não-streaming até que o modelo retorne uma resposta utilizável pelo cliente."
       },
       "RETRY_AFTER_PROVENANCE_ENABLED": {
