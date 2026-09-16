@@ -18,6 +18,7 @@ import {
   type DeleteByPeriodTarget,
 } from "./cleanup/usagePurge";
 import { ensureCompressionRunTelemetryTable } from "./compressionRunTelemetry";
+import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
 
 interface CleanupResult {
   deleted: number;
@@ -474,9 +475,21 @@ function getBatchRetentionDays(): number {
  * with no age filter, and is left untouched here -- it's a public API
  * contract, not the automatic cleanup path. Observed live: 182K checkpoint
  * rows / 5.25 GB, with no batch ever explicitly deleted by an operator.
+ *
+ * Gated by `BATCH_AND_FILE_AUTO_CLEANUP_ENABLED` (default off, #12999): every
+ * existing install would otherwise start deleting terminal batches (and their
+ * checkpoints) that today are kept forever, on the very next 6-hourly sweep.
+ * Fail closed -- an operator must opt in before this sweep touches anything.
  */
 export async function cleanupOldBatches(): Promise<CleanupResult> {
   const result: CleanupResult = { deleted: 0, errors: 0 };
+
+  if (!isFeatureFlagEnabled("BATCH_AND_FILE_AUTO_CLEANUP_ENABLED")) {
+    console.log(
+      "[Cleanup] Batch auto-cleanup disabled (BATCH_AND_FILE_AUTO_CLEANUP_ENABLED=false); skipping."
+    );
+    return result;
+  }
 
   try {
     const { deleteTerminalBatchesOlderThan } = await import("./batches");
@@ -501,9 +514,20 @@ export async function cleanupOldBatches(): Promise<CleanupResult> {
  * retention-days setting, just an operator-scheduled sweep, since nothing
  * previously enforced expires_at at all. Observed live: 1,874 rows / 5.19 GB
  * of uploaded file content, most long past expiry.
+ *
+ * Gated by `BATCH_AND_FILE_AUTO_CLEANUP_ENABLED` (default off, #12999): every
+ * existing install would otherwise start clearing file content that today is
+ * kept until explicitly deleted. Fail closed -- an operator must opt in.
  */
 export async function cleanupExpiredFiles(): Promise<CleanupResult> {
   const result: CleanupResult = { deleted: 0, errors: 0 };
+
+  if (!isFeatureFlagEnabled("BATCH_AND_FILE_AUTO_CLEANUP_ENABLED")) {
+    console.log(
+      "[Cleanup] Expired-file auto-cleanup disabled (BATCH_AND_FILE_AUTO_CLEANUP_ENABLED=false); skipping."
+    );
+    return result;
+  }
 
   try {
     const { pruneExpiredFiles } = await import("./files");

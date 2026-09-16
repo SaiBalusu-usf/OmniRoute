@@ -11,7 +11,7 @@
 // shared retention helper core.ts's health-check path now calls -- plus the
 // cleanup.ts wrappers that wire them into the automatic sweep.
 
-import { describe, it, beforeEach } from "node:test";
+import { describe, it, beforeEach, after } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
@@ -21,22 +21,26 @@ const TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "omniroute-terminal-
 process.env.DATA_DIR = TEST_DATA_DIR;
 
 const core = await import("../../src/lib/db/core.ts");
-const { createFile, getFileContent, pruneExpiredFiles } = await import(
-  "../../src/lib/db/files.ts"
-);
-const { createBatch, getBatch, deleteTerminalBatchesOlderThan } = await import(
-  "../../src/lib/db/batches.ts"
-);
+const { createFile, getFileContent, pruneExpiredFiles } = await import("../../src/lib/db/files.ts");
+const { createBatch, getBatch, deleteTerminalBatchesOlderThan } =
+  await import("../../src/lib/db/batches.ts");
 const { cleanupOldBatches, cleanupExpiredFiles } = await import("../../src/lib/db/cleanup.ts");
+
+// Repo test rule: DB-touching tests must close the handle in test.after(), or
+// the native test runner can hang indefinitely on a dangling connection.
+after(() => {
+  delete process.env.BATCH_AND_FILE_AUTO_CLEANUP_ENABLED;
+  core.resetDbInstance();
+  fs.rmSync(TEST_DATA_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+});
 
 const DAY = 24 * 60 * 60;
 
 function backdateBatch(batchId: string, column: string, epochSeconds: number, status: string) {
-  core.getDbInstance().prepare(`UPDATE batches SET ${column} = ?, status = ? WHERE id = ?`).run(
-    epochSeconds,
-    status,
-    batchId
-  );
+  core
+    .getDbInstance()
+    .prepare(`UPDATE batches SET ${column} = ?, status = ? WHERE id = ?`)
+    .run(epochSeconds, status, batchId);
 }
 
 function seedBatchWithCheckpoint(overrides: { column: string; ageDays: number; status: string }) {
@@ -70,7 +74,11 @@ describe("deleteTerminalBatchesOlderThan", () => {
   });
 
   it("deletes a completed batch older than the retention window, and its checkpoint", () => {
-    const { batch } = seedBatchWithCheckpoint({ column: "completed_at", ageDays: 40, status: "completed" });
+    const { batch } = seedBatchWithCheckpoint({
+      column: "completed_at",
+      ageDays: 40,
+      status: "completed",
+    });
 
     const result = deleteTerminalBatchesOlderThan(30);
 
@@ -84,7 +92,11 @@ describe("deleteTerminalBatchesOlderThan", () => {
   });
 
   it("leaves a completed batch newer than the retention window untouched", () => {
-    const { batch } = seedBatchWithCheckpoint({ column: "completed_at", ageDays: 5, status: "completed" });
+    const { batch } = seedBatchWithCheckpoint({
+      column: "completed_at",
+      ageDays: 5,
+      status: "completed",
+    });
 
     const result = deleteTerminalBatchesOlderThan(30);
 
@@ -107,7 +119,11 @@ describe("deleteTerminalBatchesOlderThan", () => {
   });
 
   it("never touches a batch that is still in progress, regardless of age", () => {
-    const { batch } = seedBatchWithCheckpoint({ column: "created_at", ageDays: 90, status: "in_progress" });
+    const { batch } = seedBatchWithCheckpoint({
+      column: "created_at",
+      ageDays: 90,
+      status: "in_progress",
+    });
 
     const result = deleteTerminalBatchesOlderThan(30);
 
@@ -115,13 +131,53 @@ describe("deleteTerminalBatchesOlderThan", () => {
     assert.ok(getBatch(batch.id), "a non-terminal batch must never be swept, no matter how old");
   });
 
-  it("cleanupOldBatches() wraps the same behavior with the OMNIROUTE_BATCH_RETENTION_DAYS default", async () => {
+  it("cleanupOldBatches() wraps the same behavior with the OMNIROUTE_BATCH_RETENTION_DAYS default, when BATCH_AND_FILE_AUTO_CLEANUP_ENABLED=true", async () => {
     seedBatchWithCheckpoint({ column: "completed_at", ageDays: 40, status: "completed" });
 
+    process.env.BATCH_AND_FILE_AUTO_CLEANUP_ENABLED = "true";
+    try {
+      const result = await cleanupOldBatches();
+      assert.equal(result.deleted, 1);
+      assert.equal(result.errors, 0);
+    } finally {
+      delete process.env.BATCH_AND_FILE_AUTO_CLEANUP_ENABLED;
+    }
+  });
+
+  it("cleanupOldBatches() deletes nothing by default (BATCH_AND_FILE_AUTO_CLEANUP_ENABLED unset -- fail closed, #12999)", async () => {
+    const { batch } = seedBatchWithCheckpoint({
+      column: "completed_at",
+      ageDays: 40,
+      status: "completed",
+    });
+
+    delete process.env.BATCH_AND_FILE_AUTO_CLEANUP_ENABLED;
     const result = await cleanupOldBatches();
 
-    assert.equal(result.deleted, 1);
+    assert.equal(
+      result.deleted,
+      0,
+      "default behavior must stay identical until an operator opts in"
+    );
     assert.equal(result.errors, 0);
+    assert.ok(getBatch(batch.id), "the terminal batch must survive with the flag unset");
+  });
+
+  it("cleanupOldBatches() deletes nothing when BATCH_AND_FILE_AUTO_CLEANUP_ENABLED=false", async () => {
+    const { batch } = seedBatchWithCheckpoint({
+      column: "completed_at",
+      ageDays: 40,
+      status: "completed",
+    });
+
+    process.env.BATCH_AND_FILE_AUTO_CLEANUP_ENABLED = "false";
+    try {
+      const result = await cleanupOldBatches();
+      assert.equal(result.deleted, 0);
+      assert.ok(getBatch(batch.id));
+    } finally {
+      delete process.env.BATCH_AND_FILE_AUTO_CLEANUP_ENABLED;
+    }
   });
 });
 
@@ -193,7 +249,7 @@ describe("pruneExpiredFiles", () => {
     assert.equal(deleted, 0, "an already-deleted row must not be counted again");
   });
 
-  it("cleanupExpiredFiles() wraps the same behavior for the automatic sweep", async () => {
+  it("cleanupExpiredFiles() wraps the same behavior for the automatic sweep, when BATCH_AND_FILE_AUTO_CLEANUP_ENABLED=true", async () => {
     const now = Math.floor(Date.now() / 1000);
     createFile({
       bytes: 4,
@@ -203,9 +259,40 @@ describe("pruneExpiredFiles", () => {
       expiresAt: now - DAY,
     });
 
-    const result = await cleanupExpiredFiles();
+    process.env.BATCH_AND_FILE_AUTO_CLEANUP_ENABLED = "true";
+    let result: Awaited<ReturnType<typeof cleanupExpiredFiles>>;
+    try {
+      result = await cleanupExpiredFiles();
+    } finally {
+      delete process.env.BATCH_AND_FILE_AUTO_CLEANUP_ENABLED;
+    }
 
     assert.equal(result.deleted, 1);
     assert.equal(result.errors, 0);
+  });
+
+  it("cleanupExpiredFiles() clears nothing by default (BATCH_AND_FILE_AUTO_CLEANUP_ENABLED unset -- fail closed, #12999)", async () => {
+    const now = Math.floor(Date.now() / 1000);
+    const file = createFile({
+      bytes: 4,
+      filename: "expired-3.jsonl",
+      purpose: "batch",
+      content: Buffer.from("data"),
+      expiresAt: now - DAY,
+    });
+
+    delete process.env.BATCH_AND_FILE_AUTO_CLEANUP_ENABLED;
+    const result = await cleanupExpiredFiles();
+
+    assert.equal(
+      result.deleted,
+      0,
+      "default behavior must stay identical until an operator opts in"
+    );
+    assert.equal(result.errors, 0);
+    assert.ok(
+      getFileContent(file.id),
+      "the expired file's content must survive with the flag unset"
+    );
   });
 });
