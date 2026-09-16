@@ -997,6 +997,8 @@
   "featureFlagProxyPoolEgressObservationDescription": "A vezérlőpulton jelenjen meg egy proxykészlet alatt, hogy az elmúlt 24 órában hány megfigyelt kimenő IP-cím szolgálta ki a tagjait, hány kapcsolat használta ezeket, és legfeljebb hány kapcsolat volt megfigyelhető egyetlen IP-cím mögött. Csak olvasható, a proxynaplóból számított adat, amelyet a rendszer soha nem használ útválasztásra. Alapértelmezés szerint kikapcsolva: a készletszerkesztő változatlan, a megfigyelési útvonal pedig null értékkel válaszol.",
   "featureFlagProxyHealthBlockedResetsStreakDescription": "A proxyk állapotellenőrzése során a cél által elutasított próba (401/403/429: a proxy továbbította a kérést, a cél pedig elutasította ezt a kimenő IP-címet) a kiszolgált próbához hasonlóan nullázza a proxy egymást követő hibáinak számlálóját. Alapértelmezés szerint kikapcsolva: az elutasítás semleges marad, és nem változtatja meg a sorozatot. Az 5xx válasz mindkét esetben eldönthetetlen marad, és egy elutasítás soha nem távolít el, nem tilt le és nem aktivál újra proxyt.",
   "featureFlagBatchAndFileAutoCleanupEnabledDescription": "__MISSING__:Let the automatic cleanup sweep delete terminal (completed/failed/cancelled/expired) Batch API jobs older than OMNIROUTE_BATCH_RETENTION_DAYS, along with their per-line checkpoints, and clear the BLOB content of uploaded files past their own expires_at. Off by default: every existing install keeps this data exactly as before until an operator opts in. The operator-triggered DELETE /api/v1/batches/delete-completed route is unaffected either way -- it is a separate, unconditional public API contract.",
+  "featureFlagXaiOauthLiveModelDiscoveryDescription": "__MISSING__:Fetch the live xAI model catalog for xai-oauth connections from https://api.x.ai/v1/models using the OAuth bearer token, instead of the frozen static seed. Off by default: xai-oauth keeps serving the static seed unchanged. On any resolution error, discovery falls back to the seed.",
+  "featureFlagDbHealthcheckStartupDeferredEnabledDescription": "__MISSING__:Run the startup database integrity/health check after the server starts accepting requests instead of blocking startup until it completes. Off by default: startup blocks on the check exactly like before this change, so a corrupt database is still caught before the first request is served.",
   "sidebar": {
     "home": "Otthon",
     "dashboard": "Irányítópult",
@@ -6126,6 +6128,7 @@
       "agentrouter": "Szerezzen 200 $ ingyenes kreditet a https://agentrouter.org/register oldalon — bankkártya nem szükséges.",
       "unorouter": "Hozzon létre egy API kulcsot a https://unorouter.ai oldalon, majd illessze be ide Bearer tokenként.",
       "agnes": "Szerezzen API-kulcsot az agnes-ai.com oldalon",
+      "agnes-cn": "Connect Agnes AI (China) with an API key issued for api.agnes-ai.cn. Keys from apihub.agnes-ai.com will not work.",
       "aimlapi": "Ingyenes csomag szüneteltetve (2026) — az AI/ML API mostantól csak használatalapú (min. 20 $ feltöltés); nincsenek ismétlődő ingyenes kreditek.",
       "ai21": "10 $ próbakredit regisztrációkor (3 hónapig érvényes), bankkártya nem szükséges",
       "alibaba": "Csatlakoztassa az Alibaba szolgáltatást egy API-kulccsal.",
@@ -7765,6 +7768,7 @@
     "retentionMcpAudit": "MCP-ellenőrzés (nap)",
     "retentionA2aEvents": "A2A események (nap)",
     "retentionCallLogs": "Hívásnaplók (nap)",
+    "retentionConversationTurnNodes": "Conversation turn nodes (days)",
     "retentionUsageHistory": "Használati előzmények (nap)",
     "retentionMemoryEntries": "Memóriabejegyzések (nap)",
     "retentionXpAuditLog": "XP auditnapló (nap)",
@@ -11426,7 +11430,9 @@
       "correlationIdValue": "Korelációs azonosító: {id}",
       "detailedPayloadInfo": "Először engedélyezze a részletes naplózást, ha a négyfázisú kliens/szolgáltató payload nézetet szeretné az új kérésekhez.",
       "copyAll": "Összes másolása",
-      "copiedAll": "Minden másolva"
+      "copiedAll": "Minden másolva",
+      "rawViewOff": "__MISSING__:Raw view: off",
+      "rawViewOn": "__MISSING__:Raw view: on"
     }
   },
   "proxyLogger": {

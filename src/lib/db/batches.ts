@@ -387,22 +387,25 @@ export function deleteBatch(id: string): boolean {
 
   db.prepare("DELETE FROM batch_item_checkpoints WHERE batch_id = ?").run(id);
 
-  // Soft-delete associated files (input, output, error)
-  if (batch.inputFileId) {
+  // Soft-delete associated files (input, output, error) — but only when no
+  // OTHER batch still references the same file id (#13681). A file shared
+  // across batches (e.g. one input file reused for several batch submissions)
+  // must survive as long as any sibling batch still points at it.
+  if (batch.inputFileId && !isFileReferencedByOtherBatch(batch.inputFileId, [id])) {
     try {
       deleteFile(batch.inputFileId);
     } catch {
       /* ignore */
     }
   }
-  if (batch.outputFileId) {
+  if (batch.outputFileId && !isFileReferencedByOtherBatch(batch.outputFileId, [id])) {
     try {
       deleteFile(batch.outputFileId);
     } catch {
       /* ignore */
     }
   }
-  if (batch.errorFileId) {
+  if (batch.errorFileId && !isFileReferencedByOtherBatch(batch.errorFileId, [id])) {
     try {
       deleteFile(batch.errorFileId);
     } catch {
@@ -423,6 +426,47 @@ export type DeleteCompletedBatchesScope = { apiKeyId: string } | { allTenants: t
 
 /** Both sweep modes commit in chunks of this many batches (SEC-D, LEDGER-4). */
 export const INSTANCE_SWEEP_CHUNK = 200;
+
+/**
+ * Upper bound on the number of `INSTANCE_SWEEP_CHUNK`-sized chunks a single
+ * `deleteCompletedBatches` call may run (#13680). `sweepLoop` is a synchronous
+ * `for (;;)` over `better-sqlite3` — with no cap, one request could hold the
+ * Node.js event loop for as long as it takes to sweep every completed batch on
+ * the instance. 25 × 200 = 5000 batches/request is a judgment call, not a hard
+ * constraint; any caller with more to sweep gets `hasMore: true` back and
+ * resumes by calling again — resumption falls out naturally from rowid
+ * ordering plus delete-as-you-go (already-swept rows are gone, so the next
+ * SELECT picks up the next-lowest surviving rowid on its own; no cursor field
+ * needed).
+ */
+export const MAX_CHUNKS_PER_REQUEST = 25;
+
+/**
+ * True when some batch OTHER than one of `excludeBatchIds` still references
+ * `fileId` as its input/output/error file (#13681). Used before soft-deleting
+ * a file to avoid nulling content a surviving batch still needs. Binds
+ * `fileId` three times; when `excludeBatchIds` is empty the `NOT IN (...)`
+ * clause is dropped entirely rather than emitted empty (`NOT IN ()` is invalid
+ * SQL, and getting the guard wrong there would silently match everything).
+ */
+export function isFileReferencedByOtherBatch(fileId: string, excludeBatchIds: string[]): boolean {
+  const db = getDbInstance();
+  if (excludeBatchIds.length === 0) {
+    const row = db
+      .prepare(
+        "SELECT 1 FROM batches WHERE input_file_id = ? OR output_file_id = ? OR error_file_id = ? LIMIT 1"
+      )
+      .get(fileId, fileId, fileId);
+    return !!row;
+  }
+  const marks = excludeBatchIds.map(() => "?").join(",");
+  const row = db
+    .prepare(
+      `SELECT 1 FROM batches WHERE (input_file_id = ? OR output_file_id = ? OR error_file_id = ?) AND id NOT IN (${marks}) LIMIT 1`
+    )
+    .get(fileId, fileId, fileId, ...excludeBatchIds);
+  return !!row;
+}
 
 /**
  * Delete the batches matching `whereSql`/`params` and the files they
@@ -466,10 +510,26 @@ export const INSTANCE_SWEEP_CHUNK = 200;
  * so the lowest-privilege caller — any valid API key — cannot hold the
  * instance's single writer for the length of its whole sweep. Each chunk stays
  * atomic: a failure inside chunk N leaves chunks < N committed, chunk N fully
- * rolled back, and rethrows. Inherent to per-chunk commits, in either mode: a
- * file shared by batches in two different chunks can be nulled by chunk 1
- * before chunk 2 fails; the surviving batch row is swept by the next run. The
- * returned totals sum the chunks.
+ * rolled back, and rethrows. Each chunk's file soft-deletes now check whether
+ * some batch OUTSIDE that chunk still references the file
+ * (`isFileReferencedByOtherBatch`, #13681) — a file shared with a
+ * non-completed sibling batch, or with a completed batch a LATER chunk hasn't
+ * reached yet, survives this chunk. The only case that check cannot see is
+ * pure timing: chunk 1 commits and nulls a file, then — before chunk 2 runs —
+ * a NEW batch is created reusing that same file id. That race is inherent to
+ * per-chunk commits and stays a known, accepted edge case; everything else
+ * (a concurrently existing sibling, in any status, in any chunk) is now
+ * guarded. The returned totals sum the chunks.
+ *
+ * A single call commits at most `MAX_CHUNKS_PER_REQUEST` chunks (#13680):
+ * `better-sqlite3` is synchronous, so an unbounded loop would hold the event
+ * loop for as long as it takes to sweep the whole key's/instance's backlog.
+ * When the cap is hit with more rows still pending, the call returns
+ * `hasMore: true` instead of continuing; the caller simply calls again (the
+ * DELETE route on its next request, the cleanup job on its next scheduled
+ * run). Resumption needs no cursor: swept rows are gone, `rowid` only
+ * increases, so the next call's `ORDER BY rowid LIMIT ?` picks up exactly
+ * where the previous call left off.
  *
  * The loop must make progress: it remembers the first id of the previous chunk
  * and throws if the next chunk starts with the same id — the DELETE removed
@@ -489,6 +549,7 @@ function deleteBatchesMatching(
 ): {
   deletedBatches: number;
   deletedFiles: number;
+  hasMore: boolean;
 } {
   const scopeObj = scope && typeof scope === "object" ? scope : {};
   const allTenants = "allTenants" in scopeObj && scopeObj.allTenants === true;
@@ -530,6 +591,12 @@ function deleteBatchesMatching(
 
     let deletedFiles = 0;
     for (const fid of fileIds) {
+      // #13681: a file referenced by a batch outside this chunk (a matching
+      // batch a later chunk has not reached yet, or any batch the WHERE does
+      // not match — non-terminal, or too young for the age-gated sweep) must
+      // survive this chunk's sweep. Applies to BOTH callers of
+      // deleteBatchesMatching: the DELETE route and the automatic cleanup.
+      if (isFileReferencedByOtherBatch(fid, ids)) continue;
       try {
         // Key mode: only the key's OWN files. A batch may reference a file
         // another tenant (or nobody) owns; a bulk destructive sweep must not
@@ -554,11 +621,20 @@ function deleteBatchesMatching(
   // modes is the SELECT that produces the next chunk. No outer transaction —
   // the write lock is released between chunks (LEDGER-4/20/21).
   const sweepLoop = (nextIds: () => string[]) => {
-    const totals = { deletedBatches: 0, deletedFiles: 0 };
+    const totals = { deletedBatches: 0, deletedFiles: 0, hasMore: false };
     let previousFirstId: string | null = null;
+    let chunkCount = 0;
     for (;;) {
       const ids = nextIds();
       if (ids.length === 0) break;
+      // Chunk cap (#13680): a single request commits at most
+      // MAX_CHUNKS_PER_REQUEST chunks. This peek doesn't delete or count
+      // anything — it only tells the caller whether more work remains so it
+      // can call again (resumption is natural: already-swept rows are gone).
+      if (chunkCount >= MAX_CHUNKS_PER_REQUEST) {
+        totals.hasMore = true;
+        break;
+      }
       // Forward-progress guard (LEDGER-22): the chunk is re-selected from the
       // table after each commit, so a repeated first id means the previous
       // DELETE removed nothing and the loop would spin forever. A concurrent
@@ -570,6 +646,7 @@ function deleteBatchesMatching(
       const part = sweepIds(ids);
       totals.deletedBatches += part.deletedBatches;
       totals.deletedFiles += part.deletedFiles;
+      chunkCount++;
     }
     return totals;
   };
@@ -590,6 +667,7 @@ function deleteBatchesMatching(
 export function deleteCompletedBatches(scope: DeleteCompletedBatchesScope): {
   deletedBatches: number;
   deletedFiles: number;
+  hasMore: boolean;
 } {
   return deleteBatchesMatching("status = 'completed'", [], scope);
 }
@@ -614,6 +692,7 @@ export function deleteCompletedBatches(scope: DeleteCompletedBatchesScope): {
 export function deleteTerminalBatchesOlderThan(days: number): {
   deletedBatches: number;
   deletedFiles: number;
+  hasMore: boolean;
 } {
   const cutoffEpochSeconds = Math.floor(Date.now() / 1000) - days * 24 * 60 * 60;
   return deleteBatchesMatching(

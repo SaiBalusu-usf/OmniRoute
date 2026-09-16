@@ -997,6 +997,8 @@
   "featureFlagProxyPoolEgressObservationDescription": "Visa under en proxypool på instrumentpanelen hur många observerade utgående IP-adresser som betjänade dess medlemmar under de senaste 24 timmarna, hur många anslutningar som använde dem och det högsta antalet som observerades bakom en och samma IP-adress. Skrivskyddat, beräknat från proxyloggen och används aldrig för dirigering. Avstängt som standard: poolredigeraren är oförändrad och observationsrutten returnerar null.",
   "featureFlagProxyHealthBlockedResetsStreakDescription": "Låt en kontroll som avvisades av målet (401/403/429: proxyn vidarebefordrade begäran men destinationen avvisade den utgående IP-adressen) nollställa proxyns serie av på varandra följande fel i proxyhälsokontrollen, precis som en betjänad kontroll. Avstängt som standard: ett avvisande förblir neutralt och bibehåller serien. Ett 5xx-svar förblir icke avgörande i båda fallen, och ett avvisande tar aldrig bort, inaktiverar eller återaktiverar en proxy.",
   "featureFlagBatchAndFileAutoCleanupEnabledDescription": "__MISSING__:Let the automatic cleanup sweep delete terminal (completed/failed/cancelled/expired) Batch API jobs older than OMNIROUTE_BATCH_RETENTION_DAYS, along with their per-line checkpoints, and clear the BLOB content of uploaded files past their own expires_at. Off by default: every existing install keeps this data exactly as before until an operator opts in. The operator-triggered DELETE /api/v1/batches/delete-completed route is unaffected either way -- it is a separate, unconditional public API contract.",
+  "featureFlagXaiOauthLiveModelDiscoveryDescription": "__MISSING__:Fetch the live xAI model catalog for xai-oauth connections from https://api.x.ai/v1/models using the OAuth bearer token, instead of the frozen static seed. Off by default: xai-oauth keeps serving the static seed unchanged. On any resolution error, discovery falls back to the seed.",
+  "featureFlagDbHealthcheckStartupDeferredEnabledDescription": "__MISSING__:Run the startup database integrity/health check after the server starts accepting requests instead of blocking startup until it completes. Off by default: startup blocks on the check exactly like before this change, so a corrupt database is still caught before the first request is served.",
   "sidebar": {
     "home": "Hem",
     "dashboard": "Instrumentpanel",
@@ -6126,6 +6128,7 @@
       "agentrouter": "Få $200 i gratiskrediter på https://agentrouter.org/register — inget kreditkort krävs.",
       "unorouter": "Skapa en API-nyckel på https://unorouter.ai, klistra sedan in den här som en Bearer-token.",
       "agnes": "Hämta API-nyckel på agnes-ai.com",
+      "agnes-cn": "Connect Agnes AI (China) with an API key issued for api.agnes-ai.cn. Keys from apihub.agnes-ai.com will not work.",
       "aimlapi": "Gratisnivån pausad (2026) — AI/ML API är nu endast pay-as-you-go (minst $20 påfyllning); inga återkommande gratiskrediter.",
       "ai21": "$10 i testkrediter vid registrering (giltiga i 3 månader), inget kreditkort krävs",
       "alibaba": "Anslut Alibaba med en API-nyckel.",
@@ -7765,6 +7768,7 @@
     "retentionMcpAudit": "MCP-revision (dagar)",
     "retentionA2aEvents": "A2A-evenemang (dagar)",
     "retentionCallLogs": "Samtalsloggar (dagar)",
+    "retentionConversationTurnNodes": "Conversation turn nodes (days)",
     "retentionUsageHistory": "Användningshistorik (dagar)",
     "retentionMemoryEntries": "Minnesposter (dagar)",
     "retentionXpAuditLog": "XP-granskningslogg (dagar)",
@@ -11426,7 +11430,9 @@
       "correlationIdValue": "Korrelations-ID: {id}",
       "detailedPayloadInfo": "Aktivera detaljerad loggning först om du vill ha den fyrastegs klient/leverantörs payload-vyn för nya förfrågningar.",
       "copyAll": "Kopiera alla",
-      "copiedAll": "Alla kopierade"
+      "copiedAll": "Alla kopierade",
+      "rawViewOff": "__MISSING__:Raw view: off",
+      "rawViewOn": "__MISSING__:Raw view: on"
     }
   },
   "proxyLogger": {

@@ -997,6 +997,8 @@
   "featureFlagProxyPoolEgressObservationDescription": "Wyświetla w panelu, pod pulą serwerów proxy, ile zaobserwowanych wychodzących adresów IP obsługiwało jej elementy w ciągu ostatnich 24 godz., ile połączeń z nich korzystało oraz największą liczbę połączeń za jednym adresem IP. Tylko do odczytu, obliczane na podstawie dziennika serwerów proxy i nigdy niewykorzystywane do routingu. Domyślnie wyłączone: edytor puli pozostaje bez zmian, a trasa obserwacji zwraca null.",
   "featureFlagProxyHealthBlockedResetsStreakDescription": "Podczas kontroli kondycji serwerów proxy pozwala, aby próba odrzucona przez cel (401/403/429: serwer proxy przekazał żądanie, ale miejsce docelowe odrzuciło ten wychodzący adres IP) resetowała serię kolejnych niepowodzeń serwera proxy, tak jak obsłużona próba. Domyślnie wyłączone: odrzucenie pozostaje neutralne i nie przerywa serii. Odpowiedź 5xx pozostaje nierozstrzygająca w obu przypadkach, a odrzucenie nigdy nie usuwa, nie wyłącza ani nie aktywuje ponownie serwera proxy.",
   "featureFlagBatchAndFileAutoCleanupEnabledDescription": "__MISSING__:Let the automatic cleanup sweep delete terminal (completed/failed/cancelled/expired) Batch API jobs older than OMNIROUTE_BATCH_RETENTION_DAYS, along with their per-line checkpoints, and clear the BLOB content of uploaded files past their own expires_at. Off by default: every existing install keeps this data exactly as before until an operator opts in. The operator-triggered DELETE /api/v1/batches/delete-completed route is unaffected either way -- it is a separate, unconditional public API contract.",
+  "featureFlagXaiOauthLiveModelDiscoveryDescription": "__MISSING__:Fetch the live xAI model catalog for xai-oauth connections from https://api.x.ai/v1/models using the OAuth bearer token, instead of the frozen static seed. Off by default: xai-oauth keeps serving the static seed unchanged. On any resolution error, discovery falls back to the seed.",
+  "featureFlagDbHealthcheckStartupDeferredEnabledDescription": "__MISSING__:Run the startup database integrity/health check after the server starts accepting requests instead of blocking startup until it completes. Off by default: startup blocks on the check exactly like before this change, so a corrupt database is still caught before the first request is served.",
   "sidebar": {
     "home": "Strona główna",
     "dashboard": "Panel",
@@ -6126,6 +6128,7 @@
       "agentrouter": "Otrzymaj 200 $ darmowych środków na https://agentrouter.org/register — karta kredytowa nie jest wymagana.",
       "unorouter": "Utwórz klucz API na https://unorouter.ai, a następnie wklej go tutaj jako token Bearer.",
       "agnes": "Pobierz klucz API na stronie agnes-ai.com",
+      "agnes-cn": "Connect Agnes AI (China) with an API key issued for api.agnes-ai.cn. Keys from apihub.agnes-ai.com will not work.",
       "aimlapi": "Bezpłatny pakiet wstrzymany (2026) — AI/ML API działa teraz wyłącznie w modelu pay-as-you-go (min. doładowanie 20 $); brak cyklicznych darmowych środków.",
       "ai21": "10 $ środków próbnych przy rejestracji (ważne przez 3 miesiące), karta kredytowa nie jest wymagana",
       "alibaba": "Połącz z Alibaba za pomocą klucza API.",
@@ -7765,6 +7768,7 @@
     "retentionMcpAudit": "Audit MCP (dni)",
     "retentionA2aEvents": "Zdarzenia A2A (dni)",
     "retentionCallLogs": "Logi wywołań (dni)",
+    "retentionConversationTurnNodes": "Conversation turn nodes (days)",
     "retentionUsageHistory": "Historia użycia (dni)",
     "retentionMemoryEntries": "Wpisy pamięci (dni)",
     "retentionXpAuditLog": "Log audytu XP (dni)",
@@ -11426,7 +11430,9 @@
       "correlationIdValue": "Identyfikator korelacji: {id}",
       "detailedPayloadInfo": "Najpierw włącz szczegółowe logowanie, jeśli chcesz uzyskać widok ładunku klienta/dostawcy w czterech etapach dla nowych żądań.",
       "copyAll": "Kopiuj wszystko",
-      "copiedAll": "Skopiowano wszystko"
+      "copiedAll": "Skopiowano wszystko",
+      "rawViewOff": "__MISSING__:Raw view: off",
+      "rawViewOn": "__MISSING__:Raw view: on"
     }
   },
   "proxyLogger": {
