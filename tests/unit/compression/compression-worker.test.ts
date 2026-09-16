@@ -193,4 +193,39 @@ describe("compression worker execution", () => {
     assert.equal(ticked, true);
     await jobs;
   });
+
+  it("fails open when queue depth exceeds MAX_QUEUE_DEPTH", async () => {
+    const pool = new CompressionWorkerPool({ size: 1 });
+    try {
+      const promises: Promise<CompressionResult>[] = [];
+      for (let i = 0; i < 40; i++) {
+        promises.push(pool.run(body, "stacked", { config }));
+      }
+      const results = await Promise.all(promises);
+      assert.equal(results.length, 40);
+      for (const res of results) {
+        assert.ok(res.body);
+      }
+    } finally {
+      await pool.close();
+    }
+  });
+
+  it("drains queue and fails open if workers fail repeatedly", async () => {
+    const pool = new CompressionWorkerPool({ size: 1, timeoutMs: 1 });
+    try {
+      const results = await Promise.all([
+        pool.run(body, "stacked", { config }),
+        pool.run(body, "stacked", { config }),
+        pool.run(body, "stacked", { config }),
+        pool.run(body, "stacked", { config }),
+      ]);
+      assert.equal(results.length, 4);
+      for (const res of results) {
+        assert.equal(res.compressed, false);
+      }
+    } finally {
+      await pool.close();
+    }
+  });
 });

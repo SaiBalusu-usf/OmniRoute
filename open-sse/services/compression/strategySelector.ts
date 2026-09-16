@@ -540,9 +540,17 @@ async function runCompressionAsync(
   if (isCompressionWorkerEligible(body, mode, workerOptions)) {
     try {
       const { runCompressionInWorker } = await import("./compressionWorkerPool.ts");
-      return await runCompressionInWorker(body, mode, workerOptions, options?.onEngineStep);
+      const workerRes = await runCompressionInWorker(
+        body,
+        mode,
+        workerOptions,
+        options?.onEngineStep
+      );
+      if (workerRes.compressed) {
+        return workerRes;
+      }
     } catch {
-      return { body, compressed: false, stats: null };
+      // Fall through to in-process compression
     }
   }
   if (

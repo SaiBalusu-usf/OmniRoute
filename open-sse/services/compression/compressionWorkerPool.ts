@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { Worker } from "node:worker_threads";
 import type { CompressionResult } from "./types.ts";
 import type { StackedCompressionStep } from "./strategySelector.ts";
@@ -8,6 +9,8 @@ import type {
   CompressionWorkerMessage,
   CompressionWorkerOptions,
 } from "./compressionWorkerProtocol.ts";
+
+const MAX_QUEUE_DEPTH = 32;
 
 function positiveInteger(value: string | undefined, fallback: number): number {
   const parsed = Number(value);
@@ -80,9 +83,13 @@ export function resolveWorkerFile(): string {
 function unchanged(body: Record<string, unknown>): CompressionResult {
   return { body, compressed: false, stats: null };
 }
-interface PendingJob extends CompressionWorkerJob {
-  originalBody: Record<string, unknown>;
-  resolve: (result: CompressionResult) => void;
+interface PendingJob {
+  id: number;
+  body?: Record<string, unknown>;
+  mode: CompressionWorkerJob["mode"];
+  options?: CompressionWorkerOptions;
+  originalBody?: Record<string, unknown>;
+  resolve?: (result: CompressionResult) => void;
   onEngineStep?: (step: StackedCompressionStep) => void;
 }
 interface PoolWorker {
@@ -99,6 +106,8 @@ export class CompressionWorkerPool {
   private readonly size: number;
   private readonly timeoutMs: number;
   private readonly idleMs: number;
+  private disabled = false;
+  private consecutiveFailures = 0;
 
   constructor({
     size = positiveInteger(process.env.OMNI_COMPRESSION_WORKERS, 2),
@@ -116,6 +125,12 @@ export class CompressionWorkerPool {
     options?: CompressionWorkerOptions,
     onEngineStep?: (step: StackedCompressionStep) => void
   ): Promise<CompressionResult> {
+    if (this.disabled) {
+      return Promise.resolve(unchanged(body));
+    }
+    if (this.queue.length >= MAX_QUEUE_DEPTH) {
+      return Promise.resolve(unchanged(body));
+    }
     return new Promise((resolve) => {
       this.queue.push({
         id: this.nextId++,
@@ -126,34 +141,76 @@ export class CompressionWorkerPool {
         resolve,
         onEngineStep,
       });
-      this.dispatch();
+      try {
+        this.dispatch();
+      } catch {
+        this.drainQueueAndFailOpen();
+      }
     });
   }
+
+  private drainQueueAndFailOpen(): void {
+    const jobs = this.queue.splice(0);
+    for (const job of jobs) {
+      const orig = job.originalBody;
+      const res = job.resolve;
+      job.body = undefined;
+      job.originalBody = undefined;
+      job.options = undefined;
+      job.onEngineStep = undefined;
+      job.resolve = undefined;
+      if (res && orig) {
+        try {
+          res(unchanged(orig));
+        } catch {}
+      }
+    }
+  }
+
   async close(): Promise<void> {
-    for (const job of this.queue.splice(0)) job.resolve(unchanged(job.originalBody));
+    this.disabled = true;
+    this.drainQueueAndFailOpen();
     await Promise.all([...this.workers].map((slot) => this.remove(slot)));
   }
-  private spawn(): PoolWorker {
-    const slot: PoolWorker = {
-      worker: new Worker(resolveWorkerFile()),
-      job: null,
-      timeout: null,
-      idle: null,
-    };
-    this.workers.add(slot);
-    slot.worker.on("message", (message: CompressionWorkerMessage) =>
-      this.handleMessage(slot, message)
-    );
-    slot.worker.on("error", () => this.fail(slot));
-    slot.worker.on("exit", () => {
-      if (this.workers.has(slot)) this.fail(slot);
-    });
-    return slot;
+
+  private spawn(): PoolWorker | undefined {
+    if (this.disabled) return undefined;
+    try {
+      const file = resolve(resolveWorkerFile());
+      const workerUrl = pathToFileURL(file);
+      const slot: PoolWorker = {
+        worker: new Worker(workerUrl),
+        job: null,
+        timeout: null,
+        idle: null,
+      };
+      this.workers.add(slot);
+      slot.worker.on("message", (message: CompressionWorkerMessage) =>
+        this.handleMessage(slot, message)
+      );
+      slot.worker.on("error", () => this.fail(slot));
+      slot.worker.on("exit", () => {
+        if (this.workers.has(slot)) this.fail(slot);
+      });
+      return slot;
+    } catch {
+      this.consecutiveFailures++;
+      this.disabled = true;
+      this.drainQueueAndFailOpen();
+      return undefined;
+    }
   }
+
   private dispatch(): void {
+    if (this.disabled) {
+      this.drainQueueAndFailOpen();
+      return;
+    }
     while (this.queue.length) {
       let slot = [...this.workers].find((candidate) => !candidate.job);
-      if (!slot && this.workers.size < this.size) slot = this.spawn();
+      if (!slot && this.workers.size < this.size) {
+        slot = this.spawn();
+      }
       if (!slot) return;
       if (slot.idle) clearTimeout(slot.idle);
       const job = this.queue.shift();
@@ -162,9 +219,14 @@ export class CompressionWorkerPool {
       slot.timeout = setTimeout(() => this.fail(slot!), this.timeoutMs);
       slot.timeout.unref();
       const { originalBody: _body, resolve: _resolve, onEngineStep: _step, ...wireJob } = job;
-      slot.worker.postMessage(wireJob);
+      try {
+        slot.worker.postMessage(wireJob);
+      } catch {
+        this.fail(slot);
+      }
     }
   }
+
   private handleMessage(slot: PoolWorker, message: CompressionWorkerMessage): void {
     const job = slot.job;
     if (!job || job.id !== message.id) return;
@@ -176,28 +238,73 @@ export class CompressionWorkerPool {
       }
       return;
     }
-    this.finish(slot, message.type === "result" ? message.result : unchanged(job.originalBody));
+    this.finish(
+      slot,
+      message.type === "result" ? message.result : unchanged(job.originalBody ?? {})
+    );
   }
+
   private finish(slot: PoolWorker, result: CompressionResult): void {
+    this.consecutiveFailures = 0;
     const job = slot.job;
     if (!job) return;
     if (slot.timeout) clearTimeout(slot.timeout);
     slot.timeout = null;
     slot.job = null;
-    job.resolve(result);
+    const res = job.resolve;
+    job.body = undefined;
+    job.originalBody = undefined;
+    job.options = undefined;
+    job.onEngineStep = undefined;
+    job.resolve = undefined;
+    if (res) {
+      try {
+        res(result);
+      } catch {}
+    }
     // Idle eviction MUST terminate. Dropping the slot from the set only releases our
     // reference - the thread, its MessagePort and its private heap outlive the pool
     // for the whole process lifetime, invisible to process.memoryUsage(). (#12812)
     slot.idle = setTimeout(() => void this.remove(slot), this.idleMs);
     slot.idle.unref();
-    this.dispatch();
+    try {
+      this.dispatch();
+    } catch {
+      this.drainQueueAndFailOpen();
+    }
   }
+
   private fail(slot: PoolWorker): void {
+    this.consecutiveFailures++;
+    if (this.consecutiveFailures >= 3) {
+      this.disabled = true;
+      this.drainQueueAndFailOpen();
+    }
     const job = slot.job;
-    if (job) job.resolve(unchanged(job.originalBody));
     slot.job = null;
-    void this.remove(slot).finally(() => this.dispatch());
+    if (job) {
+      const orig = job.originalBody;
+      const res = job.resolve;
+      job.body = undefined;
+      job.originalBody = undefined;
+      job.options = undefined;
+      job.onEngineStep = undefined;
+      job.resolve = undefined;
+      if (res && orig) {
+        try {
+          res(unchanged(orig));
+        } catch {}
+      }
+    }
+    void this.remove(slot).finally(() => {
+      try {
+        this.dispatch();
+      } catch {
+        this.drainQueueAndFailOpen();
+      }
+    });
   }
+
   /** Drop a slot and release its OS thread. Removal always terminates: a pooled worker
    *  has no other owner, so skipping terminate() strands the thread permanently. */
   private async remove(slot: PoolWorker): Promise<void> {

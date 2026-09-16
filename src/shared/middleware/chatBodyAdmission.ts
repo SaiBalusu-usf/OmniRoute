@@ -1136,6 +1136,7 @@ export async function admitChatRequest(
     body.set(chunk, offset);
     offset += chunk.byteLength;
   }
+  chunks.length = 0;
   return { admit: true, request: rebuildRequest(request, body), lease };
 }
 
