@@ -3,6 +3,7 @@ import {
   parseEmbeddingModel,
   getEmbeddingProvider,
   buildDynamicEmbeddingProvider,
+  deriveEmbeddingProviderForChatProvider,
   type EmbeddingProviderNodeRow,
   type EmbeddingProvider,
 } from "@omniroute/open-sse/config/embeddingRegistry.ts";
@@ -191,6 +192,8 @@ export async function createEmbeddingResponse(
     null;
   let credentialsProviderId = provider;
 
+  // #11088: synced-endpoint route — the connection advertising this endpoint
+  // supplies credentials and its configured base URL directly.
   if (syncedEndpointRoute) {
     credentials = await getProviderCredentials(
       provider,
@@ -231,6 +234,26 @@ export async function createEmbeddingResponse(
       authHeader: "bearer",
       models: [],
     };
+  }
+
+  // Generic fallback: a configured OpenAI-compatible chat provider with no
+  // curated embedding entry (groq, mistral, upstage, ...) still serves
+  // embeddings via the standard <base>/embeddings endpoint. Curated registry
+  // entries are checked first and keep their specialized configuration.
+  if (!providerConfig && !options.resolvedProvider) {
+    try {
+      const { REGISTRY } = await import("@omniroute/open-sse/config/providerRegistry.ts");
+      const chatEntry = (REGISTRY as Record<string, { baseUrl?: string } | undefined>)[provider];
+      providerConfig = deriveEmbeddingProviderForChatProvider(provider, chatEntry);
+      if (providerConfig) {
+        log.info(
+          "EMBED",
+          `Derived generic embedding endpoint for configured provider ${provider}: ${providerConfig.baseUrl}`
+        );
+      }
+    } catch (err) {
+      log.error("EMBED", `Failed to derive generic embedding provider ${provider}: ${err}`);
+    }
   }
 
   if (!providerConfig) {
@@ -297,9 +320,12 @@ export async function createEmbeddingResponse(
       );
     }
     if ("allExpired" in credentials && credentials.allExpired) {
+      const expiredStatus = (credentials as { expiredStatus?: string }).expiredStatus;
+      const quota = expiredStatus === "credits_exhausted";
+      const reason = quota ? "credits exhausted" : "authentication expired";
       return errorResponse(
-        HTTP_STATUS.UNAUTHORIZED,
-        `[${provider}] All ${credentials.expiredCount || 1} connection(s) authentication expired — please reconnect in the dashboard`
+        quota ? HTTP_STATUS.PAYMENT_REQUIRED : HTTP_STATUS.UNAUTHORIZED,
+        `[${provider}] All ${credentials.expiredCount || 1} connection(s) ${reason} — please reconnect in the dashboard`
       );
     }
   } else if (provider === "ollama-local" || provider === "lmstudio") {
@@ -317,6 +343,31 @@ export async function createEmbeddingResponse(
       !("allExpired" in localCredentials)
     ) {
       credentials = localCredentials;
+    }
+  } else if (!credentials && providerConfig.authType === "none") {
+    // #13234: private-host nodes are classified no-auth so a keyless
+    // LAN Ollama still works (#6925). A stored API key on that same
+    // node must still ride outbound, matching dashboard Check.
+    const keyedCredentials = await getProviderCredentials(credentialsProviderId);
+    if (
+      keyedCredentials &&
+      !("allRateLimited" in keyedCredentials) &&
+      !("allExpired" in keyedCredentials)
+    ) {
+      const token =
+        (typeof (keyedCredentials as { apiKey?: unknown }).apiKey === "string" &&
+          (keyedCredentials as { apiKey?: string }).apiKey) ||
+        (typeof (keyedCredentials as { accessToken?: unknown }).accessToken === "string" &&
+          (keyedCredentials as { accessToken?: string }).accessToken) ||
+        "";
+      if (token) {
+        credentials = keyedCredentials;
+        providerConfig = {
+          ...providerConfig,
+          authType: "apikey",
+          authHeader: "bearer",
+        };
+      }
     }
   }
 

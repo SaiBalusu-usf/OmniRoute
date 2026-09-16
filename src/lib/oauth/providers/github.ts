@@ -1,3 +1,4 @@
+import { getGitHubCopilotChatUserAgent } from "@omniroute/open-sse/config/providerHeaderProfiles.ts";
 import { GITHUB_CONFIG } from "../constants/oauth";
 import {
   discoverCopilotCapabilities,
@@ -62,7 +63,7 @@ export const github = {
         Authorization: `Bearer ${tokens.access_token}`,
         Accept: "application/json",
         "X-GitHub-Api-Version": GITHUB_CONFIG.apiVersion,
-        "User-Agent": GITHUB_CONFIG.userAgent,
+        "User-Agent": getGitHubCopilotChatUserAgent(),
       },
     });
     const copilotTokenData = copilotRes.ok ? await copilotRes.json() : null;
@@ -72,7 +73,7 @@ export const github = {
         Authorization: `Bearer ${tokens.access_token}`,
         Accept: "application/json",
         "X-GitHub-Api-Version": GITHUB_CONFIG.apiVersion,
-        "User-Agent": GITHUB_CONFIG.userAgent,
+        "User-Agent": getGitHubCopilotChatUserAgent(),
       },
     });
     const userInfo = userRes.ok ? await userRes.json() : {};
@@ -104,6 +105,7 @@ export const github = {
     refreshToken: tokens.refresh_token,
     expiresIn: tokens.expires_in,
     providerSpecificData: {
+      autoSync: true,
       copilotToken: extra?.copilotToken?.token,
       copilotTokenExpiresAt: extra?.copilotToken?.expires_at,
       githubUserId: extra?.userInfo?.id,
