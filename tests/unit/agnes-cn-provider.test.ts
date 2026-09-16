@@ -23,9 +23,8 @@ const { FREE_MODEL_BUDGETS } = await import("../../open-sse/config/freeModelCata
 const { resolveProviderAlias, parseModel } = await import("../../open-sse/services/model.ts");
 const { sanitizeReasoningEffortForProvider } =
   await import("../../open-sse/executors/base/reasoningEffort.ts");
-const { isNamedOpenAIStyleProvider } = await import(
-  "../../src/app/api/providers/[id]/models/discovery/providerSets.ts"
-);
+const { isNamedOpenAIStyleProvider } =
+  await import("../../src/app/api/providers/[id]/models/discovery/providerSets.ts");
 const { getDiscoveryClass } = await import("../../src/lib/providerModels/discoveryClass.ts");
 const { createProviderConnection } = await import("../../src/lib/db/providers.ts");
 const { getProviderCredentials } = await import("../../src/sse/services/auth.ts");
@@ -98,7 +97,10 @@ test("agnes-cn is a named OpenAI-style provider with openai-compat discovery", (
 });
 
 test("PROVIDER_SEARCH_PAIRS and CATALOG_SIBLING_IDS do not pair agnes with agnes-cn", () => {
-  const pairs = extractNamedConstLiteral(readRepo("src/sse/services/auth.ts"), "PROVIDER_SEARCH_PAIRS");
+  const pairs = extractNamedConstLiteral(
+    readRepo("src/sse/services/auth.ts"),
+    "PROVIDER_SEARCH_PAIRS"
+  );
   const siblings = extractNamedConstLiteral(
     readRepo("src/lib/db/models/activeSyncedCatalog.ts"),
     "CATALOG_SIBLING_IDS"
@@ -235,43 +237,34 @@ test("agnes-cn dashboard card name includes China and is not hidden", () => {
   assert.equal(typeof entry.name, "string");
   assert.match(entry.name, /China/);
   assert.notEqual(entry.hiddenFromDashboard, true);
-  assert.equal(
-    typeof entry.freeNote,
-    "string",
-    "agnes-cn hasFree card must explain the free tier"
-  );
+  assert.equal(typeof entry.freeNote, "string", "agnes-cn hasFree card must explain the free tier");
   assert.ok((entry.freeNote as string).length > 0);
 });
 
 test("agnes-cn translate-path golden records China host", () => {
   const snapshot = JSON.parse(readRepo("tests/snapshots/provider/translate-path.json"));
-  assert.equal(
-    snapshot["agnes-cn"].url.stream,
-    CN_CHAT_URL
-  );
-  assert.equal(
-    snapshot["agnes-cn"].url.nonStream,
-    CN_CHAT_URL
-  );
-  assert.equal(
-    snapshot.agnes.url.stream,
-    INTL_CHAT_URL
-  );
-  assert.equal(
-    snapshot.agnes.url.nonStream,
-    INTL_CHAT_URL
-  );
+  assert.equal(snapshot["agnes-cn"].url.stream, CN_CHAT_URL);
+  assert.equal(snapshot["agnes-cn"].url.nonStream, CN_CHAT_URL);
+  assert.equal(snapshot.agnes.url.stream, INTL_CHAT_URL);
+  assert.equal(snapshot.agnes.url.nonStream, INTL_CHAT_URL);
 });
 
 test("every i18n locale has a nonempty agnes-cn onboarding description", () => {
   const messagesDir = path.join(REPO_ROOT, "src/i18n/messages");
   const files = fs.readdirSync(messagesDir).filter((file) => file.endsWith(".json"));
-  assert.equal(files.length, 51);
+  // 66 locales as of 2026-09 (config/i18n.json). This was 51 in the original PR —
+  // 15 locales (am, ha, hy, ig, ka, km, kn, ml, my, ne, or, pa, si, uz, yo) never got
+  // the key, which is exactly the i18n-new-key-coverage CI gate this fixes.
+  assert.equal(files.length, 66);
 
   for (const file of files) {
     const messages = JSON.parse(readRepo(`src/i18n/messages/${file}`));
     const desc = messages?.providers?.onboardingProviderDescriptions?.["agnes-cn"];
-    assert.equal(typeof desc, "string", `${file} missing providers.onboardingProviderDescriptions['agnes-cn']`);
+    assert.equal(
+      typeof desc,
+      "string",
+      `${file} missing providers.onboardingProviderDescriptions['agnes-cn']`
+    );
     assert.ok(desc.length > 0, `${file} agnes-cn onboarding description is empty`);
   }
 
