@@ -14,6 +14,7 @@ import {
   extractTopHeading,
   stripTopHeading,
 } from "../../scripts/i18n/run-translation.mjs";
+import { mirrorNeedsRebuild, mergeStateUpdates } from "../../scripts/i18n/run-translation.mjs";
 
 // The docs translator remembers a short hash of every `## ` section of the
 // source at translation time and, on the next run, only sends the sections
@@ -161,4 +162,42 @@ test("planSectionReuse always rebuilds a mirror preamble that starts with leaked
   const plan = planSectionReuse({ previousHashes: prev, sections, mirrorSections: mirror });
   assert.deepEqual(plan.translate, [0]);
   assert.deepEqual([...plan.reuse.keys()], [1]);
+});
+
+const SRC =
+  '---\ntitle: "Guide"\n---\n\n# Guide\n\nThis is the first long paragraph of the guide.\n\n## One\n\nAnother long paragraph with enough characters in it.\n\nA third long paragraph with enough characters in it.\n';
+
+test("mirrorNeedsRebuild: leaked frontmatter in the mirror body", () => {
+  const mirror =
+    '# Guide (Deutsch)\n\n🌐 **Languages:** x\n\n---\n\n---\n\ntitle: "Anleitung"\n---\n\nErster Absatz.\n';
+  assert.equal(mirrorNeedsRebuild(mirror, SRC), true);
+});
+
+test("mirrorNeedsRebuild: an English copy adopted as translated", () => {
+  const mirror =
+    "# Guide (Deutsch)\n\n🌐 **Languages:** x\n\n---\n\nThis is the first long paragraph of the guide.\n\n## One\n\nAnother long paragraph with enough characters in it.\n\nA third long paragraph with enough characters in it.\n";
+  assert.equal(mirrorNeedsRebuild(mirror, SRC), true);
+});
+
+test("mirrorNeedsRebuild: a real translation is left alone", () => {
+  const mirror =
+    "# Anleitung (Deutsch)\n\n🌐 **Languages:** x\n\n---\n\nDies ist der erste lange Absatz der Anleitung.\n\n## Eins\n\nEin weiterer langer Absatz mit genügend Zeichen darin.\n\nEin dritter langer Absatz mit genügend Zeichen darin.\n";
+  assert.equal(mirrorNeedsRebuild(mirror, SRC), false);
+});
+
+test("mergeStateUpdates keeps other runners' entries and applies this run's records", () => {
+  const fresh = {
+    sources: {
+      "a.md": { source_hash: "s1", locales: { de: { source_hash: "s1", target_hash: "t1" } } },
+    },
+  };
+  const rec = { source_hash: "s2", target_hash: "t2", section_hashes: ["x"], updated_at: "now" };
+  const out = mergeStateUpdates(
+    fresh,
+    [{ rel: "a.md", locale: "fr", sourceHash: "s2", record: rec }],
+    { sources: {} }
+  );
+  assert.deepEqual(out.sources["a.md"].locales.de, { source_hash: "s1", target_hash: "t1" });
+  assert.deepEqual(out.sources["a.md"].locales.fr, rec);
+  assert.equal(out.sources["a.md"].source_hash, "s2");
 });

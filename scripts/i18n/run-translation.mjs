@@ -531,6 +531,27 @@ export function planSectionReuse({ previousHashes, sections, mirrorSections }) {
 // The mirror without the prefix this script writes in front of the translated
 // body: `# Title (native)`, the `🌐 **Languages:**` bar (older mirrors carry a
 // translated label, so only the globe is pinned) and the `---` separator.
+/**
+ * A mirror whose source did not change can still need a rebuild: the pre-2026-09 extractor
+ * leaked the source's YAML frontmatter into the body, and 322 mirrors of the pre-expansion
+ * locales were plain English copies adopted as translated. Both are invisible to the hash
+ * comparison, so the task loop asks this before skipping an up-to-date pair.
+ */
+export function mirrorNeedsRebuild(mirrorText, sourceText) {
+  const body = extractMirrorBody(mirrorText);
+  if (/^---\s*\n[\s\S]{0,600}?\n---\s*\n/.test(body)) return true; // leaked frontmatter
+  const longLines = (text) =>
+    stripTopHeading(text.replace(/^---\n[\s\S]*?\n---\n+/, ""))
+      .split("\n")
+      .map((l) => l.trim())
+      .filter((l) => l.length > 20 && !/^[`|#\-*\d\s]+$/.test(l));
+  const src = new Set(longLines(sourceText));
+  const mir = longLines(body);
+  if (mir.length < 3) return false;
+  const same = mir.filter((l) => src.has(l)).length;
+  return same / mir.length >= 0.8; // still English
+}
+
 export function extractMirrorBody(mirrorText) {
   return mirrorText
     .replace(/^# .+\r?\n+/, "")
@@ -690,6 +711,22 @@ function createLimiter(max) {
 
 // ----- Main ----------------------------------------------------------------
 
+/**
+ * Merge one run's (source, locale) records into a freshly re-read state. Source-level
+ * `source_hash` follows the record; untouched entries stay as the other runners left them.
+ * `fallback` is this run's in-memory state, used only when the file could not be read.
+ */
+export function mergeStateUpdates(fresh, touched, fallback) {
+  const base = fresh && fresh.sources ? fresh : fallback || { sources: {} };
+  for (const { rel, locale, sourceHash, record } of touched) {
+    const entry =
+      base.sources[rel] || (base.sources[rel] = { source_hash: sourceHash, locales: {} });
+    entry.source_hash = sourceHash;
+    entry.locales[locale] = record;
+  }
+  return base;
+}
+
 async function main() {
   const opts = parseArgs(process.argv);
   const config = await loadConfig();
@@ -811,6 +848,7 @@ async function main() {
 
   // Build a flat queue of (source, locale) work units.
   const tasks = [];
+  const touched = [];
   for (const rel of sources) {
     const { hash: sourceHash } = sourceHashes.get(rel);
     const entry =
@@ -823,10 +861,17 @@ async function main() {
       const previous = entry.locales[locale];
       const sourceChanged = previous?.source_hash !== sourceHash;
       const missingTarget = !existsSync(targetAbs);
-      if (!opts.force && !sourceChanged && !missingTarget) {
+      const needsRebuild =
+        !opts.force &&
+        !sourceChanged &&
+        !missingTarget &&
+        mirrorNeedsRebuild(await fs.readFile(targetAbs, "utf8"), sourceHashes.get(rel).text);
+      if (!opts.force && !sourceChanged && !missingTarget && !needsRebuild) {
         stats.skipped++;
         continue;
       }
+      if (needsRebuild)
+        logInfo(`${rel} → ${locale}: mirror needs a rebuild (English copy or leaked frontmatter)`);
       tasks.push({ rel, locale, targetAbs, sourceChanged, missingTarget });
     }
   }
@@ -895,12 +940,14 @@ async function main() {
         await fs.writeFile(task.targetAbs, finalContent, "utf8");
 
         const targetHash = sha256(Buffer.from(finalContent, "utf8"));
-        state.sources[task.rel].locales[task.locale] = {
+        const record = {
           source_hash: sourceHash,
           target_hash: targetHash,
           section_hashes: sectionHashes(sections),
           updated_at: new Date().toISOString(),
         };
+        state.sources[task.rel].locales[task.locale] = record;
+        touched.push({ rel: task.rel, locale: task.locale, sourceHash, record });
 
         stats.translated++;
         logInfo(`✓ ${task.rel} → ${task.locale} (${translatedBody.length} chars)`);
@@ -908,8 +955,11 @@ async function main() {
     )
   );
 
-  // Save state even on partial failure so future runs only retry what failed.
-  await saveState(state);
+  // Save state even on partial failure so future runs only retry what failed. Several
+  // `--locale=<code>` runs execute in parallel during a batch, so re-read the file and merge
+  // only this run's entries instead of overwriting the whole state (last writer used to win
+  // and the other runners' work vanished from the state — 2026-09-16).
+  await saveState(mergeStateUpdates(await loadState(), touched, state));
 
   const elapsedSec = ((Date.now() - startMs) / 1000).toFixed(1);
   logInfo(
