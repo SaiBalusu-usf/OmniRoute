@@ -93,6 +93,8 @@ export type AttemptLoopDeps = {
     comboId: string | undefined,
     log: ComboLogger,
     tag: string,
+    /** Test seam, unused on the routing path; see staleLkgpClear.ts. */
+    clearLKGP?: ((comboName: string, modelKey: string) => Promise<void>) | undefined,
     failed?: { provider?: string | null; connectionId?: string | null } | null
   ) => void;
   /**

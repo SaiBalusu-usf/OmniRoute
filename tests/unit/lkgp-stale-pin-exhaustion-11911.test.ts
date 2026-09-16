@@ -16,6 +16,7 @@ const TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "omniroute-lkgp-stal
 process.env.DATA_DIR = TEST_DATA_DIR;
 
 const { handleComboChat } = await import("../../open-sse/services/combo.ts");
+const { clearStaleLKGP } = await import("../../open-sse/services/combo.ts");
 const settingsDb = await import("../../src/lib/db/settings.ts");
 const core = await import("../../src/lib/db/core.ts");
 const { resetAllComboMetrics } = await import("../../open-sse/services/comboMetrics.ts");
@@ -199,5 +200,35 @@ test("#11911 follow-up: a pin naming a healthy provider survives another target 
     pinAfter,
     { provider: "felo" },
     "skipping opencode must not clear a pin naming healthy felo"
+  );
+});
+
+test("#12235: a sibling connection failing does not clear a pin naming the same provider", async () => {
+  // The combo pin carries a connectionId as well as a provider. Two connections
+  // of the SAME provider are independent targets: one going down says nothing
+  // about the other, so matching on provider alone would throw away a pin for a
+  // connection that never failed.
+  const comboName = "sibling-connection-pin";
+  await settingsDb.setLKGP(comboName, comboName, "felo", "conn-A");
+
+  await clearStaleLKGP(comboName, null, comboName, null, "COMBO", undefined, {
+    provider: "felo",
+    connectionId: "conn-B",
+  });
+  assert.deepEqual(
+    await settingsDb.getLKGP(comboName, comboName),
+    { provider: "felo", connectionId: "conn-A" },
+    "conn-B failing must not clear a pin naming conn-A"
+  );
+
+  // ...and the pin IS cleared when the failure names that same connection.
+  await clearStaleLKGP(comboName, null, comboName, null, "COMBO", undefined, {
+    provider: "felo",
+    connectionId: "conn-A",
+  });
+  assert.equal(
+    await settingsDb.getLKGP(comboName, comboName),
+    null,
+    "conn-A failing must clear the pin that names it"
   );
 });
