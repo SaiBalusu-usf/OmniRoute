@@ -119,3 +119,12 @@ test("GET /v1/providers/:provider/models rejects non-matching connection-like st
   const body = await res.json();
   assert.equal(body.error?.code, "invalid_provider");
 });
+
+test("GET /v1/providers/:provider/models does not inherit stale content-length from full catalog", async () => {
+  const res = await callGET("antigravity");
+  const contentLength = res.headers.get("content-length");
+  const text = await res.text();
+  if (contentLength != null) {
+    assert.equal(Number(contentLength), Buffer.byteLength(text));
+  }
+});

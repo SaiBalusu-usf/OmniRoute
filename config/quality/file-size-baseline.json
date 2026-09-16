@@ -438,7 +438,7 @@
     "open-sse/executors/codex.ts": 1505,
     "open-sse/executors/cursor.ts": 1759,
     "open-sse/executors/muse-spark-web.ts": 1405,
-    "open-sse/handlers/chatCore.ts": 6162,
+    "open-sse/handlers/chatCore.ts": 6169,
     "open-sse/handlers/imageGeneration.ts": 3293,
     "open-sse/handlers/search.ts": 1789,
     "open-sse/mcp-server/schemas/tools.ts": 1621,
