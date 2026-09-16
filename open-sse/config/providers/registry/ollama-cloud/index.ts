@@ -28,21 +28,39 @@ export const ollama_cloudProvider: RegistryEntry = {
     // #10788: these models accept none|low|medium|high|max. Keep their explicit
     // declarations aligned with the provider fallback so the static and synced
     // catalog paths expose the same native vocabulary.
+    // DeepSeek v4 family — DECISION 2026-09-16: contextLength = 262144, the
+    // operator's deliberate working cap for agentic use (see
+    // config/routers/omniroute.yml: 262144 is "a CHOICE, not a provider limit";
+    // the native window is 1M but agentic work caps there to bound per-turn
+    // input cost). MUST declare contextLength explicitly: without it the
+    // request-time gate (resolveTokenLimit) falls to DEFAULT_LIMITS.default
+    // = 128000 — TOO LOW, false-rejecting prompts up to the 262k cap that
+    // ollama-cloud would serve. Do NOT raise to the 1M native window; the
+    // 262k working cap is the operator rule. Every future ollama-cloud model
+    // must declare its real (operator-capped) contextLength, never rely on
+    // the 128k default.
     {
       id: "deepseek-v4-pro",
       name: "DeepSeek V4 Pro",
+      contextLength: 262144,
       supportsReasoning: true,
       supportedThinkingEfforts: ["none", "low", "medium", "high", "max"],
     },
     {
       id: "deepseek-v4-flash",
       name: "DeepSeek V4 Flash",
+      contextLength: 262144,
+      supportsReasoning: true,
+      supportedThinkingEfforts: ["none", "low", "medium", "high", "max"],
+    },
+    {
+      id: "deepseek-v4.1-flash",
+      name: "DeepSeek V4.1 Flash",
+      contextLength: 262144,
       supportsReasoning: true,
       supportedThinkingEfforts: ["none", "low", "medium", "high", "max"],
     },
     { id: "kimi-k2.6", name: "Kimi K2.6" },
-    // Ollama Cloud accepts low|medium|high|max|none and rejects xhigh, so the
-    // explicit supportsXHighEffort:false makes the sanitizer map xhigh → max.
     {
       id: "glm-5.1",
       name: "GLM 5.1",
@@ -57,7 +75,6 @@ export const ollama_cloudProvider: RegistryEntry = {
       supportsXHighEffort: false,
       supportedThinkingEfforts: ["none", "low", "medium", "high", "max"],
     },
-    // #3110: MiniMax M3 via Ollama
     { id: "minimax-m3", name: "MiniMax M3", contextLength: 1048576, supportsVision: true },
     { id: "minimax-m2.7", name: "MiniMax M2.7" },
     { id: "gemma4:31b", name: "Gemma 4 31B" },
