@@ -1,13 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import { PROVIDER_MODELS_CONFIG } from "../../src/app/api/providers/[id]/models/discovery/providerModelsConfig.ts";
+import {
+  PROVIDER_MODELS_CONFIG,
+  getXaiOauthLiveModelsConfig,
+} from "../../src/app/api/providers/[id]/models/discovery/providerModelsConfig.ts";
 import { HARDCODED_MODELS_CONFIG_IDS } from "../../src/lib/providerModels/hardcodedModelsConfigIds.ts";
 import { getDiscoveryClass } from "../../src/lib/providerModels/discoveryClass.ts";
 import { deriveConfigFromRegistryModelsUrl } from "../../src/app/api/providers/[id]/models/discoveryConfig.ts";
 import { getRegistryEntry } from "../../open-sse/config/providerRegistry.ts";
 
+const core = await import("../../src/lib/db/core.ts");
+
 const XAI_MODELS_URL = "https://api.x.ai/v1/models";
+const FLAG_KEY = "XAI_OAUTH_LIVE_MODEL_DISCOVERY";
 
 const XAI_SEED_IDS = [
   "grok-4.6",
@@ -16,144 +21,94 @@ const XAI_SEED_IDS = [
   "grok-4.20-multi-agent-0309",
   "grok-4.20-0309-reasoning",
   "grok-4.20-0309-non-reasoning",
-].slice().sort();
+]
+  .slice()
+  .sort();
 
 const XAI_OAUTH_SEED_IDS = [...XAI_SEED_IDS, "grok-4.5"].sort();
-
-function readRepo(rel: string): string {
-  return fs.readFileSync(new URL("../../" + rel, import.meta.url), "utf8");
-}
 
 function modelIds(provider: string): string[] {
   const entry = getRegistryEntry(provider);
   assert.ok(entry, `${provider} registry entry missing`);
-  return (entry.models ?? []).map((model) => model.id).slice().sort();
+  return (entry.models ?? [])
+    .map((model) => model.id)
+    .slice()
+    .sort();
 }
 
-function extractNamedBlock(src: string, name: string): string {
-  const marker = "const " + name;
-  const exportMarker = "export const " + name;
-  let at = src.indexOf(exportMarker);
-  if (at < 0) at = src.indexOf(marker);
-  assert.ok(at >= 0, name + " declaration not found");
-  const eq = src.indexOf("=", at);
-  assert.ok(eq >= 0, name + " assignment not found");
-  let i = eq + 1;
-  while (i < src.length && /\s/.test(src[i]!)) i += 1;
-  const open = src[i];
-  assert.ok(open === "{" || open === "[", name + " does not open a block");
-  const close = open === "{" ? "}" : "]";
-  let depth = 0;
-  let inStr: string | null = null;
-  let escaped = false;
-  for (let j = i; j < src.length; j += 1) {
-    const ch = src[j]!;
-    if (inStr) {
-      if (escaped) {
-        escaped = false;
-        continue;
-      }
-      if (ch === "\\") {
-        escaped = true;
-        continue;
-      }
-      if (ch === inStr) inStr = null;
-      continue;
-    }
-    if (ch === "'" || ch === '"' || ch === "`") {
-      inStr = ch;
-      continue;
-    }
-    if (ch === open) depth += 1;
-    else if (ch === close) {
-      depth -= 1;
-      if (depth === 0) {
-        let k = j + 1;
-        while (k < src.length && /\s/.test(src[k]!)) k += 1;
-        assert.equal(src[k], ";", name + " block missing semicolon");
-        return src.slice(i, k + 1);
-      }
-    }
+test.after(() => {
+  delete process.env[FLAG_KEY];
+  try {
+    core.resetDbInstance?.();
+  } catch {
+    // best-effort cleanup
   }
-  assert.fail(name + " block not closed");
-}
+});
 
-
-function assertNoXaiFamily(block: string, label: string): void {
-  assert.doesNotMatch(block, /["']xai["']/, `${label} must not mention xai`);
-  assert.doesNotMatch(
-    block,
-    /["']xai-oauth["']/,
-    `${label} must not mention xai-oauth`
-  );
-  assert.doesNotMatch(block, /["']xao["']/, `${label} must not mention xao`);
-}
-
-test("test 1: xai-oauth discovery URL method auth exact match", () => {
-  const oauth = PROVIDER_MODELS_CONFIG["xai-oauth"];
+test("test 1: xai stays statically registered with the exact live-discovery shape", () => {
   const apikey = PROVIDER_MODELS_CONFIG["xai"];
-  assert.ok(oauth, "xai-oauth must exist in PROVIDER_MODELS_CONFIG");
   assert.ok(apikey, "xai must exist in PROVIDER_MODELS_CONFIG");
-  assert.equal(oauth.url, XAI_MODELS_URL);
   assert.equal(apikey.url, XAI_MODELS_URL);
-  assert.equal(oauth.method, "GET");
-  assert.equal(oauth.authHeader, "Authorization");
-  assert.equal(oauth.authPrefix, "Bearer ");
+  assert.equal(apikey.method, "GET");
+  assert.equal(apikey.authHeader, "Authorization");
+  assert.equal(apikey.authPrefix, "Bearer ");
 });
 
-test("test 2: xai and xai-oauth share one config object", () => {
+test("test 2: getXaiOauthLiveModelsConfig — flag off keeps xai-oauth on the frozen seed (real code path)", () => {
+  delete process.env[FLAG_KEY];
   assert.equal(
-    PROVIDER_MODELS_CONFIG["xai"],
-    PROVIDER_MODELS_CONFIG["xai-oauth"]
+    getXaiOauthLiveModelsConfig(),
+    undefined,
+    "with the flag unset (default false), xai-oauth must resolve to no live-discovery config"
   );
 });
 
-test("test 3: HARDCODED lockstep includes xai-oauth", () => {
-  assert.ok(HARDCODED_MODELS_CONFIG_IDS.has("xai-oauth"));
+test("test 2b: getXaiOauthLiveModelsConfig — flag on resolves the same live-discovery shape as xai (real code path)", () => {
+  process.env[FLAG_KEY] = "true";
+  try {
+    const live = getXaiOauthLiveModelsConfig();
+    assert.ok(live, "with the flag on, xai-oauth must resolve a live-discovery config");
+    assert.equal(live.url, XAI_MODELS_URL);
+    assert.equal(live.method, "GET");
+    assert.equal(live.authHeader, "Authorization");
+    assert.equal(live.authPrefix, "Bearer ");
+  } finally {
+    delete process.env[FLAG_KEY];
+  }
+});
+
+test("test 3: xai-oauth is intentionally NOT in PROVIDER_MODELS_CONFIG / HARDCODED lockstep", () => {
+  assert.equal(PROVIDER_MODELS_CONFIG["xai-oauth"], undefined);
+  assert.equal(HARDCODED_MODELS_CONFIG_IDS.has("xai-oauth"), false);
   const fromModule = [...HARDCODED_MODELS_CONFIG_IDS].sort();
   const fromConfig = Object.keys(PROVIDER_MODELS_CONFIG).sort();
   assert.deepEqual(fromModule, fromConfig);
 });
 
-test("test 4: getDiscoveryClass xai-oauth is openai-compat", () => {
-  assert.equal(getDiscoveryClass("xai-oauth"), "openai-compat");
+test("test 4: getDiscoveryClass — xai is openai-compat; xai-oauth is static-only by default (flag off)", () => {
+  // xai-oauth is deliberately absent from HARDCODED_MODELS_CONFIG_IDS and has no
+  // registry modelsUrl, so with XAI_OAUTH_LIVE_MODEL_DISCOVERY off (default) it
+  // classifies as static-only — matching its pre-PR #13518 behavior.
+  assert.equal(getDiscoveryClass("xai-oauth"), "static-only");
   assert.equal(getDiscoveryClass("xai"), "openai-compat");
 });
 
-test("test 5: catalog siblings and search pairs stay unmerged", () => {
-  const siblingSrc = readRepo("src/lib/db/models/activeSyncedCatalog.ts");
-  const siblingBlock = extractNamedBlock(siblingSrc, "CATALOG_SIBLING_IDS");
-  assertNoXaiFamily(siblingBlock, "CATALOG_SIBLING_IDS");
+// Former test 5 ("catalog siblings and search pairs stay unmerged") was a source-grep
+// tautology: it read activeSyncedCatalog.ts / auth.ts as text, hand-parsed a bracket-
+// matched block out of it, and asserted regexes over that extracted text — never
+// exercising CATALOG_SIBLING_IDS or PROVIDER_SEARCH_PAIRS as real code. Both constants
+// are module-private (not exported), so the only way to assert against their real
+// values is to export them — an unrelated surface change outside this PR's scope (live
+// xAI model discovery for xai-oauth). Dropped rather than kept as a tautology; a
+// follow-up PR that exports those constants can add a real regression test for the
+// xai/xai-oauth-not-merged invariant.
 
-  const poisonedSiblings = siblingBlock.replace(
-    /antigravity:\s*\["agy"\]/,
-    'xai: ["xai-oauth"], antigravity: ["agy"]'
-  );
-  assert.throws(() => assertNoXaiFamily(poisonedSiblings, "poisoned siblings"));
-
-  const pairsSrc = readRepo("src/sse/services/auth.ts");
-  const pairsBlock = extractNamedBlock(pairsSrc, "PROVIDER_SEARCH_PAIRS");
-  assertNoXaiFamily(pairsBlock, "PROVIDER_SEARCH_PAIRS");
-
-  const poisonedPairs = pairsBlock.replace(
-    /\["nvidia",\s*"nvidia_nim"\]/,
-    '["xai", "xai-oauth"], ["nvidia", "nvidia_nim"]'
-  );
-  assert.throws(() => assertNoXaiFamily(poisonedPairs, "poisoned pairs"));
-});
-
-test("test 6: gate 4 deriveConfig does not mutate registry", () => {
+test("test 6: gate 4 deriveConfig does not mutate registry, and stays undefined for xai-oauth", () => {
   const minimax = getRegistryEntry("minimax");
   assert.ok(minimax?.modelsUrl);
-  assert.equal(
-    deriveConfigFromRegistryModelsUrl("minimax")?.url,
-    minimax.modelsUrl
-  );
+  assert.equal(deriveConfigFromRegistryModelsUrl("minimax")?.url, minimax.modelsUrl);
   assert.equal(deriveConfigFromRegistryModelsUrl("xai-oauth"), undefined);
-  assert.equal(
-    deriveConfigFromRegistryModelsUrl("no-such-provider-xyz"),
-    undefined
-  );
+  assert.equal(deriveConfigFromRegistryModelsUrl("no-such-provider-xyz"), undefined);
 });
 
 test("test 7: xai and xai-oauth seeds stay frozen", () => {
