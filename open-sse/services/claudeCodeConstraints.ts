@@ -32,6 +32,13 @@ export function enforceThinkingTemperature(body: Record<string, unknown>): void 
   }
 }
 
+/** Applies the final Anthropic wire-body invariants before serialization. */
+export function finalizeClaudeBodyConstraints(body: Record<string, unknown>): void {
+  hoistLeadingSystemMessages(body);
+  relocateDirectiveOnlyMessages(body);
+  enforceThinkingTemperature(body);
+}
+
 function isSystemRole(role: unknown): boolean {
   return (
     typeof role === "string" &&
@@ -100,6 +107,41 @@ export function relocateDirectiveOnlyMessages(payload: Record<string, unknown>):
   ];
 }
 
+/** Extracts non-empty text blocks from string or array message content. */
+function textBlocksFromContent(content: unknown): Array<Record<string, unknown>> {
+  if (typeof content === "string" && content.length > 0) {
+    return [{ type: "text", text: content }];
+  }
+  if (!Array.isArray(content)) return [];
+  const blocks: Array<Record<string, unknown>> = [];
+  for (const block of content) {
+    if (block == null || typeof block !== "object") continue;
+    const contentBlock = block as Record<string, unknown>;
+    if (
+      contentBlock.type === "text" &&
+      typeof contentBlock.text === "string" &&
+      contentBlock.text.length > 0
+    ) {
+      blocks.push({ ...contentBlock });
+    }
+  }
+  return blocks;
+}
+
+/** Merges hoisted blocks into the existing top-level system value. */
+function mergeSystemBlocks(
+  existing: unknown,
+  extra: Array<Record<string, unknown>>
+): Array<Record<string, unknown>> {
+  if (typeof existing === "string" && existing.length > 0) {
+    return [{ type: "text", text: existing }, ...extra];
+  }
+  if (Array.isArray(existing)) {
+    return [...(existing as Array<Record<string, unknown>>), ...extra];
+  }
+  return extra;
+}
+
 /**
  * Hoists only the initial system/developer run into Anthropic's top-level `system` field.
  * Directive-only entries remain in `messages` for the positional relocation pass, and
@@ -120,37 +162,14 @@ export function hoistLeadingSystemMessages(payload: Record<string, unknown>): vo
       directives.push(message);
       continue;
     }
-
-    if (typeof message.content === "string" && message.content.length > 0) {
-      extraBlocks.push({ type: "text", text: message.content });
-    } else if (Array.isArray(message.content)) {
-      for (const block of message.content) {
-        if (block == null || typeof block !== "object") continue;
-        const contentBlock = block as Record<string, unknown>;
-        if (
-          contentBlock.type === "text" &&
-          typeof contentBlock.text === "string" &&
-          contentBlock.text.length > 0
-        ) {
-          extraBlocks.push({ ...contentBlock });
-        }
-      }
-    }
-
+    extraBlocks.push(...textBlocksFromContent(message.content));
     if (payload.output_config == null && hasOutputConfig(message)) {
       payload.output_config = message.output_config;
     }
   }
 
   if (extraBlocks.length > 0) {
-    const existingSystem = payload.system;
-    if (typeof existingSystem === "string" && existingSystem.length > 0) {
-      payload.system = [{ type: "text", text: existingSystem }, ...extraBlocks];
-    } else if (Array.isArray(existingSystem)) {
-      payload.system = [...existingSystem, ...extraBlocks];
-    } else {
-      payload.system = extraBlocks;
-    }
+    payload.system = mergeSystemBlocks(payload.system, extraBlocks);
   }
   payload.messages = [...directives, ...messages.slice(runEnd)];
 }

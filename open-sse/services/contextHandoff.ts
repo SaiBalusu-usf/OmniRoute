@@ -754,6 +754,18 @@ function logUniversalHandoffOutcome(
   console.warn(`[universal-handoff] ${outcome} (combo=${comboName}): ${detail}`);
 }
 
+/** Reads the summary model's reply as text, tolerating non-JSON bodies. */
+async function readUniversalHandoffResponse(response: Response): Promise<string> {
+  try {
+    return getResponseText((await response.clone().json()) as Record<string, unknown>);
+  } catch {
+    return await response
+      .clone()
+      .text()
+      .catch(() => "");
+  }
+}
+
 /**
  * Generate a universal handoff summary for any model/provider switch.
  */
@@ -811,24 +823,13 @@ async function generateUniversalHandoffAsync(options: {
     return "unavailable";
   }
 
-  let content = "";
-  try {
-    content = getResponseText((await response.clone().json()) as Record<string, unknown>);
-  } catch {
-    content = await response
-      .clone()
-      .text()
-      .catch(() => "");
-  }
+  const content = await readUniversalHandoffResponse(response);
 
   const parsed = parseHandoffJSON(content);
   if (!parsed) {
     const preview = JSON.stringify(content.slice(0, 200));
-    logUniversalHandoffOutcome(
-      "unparseable",
-      options.comboName,
-      `model=${summaryModel} contentPreview=${preview}`
-    );
+    const detail = `model=${summaryModel} contentPreview=${preview}`;
+    logUniversalHandoffOutcome("unparseable", options.comboName, detail);
     return "unparseable";
   }
 

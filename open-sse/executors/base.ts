@@ -59,16 +59,12 @@ import {
 } from "../services/tokenRefresh.ts";
 import type { ProviderRequestDefaults } from "../services/providerRequestDefaults.ts";
 import { signRequestBody } from "../services/claudeCodeCCH.ts";
-import {
-  hoistLeadingSystemMessages,
-  normalizeCacheControlTtl,
-  relocateDirectiveOnlyMessages,
-} from "../services/claudeCodeConstraints.ts";
+import { normalizeCacheControlTtl } from "../services/claudeCodeConstraints.ts";
 import {
   appendAnthropicBetaHeader,
   CLAUDE_CODE_COMPATIBLE_REDACT_THINKING_BETA,
   CONTEXT_1M_BETA_HEADER,
-  enforceThinkingTemperature,
+  finalizeClaudeBodyConstraints,
   modelHasNativeContext1m,
   modelSupportsContext1mBeta,
 } from "../services/claudeCodeCompatible.ts";
@@ -1372,14 +1368,7 @@ export class BaseExecutor {
         // routing mode (grouped/raw/combo) and the native passthrough share,
         // before fingerprinting and CCH signing serialize the body.
         if (this.provider === "claude" || usesClaudeCodeProtocol) {
-          const tb = transformedBody as Record<string, unknown>;
-          // Final wire-body guard: chatCore normally hoists initial prompt roles,
-          // but direct executor calls and later payload transforms can bypass or
-          // undo that repair. Preserve valid directive-only messages while lifting
-          // real prompt content into Anthropic's top-level system parameter.
-          hoistLeadingSystemMessages(tb);
-          relocateDirectiveOnlyMessages(tb);
-          enforceThinkingTemperature(tb);
+          finalizeClaudeBodyConstraints(transformedBody as Record<string, unknown>);
         }
 
         // Delegated Context Editing (opt-in): attach the clear_tool_uses strategy so
