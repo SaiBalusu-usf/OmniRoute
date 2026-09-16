@@ -841,6 +841,7 @@ export default function EditConnectionModal({
             serviceTier={formData.codexServiceTier}
             fingerprintMode={formData.codexFingerprintMode}
             openaiStoreEnabled={formData.codexOpenaiStoreEnabled}
+            allowPaidCredits={formData.allowPaidCredits}
             showFingerprintMode={isOAuth}
             onChange={(patch) => setFormData({ ...formData, ...patch })}
           />
@@ -852,16 +853,6 @@ export default function EditConnectionModal({
               onChange={(checked) => setFormData({ ...formData, blockExtraUsage: checked })}
               label={t("blockClaudeExtraUsageLabel")}
               description={t("blockClaudeExtraUsageDescription")}
-            />
-          </div>
-        )}
-        {isCodex && (
-          <div className="flex flex-col gap-4 rounded-lg border border-border/50 bg-surface/20 p-4">
-            <Toggle
-              checked={formData.allowPaidCredits}
-              onChange={(checked) => setFormData({ ...formData, allowPaidCredits: checked })}
-              label={t("allowCodexPaidCreditsLabel")}
-              description={t("allowCodexPaidCreditsDescription")}
             />
           </div>
         )}
