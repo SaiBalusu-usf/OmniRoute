@@ -272,6 +272,30 @@ export async function cleanupMemoryEntries(): Promise<CleanupResult> {
     const runResult = stmt.run(cutoffISO);
     result.deleted = runResult.changes;
 
+    // Compact FTS5 segments to reclaim space from tombstoned rows left
+    // by the DELETE trigger (memory_fts_ad). Without this, orphaned FTS
+    // data/docsize rows grow without bound after retention deletes.
+    if (result.deleted > 0) {
+      try {
+        db.prepare("INSERT INTO memory_fts(memory_fts) VALUES('optimize')").run();
+      } catch {
+        // Best-effort; FTS compaction failure is non-fatal.
+      }
+    }
+
+    // optimize only merges segments; it does not drop tombstones from
+    // access-count UPDATEs that already reindexed. rebuild from the
+    // content table on every pass so a bloated index cannot wait for
+    // a memory-row delete that may never happen.
+    if (tableExists("memory_fts")) {
+      try {
+        db.exec("INSERT INTO memory_fts(memory_fts) VALUES('rebuild')");
+      } catch (err: unknown) {
+        console.error("[Cleanup] FTS5 rebuild after memory retention failed:", err);
+        result.errors++;
+      }
+    }
+
     console.log(
       `[Cleanup] Deleted ${result.deleted} memory_entries older than ${retentionDays} days`
     );
