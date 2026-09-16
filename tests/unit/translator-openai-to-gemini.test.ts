@@ -554,6 +554,43 @@ test("OpenAI -> Cloud Code Gemini emits native functionResponse result", () => {
   });
 });
 
+test("OpenAI -> Cloud Code Gemini preserves empty tool response (content: '') as native functionResponse", () => {
+  const request = openaiToCloudCodeGeminiRequest(
+    "gemini-3-flash-preview",
+    {
+      messages: [
+        { role: "user", content: "Run command" },
+        {
+          role: "assistant",
+          tool_calls: [
+            {
+              id: "call_empty_1",
+              type: "function",
+              function: { name: "terminal", arguments: '{"command":"true"}' },
+            },
+          ],
+        },
+        {
+          role: "tool",
+          tool_call_id: "call_empty_1",
+          content: "",
+        },
+      ],
+    },
+    true
+  ) as any;
+
+  const toolTurn = request.contents.find(
+    (content: any) => content.role === "user" && content.parts.some((part: any) => part.functionResponse)
+  );
+  assert.ok(toolTurn, "expected Cloud Code Gemini tool response turn even when content is empty string");
+  assert.deepEqual(getFunctionResponse(toolTurn.parts[0]), {
+    id: "call_empty_1",
+    name: "terminal",
+    response: { result: "" },
+  });
+});
+
 test("OpenAI -> Antigravity wraps Gemini requests in a Cloud Code envelope", () => {
   const result = openaiToAntigravityRequest(
     "gemini-2.5-pro",
