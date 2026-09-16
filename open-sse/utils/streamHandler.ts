@@ -33,6 +33,7 @@ type StreamErrorEvent = {
 type StreamControllerOptions = {
   onDisconnect?: (event: StreamDisconnectEvent) => boolean | void;
   onError?: (event: StreamErrorEvent) => boolean | void;
+  onCleanup?: () => void;
   provider?: string;
   model?: string;
   connectionId?: string | null;
@@ -241,6 +242,7 @@ function hasClientTerminalSseMarker(text: string, clientResponseFormat?: string 
 export function createStreamController({
   onDisconnect,
   onError,
+  onCleanup,
   provider,
   model,
   connectionId,
@@ -295,6 +297,20 @@ export function createStreamController({
     cleanupClientAbortSignal = null;
   };
 
+  const severClosures = () => {
+    cleanupClientAbortListener();
+    try {
+      onCleanup?.();
+    } catch (e) {
+      console.debug(`[STREAM-HANDLER] onCleanup error:`, e);
+    }
+    onDisconnect = undefined;
+    onError = undefined;
+    onCleanup = undefined;
+    completedToolHandoffDrain = null;
+    clientAbortSignal = null;
+  };
+
   const getClientAbortReason = () => {
     const reason = clientAbortSignal?.reason;
     if (typeof reason === "string" && reason.trim().length > 0) {
@@ -320,7 +336,6 @@ export function createStreamController({
         return;
       }
       disconnected = true;
-      cleanupClientAbortListener();
 
       logStream(`disconnect: ${reason}`);
 
@@ -339,14 +354,18 @@ export function createStreamController({
         abortController.abort(reason);
       }
 
-      onDisconnect?.({ reason, duration: Date.now() - startTime });
+      try {
+        onDisconnect?.({ reason, duration: Date.now() - startTime });
+      } finally {
+        severClosures();
+      }
     },
 
     // Call when stream completes normally
     handleComplete: () => {
       if (disconnected) return;
       disconnected = true;
-      cleanupClientAbortListener();
+      severClosures();
 
       logStream("complete");
     },
@@ -371,8 +390,6 @@ export function createStreamController({
 
     // Call on error
     handleError: (error: unknown) => {
-      cleanupClientAbortListener();
-
       // A client disconnect is not a provider failure. If the client already went away
       // (disconnected) or the error is a client abort / "Controller is already closed",
       // skip the onError failover/cooldown path — otherwise one cancelled request marks
@@ -380,23 +397,28 @@ export function createStreamController({
       if (disconnected || isClientDisconnectError(error)) {
         clearPendingRequest(error);
         logStream(disconnected ? "client_disconnect (post-abort)" : "client_disconnect");
+        severClosures();
         return;
       }
 
       const alreadyCleared = isPendingRequestClearedError(error);
       let handled = false;
-      if (!alreadyCleared) {
-        try {
-          handled =
-            onError?.({
-              error,
-              message: getErrorMessage(error),
-              statusCode: getErrorStatusCode(error),
-              duration: Date.now() - startTime,
-            }) === true;
-        } catch (e) {
-          console.debug(`[STREAM-HANDLER] onError callback error:`, e);
+      try {
+        if (!alreadyCleared) {
+          try {
+            handled =
+              onError?.({
+                error,
+                message: getErrorMessage(error),
+                statusCode: getErrorStatusCode(error),
+                duration: Date.now() - startTime,
+              }) === true;
+          } catch (e) {
+            console.debug(`[STREAM-HANDLER] onError callback error:`, e);
+          }
         }
+      } finally {
+        severClosures();
       }
 
       if (!handled) {
@@ -418,11 +440,11 @@ export function createStreamController({
     },
 
     abort: () => {
-      cleanupClientAbortListener();
+      severClosures();
       abortController.abort();
     },
     dispose: () => {
-      cleanupClientAbortListener();
+      severClosures();
     },
     clientResponseFormat,
     clientDisconnectGracePeriodMs,
@@ -769,6 +791,9 @@ export function createDisconnectAwareStream(
             } catch {
               // Expected: downstream may have already closed
             }
+            try {
+              streamController.dispose?.();
+            } catch {}
             return;
           }
           controller.enqueue(value);
@@ -780,6 +805,9 @@ export function createDisconnectAwareStream(
             } catch {
               // Expected: downstream may have already closed
             }
+            try {
+              streamController.dispose?.();
+            } catch {}
             return;
           }
 
@@ -790,6 +818,9 @@ export function createDisconnectAwareStream(
             } catch {
               // Expected: downstream may have already closed
             }
+            try {
+              streamController.dispose?.();
+            } catch {}
             return;
           }
 
@@ -818,6 +849,9 @@ export function createDisconnectAwareStream(
           } catch {
             // Closing an already-closed/aborted controller after client disconnect is expected.
           }
+          try {
+            streamController.dispose?.();
+          } catch {}
         }
       },
 
@@ -829,6 +863,9 @@ export function createDisconnectAwareStream(
         } else {
           streamController.handleDisconnect(reason || "cancelled");
         }
+        try {
+          streamController.dispose?.();
+        } catch {}
         if (deferCompletedToolHandoff) return;
         await Promise.allSettled([reader.cancel(reason), writer.abort(reason)]);
       },

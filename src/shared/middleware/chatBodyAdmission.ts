@@ -38,6 +38,7 @@ import {
   type IngestBudgetAcquireResult,
 } from "./ingestByteAdmission";
 import {
+  checkResourcePressureGuard,
   getResourcePressureObservation,
   type PressureSeverity,
 } from "@omniroute/open-sse/utils/resourcePressure.ts";
@@ -217,10 +218,23 @@ export type ChatAdmissionShedReason =
   | "inflight_bytes_budget"
   | "resource_pressure";
 
-/** Read cached pressure severity; sampling failures must not cause false sheds. */
+/** Read pressure severity; when critical, attempt GC & fresh sample before confirming shed (#13821). */
 export function defaultPressureSeverity(): PressureSeverity {
   try {
-    return getResourcePressureObservation().state.severity;
+    const observation = getResourcePressureObservation();
+    if (observation.state.severity === "critical") {
+      const globalWithGc = globalThis as unknown as { gc?: () => void };
+      if (typeof globalWithGc.gc === "function") {
+        try {
+          globalWithGc.gc();
+        } catch {}
+      }
+      try {
+        checkResourcePressureGuard();
+      } catch {}
+      return getResourcePressureObservation().state.severity;
+    }
+    return observation.state.severity;
   } catch {
     return "normal";
   }
@@ -1006,8 +1020,19 @@ export async function admitChatRequest(
   // is under genuine critical resource pressure. No-op for every controller a
   // test constructs directly (default severity is always "normal").
   if (controller.pressureSeverity() === "critical") {
-    controller.recordShed("resource_pressure", sessionId);
-    return { admit: false, response: resourcePressureRejectionResponse() };
+    const globalWithGc = globalThis as unknown as { gc?: () => void };
+    if (typeof globalWithGc.gc === "function") {
+      try {
+        globalWithGc.gc();
+      } catch {}
+    }
+    try {
+      checkResourcePressureGuard();
+    } catch {}
+    if (controller.pressureSeverity() === "critical") {
+      controller.recordShed("resource_pressure", sessionId);
+      return { admit: false, response: resourcePressureRejectionResponse() };
+    }
   }
 
   if (contentLength !== null && contentLength > hardMaxBytes) {

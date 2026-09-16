@@ -4,9 +4,12 @@ import { truncatePendingPreview } from "./usageHistory/helpers";
 
 const COMPLETED_DETAIL_TTL_MS = 30_000;
 const MAX_COMPLETED_DETAILS = 16;
+const MAX_COMPLETED_DETAILS_BYTES = 8 * 1024 * 1024; // 8 MiB byte budget (#13621 / PR #13623)
 
 const completedDetails = new Map<string, PendingRequestDetail>();
 const completedDetailTimers = new Map<string, ReturnType<typeof setTimeout>>();
+const detailBytes = new Map<string, number>();
+let totalCompletedDetailsBytes = 0;
 
 function detachValue<T>(val: T): T {
   if (typeof val === "string") {
@@ -25,8 +28,33 @@ function detachValue<T>(val: T): T {
   return val;
 }
 
+function estimateDetailBytes(detail: PendingRequestDetail): number {
+  let bytes = 256;
+  const measure = (val: unknown) => {
+    if (typeof val === "string") return val.length * 2;
+    if (val && typeof val === "object") {
+      try {
+        return JSON.stringify(val).length * 2;
+      } catch {
+        return 512;
+      }
+    }
+    return 0;
+  };
+  bytes += measure(detail.clientRequest);
+  bytes += measure(detail.providerRequest);
+  bytes += measure(detail.clientResponse);
+  bytes += measure(detail.providerResponse);
+  return bytes;
+}
+
 function deleteCompletedDetail(id: string) {
   completedDetails.delete(id);
+  const bytes = detailBytes.get(id);
+  if (bytes) {
+    totalCompletedDetailsBytes = Math.max(0, totalCompletedDetailsBytes - bytes);
+    detailBytes.delete(id);
+  }
   const existingTimer = completedDetailTimers.get(id);
   if (existingTimer) {
     clearTimeout(existingTimer);
@@ -35,7 +63,10 @@ function deleteCompletedDetail(id: string) {
 }
 
 function trimCompletedDetails() {
-  while (completedDetails.size > MAX_COMPLETED_DETAILS) {
+  while (
+    completedDetails.size > MAX_COMPLETED_DETAILS ||
+    totalCompletedDetailsBytes > MAX_COMPLETED_DETAILS_BYTES
+  ) {
     const oldestId = completedDetails.keys().next().value;
     if (!oldestId) break;
     deleteCompletedDetail(oldestId);
@@ -47,6 +78,9 @@ export function getCompletedDetails(): Map<string, PendingRequestDetail> {
 }
 
 export function storeCompletedDetail(detail: PendingRequestDetail) {
+  if (completedDetails.has(detail.id)) {
+    deleteCompletedDetail(detail.id);
+  }
   const cleanDetail: PendingRequestDetail = {
     ...detail,
     clientRequest: truncatePendingPreview(detachValue(detail.clientRequest)),
@@ -54,7 +88,10 @@ export function storeCompletedDetail(detail: PendingRequestDetail) {
     clientResponse: truncatePendingPreview(detachValue(detail.clientResponse)),
     providerResponse: truncatePendingPreview(detachValue(detail.providerResponse)),
   };
+  const bytes = estimateDetailBytes(cleanDetail);
   completedDetails.set(cleanDetail.id, cleanDetail);
+  detailBytes.set(cleanDetail.id, bytes);
+  totalCompletedDetailsBytes += bytes;
   trimCompletedDetails();
 }
 
@@ -62,8 +99,7 @@ export function scheduleCompletedDetailCleanup(id: string) {
   const existingTimer = completedDetailTimers.get(id);
   if (existingTimer) clearTimeout(existingTimer);
   const timer = setTimeout(() => {
-    completedDetails.delete(id);
-    completedDetailTimers.delete(id);
+    deleteCompletedDetail(id);
   }, COMPLETED_DETAIL_TTL_MS);
   timer.unref?.();
   completedDetailTimers.set(id, timer);
@@ -73,6 +109,8 @@ export function clearCompletedDetails() {
   for (const timer of completedDetailTimers.values()) clearTimeout(timer);
   completedDetailTimers.clear();
   completedDetails.clear();
+  detailBytes.clear();
+  totalCompletedDetailsBytes = 0;
 }
 
 function isUnset(value: unknown): boolean {

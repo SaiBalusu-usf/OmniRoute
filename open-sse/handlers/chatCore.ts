@@ -3003,8 +3003,21 @@ export async function handleChatCore({
   let onClientDisconnectFinalize:
     ((event: { reason: string; duration: number }) => boolean) | null = null;
 
+  let streamController: ReturnType<typeof createStreamController>;
+
+  const cleanupRequestResources = () => {
+    onPipelineStreamError = null;
+    onClientDisconnectFinalize = null;
+    try {
+      providerRequestCapture.clear?.();
+    } catch {}
+    try {
+      streamController?.dispose?.();
+    } catch {}
+  };
+
   // Create stream controller for disconnect detection
-  const streamController = createStreamController({
+  streamController = createStreamController({
     onDisconnect: (event) => {
       let finalized = false;
       try {
@@ -3026,6 +3039,7 @@ export async function handleChatCore({
       return finalized;
     },
     onError: (event) => onPipelineStreamError?.(event),
+    onCleanup: () => cleanupRequestResources(),
     provider,
     model,
     connectionId,
@@ -3034,15 +3048,6 @@ export async function handleChatCore({
     allowCompletedToolHandoffGrace: isCodexResponsesEcho,
     clientDisconnectGracePeriodMs: STREAM_DISCONNECT_GRACE_PERIOD_MS,
   });
-
-  const cleanupRequestResources = () => {
-    try {
-      providerRequestCapture.clear?.();
-    } catch {}
-    try {
-      streamController.dispose?.();
-    } catch {}
-  };
 
   const dedupRequestBody = { ...translatedBody, model: `${provider}/${model}`, stream };
   const dedupEnabled = shouldDeduplicate(dedupRequestBody);
