@@ -555,7 +555,11 @@ async function validateDevinCliKeyFallback(
  * (see docs.devin.ai/api-reference/sessions/list-sessions). Distinct from the
  * "devin-cli" LLM provider (ACP), which is already wired via providerRegistry.
  */
-export async function validateDevinCloudAgentProvider({ apiKey }: { apiKey: string }) {
+export async function validateDevinCloudAgentProvider({
+  apiKey,
+}: {
+  apiKey: string;
+}): Promise<{ valid: boolean; error: string | null; warning?: string }> {
   try {
     const response = await validationWrite("https://api.devin.ai/v1/sessions?limit=1", {
       method: "GET",
@@ -575,7 +579,7 @@ export async function validateDevinCloudAgentProvider({ apiKey }: { apiKey: stri
           valid: true,
           error: null,
           warning: "HTTP API rejected this key; validated via Devin CLI instead",
-        } as any;
+        };
       }
       return { valid: false, error: "Invalid API key" };
     }
