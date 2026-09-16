@@ -494,7 +494,7 @@
     "src/lib/tailscaleTunnel.ts": 1208,
     "src/lib/tokenHealthCheck.ts": 1218,
     "src/shared/components/RequestLoggerV2.tsx": 1718,
-    "src/shared/constants/providers/apikey/gateways.ts": 1502,
+    "src/shared/constants/providers/apikey/gateways.ts": 1521,
     "src/shared/services/cliRuntime.ts": 1296,
     "src/sse/handlers/chat.ts": 2490,
     "src/sse/services/auth.ts": 3557,
