@@ -1,4 +1,4 @@
--- Migration 134: per-request cost ledger + per-key tpm/rpm/monthly quota (M3 D2+D5).
+-- Migration 180: per-request cost ledger + per-key tpm/rpm/monthly quota (M3 D2+D5).
 --
 -- 1. request_cost_ledger — one row per completed call with the full cost
 --    breakdown (provider / model / input+output tokens / unit price / amount),
