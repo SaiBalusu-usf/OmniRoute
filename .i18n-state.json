@@ -4915,7 +4915,7 @@
       }
     },
     "docs/guides/UNINSTALL.md": {
-      "source_hash": "066ce7ce9010c0f642de95beaac98846a9612fd7bcf8a5d5e714043f42abb45f",
+      "source_hash": "ee4735ce48416a0c64fe6e0541ca54cc6e0d491ffdc9ab690ca78d944078ef6d",
       "locales": {
         "ar": {
           "source_hash": "8bc2bce775d77b8ee8e357c9801b578b6b4df1cc70e35f8a5d7b2515bbd48954",
@@ -5048,9 +5048,16 @@
           "updated_at": "2026-09-15T09:57:07.453Z"
         },
         "pt-BR": {
-          "source_hash": "8bc2bce775d77b8ee8e357c9801b578b6b4df1cc70e35f8a5d7b2515bbd48954",
-          "target_hash": "6249d39ffea98830f73e1cdf234ec6767a313ed77e5c483fb8b790837c07ab22",
-          "updated_at": "2026-09-15T09:57:07.453Z"
+          "source_hash": "ee4735ce48416a0c64fe6e0541ca54cc6e0d491ffdc9ab690ca78d944078ef6d",
+          "target_hash": "daa27526652fa06dbb00928b711e4cf028be810d132030ae49ec58c30676e4f6",
+          "section_hashes": [
+            "b508286e3dc8",
+            "c98a5cc1ad5c",
+            "bb88e6e6895d",
+            "61d53d9c4c97",
+            "85fb5e897f2f"
+          ],
+          "updated_at": "2026-09-16T13:05:57.260Z"
         },
         "ro": {
           "source_hash": "8bc2bce775d77b8ee8e357c9801b578b6b4df1cc70e35f8a5d7b2515bbd48954",

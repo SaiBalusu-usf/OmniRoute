@@ -37,6 +37,7 @@
  */
 
 import { promises as fs, existsSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import path from "node:path";
 import crypto from "node:crypto";
 import process from "node:process";
@@ -282,13 +283,23 @@ function targetPathFor(relSource, locale) {
   return path.join(DOCS_I18N_DIR, locale, relSource);
 }
 
-function extractTopHeading(markdown) {
-  const m = markdown.match(/^# (.+)\r?\n/);
+// Most docs sources open with a YAML front-matter block (`---` … `---`). The
+// H1 sits behind it, so the heading helpers look past the block: otherwise the
+// mirror gets the file name as its title and the front matter (plus a second
+// heading) is translated into its body.
+const FRONT_MATTER = /^---\r?\n[\s\S]*?\r?\n---\r?\n+/;
+
+function stripFrontMatter(markdown) {
+  return markdown.replace(FRONT_MATTER, "");
+}
+
+export function extractTopHeading(markdown) {
+  const m = stripFrontMatter(markdown).match(/^# (.+)\r?\n/);
   return m ? m[1].trim() : null;
 }
 
-function stripTopHeading(markdown) {
-  return markdown.replace(/^# .+\r?\n+/, "");
+export function stripTopHeading(markdown) {
+  return stripFrontMatter(markdown).replace(/^# .+\r?\n+/, "");
 }
 
 // ----- Translator backend --------------------------------------------------
@@ -463,6 +474,110 @@ function splitOversizedSection(section, maxChars) {
   }
   if (current.length) chunks.push(current.join("\n"));
   return chunks;
+}
+
+// ----- Section cache --------------------------------------------------------
+// A mirror is retranslated section by section: the state remembers a short
+// hash of every `## ` section of the source at the time of translation, and a
+// later run only sends the sections whose hash changed, splicing the untouched
+// translated sections of the mirror back in. Sections are matched by index
+// only — an inserted or removed section shifts everything after it and costs
+// a retranslation of the tail, which is acceptable.
+
+// Section 0 is the preamble (text before the first `## `); every other section
+// starts with its `## ` heading line. Joining with "\n\n" reproduces the body
+// modulo trailing whitespace. A `## ` inside a fenced code block never splits.
+export function splitSections(markdown) {
+  const sections = [[]];
+  let inFence = false;
+  for (const line of markdown.split("\n")) {
+    if (FENCE_LINE.test(line)) inFence = !inFence;
+    if (!inFence && /^## /.test(line) && sections.at(-1).length) sections.push([]);
+    sections.at(-1).push(line);
+  }
+  return sections.map((s) => s.join("\n").replace(/\s+$/, ""));
+}
+
+export function sectionHashes(sections) {
+  return sections.map((s) => sha256(Buffer.from(s.trim(), "utf8")).slice(0, 12));
+}
+
+// `null` means "no reuse possible — translate the whole body": no recorded
+// hashes, or the mirror on disk does not have the section count the hashes
+// were recorded for (a hand edit, or a mirror written by an older pipeline).
+export function planSectionReuse({ previousHashes, sections, mirrorSections }) {
+  if (!Array.isArray(previousHashes) || previousHashes.length !== mirrorSections.length) {
+    return null;
+  }
+  if (previousHashes.length !== sections.length) return null;
+  const now = sectionHashes(sections);
+  const reuse = new Map();
+  const translate = [];
+  now.forEach((h, i) => {
+    if (h === previousHashes[i]) reuse.set(i, mirrorSections[i]);
+    else translate.push(i);
+  });
+  return { reuse, translate };
+}
+
+// The mirror without the prefix this script writes in front of the translated
+// body: `# Title (native)`, the `🌐 **Languages:**` bar (older mirrors carry a
+// translated label, so only the globe is pinned) and the `---` separator.
+export function extractMirrorBody(mirrorText) {
+  return mirrorText
+    .replace(/^# .+\r?\n+/, "")
+    .replace(/^🌐 .*\r?\n+/, "")
+    .replace(/^---\r?\n+/, "");
+}
+
+// Bootstrap for targets translated before section hashes existed: walks the
+// file's git history (newest first, at most 200 commits) and returns the text
+// whose sha256 equals `sha` — the source that produced the mirror on disk — or
+// `null` when it is not in reach (shallow clone, rewritten history).
+export async function findSourceTextByHash(rel, sha, { cwd = ROOT } = {}) {
+  let commits;
+  try {
+    commits = execFileSync("git", ["log", "--format=%H", "-n", "200", "--", rel], {
+      cwd,
+      encoding: "utf8",
+    })
+      .trim()
+      .split("\n")
+      .filter(Boolean);
+  } catch {
+    return null;
+  }
+  for (const commit of commits) {
+    let text;
+    try {
+      text = execFileSync("git", ["show", `${commit}:${rel}`], {
+        cwd,
+        encoding: "utf8",
+        maxBuffer: 1 << 28,
+      });
+    } catch {
+      continue;
+    }
+    if (sha256(Buffer.from(text, "utf8")) === sha) return text;
+  }
+  return null;
+}
+
+// Decides which sections of a task can be spliced in from the mirror on disk.
+// Targets recorded without `section_hashes` are bootstrapped from git history
+// by the `source_hash` the state remembers for them.
+async function resolveSectionPlan({ task, state, opts, sections }) {
+  if (task.missingTarget || opts.force) return null;
+  const recorded = state.sources[task.rel]?.locales?.[task.locale];
+  let previousHashes = recorded?.section_hashes;
+  if (!previousHashes && recorded?.source_hash) {
+    const oldText = await findSourceTextByHash(task.rel, recorded.source_hash);
+    if (oldText) previousHashes = sectionHashes(splitSections(stripTopHeading(oldText)));
+  }
+  if (!previousHashes) return null;
+  const mirrorText = await fs.readFile(task.targetAbs, "utf8");
+  const mirrorSections = splitSections(extractMirrorBody(mirrorText));
+  return planSectionReuse({ previousHashes, sections, mirrorSections });
 }
 
 async function translateBody(body, localeEntry, backend) {
@@ -685,9 +800,26 @@ async function main() {
         const topHeading = extractTopHeading(sourceText);
         const body = stripTopHeading(sourceText);
 
+        const sections = splitSections(body);
         let translatedBody;
         try {
-          translatedBody = await translateBody(body, localeEntry, backend);
+          const plan = await resolveSectionPlan({ task, state, opts, sections });
+          if (plan && plan.translate.length < sections.length) {
+            const out = [...sections];
+            for (const [i, text] of plan.reuse) out[i] = text;
+            for (const i of plan.translate) {
+              // An empty preamble (body opening with `## `) has nothing to send.
+              out[i] = sections[i].trim()
+                ? await translateBody(sections[i], localeEntry, backend)
+                : "";
+            }
+            translatedBody = out.join("\n\n");
+            logInfo(
+              `${task.rel} → ${task.locale}: ${plan.translate.length}/${sections.length} sections retranslated`
+            );
+          } else {
+            translatedBody = await translateBody(body, localeEntry, backend);
+          }
         } catch (err) {
           stats.failed++;
           failures.push({ rel: task.rel, locale: task.locale, error: err.message });
@@ -712,6 +844,7 @@ async function main() {
         state.sources[task.rel].locales[task.locale] = {
           source_hash: sourceHash,
           target_hash: targetHash,
+          section_hashes: sectionHashes(sections),
           updated_at: new Date().toISOString(),
         };
 
