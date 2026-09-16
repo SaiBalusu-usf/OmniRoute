@@ -514,7 +514,11 @@ export function planSectionReuse({ previousHashes, sections, mirrorSections }) {
   const reuse = new Map();
   const translate = [];
   now.forEach((h, i) => {
-    if (h === previousHashes[i]) reuse.set(i, mirrorSections[i]);
+    // A mirror section byte-equal to its source section is an untranslated copy (322 mirrors
+    // of the 36 pre-expansion locales were adopted as English, 2026-09-16 audit) — never reuse it.
+    const untranslated =
+      mirrorSections[i].trim() === sections[i].trim() && /[A-Za-z]{3,}/.test(sections[i]);
+    if (h === previousHashes[i] && !untranslated) reuse.set(i, mirrorSections[i]);
     else translate.push(i);
   });
   return { reuse, translate };

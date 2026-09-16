@@ -144,3 +144,12 @@ test("findSourceTextByHash walks the file's git history and returns the text wit
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("planSectionReuse never reuses a mirror section that is still the English source", () => {
+  const sections = ["p", "## A\n\nalpha text here", "## B\n\nbeta"];
+  const prev = sectionHashes(sections);
+  const mirror = ["p-pt", "## A\n\nalpha text here", "## B-pt\n\nbeta-pt"];
+  const plan = planSectionReuse({ previousHashes: prev, sections, mirrorSections: mirror });
+  assert.deepEqual([...plan.reuse.keys()], [0, 2]);
+  assert.deepEqual(plan.translate, [1]);
+});
