@@ -420,12 +420,42 @@ async function buildUnifiedModelsResponseCore(
       const canonical = canonicalProviderId || resolveCanonicalProviderId(providerKey);
       const alias = providerIdToAlias[canonical] || providerIdToAlias[providerKey] || undefined;
       const nodePrefix = providerIdToPrefix[providerKey] || providerIdToPrefix[canonical];
-      const keysToCheck = [providerKey, canonical, alias, nodePrefix].filter((k): k is string =>
-        Boolean(k)
-      );
+      // Also check the bare model id as a key (some overrides are stored as
+      // `modelId` alone without a provider prefix) and the first path segment
+      // of a provider-qualified id (`openai/gpt-5.6-luna` → `openai`).
+      const keysToCheck = [
+        providerKey,
+        canonical,
+        alias,
+        nodePrefix,
+        modelId.split("/")[0],
+        modelId,
+      ].filter((k): k is string => Boolean(k));
       for (const key of keysToCheck) {
         const hiddenSet = hiddenModelsByProvider.get(key);
         if (hiddenSet?.has(modelId)) return true;
+      }
+
+      // Cross-provider sweep: a curated/gateway provider (e.g. `cline`) can
+      // re-advertise another provider's models (e.g. `openai/gpt-5.6-luna`),
+      // so the eye-toggle for `openai` must suppress that id no matter which
+      // provider's catalog surfaces it. Scan every provider's hidden set for
+      // the id, its bare tail after the first slash, or a suffix match.
+      for (const hiddenSet of hiddenModelsByProvider.values()) {
+        if (hiddenSet.has(modelId)) return true;
+        if (modelId.includes("/")) {
+          const tail = modelId.slice(modelId.indexOf("/") + 1);
+          if (hiddenSet.has(tail)) return true;
+          if (tail.includes("/") && [...hiddenSet].some((h) => h === tail)) return true;
+        }
+        // provider-qualified hidden ids (e.g. `openai/gpt-5.6-luna`) vs a bare
+        // catalog id (`gpt-5.6-luna`): match when the hidden id ends with the id.
+        if (
+          !modelId.includes("/") &&
+          [...hiddenSet].some((h) => h.includes("/") && h.endsWith(`/${modelId}`))
+        ) {
+          return true;
+        }
       }
       return false;
     };
