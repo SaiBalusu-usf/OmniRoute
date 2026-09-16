@@ -148,7 +148,10 @@ test("managed sql.js repair preserves a reopenable pre-repair host snapshot", as
       restored.close();
     }
   } finally {
-    core.closeDbInstance();
+    // resetDbInstance (not just closeDbInstance) also invalidates the read
+    // cache the singleton left behind, matching this project's DB-test
+    // cleanup convention (AGENTS.md > "Database Handles in Tests").
+    core.resetDbInstance();
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });

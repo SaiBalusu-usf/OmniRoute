@@ -1,4 +1,5 @@
 {
+  "_rebaseline_2026_09_15_13717_db_health_startup_deferred_flag": "PR #13717 rework: src/lib/db/core.ts growth from the DB_HEALTHCHECK_STARTUP_DEFERRED_ENABLED feature-flag gate (default off) around the startup health-check call site — the flag-off branch is a verbatim reproduction of the pre-#13717 synchronous call, now wrapped in try/catch (a genuine crash-fix: ensureBackupBeforeRepair in healthCheck.ts can throw 'backup creation failed', and this call site was previously unwrapped — see the PR's rework notes) plus a comment on why setDb(db) had to move earlier (a second real bug this rework found and fixed: the flag read itself is a DB-backed feature-flag override, i.e. it calls getDbInstance(), and reading it before the singleton was registered caused unbounded recursive re-opening of the database). Covered by tests/unit/db-health-check.test.ts (default synchronous branch) and the new tests/unit/db-health-startup-deferred-flag-13717.test.ts (both flag states, subprocess-isolated).",
   "_rebaseline_2026_09_15_13609_combined_growth": "Combined growth of the 2026-09-15 maxmad64bis uplift batch (each PR rebaselined its own growth; the merged sum is larger): open-sse/services/accountFallback.ts->2507. Every hunk is flag-gated or a verified fix covered by that PR's tests; see the batch report.",
   "_rebaseline_2026_09_15_13602_combined_growth": "Combined growth of the 2026-09-15 maxmad64bis uplift batch (each PR rebaselined its own growth; the merged sum is larger): src/sse/handlers/chatHelpers.ts->1214. Every hunk is flag-gated or a verified fix covered by that PR's tests; see the batch report.",
   "_rebaseline_2026_09_15_13580_combined_growth": "Combined growth of the 2026-09-15 maxmad64bis uplift batch (each PR rebaselined its own growth; the merged sum is larger): src/sse/handlers/chatHelpers.ts->1202. Every hunk is flag-gated or a verified fix covered by that PR's tests; see the batch report.",
@@ -486,7 +487,7 @@
     "src/app/api/v1/models/catalog.ts": 2075,
     "src/app/docs/lib/openapi.generated.ts": 1347,
     "src/lib/db/apiKeys.ts": 1625,
-    "src/lib/db/core.ts": 1770,
+    "src/lib/db/core.ts": 1788,
     "src/lib/db/migrationRunner.ts": 1206,
     "src/lib/tailscaleTunnel.ts": 1208,
     "src/lib/tokenHealthCheck.ts": 1218,
