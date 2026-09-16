@@ -55,6 +55,7 @@ import {
 import { createStreamFailureAborter } from "./streamFailureBoundary.ts";
 import { recordToolLatency } from "../services/toolLatencyTracker.ts";
 import { extractToolSchemaMap } from "../translator/response/openai-responses/toolSchemas.ts";
+import { resolveRequestToolIdentity } from "../translator/response/openai-responses/requestToolIdentity.ts";
 import {
   generateSessionId,
   markToolFinish,
