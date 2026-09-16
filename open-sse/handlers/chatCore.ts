@@ -691,6 +691,19 @@ export async function handleChatCore({
     transport?: string,
     failureDetail?: string
   ): void => recordKeyHealthStatusFor(status, creds, log, transport, failureDetail);
+  // Endpoint/format resolution extracted to chatCore/requestFormat.ts (#3501); pure derivation
+  // from the request. OUTSIDE the try below — persistFailureUsage closes over endpointPath.
+  const {
+    endpointPath,
+    sourceFormat,
+    isResponsesEndpoint,
+    nativeCodexPassthrough,
+    nativeXaiResponsesPassthrough,
+    isDroidCLI,
+    isOpencodeClient,
+    copilotCompatibleReasoning,
+    clientResponseFormat,
+  } = resolveChatCoreRequestFormat({ clientRawRequest, body, provider, userAgent });
   // ── Phase 9.2: Idempotency check ──
   // Resolve the idempotency key once here and reuse it at the Phase 9.2 save site below,
   // rather than re-deriving it. (#3821-review LEDGER-6)
@@ -711,7 +724,7 @@ export async function handleChatCore({
   }
 
   const turnExecution = acquireTurnExecution(idempotencyKey);
-  if (!turnExecution.acquired) {
+  if (turnExecution.acquired === false) {
     const duplicate = createTurnInProgressResult(turnExecution.retryCount);
     log?.warn?.(
       "TURN_GUARD",
@@ -730,19 +743,6 @@ export async function handleChatCore({
   if (connectionId && credentials && !credentials.connectionId) {
     credentials.connectionId = connectionId;
   }
-  // Endpoint/format resolution extracted to chatCore/requestFormat.ts (#3501); pure derivation
-  // from the inbound request, destructured so every downstream use stays byte-identical.
-  const {
-    endpointPath,
-    sourceFormat,
-    isResponsesEndpoint,
-    nativeCodexPassthrough,
-    nativeXaiResponsesPassthrough,
-    isDroidCLI,
-    isOpencodeClient,
-    copilotCompatibleReasoning,
-    clientResponseFormat,
-  } = resolveChatCoreRequestFormat({ clientRawRequest, body, provider, userAgent });
   let clientRequestedResponsesStream = false;
   const nativeOpenAICompatibleResponsesPassthrough =
     shouldUseNativeOpenAICompatibleResponsesPassthrough({
