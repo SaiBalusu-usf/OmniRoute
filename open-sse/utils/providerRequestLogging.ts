@@ -6,13 +6,15 @@ export type ProviderRequestPrepared = {
   url: string;
   headers: Record<string, string>;
   body: unknown;
-  bodyString: string;
+  bodyString?: string;
+  bodyLength?: number;
 };
 
 export type Capture = {
   capture: (request: ProviderRequestPrepared) => Promise<void> | void;
   body: (fallback: unknown) => unknown;
   latest?: () => ProviderRequestPrepared | null;
+  clear?: () => void;
 };
 
 type RequestLoggerLike = {
@@ -89,10 +91,17 @@ async function capturePreparedRequest(
 ) {
   if (!requestCapture) return;
   const latest = requestCapture.latest?.();
-  if (latest?.url === url && latest.bodyString === bodyString) return;
+  const bodyLength = bodyString.length;
+  if (
+    latest?.url === url &&
+    (latest.bodyLength === bodyLength ||
+      (typeof latest.bodyString === "string" && latest.bodyString === bodyString))
+  ) {
+    return;
+  }
 
   try {
-    await requestCapture.capture({ url, headers, body, bodyString });
+    await requestCapture.capture({ url, headers, body, bodyLength });
   } catch (error) {
     log?.warn?.(
       "REQUEST_LOG",
@@ -225,7 +234,16 @@ export function createPreparedRequestLogger(
   let latest: ProviderRequestPrepared | null = null;
   return {
     capture(request) {
-      latest = request;
+      const bodyLength =
+        request.bodyLength ??
+        (typeof request.bodyString === "string" ? request.bodyString.length : undefined);
+      // Strip bodyString: never retain multi-megabyte raw strings in closure heap!
+      latest = {
+        url: request.url,
+        headers: request.headers,
+        body: request.body,
+        bodyLength,
+      };
       reqLogger.logTargetRequest(request.url, request.headers, request.body);
       updatePendingScope(scope, {
         providerRequest: request.body,
@@ -267,6 +285,9 @@ export function createPreparedRequestLogger(
     },
     latest() {
       return latest;
+    },
+    clear() {
+      latest = null;
     },
   };
 }

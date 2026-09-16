@@ -3035,6 +3035,15 @@ export async function handleChatCore({
     clientDisconnectGracePeriodMs: STREAM_DISCONNECT_GRACE_PERIOD_MS,
   });
 
+  const cleanupRequestResources = () => {
+    try {
+      providerRequestCapture.clear?.();
+    } catch {}
+    try {
+      streamController.dispose?.();
+    } catch {}
+  };
+
   const dedupRequestBody = { ...translatedBody, model: `${provider}/${model}`, stream };
   const dedupEnabled = shouldDeduplicate(dedupRequestBody);
   // Namespaced by the calling API key: dedup hands the SAME response object to
@@ -3520,6 +3529,7 @@ export async function handleChatCore({
       if (dedupResult.wasDeduplicated) {
         log?.debug?.("DEDUP", `Joined in-flight request hash=${dedupHash}`);
       }
+      cleanupRequestResources();
       return materializeDeduplicatedExecutionResult(dedupResult.result);
     }
 
@@ -3576,6 +3586,7 @@ export async function handleChatCore({
         // FIX 6: clear the pending request marker before the early return so we do
         // not leak a phantom pending request (start was tracked at line ~1847).
         trackPendingRequest(model, provider, connectionId, false);
+        cleanupRequestResources();
         // FIX 5: tag this as a per-API-key token-limit breach (errorCode
         // TOKEN_LIMIT_EXCEEDED) so the combo loop can distinguish it from an
         // upstream 429 and NOT cool shared accounts / retry it transiently.
@@ -3600,6 +3611,7 @@ export async function handleChatCore({
     try {
       if (isTpmExhausted(effectiveModel)) {
         trackPendingRequest(model, provider, connectionId, false);
+        cleanupRequestResources();
         return createErrorResult(
           HTTP_STATUS.RATE_LIMITED,
           `Gemini TPM rate limit reached for ${effectiveModel}. Please try again later.`,
@@ -4189,7 +4201,10 @@ export async function handleChatCore({
       }
     } catch (error) {
       trackPendingRequest(model, provider, connectionId, false);
-      if (isManagedLeaseFenceError(error)) return managedLeaseFenceErrorResult(error);
+      if (isManagedLeaseFenceError(error)) {
+        cleanupRequestResources();
+        return managedLeaseFenceErrorResult(error);
+      }
       if (isSemaphoreCapacityError(error)) {
         appendRequestLog({
           model,
@@ -4210,6 +4225,7 @@ export async function handleChatCore({
         const result = stream
           ? createStreamingErrorResult(HTTP_STATUS.RATE_LIMITED, failureMessage, error.code)
           : createErrorResult(HTTP_STATUS.RATE_LIMITED, failureMessage);
+        cleanupRequestResources();
         return {
           ...result,
           errorType: "account_semaphore_capacity",
@@ -4278,6 +4294,7 @@ export async function handleChatCore({
       });
       if (isRequestAborted) {
         streamController.handleError(error);
+        cleanupRequestResources();
         return createErrorResult(499, "Request aborted");
       }
       const persistentErrorCode = projectFailureUsageErrorCode({
@@ -4290,6 +4307,7 @@ export async function handleChatCore({
       });
       persistFailureUsage(failureStatus, persistentErrorCode);
       console.log(`${COLORS.red}[ERROR] ${failureMessage}${COLORS.reset}`);
+      cleanupRequestResources();
       if (stream && upstreamErrorCode) {
         const result = createStreamingErrorResult(
           failureStatus,
@@ -5053,6 +5071,7 @@ export async function handleChatCore({
         });
         persistFailureUsage(err.status, err.errorCode || `upstream_${err.status}`);
         trackPendingRequest(model, provider, connectionId, false);
+        cleanupRequestResources();
         return err;
       }
 
@@ -5466,6 +5485,7 @@ export async function handleChatCore({
             connectionId: credentials?.connectionId ?? null,
           })
         );
+        cleanupRequestResources();
         return createErrorResult(
           HTTP_STATUS.BAD_GATEWAY,
           malformedMessage,
@@ -5604,6 +5624,7 @@ export async function handleChatCore({
         })
       );
 
+      cleanupRequestResources();
       return {
         success: true,
         response: maybeWrapForcedNonStreamingResponsesJson({
@@ -5614,6 +5635,7 @@ export async function handleChatCore({
       };
     } catch (error) {
       trackPendingRequest(model, provider, connectionId, false);
+      cleanupRequestResources();
       if (isManagedLeaseFenceError(error)) return managedLeaseFenceErrorResult(error);
       if (isSemaphoreCapacityError(error)) {
         appendRequestLog({
@@ -5762,6 +5784,7 @@ export async function handleChatCore({
     itlMs: streamItlMs,
     interrupted: _streamInterrupted,
   }) => {
+    cleanupRequestResources();
     const normalizedStreamStatus = streamStatus || 200;
     if (streamCompletionRecorded) return;
     streamCompletionRecorded = true;

@@ -421,6 +421,9 @@ export function createStreamController({
       cleanupClientAbortListener();
       abortController.abort();
     },
+    dispose: () => {
+      cleanupClientAbortListener();
+    },
     clientResponseFormat,
     clientDisconnectGracePeriodMs,
   };

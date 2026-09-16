@@ -162,6 +162,11 @@ const EXTRA_MODULE_ENTRIES = [
     src: ["node_modules", "pino-pretty"],
     dest: ["node_modules", "pino-pretty"],
   },
+  {
+    label: "real-require",
+    src: ["node_modules", "real-require"],
+    dest: ["node_modules", "real-require"],
+  },
   { label: "split2", src: ["node_modules", "split2"], dest: ["node_modules", "split2"] },
   { label: "migrations", src: ["src", "lib", "db", "migrations"], dest: ["migrations"] },
   { label: "MITM server", src: ["src", "mitm", "server.cjs"], dest: ["src", "mitm", "server.cjs"] },

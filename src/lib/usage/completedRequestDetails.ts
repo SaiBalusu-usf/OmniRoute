@@ -1,8 +1,9 @@
 import { getDbInstance } from "../db/core";
 import type { PendingRequestDetail } from "./usageHistory";
+import { truncatePendingPreview } from "./usageHistory/helpers";
 
-const COMPLETED_DETAIL_TTL_MS = 120_000;
-const MAX_COMPLETED_DETAILS = 32;
+const COMPLETED_DETAIL_TTL_MS = 30_000;
+const MAX_COMPLETED_DETAILS = 16;
 
 const completedDetails = new Map<string, PendingRequestDetail>();
 const completedDetailTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -48,10 +49,10 @@ export function getCompletedDetails(): Map<string, PendingRequestDetail> {
 export function storeCompletedDetail(detail: PendingRequestDetail) {
   const cleanDetail: PendingRequestDetail = {
     ...detail,
-    clientRequest: detachValue(detail.clientRequest),
-    providerRequest: detachValue(detail.providerRequest),
-    clientResponse: detachValue(detail.clientResponse),
-    providerResponse: detachValue(detail.providerResponse),
+    clientRequest: truncatePendingPreview(detachValue(detail.clientRequest)),
+    providerRequest: truncatePendingPreview(detachValue(detail.providerRequest)),
+    clientResponse: truncatePendingPreview(detachValue(detail.clientResponse)),
+    providerResponse: truncatePendingPreview(detachValue(detail.providerResponse)),
   };
   completedDetails.set(cleanDetail.id, cleanDetail);
   trimCompletedDetails();
@@ -103,10 +104,10 @@ export function maybeEnrichCompletedDetail(updated: PendingRequestDetail, connec
         // testing emptiness once before the loop let it overwrite the payload
         // just recovered, showing a provider payload as the client response.
         if (isUnset(updated.providerResponse) && pipeline?.providerResponse) {
-          updated.providerResponse = pipeline.providerResponse;
+          updated.providerResponse = truncatePendingPreview(pipeline.providerResponse);
         }
         if (isUnset(updated.clientResponse) && pipeline?.clientResponse) {
-          updated.clientResponse = pipeline.clientResponse;
+          updated.clientResponse = truncatePendingPreview(pipeline.clientResponse);
         }
         // A size-limited artifact stores an omission marker string in place of
         // the body. It is truthy, so recovering it here overwrites a real
@@ -115,8 +116,9 @@ export function maybeEnrichCompletedDetail(updated: PendingRequestDetail, connec
           ? null
           : art.artifact.responseBody;
         if (responseBody) {
-          if (isUnset(updated.providerResponse)) updated.providerResponse = responseBody;
-          if (isUnset(updated.clientResponse)) updated.clientResponse = responseBody;
+          const truncatedBody = truncatePendingPreview(responseBody);
+          if (isUnset(updated.providerResponse)) updated.providerResponse = truncatedBody;
+          if (isUnset(updated.clientResponse)) updated.clientResponse = truncatedBody;
         }
         if (updated.providerResponse || updated.clientResponse) {
           if (completedDetails.has(updated.id)) storeCompletedDetail(updated);
