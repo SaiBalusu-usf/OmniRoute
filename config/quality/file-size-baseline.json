@@ -1,4 +1,5 @@
 {
+  "_rebaseline_2026_09_16_12912_turn_execution_guard": "PR #12912 own growth: open-sse/handlers/chatCore.ts 6146->6171 (+25; the release tip measures 6143, so 4 of those lines were the baseline's own slack). The duplicate-turn guard itself (in-flight map, retry counter, age, release/handoff semantics) lives in the new leaf open-sse/handlers/chatCore/turnExecutionGuard.ts (80 lines, well under cap). What remains in this file is the irreducible call-site wiring at the single execution chokepoint: acquire, the 409 turn_in_progress early return with its TURN_GUARD warn, the release/handoff bookkeeping, and the try wrapper that scopes it (kept byte-stable with a prettier-ignore so the guarded body is not re-indented wholesale). Covered by tests/unit/turn-execution-guard.test.ts (4/4; ageMs asserted as a range after the load-sensitive flake fix).",
   "_rebaseline_2026_09_15_13602_combined_growth": "Combined growth of the 2026-09-15 maxmad64bis uplift batch (each PR rebaselined its own growth; the merged sum is larger): src/sse/handlers/chatHelpers.ts->1214. Every hunk is flag-gated or a verified fix covered by that PR's tests; see the batch report.",
   "_rebaseline_2026_09_15_13580_combined_growth": "Combined growth of the 2026-09-15 maxmad64bis uplift batch (each PR rebaselined its own growth; the merged sum is larger): src/sse/handlers/chatHelpers.ts->1202. Every hunk is flag-gated or a verified fix covered by that PR's tests; see the batch report.",
   "_rebaseline_2026_09_15_13439_combined_growth": "Combined growth of the 2026-09-15 maxmad64bis uplift batch (each PR rebaselined its own growth; the merged sum is larger): open-sse/services/combo/executeTargetAttempt.ts->1228. Every hunk is flag-gated or a verified fix covered by that PR's tests; see the batch report.",
@@ -449,7 +450,7 @@
     "open-sse/executors/codex.ts": 1505,
     "open-sse/executors/cursor.ts": 1759,
     "open-sse/executors/muse-spark-web.ts": 1405,
-    "open-sse/handlers/chatCore.ts": 6146,
+    "open-sse/handlers/chatCore.ts": 6171,
     "open-sse/handlers/imageGeneration.ts": 3293,
     "open-sse/handlers/search.ts": 1789,
     "open-sse/mcp-server/schemas/tools.ts": 1621,
