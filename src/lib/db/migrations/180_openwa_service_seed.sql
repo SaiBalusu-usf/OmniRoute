@@ -1,4 +1,4 @@
--- Migration 163: Seed the open-wa (@open-wa/wa-automate) embedded service row.
+-- Migration 180: Seed the open-wa (@open-wa/wa-automate) embedded service row.
 --
 -- open-wa is a WhatsApp Web automation library (npm package
 -- `@open-wa/wa-automate`, CLI server mode `wa-automate --port <port>`)
