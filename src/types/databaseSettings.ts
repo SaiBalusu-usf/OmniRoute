@@ -119,7 +119,10 @@ export const DEFAULT_DATABASE_SETTINGS: Omit<DatabaseSettings, "location" | "sta
     configAudit: 30,
     a2aEvents: 30,
     callLogs: 30,
-    conversationTurnNodes: 1,
+    // Default matches callLogs (30) so merging this knob changes no behavior for
+    // existing installs — operators can lower it independently if they want a
+    // shorter reconnect-anchor window than their call-log retention (#12453).
+    conversationTurnNodes: 30,
     usageHistory: 30,
     memoryEntries: 30,
     domainCostHistory: 30,

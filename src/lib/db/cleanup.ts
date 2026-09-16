@@ -443,19 +443,22 @@ export async function cleanupCcrBlocks(): Promise<CleanupResult> {
 }
 
 /**
- * Clean up conversation_turn_nodes older than the call-log retention window (#12453).
+ * Clean up conversation_turn_nodes older than their own retention window (#12453).
  *
  * The nodes are identity-only: the transcript view resolves each turn's display
  * content from the call_logs row `last_correlation_id` points at. Once
- * cleanupCallLogs purges that row the node can never render again, so the two
- * tables share the dashboard database setting `retention.conversationTurnNodes` instead of
- * a knob of their own; `CALL_LOG_RETENTION_DAYS` configures the separate
- * compliance cleanup path and does not override this window. Deleting an old
- * node only affects reconnect anchors: a conversation resumed after the window
- * mints a new id, which is already the documented anchor-miss behavior of
- * resolveConversationId. `last_seen_at` has no index (migration 156), so
- * each DELETE is a table scan. Bounded batches yield between writes so an
- * existing large table cannot park the event loop for the whole cleanup pass.
+ * cleanupCallLogs purges that row the node can never render again, so this
+ * window should not outlive `retention.callLogs` in practice — but the two
+ * settings are independent knobs (`retention.conversationTurnNodes`, default
+ * 30, matching callLogs' default so upgrading changes nothing until an
+ * operator overrides one of them). `CALL_LOG_RETENTION_DAYS` configures the
+ * separate compliance cleanup path and does not override this window.
+ * Deleting an old node only affects reconnect anchors: a conversation resumed
+ * after the window mints a new id, which is already the documented
+ * anchor-miss behavior of resolveConversationId. `last_seen_at` has no index
+ * (migration 156), so each DELETE is a table scan. Bounded batches yield
+ * between writes so an existing large table cannot park the event loop for
+ * the whole cleanup pass.
  */
 export async function cleanupConversationTurnNodes(): Promise<CleanupResult> {
   const retention = getRetentionSettings();
@@ -489,14 +492,16 @@ export async function cleanupConversationTurnNodes(): Promise<CleanupResult> {
  * expired goes in the same pass. The indexed `last_seen_at` predicate bounds
  * the NOT EXISTS probe to roots that are already past the retention window.
  * Deletion is batched for the same event-loop fairness guarantee as the
- * preceding node cleanup. */
+ * preceding node cleanup.
+ */
 export async function cleanupAgenticConversations(): Promise<CleanupResult> {
   const db = getDbInstance();
   const retention = getRetentionSettings();
   const retentionDays = retention.conversationTurnNodes;
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
-  const cutoffISO = cutoffDate.toISOString();  const result: CleanupResult = { deleted: 0, errors: 0 };
+  const cutoffISO = cutoffDate.toISOString();
+  const result: CleanupResult = { deleted: 0, errors: 0 };
 
   try {
     if (!tableExists("agentic_conversations") || !tableExists("conversation_turn_nodes")) {
