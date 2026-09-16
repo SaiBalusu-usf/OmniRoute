@@ -516,9 +516,13 @@ export function planSectionReuse({ previousHashes, sections, mirrorSections }) {
   now.forEach((h, i) => {
     // A mirror section byte-equal to its source section is an untranslated copy (322 mirrors
     // of the 36 pre-expansion locales were adopted as English, 2026-09-16 audit) — never reuse it.
+    // Section 0 of a mirror that starts with a YAML block is the old extractor's leaked
+    // frontmatter (24 newer locales, 2026-09-16) — always rebuild it.
+    const leakedFrontmatter = i === 0 && /^---\s*\n/.test(mirrorSections[i]);
     const untranslated =
       mirrorSections[i].trim() === sections[i].trim() && /[A-Za-z]{3,}/.test(sections[i]);
-    if (h === previousHashes[i] && !untranslated) reuse.set(i, mirrorSections[i]);
+    if (h === previousHashes[i] && !untranslated && !leakedFrontmatter)
+      reuse.set(i, mirrorSections[i]);
     else translate.push(i);
   });
   return { reuse, translate };
@@ -570,12 +574,58 @@ export async function findSourceTextByHash(rel, sha, { cwd = ROOT } = {}) {
 // Decides which sections of a task can be spliced in from the mirror on disk.
 // Targets recorded without `section_hashes` are bootstrapped from git history
 // by the `source_hash` the state remembers for them.
+/**
+ * Bootstrap fallback: the recorded source_hash often belongs to a working-tree state that was
+ * never committed as such (add-locale rewrites README/bars before translating), so an exact
+ * hash lookup fails. The source as of the last commit before the translation's `updated_at`
+ * is the closest committed ancestor — sections unchanged since then are safe to reuse.
+ */
+export function findSourceTextBefore(rel, isoDate, { cwd = ROOT } = {}) {
+  try {
+    const commit = execFileSync(
+      "git",
+      ["log", "-1", "--format=%H", `--before=${isoDate}`, "--", rel],
+      {
+        cwd,
+        encoding: "utf8",
+      }
+    ).trim();
+    if (!commit) return null;
+    return execFileSync("git", ["show", `${commit}:${rel}`], {
+      cwd,
+      encoding: "utf8",
+      maxBuffer: 1 << 28,
+    });
+  } catch {
+    return null;
+  }
+}
+
+export function mirrorLastCommitDate(mirrorRel, { cwd = ROOT } = {}) {
+  try {
+    const out = execFileSync("git", ["log", "-1", "--format=%cI", "--", mirrorRel], {
+      cwd,
+      encoding: "utf8",
+    }).trim();
+    return out || null;
+  } catch {
+    return null;
+  }
+}
+
 async function resolveSectionPlan({ task, state, opts, sections }) {
   if (task.missingTarget || opts.force) return null;
   const recorded = state.sources[task.rel]?.locales?.[task.locale];
   let previousHashes = recorded?.section_hashes;
   if (!previousHashes && recorded?.source_hash) {
-    const oldText = await findSourceTextByHash(task.rel, recorded.source_hash);
+    let oldText = await findSourceTextByHash(task.rel, recorded.source_hash);
+    if (!oldText) {
+      // `updated_at` is bumped by `--adopt`, so prefer the date of the last commit that
+      // actually wrote the mirror (mirrors are only written by translation runs).
+      const translatedAt =
+        mirrorLastCommitDate(path.relative(ROOT, task.targetAbs)) || recorded.updated_at;
+      if (translatedAt) oldText = findSourceTextBefore(task.rel, translatedAt);
+    }
     if (oldText) previousHashes = sectionHashes(splitSections(stripTopHeading(oldText)));
   }
   if (!previousHashes) return null;

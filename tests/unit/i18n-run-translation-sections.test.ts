@@ -153,3 +153,12 @@ test("planSectionReuse never reuses a mirror section that is still the English s
   assert.deepEqual([...plan.reuse.keys()], [0, 2]);
   assert.deepEqual(plan.translate, [1]);
 });
+
+test("planSectionReuse always rebuilds a mirror preamble that starts with leaked frontmatter", () => {
+  const sections = ["Intro line.", "## A\n\nalpha"];
+  const prev = sectionHashes(sections);
+  const mirror = ['---\n\ntitle: "Guia"\n---\n\nLinha de intro.', "## A-pt\n\nalfa"];
+  const plan = planSectionReuse({ previousHashes: prev, sections, mirrorSections: mirror });
+  assert.deepEqual(plan.translate, [0]);
+  assert.deepEqual([...plan.reuse.keys()], [1]);
+});
