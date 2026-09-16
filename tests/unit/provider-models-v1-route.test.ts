@@ -163,7 +163,6 @@ test("#13829: compatible provider IDs return synced models owned by their public
   assert.equal(body.data[0].parent, null);
 });
 
-
 test("GET /v1/providers/:provider/models rejects non-matching connection-like strings", async () => {
   // Looks like a connection ID but with wrong prefix
   const res = await callGET("custom-compatible-chat-a1b2c3d4-e5f6-7890-abcd-ef1234567890");
