@@ -15,6 +15,7 @@ const core = await import("../../src/lib/db/core.ts");
 const providersDb = await import("../../src/lib/db/providers.ts");
 const auth = await import("../../src/sse/services/auth.ts");
 const accountFallback = await import("../../open-sse/services/accountFallback.ts");
+const { COOLDOWN_MS } = await import("../../open-sse/config/errorConfig.ts");
 
 const BAI_INSUFFICIENT_BALANCE_400 =
   "[400]: credit insufficient balance: balance=0 required=6792 (request id: 20260913093939137112807c955d5685unboZPV)";
@@ -122,6 +123,35 @@ test("compatible provider HTTP 400 insufficient balance locks only the model", a
     "free-llama-3"
   );
   assert.equal(freeLockout, null);
+});
+
+test("checkFallbackError: compatible-nickname provider WITHOUT a connection-level passthroughModels override gets the fixed cooldown, not the prior escalating backoff", () => {
+  // checkFallbackError() itself never receives the connection's providerSpecificData —
+  // it only sees the provider id/model (src/sse/services/auth.ts calls it without a
+  // connectionPassthroughModels argument). So it decides purely from the
+  // `openai-compatible-*` nickname prefix matched by isCompatibleProvider() inside
+  // hasPerModelQuota(), with no explicit connection override in play at all.
+  // Uses a CREDITS_EXHAUSTED_SIGNALS phrase ("credits exhausted") that is NOT also an
+  // isMoonshotAccountBalanceExhausted phrase ("insufficient balance" / "exceeded_current_quota")
+  // so this isolates hasPerModelQuota()'s effect from that separate, unconditional check.
+  const result = accountFallback.checkFallbackError(
+    400,
+    "credits exhausted for model claude-3-opus",
+    0,
+    "claude-3-opus",
+    "openai-compatible-chat-456"
+  );
+
+  assert.equal(result.shouldFallback, true);
+  assert.equal(result.reason, "quota_exhausted");
+  // Fixed cooldown (COOLDOWN_MS.paymentRequired) from the credit-exhaustion branch —
+  // NOT the prior exponential/escalating backoff path a `*-compatible-*` nickname used
+  // to get when `!isCompatibleProvider(provider)` excluded it from this block.
+  assert.equal(result.cooldownMs, COOLDOWN_MS.paymentRequired);
+  // hasPerModelQuota() matches the nickname prefix regardless of the connection's
+  // passthroughModels setting, so the terminal `creditsExhausted` flag stays unset —
+  // model-scoped lockout, not connection-wide termination.
+  assert.equal(result.creditsExhausted, undefined);
 });
 
 test("single-model non-passthrough provider (openai) still terminates connection on credit exhaustion", async () => {
