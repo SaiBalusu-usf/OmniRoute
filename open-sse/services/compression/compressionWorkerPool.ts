@@ -168,7 +168,10 @@ export class CompressionWorkerPool {
       this.handleMessage(slot, message)
     );
     slot.worker.on("error", (error) =>
-      this.fail(slot, `compression worker thread error: ${error?.message ?? error}`)
+      this.fail(
+        slot,
+        `compression worker thread error: ${error instanceof Error ? error.message : String(error)}`
+      )
     );
     slot.worker.on("exit", (code) => {
       if (this.workers.has(slot)) this.fail(slot, `compression worker exited (code ${code})`);
