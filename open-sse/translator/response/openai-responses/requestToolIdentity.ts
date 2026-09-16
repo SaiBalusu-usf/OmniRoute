@@ -86,16 +86,18 @@ export function resolveRequestToolIdentity(identityMap: unknown, toolName: strin
     return leafMatches[0];
   }
 
-  // 6. Check suffix match (e.g. tool_<hash>_exec or prefix__exec, only if unambiguous)
+  // 6. Check underscore-delimited suffix match (e.g. tool_<hash>_exec or prefix__exec, only
+  // if unambiguous). Dot notation is intentionally excluded here: a dotted name is meant to
+  // spell an exact `namespace.name` pair (already handled by step 4), so a dotted prefix that
+  // does not match any candidate's real namespace (e.g. "other.exec_command") must stay
+  // unresolved rather than being treated as an arbitrary hash-style prefix.
   const suffixMatches = candidates.filter((identity) => {
     const nmLower = identity.name.toLowerCase();
     return (
       toolName.endsWith(`_${identity.name}`) ||
       toolName.endsWith(`__${identity.name}`) ||
-      toolName.endsWith(`.${identity.name}`) ||
       toolLower.endsWith(`_${nmLower}`) ||
-      toolLower.endsWith(`__${nmLower}`) ||
-      toolLower.endsWith(`.${nmLower}`)
+      toolLower.endsWith(`__${nmLower}`)
     );
   });
   if (suffixMatches.length === 1) {
@@ -105,3 +107,35 @@ export function resolveRequestToolIdentity(identityMap: unknown, toolName: strin
   return null;
 }
 
+/**
+ * Shared classification used by both emitToolCall() and closeToolCall() in
+ * openai-responses.ts — kept here so the two call sites cannot drift apart
+ * (see the "must stay in sync" comment at both call sites).
+ */
+export function resolveToolCustomStatus(
+  state: {
+    requestToolIdentityMap?: unknown;
+    toolSchemas?: { has?: (key: string) => boolean };
+    customToolNames?: { has?: (key: string) => boolean };
+  },
+  toolName: string,
+  lowerName: string
+): { identity: RequestToolIdentity | null; isCustomTool: boolean } {
+  const identity = resolveRequestToolIdentity(state.requestToolIdentityMap, toolName);
+  const resolvedLeaf = identity ? identity.name.toLowerCase() : lowerName;
+  // "exec" only carves out as a custom tool when it resolved through a namespace identity
+  // (the Codex `functions.exec`/`os.exec` sub-tool convention) — a bare, unnamespaced
+  // function literally named "exec" (e.g. a Gemma tool call) must stay a regular function_call.
+  const isCustomTool = Boolean(
+    ((lowerName === "apply_patch" ||
+      lowerName === "applypatch" ||
+      resolvedLeaf === "apply_patch" ||
+      resolvedLeaf === "applypatch" ||
+      (identity !== null && resolvedLeaf === "exec")) &&
+      !state.toolSchemas?.has?.(toolName)) ||
+    state.customToolNames?.has?.(toolName) === true ||
+    (identity !== null && state.customToolNames?.has?.(identity.name) === true) ||
+    state.customToolNames?.has?.(resolvedLeaf) === true
+  );
+  return { identity, isCustomTool };
+}
