@@ -41,6 +41,7 @@ import { migrateLegacyEncryptedString } from "./encryption";
 import { invalidateDbCache } from "./readCache";
 import { rowToCamel } from "./caseMapping";
 import { isAutomatedTestProcess } from "@/shared/utils/testProcess";
+import { isDbHealthcheckStartupDeferredEnabled } from "@/shared/utils/featureFlags";
 import { parseModelAccessMode } from "./apiKeys/modelAccessMode";
 import { getExistingDbInstance as getDb, setDbInstance as setDb } from "./singleton";
 import type { WalCheckpointMode } from "./walMaintenance";
@@ -875,6 +876,10 @@ function shouldRunStartupDbHealthCheck(): boolean {
 }
 
 function createManagedDbBackup(db: SqliteDatabase, reason: string): boolean {
+  // The inline VACUUM-INTO + pruning implementation this replaced (kept by the
+  // release tip's #13404, which added the post-backup pruning) now lives in
+  // ./managedBackup.ts (writeManagedDbBackup), including that same pruning —
+  // carried over verbatim, see tests/unit/db-backup-healthcheck-prune-13308.test.ts.
   if (isAutomatedTestProcess()) return false;
   return writeManagedDbBackup(db, reason, DB_BACKUPS_DIR || path.join(DATA_DIR, "db_backups"));
 }
@@ -1356,16 +1361,56 @@ export function getDbInstance(): SqliteDatabase {
     "INSERT OR REPLACE INTO db_meta (key, value) VALUES ('schema_version', '1')"
   );
   versionStmt.run();
-  if (shouldRunStartupDbHealthCheck()) {
-    setImmediate(() => {
-      if (!db.open || getDb() !== db) return;
-      void runManagedDbHealthCheck({ autoRepair: true }).catch(() => {
-        console.warn("[DB] Startup health-check failed");
-      });
-    });
-  }
 
+  // Register the singleton BEFORE the health-check gate below: the flag read
+  // (isDbHealthcheckStartupDeferredEnabled, like any DB-backed feature-flag
+  // override) itself calls getDbInstance(), and with the singleton still
+  // unset at this point that call would see no existing instance and open a
+  // second, independent connection — which hits the very same unset-singleton
+  // gate on its own way through, recursing without end (each recursion opens
+  // its own real DB connection and re-runs migrations-check, so this is a
+  // real resource-exhaustion loop, not just a deep call stack). #13717 rework.
   setDb(db);
+
+  if (shouldRunStartupDbHealthCheck()) {
+    if (isDbHealthcheckStartupDeferredEnabled()) {
+      // Opt-in (#13717): defer the check past startup via the bounded/paged,
+      // child-process-isolated managed health check. Off by default — see the
+      // synchronous branch below, which preserves the pre-#13717 behavior of
+      // blocking startup until the check completes.
+      setImmediate(() => {
+        if (!db.open || getDb() !== db) return;
+        void runManagedDbHealthCheck({ autoRepair: true }).catch(() => {
+          console.warn("[DB] Startup health-check failed");
+        });
+      });
+    } else {
+      const skipIntegrityCheck = process.env.OMNIROUTE_SKIP_DB_HEALTHCHECK === "1";
+      if (skipIntegrityCheck) {
+        console.log("[DB] Health check skipped (OMNIROUTE_SKIP_DB_HEALTHCHECK=1)");
+      }
+      try {
+        runDbHealthCheck(db, {
+          autoRepair: true,
+          expectedSchemaVersion: "1",
+          skipIntegrityCheck,
+          createBackupBeforeRepair: () => createManagedDbBackup(db, "health-check-repair"),
+        });
+      } catch (error: unknown) {
+        // #13717 gates repair on a successful backup (ensureBackupBeforeRepair
+        // now throws "backup creation failed" instead of proceeding without
+        // one). On the pre-#13717 tip this callback never threw, so this call
+        // was never wrapped — leaving it unwrapped here would turn "backup
+        // unavailable" (disk full, unwritable DB_BACKUPS_DIR, or simply
+        // running under a test harness where createManagedDbBackup always
+        // returns false) into an uncaught exception that crashes the entire
+        // DB singleton initialization. Match the deferred branch's failure
+        // handling: log and keep serving with the pre-existing data intact.
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`[DB] Startup health-check failed: ${message}`);
+      }
+    }
+  }
 
   // Re-encrypt any tokens using the legacy dynamic salt to canonical static salt
   try {
