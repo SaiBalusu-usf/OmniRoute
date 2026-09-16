@@ -14,6 +14,7 @@
 
 import { getDbInstance } from "./core";
 import { aggregateLedgerThisMonth } from "./costLedger";
+import { toNumber } from "@/shared/utils/numeric";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -70,15 +71,6 @@ type JsonRecord = Record<string, unknown>;
 
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
-}
-
-function toNumber(value: unknown, fallback = 0): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim().length > 0) {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  }
-  return fallback;
 }
 
 /** NULL or <=0 reads as unlimited → null. */
@@ -150,9 +142,7 @@ export function upsertKeyQuotaLimits(
   const tpm = limitToDb(input.tpmLimit !== undefined ? input.tpmLimit : existing.tpmLimit);
   const rpm = limitToDb(input.rpmLimit !== undefined ? input.rpmLimit : existing.rpmLimit);
   const monthly = limitToDb(
-    input.monthlyAmountUsd !== undefined
-      ? input.monthlyAmountUsd
-      : existing.monthlyAmountUsd
+    input.monthlyAmountUsd !== undefined ? input.monthlyAmountUsd : existing.monthlyAmountUsd
   );
 
   db.prepare(
@@ -259,9 +249,7 @@ export function getKeyQuotaCounters(
     tpmUsed: effectiveWindowCount(apiKeyId, DIMENSION_TPM, nowMs),
     rpmUsed: effectiveWindowCount(apiKeyId, DIMENSION_RPM, nowMs),
     monthlyAmountUsd:
-      deps.monthTotalUsd !== undefined
-        ? deps.monthTotalUsd
-        : getLedgerMonthTotal(apiKeyId, nowMs),
+      deps.monthTotalUsd !== undefined ? deps.monthTotalUsd : getLedgerMonthTotal(apiKeyId, nowMs),
   };
 }
 
@@ -287,23 +275,21 @@ export function getKeyQuotaStatus(
 ): KeyQuotaStatus {
   const limits = getKeyQuotaLimits(apiKeyId);
   const counters = getKeyQuotaCounters(apiKeyId, deps);
-  const enabled = limits.tpmLimit !== null || limits.rpmLimit !== null || limits.monthlyAmountUsd !== null;
+  const enabled =
+    limits.tpmLimit !== null || limits.rpmLimit !== null || limits.monthlyAmountUsd !== null;
 
   const nowMs = (deps.now ?? Date.now)();
-  const windowStartMs = Math.floor(nowMs / KEY_QUOTA_WINDOW_MS) * KEY_QUOTA_WINDOW_MS;
 
   return {
     enabled,
     limits,
     counters,
-    tpmExceeded:
-      enabled && limits.tpmLimit !== null && counters.tpmUsed >= limits.tpmLimit,
-    rpmExceeded:
-      enabled && limits.rpmLimit !== null && counters.rpmUsed >= limits.rpmLimit,
+    tpmExceeded: enabled && limits.tpmLimit !== null && counters.tpmUsed >= limits.tpmLimit,
+    rpmExceeded: enabled && limits.rpmLimit !== null && counters.rpmUsed >= limits.rpmLimit,
     monthlyExceeded:
       enabled &&
       limits.monthlyAmountUsd !== null &&
       counters.monthlyAmountUsd >= limits.monthlyAmountUsd,
-    windowResetAtIso: new Date(windowStartMs + KEY_QUOTA_WINDOW_MS).toISOString(),
+    windowResetAtIso: toIsoWindowStart(nowMs + KEY_QUOTA_WINDOW_MS),
   };
 }

@@ -17,6 +17,7 @@
 import { recordLedgerEntrySafe } from "@/lib/db/costLedger";
 import { getPricingForModel } from "@/lib/db/settings/pricing";
 import { getLoggedInputTokens, getLoggedOutputTokens, getReasoningTokens } from "./tokenAccounting";
+import { toNumber } from "@/shared/utils/numeric";
 
 export interface CostLedgerRecorderInput {
   apiKeyId: string | null | undefined;
@@ -35,9 +36,7 @@ export interface CostLedgerRecorderInput {
  * same pricing source `calculateCost` uses (best-effort, no pricing row → 0).
  * Fire-and-forget: safe to call without awaiting; never throws.
  */
-export async function recordLedgerFromCost(
-  input: CostLedgerRecorderInput
-): Promise<void> {
+export async function recordLedgerFromCost(input: CostLedgerRecorderInput): Promise<void> {
   if (!input?.apiKeyId) return;
   try {
     let unitPriceInput = 0;
@@ -68,13 +67,4 @@ export async function recordLedgerFromCost(
   } catch {
     // Best-effort only.
   }
-}
-
-function toNumber(value: unknown, fallback = 0): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim().length > 0) {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  }
-  return fallback;
 }
