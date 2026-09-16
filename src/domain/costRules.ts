@@ -442,6 +442,37 @@ export interface RecordCostDetails {
 }
 
 /**
+ * Build the provider/model/tokens/serviceTier/requestId breakdown shared by
+ * both {@link recordChatCallCost} call sites in chatCore.ts (built once,
+ * kept out of that file to stay under its frozen file-size ratchet).
+ */
+export function buildCostCtx(
+  provider: string | null | undefined,
+  model: string | null | undefined,
+  tokens: unknown,
+  serviceTier: string | null | undefined,
+  requestId: string | null | undefined
+): RecordCostDetails {
+  return { provider, model, tokens, serviceTier, requestId };
+}
+
+/**
+ * Record a chat-path cost when there is a real amount to log — the shared
+ * `apiKeyInfo?.id && estimatedCost > 0` guard used at both chatCore.ts
+ * `recordCost` call sites. `context` (see {@link buildCostCtx}) is
+ * built once by the caller; only `success` varies per call site.
+ */
+export function recordChatCallCost(
+  apiKeyInfo: { id?: string | null } | null | undefined,
+  estimatedCost: number,
+  context: RecordCostDetails,
+  success: boolean
+): void {
+  if (!apiKeyInfo?.id || estimatedCost <= 0) return;
+  recordCost(apiKeyInfo.id, estimatedCost, { ...context, success });
+}
+
+/**
  * Sync all budgets against the current clock so overdue resets get persisted.
  */
 export function syncAllBudgetSchedules(now = Date.now()) {
