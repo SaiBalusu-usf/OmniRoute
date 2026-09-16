@@ -1133,7 +1133,8 @@ export function recordProviderSuccess(
   // recordProviderCooldown which increments it on each failure.
   resetCooldownFailureCount(provider, connectionId ?? undefined);
 
-  // Clear failure-dedup window so the next genuine failure is not suppressed.
+  // Clear failure-dedup windows so the next genuine failure is not suppressed.
+  lastNetworkErrorByProvider.delete(provider);
   if (connectionId) {
     lastConnectionFailure.delete(`${provider}:${connectionId}`);
   }
@@ -1143,10 +1144,21 @@ export function recordProviderSuccess(
   breaker._onSuccess();
 }
 
+function clearProviderFailureDedupe(provider: string | null | undefined): void {
+  if (!provider) return;
+  lastNetworkErrorByProvider.delete(provider);
+  for (const key of [...lastConnectionFailure.keys()]) {
+    if (key.startsWith(`${provider}:`)) {
+      lastConnectionFailure.delete(key);
+    }
+  }
+}
+
 /**
  * Reset the shared provider breaker.
  */
 export function clearProviderFailure(provider: string | null | undefined): void {
+  clearProviderFailureDedupe(provider);
   const breaker = getProviderBreaker(provider);
   breaker?.reset();
 }
