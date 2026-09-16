@@ -44,6 +44,7 @@ export interface ChatCoreExecutorResult {
   headers: Record<string, string>;
   transformedBody: unknown;
   transport?: string;
+  upstreamDiagnostic?: Record<string, unknown>;
   _executionCredentials?: Record<string, unknown>;
   _accountSemaphoreRelease?: () => void;
 }
@@ -439,6 +440,7 @@ export async function runNonStreamingProviderLeg(
             upstreamErrorBody: outcome.result.upstreamErrorBody,
             upstreamHeaders: outcome.result.upstreamHeaders ?? outcome.result.response?.headers,
           },
+          upstreamDiagnostic: outcome.upstreamDiagnostic,
           receipt,
           usage: outcome.providerUsage,
         };
@@ -448,6 +450,7 @@ export async function runNonStreamingProviderLeg(
         url: outcome.url,
         headers: outcome.headers,
         transformedBody: outcome.transformedBody,
+        upstreamDiagnostic: outcome.upstreamDiagnostic,
       };
     } else {
       executorResult = await input.executeProviderRequest(
@@ -767,6 +770,7 @@ export async function runNonStreamingProviderLeg(
     return {
       kind: "error",
       result: errorResult as ChatCoreErrorResult,
+      upstreamDiagnostic: executorResult.upstreamDiagnostic,
       receipt,
       usage,
     };
