@@ -1,0 +1,1 @@
+- fix(ci): heal release/v3.8.51 base-reds for agent-skills sync and reasoning-effort test (#13866)

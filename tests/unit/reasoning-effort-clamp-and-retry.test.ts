@@ -23,6 +23,18 @@ class SimpleExecutor extends BaseExecutor {
       baseUrls: ["https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions"],
     });
   }
+  override execute(params: Parameters<BaseExecutor["execute"]>[0]) {
+    return super.execute({
+      ...params,
+      credentials: {
+        ...params.credentials,
+        providerSpecificData: {
+          baseUrl: "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
+          ...(params.credentials?.providerSpecificData as Record<string, unknown> | undefined),
+        },
+      },
+    });
+  }
   async transformRequest(_model: string, body: Record<string, unknown>) {
     return { ...body };
   }
@@ -67,7 +79,12 @@ test("422 'unknown variant xhigh, expected one of ...' clamps reasoning_effort a
     assert.equal(capturedBodies[0].reasoning_effort, "xhigh");
     assert.equal(capturedBodies[1].reasoning_effort, "high");
     assert.ok(
-      (getLearnedReasoningEffort("openai-compatible-chat-eaff6869", "qwen3-coder-30b-a3b-instruct") as unknown as Set<string>).has("high")
+      (
+        getLearnedReasoningEffort(
+          "openai-compatible-chat-eaff6869",
+          "qwen3-coder-30b-a3b-instruct"
+        ) as unknown as Set<string>
+      ).has("high")
     );
     assert.equal(result.response.status, 200);
   } finally {
@@ -113,7 +130,10 @@ test("400 please use low, high, or max clamps and retries once (nearest-tier: me
   const originalFetch = globalThis.fetch;
   const capturedBodies: Record<string, unknown>[] = [];
   const BODY_400_PLEASE_USE = JSON.stringify({
-    error: { message: "This model always engages in thinking and cannot be disabled; please use low, high, or max" },
+    error: {
+      message:
+        "This model always engages in thinking and cannot be disabled; please use low, high, or max",
+    },
   });
 
   globalThis.fetch = async (_url: string | URL | Request, init: RequestInit = {}) => {
@@ -144,10 +164,14 @@ test("400 please use low, high, or max clamps and retries once (nearest-tier: me
     // high(4), the smallest accepted rank at or above it (was "low" under the
     // old downgrade-only direction).
     assert.equal(capturedBodies[1].reasoning_effort, "high");
-    const learned = getLearnedReasoningEffort("openai-compatible-chat-eaff6869", "x-preview-f-free") as unknown as Set<string>;
+    const learned = getLearnedReasoningEffort(
+      "openai-compatible-chat-eaff6869",
+      "x-preview-f-free"
+    ) as unknown as Set<string>;
     assert.ok(learned instanceof Set);
     assert.ok(learned.has("low"));
     assert.ok(learned.has("high"));
+    assert.ok(learned.has("max"));
     assert.equal(result.response.status, 200);
   } finally {
     globalThis.fetch = originalFetch;
