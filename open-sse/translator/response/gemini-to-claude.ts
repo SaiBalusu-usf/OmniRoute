@@ -1,6 +1,6 @@
 import { register } from "../registry.ts";
 import { FORMATS } from "../formats.ts";
-import { isAbortFinishReason } from "../../utils/finishReason.ts";
+import { isAbortFinishReason, isMalformedToolCallFinishReason } from "../../utils/finishReason.ts";
 import { restoreClaudeToolName } from "../../services/claudeCodeToolRemapper.ts";
 import {
   buildGeminiThoughtSignatureKey,
@@ -414,6 +414,33 @@ export function geminiToClaudeResponse(chunk, state) {
       state.openTextBlockIdx = null;
     }
 
+    const isMalformedToolCall = isMalformedToolCallFinishReason(candidate.finishReason);
+    if (isMalformedToolCall) {
+      const idx = state.contentBlockIndex++;
+      const toolId = `toolu_malformed_${Date.now()}_${idx}`;
+      results.push({
+        type: "content_block_start",
+        index: idx,
+        content_block: {
+          type: "tool_use",
+          id: toolId,
+          name: "malformed_tool_call",
+          input: {},
+        },
+      });
+      const argsStr = JSON.stringify({
+        error: candidate.finishReason,
+        message: typeof candidate.finishMessage === "string" ? candidate.finishMessage : null,
+      });
+      results.push({
+        type: "content_block_delta",
+        index: idx,
+        delta: { type: "input_json_delta", partial_json: argsStr },
+      });
+      results.push({ type: "content_block_stop", index: idx });
+      state.hasToolUse = true;
+    }
+
     let stopReason;
     const reason = candidate.finishReason.toLowerCase();
     if (state.hasToolUse || reason === "tool_calls") {
@@ -423,7 +450,7 @@ export function geminiToClaudeResponse(chunk, state) {
     } else if (reason === "safety" || reason === "recitation" || reason === "blocklist") {
       stopReason = "end_turn";
     } else if (isAbortFinishReason(reason)) {
-      stopReason = "tool_use";
+      stopReason = state.hasToolUse ? "tool_use" : "end_turn";
     } else {
       stopReason = "end_turn";
     }

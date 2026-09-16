@@ -317,3 +317,55 @@ test("Gemini MAX_TOKENS still maps to Claude max_tokens (no regression)", () => 
   const stopReason = (messageDelta.delta as { stop_reason?: string }).stop_reason;
   assert.equal(stopReason, "max_tokens");
 });
+
+test("direct Gemini->Claude: MALFORMED_FUNCTION_CALL emits synthesized tool_use block and stop_reason tool_use", () => {
+  const state: Record<string, unknown> = {};
+  const events =
+    geminiToClaudeResponse(
+      {
+        responseId: "resp-malformed-direct",
+        modelVersion: "gemini-3.1-flash",
+        candidates: [
+          {
+            content: { parts: [{ text: "Let me read the file." }] },
+            finishReason: "MALFORMED_FUNCTION_CALL",
+            finishMessage: "Malformed function call: call:default_api:exec{command: ls}",
+            index: 0,
+          },
+        ],
+      },
+      state
+    ) || [];
+
+  const toolBlock = (events as Array<Record<string, unknown>>).find(
+    (e) => e.type === "content_block_start" && (e.content_block as Record<string, unknown>)?.type === "tool_use"
+  );
+  assert.ok(toolBlock, "expected a synthesized tool_use content block");
+  const cb = toolBlock.content_block as { name: string };
+  assert.equal(cb.name, "malformed_tool_call");
+
+  const messageDelta = (events as Array<Record<string, unknown>>).find((e) => e.type === "message_delta");
+  assert.equal((messageDelta?.delta as { stop_reason?: string })?.stop_reason, "tool_use");
+});
+
+test("direct Gemini->Claude: non-tool abort reason (e.g. OTHER) with no tool calls ends with end_turn", () => {
+  const state: Record<string, unknown> = {};
+  const events =
+    geminiToClaudeResponse(
+      {
+        responseId: "resp-other-direct",
+        modelVersion: "gemini-3.1-flash",
+        candidates: [
+          {
+            content: { parts: [{ text: "Ending turn." }] },
+            finishReason: "OTHER",
+            index: 0,
+          },
+        ],
+      },
+      state
+    ) || [];
+
+  const messageDelta = (events as Array<Record<string, unknown>>).find((e) => e.type === "message_delta");
+  assert.equal((messageDelta?.delta as { stop_reason?: string })?.stop_reason, "end_turn");
+});
