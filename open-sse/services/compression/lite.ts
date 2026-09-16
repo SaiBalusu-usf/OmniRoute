@@ -123,7 +123,7 @@ export function compressToolResults(body: ChatBody): {
   applied: boolean;
 } {
   if (!body.messages) return { body, applied: false };
-  const MAX_TOOL_LENGTH = 4000;
+  const MAX_TOOL_LENGTH = 3000;
   let applied = false;
   const truncationNotice = `\n... [Output truncated at ${MAX_TOOL_LENGTH} characters by OmniRoute to protect context. To read further, use the tool with offset/start from ${MAX_TOOL_LENGTH} onward.]`;
   const messages = body.messages.map((msg) => {

@@ -333,17 +333,19 @@ export function createResourcePressureRuntime(
   // check() may not be called for long stretches. An unref'd driver re-arms the
   // refresh whenever the circuit is armed. A fully stalled event loop still can't
   // be unwedged from inside the process — that case belongs to the supervisor's
-  // own watchdog, not to this circuit.
-  let selfRestartDriver: NodeJS.Timeout | null = null;
-  if (selfRestart.enabled) {
-    const driverIntervalMs = Math.max(1_000, Math.min(staleAfterMs, 10_000));
-    selfRestartDriver = setInterval(() => {
-      if (disposed) return;
+  // Proactive recovery driver:
+  // Re-arms refresh whenever elevated/critical or stale, so the process auto-recovers
+  // back to "normal" without requiring incoming requests to reach check() (fixing upstream #13821).
+  let recoveryDriver: NodeJS.Timeout | null = null;
+  const driverIntervalMs = Math.max(1_000, Math.min(staleAfterMs, 5_000));
+  recoveryDriver = setInterval(() => {
+    if (disposed) return;
+    if (state.severity !== "normal" || nowMs() >= nextRefreshAtMs) {
       nextRefreshAtMs = Math.min(nextRefreshAtMs, nowMs());
       scheduleRefresh();
-    }, driverIntervalMs);
-    selfRestartDriver.unref?.();
-  }
+    }
+  }, driverIntervalMs);
+  recoveryDriver.unref?.();
 
   return {
     check() {
@@ -388,9 +390,9 @@ export function createResourcePressureRuntime(
     dispose() {
       disposed = true;
       scheduled = false;
-      if (selfRestartDriver) {
-        clearInterval(selfRestartDriver);
-        selfRestartDriver = null;
+      if (recoveryDriver) {
+        clearInterval(recoveryDriver);
+        recoveryDriver = null;
       }
     },
   };

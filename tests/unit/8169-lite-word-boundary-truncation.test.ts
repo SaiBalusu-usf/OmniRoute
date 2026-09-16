@@ -20,12 +20,12 @@ function firstMessageContent(body: TestChatBody): string {
 }
 
 test("#8169: lite compressToolResults must not cut a word in half", () => {
-  const prefix = "x".repeat(3990);
-  const word = "authentication"; // straddles the 4000-char cut point
+  const prefix = "x".repeat(2990);
+  const word = "authentication"; // straddles the 3000-char cut point
   const content = prefix + word + " rest of the message continues here.";
   const { body: out } = compressToolResults(toolBody(content));
   const resultContent = firstMessageContent(out as TestChatBody);
-  const cutPoint = resultContent.indexOf("\n... [Output truncated at 4000 characters");
+  const cutPoint = resultContent.indexOf("\n... [Output truncated at 3000 characters");
   assert.notEqual(cutPoint, -1);
   const lastChar = resultContent[cutPoint - 1];
   const charAfterWouldBe = content[cutPoint];
@@ -43,15 +43,15 @@ test("#8169: compressToolResults still truncates content well over MAX_TOOL_LENG
   const resultContent = firstMessageContent(out as TestChatBody);
   assert.equal(applied, true);
   assert.ok(resultContent.length < content.length);
-  assert.ok(resultContent.endsWith("from 4000 onward.]"));
+  assert.ok(resultContent.endsWith("from 3000 onward.]"));
 });
 
 test("#8169: compressToolResults falls back to hard cut when no whitespace found in lookback window", () => {
-  const content = "a".repeat(4100); // no whitespace anywhere
+  const content = "a".repeat(3100); // no whitespace anywhere
   const { body: out, applied } = compressToolResults(toolBody(content));
   const resultContent = firstMessageContent(out as TestChatBody);
   assert.equal(applied, true);
-  assert.ok(resultContent.endsWith("from 4000 onward.]"));
+  assert.ok(resultContent.endsWith("from 3000 onward.]"));
 });
 
 test("#8169: compressToolResults leaves short tool content untouched", () => {

@@ -2,10 +2,27 @@ import { getDbInstance } from "../db/core";
 import type { PendingRequestDetail } from "./usageHistory";
 
 const COMPLETED_DETAIL_TTL_MS = 120_000;
-const MAX_COMPLETED_DETAILS = 256;
+const MAX_COMPLETED_DETAILS = 32;
 
 const completedDetails = new Map<string, PendingRequestDetail>();
 const completedDetailTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+function detachValue<T>(val: T): T {
+  if (typeof val === "string") {
+    return Buffer.from(val).toString() as unknown as T;
+  }
+  if (Array.isArray(val)) {
+    return val.map(detachValue) as unknown as T;
+  }
+  if (val && typeof val === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(val)) {
+      out[k] = detachValue(v);
+    }
+    return out as unknown as T;
+  }
+  return val;
+}
 
 function deleteCompletedDetail(id: string) {
   completedDetails.delete(id);
@@ -29,7 +46,14 @@ export function getCompletedDetails(): Map<string, PendingRequestDetail> {
 }
 
 export function storeCompletedDetail(detail: PendingRequestDetail) {
-  completedDetails.set(detail.id, detail);
+  const cleanDetail: PendingRequestDetail = {
+    ...detail,
+    clientRequest: detachValue(detail.clientRequest),
+    providerRequest: detachValue(detail.providerRequest),
+    clientResponse: detachValue(detail.clientResponse),
+    providerResponse: detachValue(detail.providerResponse),
+  };
+  completedDetails.set(cleanDetail.id, cleanDetail);
   trimCompletedDetails();
 }
 
@@ -72,8 +96,7 @@ export function maybeEnrichCompletedDetail(updated: PendingRequestDetail, connec
         const art = readCallArtifact(row.artifact_relpath);
         if (art.state !== "ready" || !art.artifact) continue;
         const pipeline = art.artifact.pipeline as
-          | { providerResponse?: unknown; clientResponse?: unknown }
-          | undefined;
+          { providerResponse?: unknown; clientResponse?: unknown } | undefined;
         // pipeline.* first: it is the translated payload of one specific side.
         // `responseBody` is a single coarse value handed to both sides, so it
         // may only fill a side still empty AFTER the pipeline had its turn --

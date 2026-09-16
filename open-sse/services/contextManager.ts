@@ -496,7 +496,7 @@ export function compressContext(
   }
 
   // Layer 1: Trim tool_result/tool messages
-  messages = trimToolMessages(messages, 4000); // Max 4000 chars per tool result
+  messages = trimToolMessages(messages, 3000); // Max 3000 chars per tool result
   currentTokens = estimateTokens(messages); // #8594: object-path keeps the #8368 image estimate
   stats.layers.push({ name: "trim_tools", tokens: currentTokens });
 

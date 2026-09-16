@@ -1127,6 +1127,18 @@ export async function releaseChatAdmissionAfterHandler(
   }
 }
 
+function releaseLeaseAndScheduleGc(lease: ChatAdmissionLease) {
+  lease.release();
+  const globalWithGc = globalThis as unknown as { gc?: () => void };
+  if (typeof globalWithGc.gc === "function") {
+    setImmediate(() => {
+      try {
+        globalWithGc.gc?.();
+      } catch {}
+    });
+  }
+}
+
 /** Hold a heavyweight lease through an SSE response without buffering the response body. */
 export function releaseChatAdmissionWhenDone(
   response: Response,
@@ -1135,7 +1147,7 @@ export function releaseChatAdmissionWhenDone(
   if (!lease) return response;
   const isStreaming = response.headers.get("content-type")?.includes("text/event-stream");
   if (!isStreaming || !response.body) {
-    lease.release();
+    releaseLeaseAndScheduleGc(lease);
     return response;
   }
 
@@ -1145,18 +1157,18 @@ export function releaseChatAdmissionWhenDone(
       try {
         const { done, value } = await reader.read();
         if (done) {
-          lease.release();
+          releaseLeaseAndScheduleGc(lease);
           controller.close();
         } else {
           controller.enqueue(value);
         }
       } catch (error) {
-        lease.release();
+        releaseLeaseAndScheduleGc(lease);
         controller.error(error);
       }
     },
     async cancel(reason) {
-      lease.release();
+      releaseLeaseAndScheduleGc(lease);
       await reader.cancel(reason).catch(() => undefined);
     },
   });

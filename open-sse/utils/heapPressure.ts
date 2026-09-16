@@ -64,6 +64,25 @@ export function checkHeapPressureGuard(
   thresholdMb: number = HEAP_PRESSURE_THRESHOLD_MB
 ): HeapPressureGuardResult | null {
   if (heapUsedMb <= thresholdMb) return null;
+
+  // Self-healing GC-before-shed: If global.gc is exposed, try explicit GC before rejecting.
+  const globalWithGc = globalThis as unknown as { gc?: () => void };
+  if (typeof globalWithGc.gc === "function") {
+    try {
+      globalWithGc.gc();
+      const freshHeapUsedMb = process.memoryUsage().heapUsed / (1024 * 1024);
+      if (freshHeapUsedMb <= thresholdMb) {
+        console.log(
+          `[chatCore] GC-before-shed reclaimed heap: ${Math.round(heapUsedMb)}MB -> ${Math.round(freshHeapUsedMb)}MB <= ${thresholdMb}MB; admitting request`
+        );
+        return null;
+      }
+      heapUsedMb = freshHeapUsedMb;
+    } catch {
+      // Fall through to guard shed if GC invocation fails
+    }
+  }
+
   console.warn(
     `[chatCore] heap pressure guard tripped: ${Math.round(heapUsedMb)}MB > ${thresholdMb}MB; returning 503`
   );

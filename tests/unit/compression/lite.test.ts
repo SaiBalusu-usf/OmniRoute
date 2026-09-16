@@ -84,7 +84,7 @@ describe("compressToolResults", () => {
     assert.equal(result.applied, true);
     const content = result.body.messages![0].content as string;
     assert.ok(content.length < 5000);
-    assert.ok(content.includes("Output truncated at 4000 characters by OmniRoute"));
+    assert.ok(content.includes("Output truncated at 3000 characters by OmniRoute"));
   });
 
   it("keeps short tool results unchanged", () => {
@@ -222,7 +222,7 @@ describe("stacked Lite precedence (global config vs explicit step)", () => {
     );
     const messages = result.body.messages as Array<{ content: string }>;
     assert.equal(messages[0].content, toolContent.trimEnd());
-    assert.ok(messages[0].content.length > 4000);
+    assert.ok(messages[0].content.length > 3000);
     assert.doesNotMatch(messages[0].content, /Output truncated at/);
     assert.ok(!result.stats?.techniquesUsed.includes("tool-compress"));
   });
@@ -240,7 +240,7 @@ describe("stacked Lite precedence (global config vs explicit step)", () => {
       }
     );
     const messages = result.body.messages as Array<{ content: string }>;
-    assert.ok(messages[0].content.endsWith("from 4000 onward.]"));
+    assert.ok(messages[0].content.endsWith("from 3000 onward.]"));
     assert.ok(messages[0].content.length < toolContent.length);
     assert.ok(result.stats?.techniquesUsed.includes("tool-compress"));
   });
@@ -290,7 +290,7 @@ describe("stacked Lite precedence (global config vs explicit step)", () => {
       { config: { ...baseConfig, stackedPipeline: [liteStep] } }
     );
     const messages = result.body.messages as Array<{ content: string }>;
-    assert.ok(messages[0].content.endsWith("from 4000 onward.]"));
+    assert.ok(messages[0].content.endsWith("from 3000 onward.]"));
   });
 });
 
@@ -316,7 +316,7 @@ describe("applyLiteCompression", () => {
     const result = applyCompression({ messages: [{ role: "tool", content: toolContent }] }, "lite");
     const messages = result.body.messages as Array<{ content: string }>;
 
-    assert.ok(messages[0].content.endsWith("from 4000 onward.]"));
+    assert.ok(messages[0].content.endsWith("from 3000 onward.]"));
     assert.ok(messages[0].content.length < toolContent.length);
   });
 
@@ -342,7 +342,7 @@ describe("applyLiteCompression", () => {
     const messages = result.body.messages as Array<{ content: string }>;
 
     assert.equal(messages[0].content, toolContent.trimEnd());
-    assert.ok(messages[0].content.length > 4000);
+    assert.ok(messages[0].content.length > 3000);
     assert.doesNotMatch(messages[0].content, /Output truncated at/);
     assert.ok(result.stats?.techniquesUsed.includes("whitespace"));
     assert.ok(!result.stats?.techniquesUsed.includes("tool-compress"));
