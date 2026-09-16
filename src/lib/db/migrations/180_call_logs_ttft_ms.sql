@@ -1,4 +1,4 @@
--- 176: record TTFT (time to first forwarded stream chunk, ms) on call-log rows
+-- 180: record TTFT (time to first forwarded stream chunk, ms) on call-log rows
 -- so /dashboard/logs can compute tokens-per-second over GENERATION time
 -- (duration - ttft) instead of end-to-end request duration (#13130). The repo's
 -- own rule in open-sse/utils/generationThroughput.ts requires tok/s to exclude
