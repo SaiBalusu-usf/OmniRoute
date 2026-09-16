@@ -26,7 +26,7 @@ type FetchCall = {
   url: string;
   method?: string;
   headers: Record<string, string>;
-  body: Record<string, any> | null;
+  body: Record<string, unknown> | null;
 };
 
 function toPlainHeaders(headers: HeadersInit | undefined | null) {
@@ -153,7 +153,16 @@ test("openrouter provider: reasoning_details[].text is mirrored to reasoning_con
     })
   );
 
-  const json = (await response.json()) as any;
+  const json = (await response.json()) as {
+    choices: Array<{
+      message: {
+        content?: unknown;
+        reasoning?: unknown;
+        reasoning_content?: unknown;
+        reasoning_details?: unknown;
+      };
+    }>;
+  };
 
   assert.equal(response.status, 200, JSON.stringify(json));
   assert.equal(fetchCalls.length, 1, "should make exactly one upstream call");

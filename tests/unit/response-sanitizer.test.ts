@@ -307,7 +307,17 @@ test("sanitizeOpenAIResponse promotes reasoning_details text to reasoning_conten
     ],
   });
 
-  const message = (sanitized as any).choices[0].message;
+  const message = (
+    sanitized as {
+      choices: Array<{
+        message: {
+          reasoning?: unknown;
+          reasoning_content?: unknown;
+          reasoning_details?: unknown;
+        };
+      }>;
+    }
+  ).choices[0].message;
   assert.equal(message.reasoning, "Hmm, let me think this through");
   assert.equal(message.reasoning_content, "Hmm, let me think this through");
   assert.deepEqual(message.reasoning_details, [
@@ -332,7 +342,17 @@ test("sanitizeOpenAIResponse does not flatten signature-only reasoning_details i
     ],
   });
 
-  const message = (sanitized as any).choices[0].message;
+  const message = (
+    sanitized as {
+      choices: Array<{
+        message: {
+          reasoning?: unknown;
+          reasoning_content?: unknown;
+          reasoning_details?: unknown;
+        };
+      }>;
+    }
+  ).choices[0].message;
   assert.equal(message.reasoning_content, undefined);
   assert.equal(message.reasoning, "native reasoning");
   assert.deepEqual(message.reasoning_details, [{ type: "reasoning.encrypted", data: "sig" }]);
@@ -601,9 +621,20 @@ test("sanitizeStreamingChunk promotes reasoning_details text when reasoning is a
     ],
   });
 
-  assert.equal((sanitized as any).choices[0].delta.reasoning, "thinking chunk");
-  assert.equal((sanitized as any).choices[0].delta.reasoning_content, "thinking chunk");
-  assert.deepEqual((sanitized as any).choices[0].delta.reasoning_details, [
+  const delta = (
+    sanitized as {
+      choices: Array<{
+        delta: {
+          reasoning?: unknown;
+          reasoning_content?: unknown;
+          reasoning_details?: unknown;
+        };
+      }>;
+    }
+  ).choices[0].delta;
+  assert.equal(delta.reasoning, "thinking chunk");
+  assert.equal(delta.reasoning_content, "thinking chunk");
+  assert.deepEqual(delta.reasoning_details, [
     { type: "reasoning.text", text: "thinking chunk" },
   ]);
 });
