@@ -993,6 +993,9 @@
   "featureFlagNoThinkingAliasEnabledDescription": "កុងតាក់មេសម្រាប់ gateway aliases របស់ no-think/&lt;provider&gt;/&lt;model&gt;។ បើក (លំនាំដើម)៖ /v1/models ផ្សព្វផ្សាយវ៉ារ្យ៉ង់មិនគិតសម្រាប់គ្រប់ម៉ូដែល Claude ដែលមានសមត្ថភាពគិត និងមានលក្ខណៈសម្បត្តិគ្រប់គ្រាន់ ហើយ no-think/ id ដែលបានផ្ញើក្នុងសំណើ នឹងត្រូវដោះស្រាយត្រឡប់ទៅម៉ូដែលពិត ដោយបិទការវែកញែក។ បិទ៖ គ្មានវ៉ារ្យ៉ង់ណាមួយត្រូវបានផ្សព្វផ្សាយទេ ហើយ no-think/ id ត្រូវបានចាត់ទុកដូចជា model id មិនស្គាល់ផ្សេងទៀត។ ការជ្រើសរើសបើក/បិទ ModelSpec.noThinkingAlias សម្រាប់ម៉ូដែលនីមួយៗ នៅតែអនុវត្ត ខណៈដែលវាត្រូវបានបើក។",
   "featureFlagChatVirtualLanesEnabledDescription": "បើកផ្លូវចូលនិម្មិតដែលសម្របខ្លួនតាម tenant នីមួយៗ សម្រាប់ការបញ្ជូនទៅ provider (#9654)៖ ការកើនឡើងខ្លាំងភ្លាមៗរបស់ tenant មួយ នឹងលែងបណ្ដាលឱ្យ tenant មួយទៀតទទួល 503។ env var OMNIROUTE_CHAT_VIRTUAL_LANES មានអាទិភាពលើការកំណត់ជំនួសពី dashboard នេះ ហើយការផ្លាស់ប្ដូរនឹងមានប្រសិទ្ធភាពនៅពេលចាប់ផ្ដើម server ឡើងវិញ។",
   "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "ទំព័រអ្នកផ្តល់សេវានៅលើផ្ទាំងគ្រប់គ្រង៖ បង្ហាញស្លាក ឥតគិតថ្លៃ តែលើសញ្ញាដែលអ្នកផ្តល់សេវាទទួលស្គាល់ប៉ុណ្ណោះ — លុបចោលការសន្និដ្ឋានតាមឈ្មោះបង្ហាញ វាលឥតគិតថ្លៃដែលមិនមែនជាតម្លៃប៊ូលីន និងបច្ច័យ :free លើអ្នកផ្តល់សេវាដែលបានចុះបញ្ជី ប៉ុន្តែមិនមានកម្រិតសេវាឥតគិតថ្លៃដែលបានចងក្រងជាឯកសារ។ ការបិទនឹងរក្សាច្បាប់ស្លាកចាស់ដដែល។",
+  "featureFlagProxySkipRecentlyFailedDescription": "ក្រុមប្រូកស៊ី និងការបង្វិលតាមគណនីនីមួយៗរបស់ opencode នឹងផ្អាកការប្រើប្រូកស៊ីដែលទើបតែបរាជ័យឡើងវិញ (ការស្ទង់ TCP ត្រូវបានបដិសេធ ឬទទួលបាន 429 តាមរយៈវា) ក្នុងរយៈពេលមួយសម្រាប់ដំណើរការនីមួយៗ ដែលកើនទ្វេដងរាល់ពេលកើតឡើងម្តងទៀត រហូតដល់កម្រិតអតិបរមា។ គ្មានស្ថានភាពប្រូកស៊ីត្រូវបានកត់ត្រាទេ ហើយនៅពេលបេក្ខភាពទាំងអស់ត្រូវបានទុកមួយឡែក ជម្រើសនៅតែមិនផ្លាស់ប្តូរ។ បិទតាមលំនាំដើម៖ លំដាប់ជ្រើសរើសគឺដូចគ្នាទាំងស្រុងនឹងការបង្វិលធម្មតា។",
+  "featureFlagProxyPoolEgressObservationDescription": "បង្ហាញនៅក្រោមក្រុមប្រូកស៊ីក្នុងផ្ទាំងគ្រប់គ្រងថា ក្នុងរយៈពេល 24 ម៉ោងចុងក្រោយ មាន IP ចេញក្រៅដែលបានសង្កេតឃើញចំនួនប៉ុន្មានបានបម្រើសមាជិករបស់ក្រុម មានការតភ្ជាប់ចំនួនប៉ុន្មានបានប្រើពួកវា និងចំនួនអតិបរមាដែលបានឃើញនៅពីក្រោយ IP តែមួយ។ សម្រាប់តែអានប៉ុណ្ណោះ គណនាពីកំណត់ហេតុប្រូកស៊ី និងមិនដែលប្រើសម្រាប់ការកំណត់ផ្លូវទេ។ បិទតាមលំនាំដើម៖ កម្មវិធីកែសម្រួលក្រុមមិនផ្លាស់ប្តូរ ហើយផ្លូវសង្កេតឆ្លើយតបជា null។",
+  "featureFlagProxyHealthBlockedResetsStreakDescription": "ក្នុងការត្រួតពិនិត្យសុខភាពប្រូកស៊ី អនុញ្ញាតឱ្យការស្ទង់ដែលគោលដៅបានបដិសេធ (401/403/429៖ ប្រូកស៊ីបានបញ្ជូនបន្ត ប៉ុន្តែគោលដៅបានបដិសេធ IP ចេញក្រៅនេះ) កំណត់ចំនួនបរាជ័យជាប់ៗគ្នារបស់ប្រូកស៊ីឡើងវិញ ដូចការស្ទង់ដែលត្រូវបានបម្រើ។ បិទតាមលំនាំដើម៖ ការបដិសេធនៅតែអព្យាក្រឹត និងរក្សាចំនួនបរាជ័យជាប់ៗគ្នា។ 5xx នៅតែមិនអាចសន្និដ្ឋានបានក្នុងករណីទាំងពីរ ហើយការបដិសេធមិនដែលលុប បិទ ឬធ្វើឱ្យប្រូកស៊ីសកម្មឡើងវិញទេ។",
   "sidebar": {
     "home": "ទំព័រដើម",
     "dashboard": "ផ្ទាំងគ្រប់គ្រង",
@@ -6364,15 +6367,15 @@
     "checkWebToken": "ពិនិត្យ token",
     "huggingchatLabel": "HuggingChat (ឥតគិតថ្លៃ)",
     "huggingchatDesc": "ការជជែកជាមួយ LLM ដោយឥតគិតថ្លៃតាមរយៈ huggingface.co/chat",
-    "poeWebLabel": "Poe Web",
+    "poeWebLabel": "Poe វេប",
     "poeWebDesc": "ការជជែកជាមួយម៉ូដែលច្រើនតាមរយៈ poe.com",
-    "veniceWebLabel": "Venice Web",
+    "veniceWebLabel": "វេនីស វេប",
     "veniceWebDesc": "ការជជែកជាមួយ AI ដែលផ្តោតលើភាពឯកជន",
-    "v0VercelWebLabel": "v0 Vercel Web",
+    "v0VercelWebLabel": "v0 Vercel គេហទំព័រ",
     "v0VercelWebDesc": "ការបង្កើតកូដដោយ AI តាមរយៈ v0.dev",
-    "kimiWebLabel": "Kimi Web",
+    "kimiWebLabel": "Kimi វេប",
     "kimiWebDesc": "ការជជែក AI សម្រាប់អ្នកប្រើប្រាស់របស់ Moonshot AI តាមរយៈ www.kimi.com (អន្តរជាតិ, Connect-RPC API)",
-    "doubaoWebLabel": "Dola Web",
+    "doubaoWebLabel": "Dola វេប",
     "doubaoWebDesc": "ការជជែក AI របស់ ByteDance តាមរយៈ dola.com",
     "overrideBaseUrlAdvanced": "កម្រិតខ្ពស់៖ កំណត់ base URL ជំនួស",
     "overrideBaseUrlHint": "កម្រិតខ្ពស់៖ កំណត់ឱ្យ provider ដែលភ្ជាប់មកជាមួយនេះប្រើ endpoint ផ្ទាល់ខ្លួន។ ទុកឱ្យទទេ ដើម្បីប្រើតម្លៃលំនាំដើម។",
@@ -6527,7 +6530,7 @@
     "routingSummarizeDropParagraphContains": "លុបកថាខណ្ឌដែលមាន៖ {items}",
     "routingSummarizeDropParagraphStartsWith": "លុបកថាខណ្ឌដែលចាប់ផ្ដើមដោយ៖ {items}",
     "routingSummarizeReplaceText": "ជំនួស \"{match}\" → \"{replacement}\"",
-    "routingSummarizeReplaceRegex": "regex /{pattern}/{flags} → \"{replacement}\"",
+    "routingSummarizeReplaceRegex": "កន្សោម regex /{pattern}/{flags} → \"{replacement}\"",
     "routingSummarizeDropBlockContains": "លុបប្លុកដែលមាន៖ {items}",
     "routingSummarizePrependSystemBlock": "បន្ថែមប្លុកនៅខាងដើម៖ \"{text}\"",
     "routingSummarizeAppendSystemBlock": "បន្ថែមប្លុកនៅខាងចុង៖ \"{text}\"",
@@ -6746,11 +6749,11 @@
     "themeSystem": "ប្រព័ន្ធ",
     "endpointTunnelVisibility": "ភាពមើលឃើញនៃធ្យូនែល Endpoint",
     "endpointTunnelVisibilityDesc": "លាក់វត្ថុបញ្ជាធ្យូនែលពីទំព័រ Endpoint ដោយមិនផ្លាស់ប្ដូរស្ថានភាពធ្យូនែល។",
-    "showCloudflareTunnel": "Cloudflare Quick Tunnel",
+    "showCloudflareTunnel": "ផ្លូវរូងរហ័ស Cloudflare",
     "showCloudflareTunnelDesc": "បង្ហាញការគ្រប់គ្រង Cloudflare Quick Tunnel នៅលើទំព័រ Endpoint។",
     "showTailscaleFunnel": "Tailscale Funnel",
     "showTailscaleFunnelDesc": "បង្ហាញការគ្រប់គ្រង Tailscale Funnel នៅលើទំព័រ Endpoint។",
-    "showNgrokTunnel": "ngrok Tunnel",
+    "showNgrokTunnel": "ធ្យូនែល ngrok",
     "showNgrokTunnelDesc": "បង្ហាញការគ្រប់គ្រង ngrok Tunnel នៅលើទំព័រ Endpoint។",
     "sidebarVisibility": "លាក់ធាតុរបារចំហៀង",
     "sidebarVisibilityDesc": "លាក់ធាតុរុករកណាមួយនៅក្នុងរបារចំហៀង ដើម្បីកាត់បន្ថយភាពរញ៉េរញ៉ៃ ដោយមិនបិទមុខងារណាមួយឡើយ",
@@ -7882,7 +7885,7 @@
         "description": "ការដាក់ពិន្ទុប្រយោគបែបស្រង់ចេញ ដោយផ្អែកលើសំណួរចុងក្រោយរបស់អ្នកប្រើ។"
       },
       "caveman": {
-        "label": "Caveman",
+        "label": "មនុស្សរូងភ្នំ",
         "description": "ការបង្ហាប់អត្ថបទដោយផ្អែកលើច្បាប់។"
       },
       "aggressive": {
@@ -8499,7 +8502,7 @@
     },
     "engines": {
       "headroom": {
-        "name": "Headroom SmartCrusher",
+        "name": "ចន្លោះកម្រិត SmartCrusher",
         "description": "ការបង្រួមទិន្នន័យតារាងដោយមិនបាត់បង់ សម្រាប់អារេ JSON ដែលមានលក្ខណៈដូចគ្នា ជាមួយសញ្ញាសម្គាល់ចំនួនជួរដេកច្បាស់លាស់។"
       },
       "session-dedup": {
@@ -10965,6 +10968,9 @@
     "strategyLatency": "បង្កើនប្រសិទ្ធភាពតាមភាពយឺតយ៉ាវ",
     "poolMembersLabel": "សមាជិកក្រុម ({count})",
     "poolNoMembers": "មិនទាន់មានប្រូកស៊ីនៅក្នុងក្រុមនេះទេ។",
+    "poolEgressObservation": "បានប្រើច្រកចេញ {exits, plural, one {#} other {#}} ដោយការតភ្ជាប់ {connections, plural, one {#} other {#}} · អតិបរមា {max} នៅលើច្រកចេញមួយ · ក្នុងរយៈពេល {hours} ម៉ោងចុងក្រោយ",
+    "poolEgressObservationEmpty": "មិនបានសង្កេតឃើញចរាចរណ៍ក្នុងរយៈពេល {hours} ម៉ោងចុងក្រោយទេ",
+    "poolEgressObservationHint": "រាប់ពីកំណត់ហេតុប្រូកស៊ីក្នុងអំឡុងពេលកំណត់៖ អាសយដ្ឋាន IP ចេញផ្សេងៗគ្នាដែលបានសង្កេតឃើញសម្រាប់សមាជិកនៃក្រុមនេះ និងការតភ្ជាប់ OmniRoute ដែលបានប្រើពួកវា។ «នៅលើច្រកចេញមួយ» មានន័យថាក្នុងអំឡុងពេលកំណត់ មិនមែននៅពេលតែមួយទេ។ ការចាក់សោ 429 សម្រាប់ IP នីមួយៗ ផ្អាកតែការតភ្ជាប់នៃគ្រួសារអ្នកផ្តល់សេវាដូចគ្នាប៉ុណ្ណោះ។",
     "poolRemove": "ដកចេញ",
     "poolRemoveFailed": "បានបរាជ័យក្នុងការដកប្រូកស៊ីចេញពីក្រុម",
     "poolAddLabel": "បន្ថែមប្រូកស៊ី",

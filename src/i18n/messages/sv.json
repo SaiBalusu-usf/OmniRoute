@@ -993,6 +993,9 @@
   "featureFlagNoThinkingAliasEnabledDescription": "Huvudreglage för gateway-aliasen no-think/&lt;provider&gt;/&lt;model&gt;. På (standard): /v1/models visar en variant utan tänkande för varje kvalificerad Claude-modell med stöd för tänkande, och ett no-think/-id som skickas i en förfrågan matchas tillbaka till den verkliga modellen med resonemang inaktiverat. Av: inga varianter visas och ett no-think/-id behandlas som vilket annat okänt modell-id som helst. Opt-in/opt-out-inställningen ModelSpec.noThinkingAlias per modell gäller fortfarande när detta är aktiverat.",
   "featureFlagChatVirtualLanesEnabledDescription": "Aktivera adaptiva virtuella åtkomstfiler per tenant för providerutskick (#9654): en tenants burst ger inte längre en annan 503. Miljövariabeln OMNIROUTE_CHAT_VIRTUAL_LANES har företräde framför den här inställningen i instrumentpanelen; ändringarna träder i kraft vid omstart av servern.",
   "featureFlagFreeBadgeRequiresProviderFreeTierDescription": "Leverantörssidor på kontrollpanelen: visa märket Gratis endast för signaler som leverantören respekterar — slopar heuristiken för visningsnamn, icke-booleska gratisfält och suffixet :free för registrerade leverantörer utan en dokumenterad kostnadsfri nivå. Av behåller den tidigare märkesregeln.",
+  "featureFlagProxySkipRecentlyFailedDescription": "Proxypooler och opencodes rotation per konto slutar att återanvända en proxy som nyss misslyckades (nekad TCP-kontroll eller ett 429-svar som togs emot via den) under en processpecifik period som fördubblas vid varje upprepat fel, upp till en maxgräns. Ingen proxystatus skrivs; om alla kandidater läggs åt sidan förblir valet oförändrat. Avstängt som standard: urvalsordningen följer exakt den vanliga rotationen.",
+  "featureFlagProxyPoolEgressObservationDescription": "Visa under en proxypool på instrumentpanelen hur många observerade utgående IP-adresser som betjänade dess medlemmar under de senaste 24 timmarna, hur många anslutningar som använde dem och det högsta antalet som observerades bakom en och samma IP-adress. Skrivskyddat, beräknat från proxyloggen och används aldrig för dirigering. Avstängt som standard: poolredigeraren är oförändrad och observationsrutten returnerar null.",
+  "featureFlagProxyHealthBlockedResetsStreakDescription": "Låt en kontroll som avvisades av målet (401/403/429: proxyn vidarebefordrade begäran men destinationen avvisade den utgående IP-adressen) nollställa proxyns serie av på varandra följande fel i proxyhälsokontrollen, precis som en betjänad kontroll. Avstängt som standard: ett avvisande förblir neutralt och bibehåller serien. Ett 5xx-svar förblir icke avgörande i båda fallen, och ett avvisande tar aldrig bort, inaktiverar eller återaktiverar en proxy.",
   "sidebar": {
     "home": "Hem",
     "dashboard": "Instrumentpanel",
@@ -10965,6 +10968,9 @@
     "strategyLatency": "Latensoptimerad",
     "poolMembersLabel": "Poolmedlemmar ({count})",
     "poolNoMembers": "Inga proxyservrar i denna pool ännu.",
+    "poolEgressObservation": "{exits, plural, one {# utgång} other {# utgångar}} används av {connections, plural, one {# anslutning} other {# anslutningar}} · upp till {max} på en utgång · senaste {hours} h",
+    "poolEgressObservationEmpty": "Ingen trafik observerades under de senaste {hours} h",
+    "poolEgressObservationHint": "Beräknat från proxyloggen under tidsfönstret: distinkta utgående IP-adresser som observerats för medlemmarna i denna pool samt de OmniRoute-anslutningar som använde dem. ”På en utgång” avser hela tidsfönstret, inte samma tidpunkt. 429-spärren per IP pausar endast anslutningar inom samma leverantörsfamilj.",
     "poolRemove": "Ta bort",
     "poolRemoveFailed": "Misslyckades med att ta bort proxyn från poolen",
     "poolAddLabel": "Lägg till en proxy",
@@ -12371,7 +12377,7 @@
         "description": "Utlös systemsäkerhetskopiering, återställ från säkerhetskopior och hantera SQLite-databasens livscykel. Stöder export-, import- och inkrementella snapshot-strategier."
       },
       "omni-webhooks": {
-        "name": "Webhooks",
+        "name": "Webhookar",
         "description": "Registrera, lista, testa och ta bort webhook-slutpunkter. Konfigurera händelseprenumerationer (request.completed, request.failed, quota.exceeded osv.) och hantera nya leveransförsök."
       },
       "omni-mcp": {
@@ -13978,8 +13984,8 @@
     "colMode": "Läge",
     "colRunner": "Körningsagent",
     "colSummary": "Sammanfattning",
-    "online": "online",
-    "offline": "offline",
+    "online": "ansluten",
+    "offline": "frånkopplad",
     "draining": "avvattning",
     "hubOffline": "Konduktörshub offline eller inte konfigurerad (CONDUCTOR_HUB_URL) — visar ingenting istället för gammal data.",
     "noRunners": "Inga löpare registrerade",
@@ -14049,7 +14055,7 @@
     "sourceA2A": "A2A",
     "sourceConductor": "Ledare",
     "sourceStale": "Föråldrad sedan {since}",
-    "sourceOffline": "Offline",
+    "sourceOffline": "Frånkopplad",
     "sourceCollapse": "Fäll ihop",
     "sourceExpand": "Fäll ut",
     "stateQueued": "Köad",
