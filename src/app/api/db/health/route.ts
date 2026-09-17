@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   try {
     return NextResponse.json(
-      runManagedDbHealthCheck({ autoRepair: false, skipIntegrityCheck: true })
+      await runManagedDbHealthCheck({ autoRepair: false, skipIntegrityCheck: true })
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    return NextResponse.json(runManagedDbHealthCheck({ autoRepair: true }));
+    return NextResponse.json(await runManagedDbHealthCheck({ autoRepair: true }));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[API] DB health repair failed:", message);

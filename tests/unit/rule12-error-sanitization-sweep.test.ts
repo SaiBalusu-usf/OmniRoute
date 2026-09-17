@@ -77,6 +77,19 @@ function patchPrepareToThrow(sqlMatch: string): () => void {
   };
 }
 
+// #13717 runs the managed health check in a child process for a real file-backed DB;
+// a child never inherits the JS stubs below, so force the owning-connection path.
+// (#13149 additionally makes the dashboard GET skip the integrity scan, so the throw
+// has to come from a prepare() on the schema-version probe, not from pragma().)
+function forceOwningConnectionPath(): () => void {
+  const db = core.getDbInstance();
+  const nameDescriptor = Object.getOwnPropertyDescriptor(db, "name");
+  Object.defineProperty(db, "name", { configurable: true, value: ":memory:" });
+  return () => {
+    if (nameDescriptor) Object.defineProperty(db, "name", nameDescriptor);
+  };
+}
+
 // A leak assertion applied to any string field of an error body.
 function assertSanitized(raw: string, context: string): void {
   assert.ok(!raw.includes("/home/omni/secret"), `${context}: posix path leaked → ${raw}`);
@@ -125,6 +138,7 @@ test("GET /api/cache/entries → 500 body is sanitized (shape { error })", async
 });
 
 test("GET /api/db/health → 500 body is sanitized (shape { error: { message } })", async () => {
+  const restoreName = forceOwningConnectionPath();
   const restore = patchPrepareToThrow("SELECT value FROM db_meta WHERE key = 'schema_version'");
   try {
     const res = await dbHealthRoute.GET(makeRequest("http://localhost/api/db/health"));
@@ -134,5 +148,6 @@ test("GET /api/db/health → 500 body is sanitized (shape { error: { message } }
     assertSanitized(body.error.message, "db/health GET");
   } finally {
     restore();
+    restoreName();
   }
 });
