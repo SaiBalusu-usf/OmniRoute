@@ -1175,20 +1175,19 @@ test("chat pipeline converts Claude SSE streams into OpenAI SSE output", async (
       },
     })
   );
-
   const raw = await response.text();
   assert.equal(response.status, 200);
-  // #13416: streaming responses declare an explicit charset (matches the rest of the
-  // codebase's streaming executors — see open-sse/executors/{uc,maxai,codex-app-server}.ts).
+  // #13416: require an explicit UTF-8 charset to prevent streaming mojibake.
   assert.equal(response.headers.get("Content-Type"), "text/event-stream; charset=utf-8");
   assert.match(raw, /chat\.completion\.chunk/);
   assert.match(raw, /Streamed Claude chunk/);
   assert.match(raw, /\[DONE\]/);
 });
 
-test("chat pipeline rejects invalid API keys and malformed JSON bodies", async () => {
+test("chat pipeline surfaces upstream invalid-key errors and rejects malformed JSON", async () => {
   await seedConnection("openai", { apiKey: "sk-openai-invalid-key-path" });
-
+  globalThis.fetch = async () =>
+    Response.json({ error: { message: "Incorrect API key provided" } }, { status: 401 });
   const invalidKeyResponse = await handleChat(
     buildRequest({
       authKey: "does-not-exist",
@@ -1199,7 +1198,6 @@ test("chat pipeline rejects invalid API keys and malformed JSON bodies", async (
     })
   );
   const invalidKeyJson = (await invalidKeyResponse.json()) as any;
-
   const invalidJsonResponse = await handleChat(
     new Request("http://localhost/v1/chat/completions", {
       method: "POST",
@@ -1270,11 +1268,9 @@ test("chat pipeline treats Accept text/event-stream as streaming mode and return
       },
     })
   );
-
   const raw = await response.text();
   assert.equal(response.status, 200);
-  // #13416: streaming responses declare an explicit charset (matches the rest of the
-  // codebase's streaming executors — see open-sse/executors/{uc,maxai,codex-app-server}.ts).
+  // #13416: require an explicit UTF-8 charset to prevent streaming mojibake.
   assert.equal(response.headers.get("Content-Type"), "text/event-stream; charset=utf-8");
   assert.ok(response.headers.get("X-OmniRoute-Session-Id"));
   assert.match(raw, /Accept header stream/);
