@@ -465,6 +465,11 @@
       "configSource": "<custom-config>",
       "provider": "notion-web"
     },
+    "oc": {
+      "className": "OpencodeExecutor",
+      "configSource": "opencode",
+      "provider": "opencode"
+    },
     "oneminai": {
       "className": "OneMinAiExecutor",
       "configSource": "oneminai",
@@ -666,6 +671,6 @@
       "provider": "zai-web"
     }
   },
-  "keyCount": 133,
+  "keyCount": 134,
   "sharedInstances": []
 }

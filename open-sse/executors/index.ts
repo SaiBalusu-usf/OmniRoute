@@ -72,6 +72,7 @@ const lazyExecutors: Record<string, () => Promise<BaseExecutor>> = {
   "opencode-zen": () => import("./opencode.ts").then((m) => new m.OpencodeExecutor("opencode-zen")),
   "opencode-go": () => import("./opencode.ts").then((m) => new m.OpencodeExecutor("opencode-go")),
   opencode: () => import("./opencode.ts").then((m) => new m.OpencodeExecutor("opencode-zen")), // Alias for opencode-zen
+  oc: () => import("./opencode.ts").then((m) => new m.OpencodeExecutor("opencode")), // No-auth OpenCode Free alias (registry id "opencode", alias "oc")
   vertex: () => import("./vertex.ts").then((m) => new m.VertexExecutor()),
   "vertex-partner": () => import("./vertex.ts").then((m) => new m.VertexExecutor()),
   cliproxyapi: () => import("./cliproxyapi.ts").then((m) => new m.CliproxyapiExecutor()),
