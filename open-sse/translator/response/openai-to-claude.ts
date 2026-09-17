@@ -400,13 +400,25 @@ export function openaiToClaudeResponse(chunk, state) {
       // #reasoning-bilingual response side (Phase B): DeepSeek-V4 and similar models
       // may also echo whole chunks of the system prompt at the START of their reply —
       // <analysis>/<system-reminder>/<summary> blocks or prose reproductions of the
-      // superpowers skill section. Run the preamble through a system-echo stripper
-      // whatever the directive setting, chained after the exact-directive stripper.
-      state._systemPreambleStripper ??= createSystemPreambleStripper();
+      // superpowers skill section. Chained after the exact-directive stripper.
+      //
+      // OPT-IN (OMNIROUTE_STRIP_SYSTEM_PREAMBLE=1), mirroring the directive
+      // stripper right above, which only runs when the operator configured
+      // OMNIROUTE_SYSTEM_INSTRUCTION_APPEND. Unlike the exact-directive match,
+      // this one recognises constructs by English-prose heuristics, so leaving it
+      // default-on would mutate the payload of EVERY openai→claude stream and can
+      // delete a legitimate section (a reply that genuinely opens with
+      // "# Skill usage: ..." loses it). Operators who hit the system-echo leak
+      // turn it on explicitly.
+      if (process.env.OMNIROUTE_STRIP_SYSTEM_PREAMBLE === "1") {
+        state._systemPreambleStripper ??= createSystemPreambleStripper();
+      }
       let scrubbedContent = state._directiveStripper
         ? state._directiveStripper(strippedContent)
         : strippedContent;
-      scrubbedContent = state._systemPreambleStripper(scrubbedContent);
+      if (state._systemPreambleStripper) {
+        scrubbedContent = state._systemPreambleStripper(scrubbedContent);
+      }
       if (scrubbedContent) {
         stopThinkingBlock(state, results);
       }
@@ -617,6 +629,33 @@ export function openaiToClaudeResponse(chunk, state) {
 
     state.claudeFinishEmitted = true;
     stopThinkingBlock(state, results);
+
+    // Both preamble strippers buffer while a construct is still undecided (a
+    // directive prefix that never completed, an <analysis>/<summary> block that
+    // never closed). Nothing flushed that buffer, so a stream ending mid-construct
+    // dropped the held text silently — for a single-chunk response whose block
+    // never closes, that is the ENTIRE answer replaced by an empty message.
+    // Release whatever is still held before the terminal blocks are emitted.
+    const flushedPreamble =
+      (state._directiveStripper?.flush?.() ?? "") +
+      (state._systemPreambleStripper?.flush?.() ?? "");
+    if (flushedPreamble) {
+      if (!state.textBlockStarted || state.textBlockClosed) {
+        state.textBlockIndex = state.nextBlockIndex++;
+        state.textBlockStarted = true;
+        state.textBlockClosed = false;
+        results.push({
+          type: "content_block_start",
+          index: state.textBlockIndex,
+          content_block: { type: "text", text: "" },
+        });
+      }
+      results.push({
+        type: "content_block_delta",
+        index: state.textBlockIndex,
+        delta: { type: "text_delta", text: flushedPreamble },
+      });
+    }
 
     // FIX B: when the response ended reasoning-only (no ordinary text block was
     // started) and the client did NOT explicitly request thinking, synthesize a

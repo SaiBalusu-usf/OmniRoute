@@ -22,17 +22,27 @@
  * directive prefix yield "" (buffered implicitly by a position counter); if the
  * stream later diverges from the directive, the so-far-matched prefix is
  * released as real content together with the rest of the chunk.
+ *
+ * Every stripper also exposes `flush()`, which MUST be called once at the end
+ * of the stream: a stream that ends while a construct is still undecided (a
+ * directive prefix that never completed, a block that never closed) leaves the
+ * suppressed text in the internal buffer, and without a flush the client would
+ * receive an empty — or truncated — response. `flush()` releases whatever is
+ * still held and puts the stripper in the terminal state.
  */
 
-export function createDirectivePreambleStripper(directive: string): (text: string) => string {
+/** A per-stream stripper: call it per chunk, then `flush()` once at stream end. */
+export type PreambleStripper = ((text: string) => string) & { flush: () => string };
+
+export function createDirectivePreambleStripper(directive: string): PreambleStripper {
   if (!directive) {
-    return (text) => text;
+    return Object.assign((text: string) => text, { flush: () => "" });
   }
 
   let done = false; // stream diverged from, or fully consumed, the directive
   let position = 0; // directive chars matched so far (contiguous from stream start)
 
-  return (text: string): string => {
+  const push = (text: string): string => {
     if (done || text === "") return text;
 
     let i = 0;
@@ -57,6 +67,19 @@ export function createDirectivePreambleStripper(directive: string): (text: strin
     // Chunk was entirely a directive prefix (or an empty remainder) — buffer it.
     return "";
   };
+
+  // Stream ended while still matching a directive prefix: the buffered chars
+  // are the only content the model produced, so release them instead of
+  // swallowing the whole response.
+  const flush = (): string => {
+    if (done) return "";
+    done = true;
+    const held = directive.slice(0, position);
+    position = 0;
+    return held;
+  };
+
+  return Object.assign(push, { flush });
 }
 
 /**
@@ -71,6 +94,12 @@ export function createDirectivePreambleStripper(directive: string): (text: strin
  * match these, so they leak to the client. This helper removes any sequence of
  * such known system-echo constructs from the very start of a stream, across
  * arbitrary chunk boundaries, and only while the stream is still a preamble.
+ *
+ * OFF by default — see the OMNIROUTE_STRIP_SYSTEM_PREAMBLE gate at the call
+ * site (translator/response/openai-to-claude.ts). The heuristics below are
+ * English-prose shaped and DO mutate response payloads, so they only run when
+ * the operator opts in, exactly like the directive stripper above only runs
+ * when OMNIROUTE_SYSTEM_INSTRUCTION_APPEND is configured.
  */
 // System-echo blocks (the system prompt's tail echoed at the start of a reply) are
 // short — a few hundred chars at most. A block carrying >= this many chars of
@@ -78,7 +107,7 @@ export function createDirectivePreambleStripper(directive: string): (text: strin
 // not an echo: preserve it instead of suppressing it as a preamble.
 const SYSTEM_ECHO_THRESHOLD = 1000;
 
-export function createSystemPreambleStripper(): (text: string) => string {
+export function createSystemPreambleStripper(): PreambleStripper {
   const tagNames = ["analysis", "system-reminder", "summary"] as const;
   const proseHeads = [
     "# Verification Process",
@@ -93,6 +122,10 @@ export function createSystemPreambleStripper(): (text: string) => string {
   let phase: "leading" | "head" | "block" = "leading";
   let stack: string[] = [];
   let buf = ""; // suppressed, not-yet-decided prefix
+  // Opener text already consumed for the construct currently in flight (the
+  // `<tag>` itself). Cleared whenever a construct is FINALLY classified as an
+  // echo; kept so flush() can restore a construct that never closed.
+  let pendingDrop = "";
 
   const isAllWs = (s: string): boolean => s.trim() === "";
 
@@ -130,7 +163,7 @@ export function createSystemPreambleStripper(): (text: string) => string {
     return false;
   };
 
-  return (text: string): string => {
+  const push = (text: string): string => {
     if (done || text === "") return text;
     buf += text;
 
@@ -146,9 +179,9 @@ export function createSystemPreambleStripper(): (text: string) => string {
         if (open) {
           if (open.kind === "tag") {
             const tagStart = buf.indexOf("<");
-            buf = buf.slice(tagStart);
-            const tagEnd = buf.indexOf(">") + 1;
-            buf = buf.slice(tagEnd);
+            const afterOpen = buf.indexOf(">", tagStart) + 1;
+            pendingDrop += buf.slice(0, afterOpen);
+            buf = buf.slice(afterOpen);
             stack.push(open.name!);
             phase = "block";
             continue;
@@ -164,7 +197,8 @@ export function createSystemPreambleStripper(): (text: string) => string {
         }
         // Diverged from every known opener: buffered prefix is real content.
         done = true;
-        const out = buf;
+        const out = pendingDrop + buf;
+        pendingDrop = "";
         buf = "";
         return out;
       }
@@ -175,6 +209,7 @@ export function createSystemPreambleStripper(): (text: string) => string {
           const b = proseBoundary(buf);
           if (b === -1) return ""; // stay suppressed until boundary or divergence
           buf = buf.slice(b);
+          pendingDrop = ""; // prose echo finally classified: the drop is final
           stack.pop();
           phase = "head";
           continue;
@@ -193,14 +228,32 @@ export function createSystemPreambleStripper(): (text: string) => string {
         if (ci >= SYSTEM_ECHO_THRESHOLD || trailing === "") {
           done = true;
           const out = "<" + top + ">" + buf.slice(0, ci) + closeTag + afterClose;
+          pendingDrop = "";
           buf = "";
           return out;
         }
         buf = trailing;
+        pendingDrop = ""; // block finally classified as an echo: the drop is final
         stack.pop();
         phase = stack.length === 0 ? "leading" : "block";
         continue;
       }
     }
   };
+
+  // Stream ended with a construct still undecided (e.g. `<analysis>` that never
+  // closed, or a prose head with no structural boundary). Without this the
+  // buffered text — possibly the ENTIRE response — would be dropped and the
+  // client would get an empty message. Release the opener plus everything held.
+  const flush = (): string => {
+    if (done) return "";
+    done = true;
+    const out = pendingDrop + buf;
+    pendingDrop = "";
+    buf = "";
+    stack = [];
+    return out;
+  };
+
+  return Object.assign(push, { flush });
 }

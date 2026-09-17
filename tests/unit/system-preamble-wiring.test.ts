@@ -19,6 +19,16 @@ function emittedText(events: Array<Record<string, unknown>>): string {
     .join("");
 }
 
+// The system-preamble stripper is OPT-IN (it mutates response payloads with
+// English-prose heuristics). These wiring tests exercise the opted-in path;
+// the default-off contract is pinned in system-preamble-gate-and-flush.test.ts.
+test.before(() => {
+  process.env.OMNIROUTE_STRIP_SYSTEM_PREAMBLE = "1";
+});
+test.after(() => {
+  delete process.env.OMNIROUTE_STRIP_SYSTEM_PREAMBLE;
+});
+
 function chunkWith(content: string) {
   return {
     id: "chatcmpl-preamble",
