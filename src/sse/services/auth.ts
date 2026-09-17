@@ -2797,7 +2797,6 @@ export async function markAccountUnavailable(
     // per-model lockout branches (per-model quota 403/404, codex scope) are left
     // as-is — extending disableCooling to model lockout is a follow-up.
     const disableCooling = connProviderSpecificData.disableCooling === true;
-
     const claudeQuotaScope = getCachedClaudeQuotaScopeDecision({
       connectionId,
       provider,
@@ -2808,7 +2807,6 @@ export async function markAccountUnavailable(
     const isModelScopedClaudeQuota = claudeQuotaScope.scope === "model";
     const isPerModelQuotaProvider =
       hasPerModelQuota(provider, model, connectionPassthroughModels) || isModelScopedClaudeQuota;
-
     // #10334 — connection-scope branch: the matched provider rule declared scope
     // "connection" for account-wide quota exhaustion (agentrouter "额度不足";
     // exclusive in practice — no opencode-family rule matches 403 today).
@@ -3052,8 +3050,7 @@ export async function markAccountUnavailable(
               : (fallbackResult.quotaResetHintMs ?? null),
           maxCooldownMs: mlSettings.maxCooldownMs,
           scope: usesExactAntigravityLock ? "exact" : undefined,
-          // Only a transport header or google.rpc.RetryInfo can bypass maxCooldownMs.
-          // Prose and generic JSON hints remain exact but operator-capped.
+          // Authoritative transport or cached upstream resets may bypass the operator cap.
           exactCooldownIsUpstreamReset:
             retryHintBypassesMaxCooldownMs(fallbackResult.retryHintSource) ||
             isModelScopedClaudeQuota,
