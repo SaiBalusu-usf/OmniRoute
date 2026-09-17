@@ -163,7 +163,8 @@ unnoticed until #8463 because:
 - `sync-ui-keys` only backfills keys that are **absent**, never ones that are **stale**;
 - `check-ui-keys-coverage` counts key _presence_, so a stale translation scores as covered;
 - `check-translation-drift` tracks the `docs/i18n/<locale>/**.md` documentation mirrors —
-  it never reads `src/i18n/messages/*.json`.
+  it never reads `src/i18n/messages/*.json`. Blocking in job `docs-sync-strict` since the
+  2026-09 re-sync: edit a core doc → `npm run i18n:run -- --files=<doc>` (section-level, cheap).
 
 **Diff-aware, not baseline-backed.** It compares `en.json` at the merge base against the
 working tree; for every key whose English value changed, any locale still holding an
@@ -535,6 +536,23 @@ several "obvious" merges turned out to hide debt and are **not** clean drop-ins.
 ## Related Documentation
 
 - Supply-chain (provenance, SBOM, Trivy, Scorecard): [`docs/security/SUPPLY_CHAIN.md`](../security/SUPPLY_CHAIN.md)
+
+#### `check-key-completeness` — key-set parity gate
+
+`scripts/i18n/check-key-completeness.mjs` (`npm run i18n:check-keys`, job `i18n-ui-coverage`).
+Compares the leaf key set of every `src/i18n/messages/<locale>.json` with `en.json` and fails
+on any absent or extra leaf, regardless of when the key was added. `__MISSING__:` placeholders
+count as present (their content is the ratio gate's business). It is the absolute complement
+of the two diff-based/percentage gates: `check-ui-keys-coverage` enforces an 80 % floor per
+locale (43 absent keys out of ~13,000 still read 99.7 %) and `check-new-key-coverage` judges
+only the keys a PR adds to `en.json`. A locale batch is generated from the `en.json` of the day
+its branch is cut and translates for days while the base keeps adding keys; the batch PR adds no
+key itself, so both siblings stayed silent when batch 1 (#13044) landed 43 keys short in nine
+locales and batch 2 (#13660) 10 keys short in eight (2026-09-15). Fix a red with
+`node scripts/i18n/sync-ui-keys.mjs --locale=<codes> --translate-markers`; an `extra` leaf
+means the source dropped it — delete it from the locale. `--warn` reports without failing.
+`--catalog=cli` runs the same comparison over `bin/cli/locales` (`npm run i18n:check-keys:cli`);
+both steps live in job `i18n-ui-coverage`.
 
 #### `check-new-key-coverage` — new-key i18n gate
 
