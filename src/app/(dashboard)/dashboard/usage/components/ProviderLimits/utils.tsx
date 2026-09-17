@@ -341,11 +341,20 @@ export function computeCanEditCutoff(quotas: any[]): boolean {
  * Providers that can redeem a banked reset credit: Codex reset credits and the GLM
  * Coding Plan Reset Cards, which share the list/redeem contract behind different routes.
  */
-export const RESET_CREDIT_PROVIDERS = ["codex", "glm", "glm-cn", "glmt", "zai"] as const;
+export const RESET_CREDIT_PROVIDERS = [
+  "codex",
+  // grok-cli redeems through the same codex-reset-credit endpoint (tip of
+  // release/v3.8.51); kept here so the generalized gate below covers it.
+  "grok-cli",
+  "glm",
+  "glm-cn",
+  "glmt",
+  "zai",
+] as const;
 
 /** The redemption API backing a provider's reset credits, if supported. */
 export function getResetCreditEndpoint(provider: string): string | null {
-  if (provider === "codex") return "/api/usage/codex-reset-credit";
+  if (provider === "codex" || provider === "grok-cli") return "/api/usage/codex-reset-credit";
   if (["glm", "glm-cn", "glmt", "zai"].includes(provider)) {
     return "/api/usage/glm-reset-card";
   }
