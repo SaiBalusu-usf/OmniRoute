@@ -15,6 +15,8 @@ import {
   isValidRequestCap,
   parseRequestCapFromBody,
   requestCapSettings,
+  type RequestCap,
+  type RequestCapSettings,
 } from "./rateLimitManager/requestCap.ts";
 import { getAntigravityQuotaFamily } from "./antigravityQuotaFamily.ts";
 import { getProviderCategory } from "../config/providerRegistry.ts";
@@ -196,6 +198,34 @@ function capMinTimeWithFloor(connectionId: string, capMinTime: number): number {
     resolveMinTime(connectionRateLimitOverrides.get(connectionId)?.minTime),
     capMinTime
   );
+}
+
+/**
+ * Limiter settings for a request cap, or null when the cap cannot be honoured:
+ * a cap that spaces calls further apart than a request may wait in the queue
+ * would turn every request into a local queue timeout. Every path that applies
+ * a cap (learning it, building a limiter, restoring persistence) goes through
+ * here, so a cap learned under a generous queue budget cannot land after the
+ * budget shrinks. A refused body-stated cap is never learned; a cap already
+ * recorded stays recorded, like one held back by an rpm override, and is
+ * retried the next time the limiter is built.
+ */
+function capSettingsWithinBudget(
+  provider: string,
+  connectionId: string,
+  cap: RequestCap,
+  source: "body-stated" | "learned" | "persisted"
+): RequestCapSettings | null {
+  const settings = requestCapSettings(cap);
+  settings.minTime = capMinTimeWithFloor(connectionId, settings.minTime);
+  const queueBudgetMs = resolveRequestQueueMaxWaitMs(provider, undefined, connectionId);
+  if (settings.minTime > queueBudgetMs) {
+    warnRateLimit(
+      `[RATE-LIMIT] ${provider}:${connectionId.slice(0, 8)} — ignoring ${source} cap of ${cap.requests} request(s) per ${Math.ceil(cap.windowMs / 1000)}s: ${settings.minTime}ms between requests exceeds the ${queueBudgetMs}ms queue budget (raise the request queue maxWaitMs to honour it)`
+    );
+    return null;
+  }
+  return settings;
 }
 
 // Resolve a maxConcurrent override. 0 or missing means "effectively infinite".
@@ -597,17 +627,21 @@ function getLimiter(provider, connectionId, model = null) {
       if (learned?.capRequests && learned.capWindowMs && !hasRpmOverride(connectionId)) {
         // A cap learned from a 429 body outranks the global defaults but not an
         // explicit per-connection override (#13594).
-        const cap = requestCapSettings({
-          requests: learned.capRequests,
-          windowMs: learned.capWindowMs,
-        });
-        defaults.minTime = capMinTimeWithFloor(connectionId, cap.minTime);
-        defaults.reservoir = cap.reservoirRefreshAmount;
-        defaults.reservoirRefreshAmount = cap.reservoirRefreshAmount;
-        defaults.reservoirRefreshInterval = cap.reservoirRefreshInterval;
-        logRateLimit(
-          `📏 [RATE-LIMIT] ${key} — applying learned cap: ${learned.capRequests} request(s) per ${Math.ceil(learned.capWindowMs / 1000)}s`
+        const cap = capSettingsWithinBudget(
+          provider,
+          connectionId,
+          { requests: learned.capRequests, windowMs: learned.capWindowMs },
+          "learned"
         );
+        if (cap) {
+          defaults.minTime = cap.minTime;
+          defaults.reservoir = cap.reservoirRefreshAmount;
+          defaults.reservoirRefreshAmount = cap.reservoirRefreshAmount;
+          defaults.reservoirRefreshInterval = cap.reservoirRefreshInterval;
+          logRateLimit(
+            `📏 [RATE-LIMIT] ${key} — applying learned cap: ${learned.capRequests} request(s) per ${Math.ceil(learned.capWindowMs / 1000)}s`
+          );
+        }
       }
       options = { ...defaults, id: key };
     }
@@ -1196,10 +1230,16 @@ async function loadPersistedLimits() {
       if (connectionId && enabledConnections.has(connectionId)) {
         const limiter = limiters.get(key);
         if (limiter && hasCap && !hasRpmOverride(connectionId)) {
-          const cap = requestCapSettings({ requests: capRequests, windowMs: capWindowMs });
-          cap.minTime = capMinTimeWithFloor(connectionId, cap.minTime);
-          updateLimiterSettings(limiter, cap);
-          count++;
+          const cap = capSettingsWithinBudget(
+            provider,
+            connectionId,
+            { requests: capRequests, windowMs: capWindowMs },
+            "persisted"
+          );
+          if (cap) {
+            updateLimiterSettings(limiter, cap);
+            count++;
+          }
         } else if (limiter && limit > 0) {
           const inferredMinTime = minTime || Math.max(0, Math.floor(60000 / limit) - 10);
           updateLimiterSettings(limiter, { minTime: inferredMinTime });
@@ -1250,18 +1290,9 @@ export function updateFromResponseBody(provider, connectionId, responseBody, sta
   const cap = parseRequestCapFromBody(responseBody);
   if (!cap) return;
 
-  const settings = requestCapSettings(cap);
-  settings.minTime = capMinTimeWithFloor(connectionId, settings.minTime);
-
-  // A cap that spaces calls further apart than a request may wait in the queue
-  // would turn every request into a local queue timeout; leave it unlearned.
-  const queueBudgetMs = resolveRequestQueueMaxWaitMs(provider, undefined, connectionId);
-  if (settings.minTime > queueBudgetMs) {
-    warnRateLimit(
-      `[RATE-LIMIT] ${provider}:${connectionId.slice(0, 8)} — ignoring body-stated cap of ${cap.requests} request(s) per ${Math.ceil(cap.windowMs / 1000)}s: ${settings.minTime}ms between requests exceeds the ${queueBudgetMs}ms queue budget`
-    );
-    return;
-  }
+  // Leave a cap the queue budget cannot honour unlearned.
+  const settings = capSettingsWithinBudget(provider, connectionId, cap, "body-stated");
+  if (!settings) return;
 
   // The 429 itself means the window is spent. Rebuild the limiter so the cap
   // is in its constructor options and its reservoir clock starts now (an

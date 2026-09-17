@@ -17,14 +17,19 @@ const UNIT_MS: Record<string, number> = {
   hr: 3_600_000,
 };
 
+// A cap word must come shortly before the figure so a bare usage statement
+// ("you made 120 requests in 1 minute", "current usage: 4 rpm") is not read as
+// a ceiling. Both patterns below share it.
+const CAP_WORD_PREFIX = String.raw`\b(?:max(?:imum)?|limit(?:ed)?|allowed|up to|at most|exceed(?:ed|s)?|quota|rate)\b(?![^.\n]{0,40}\b(?:made|sent|used)\b)[^.\n]{0,40}?`;
 // "Maximum 5 requests within 1 minutes", "Rate limit exceeded: 60 requests
-// per minute", "limit of 10 requests per 2 minutes". A cap word must come
-// shortly before the figure so usage statements ("you made 120 requests in
-// 1 minute") are not read as a ceiling.
-const REQUESTS_PER_WINDOW_RE =
-  /\b(?:max(?:imum)?|limit(?:ed)?|allowed|up to|at most|exceed(?:ed|s)?|quota|rate)\b(?![^.\n]{0,40}\b(?:made|sent|used)\b)[^.\n]{0,40}?(\d{1,7})\s+requests?\s+(?:within|per|in|every)\s+(?:(\d{1,5})\s*)?(second|sec|minute|min|hour|hr)s?\b/i;
-// "20 RPM"
-const RPM_RE = /(\d{1,7})\s*rpm\b/i;
+// per minute", "limit of 10 requests per 2 minutes".
+const REQUESTS_PER_WINDOW_RE = new RegExp(
+  CAP_WORD_PREFIX +
+    String.raw`(\d{1,7})\s+requests?\s+(?:within|per|in|every)\s+(?:(\d{1,5})\s*)?(second|sec|minute|min|hour|hr)s?\b`,
+  "i"
+);
+// "Rate limit: 20 RPM"
+const RPM_RE = new RegExp(CAP_WORD_PREFIX + String.raw`(\d{1,7})\s*rpm\b`, "i");
 
 const MAX_TEXT_LENGTH = 4_000;
 const MAX_WINDOW_MS = 24 * 3_600_000;
@@ -78,15 +83,17 @@ export function isValidRequestCap(cap: RequestCap): boolean {
   );
 }
 
+export interface RequestCapSettings {
+  minTime: number;
+  reservoirRefreshAmount: number;
+  reservoirRefreshInterval: number;
+}
+
 /**
  * Bottleneck settings that keep dispatch under a cap: a reservoir of
  * `requests` refilled every `windowMs`, spread evenly by `minTime`.
  */
-export function requestCapSettings(cap: RequestCap): {
-  minTime: number;
-  reservoirRefreshAmount: number;
-  reservoirRefreshInterval: number;
-} {
+export function requestCapSettings(cap: RequestCap): RequestCapSettings {
   return {
     minTime: Math.floor(cap.windowMs / cap.requests),
     reservoirRefreshAmount: cap.requests,

@@ -10,6 +10,7 @@ process.env.DATA_DIR = TEST_DATA_DIR;
 // Dynamic imports are required because DATA_DIR must be set before DB modules evaluate.
 await import("../../src/lib/db/core.ts");
 const rateLimitManager = await import("../../open-sse/services/rateLimitManager.ts");
+const providersDb = await import("../../src/lib/db/providers.ts");
 const requestCapModule = await import("../../open-sse/services/rateLimitManager/requestCap.ts");
 const { parseRequestCapFromBody } = requestCapModule;
 const { classifyErrorText } = await import("../../open-sse/services/accountFallback.ts");
@@ -74,7 +75,11 @@ test("parseRequestCapFromBody reads hard request caps from 429 bodies", () => {
     requests: 10,
     windowMs: 120_000,
   });
-  assert.deepEqual(parseRequestCapFromBody("Throttled: 20 RPM exceeded"), {
+  assert.deepEqual(parseRequestCapFromBody("Rate limit: 20 RPM"), {
+    requests: 20,
+    windowMs: 60_000,
+  });
+  assert.deepEqual(parseRequestCapFromBody("Rate limit: 20 rpm, current usage: 4 rpm"), {
     requests: 20,
     windowMs: 60_000,
   });
@@ -99,6 +104,11 @@ test("parseRequestCapFromBody ignores bodies without a request cap", () => {
     null
   );
   assert.equal(parseRequestCapFromBody("Generate: 7 requests per minute"), null);
+  // the rpm shorthand needs a cap word before the figure too, or a low usage
+  // figure pins the connection; a cap word after it is deliberately not enough
+  assert.equal(parseRequestCapFromBody("Current usage: 4 rpm"), null);
+  assert.equal(parseRequestCapFromBody("Rate limit hit: you have made 3 rpm"), null);
+  assert.equal(parseRequestCapFromBody("Throttled: 20 RPM exceeded"), null);
 });
 
 test("a 429 with a request cap paces the limiter and is learned", async () => {
@@ -328,6 +338,99 @@ test("a cap that cannot be honoured within the queue budget is not learned", asy
   );
 
   assert.equal(rateLimitManager.getLearnedLimits()[`tokenrouter:${connectionId}`], undefined);
+});
+
+test("a persisted cap that no longer fits the queue budget is not re-applied", async () => {
+  // A real connection row, so the restart below auto-enables it and builds its
+  // limiter before the persisted limits load, the way boot does.
+  const connection = await providersDb.createProviderConnection({
+    provider: "tokenrouter",
+    authType: "apikey",
+    name: "budget-shrank",
+    apiKey: "sk-budget-shrank",
+    isActive: true,
+  });
+  const connectionId = connection.id;
+  try {
+    captureLimiters();
+    rateLimitManager.enableRateLimitProtection(connectionId);
+    // Learned while the operator allowed requests to wait ten minutes.
+    rateLimitManager.refreshConnectionRateLimits(connectionId, { maxWaitMs: 600_000 });
+    rateLimitManager.updateFromHeaders("tokenrouter", connectionId, {}, 429, null);
+    rateLimitManager.updateFromResponseBody(
+      "tokenrouter",
+      connectionId,
+      "Quota exceeded: limit of 1 requests per 5 minutes",
+      429,
+      null
+    );
+    assert.equal(
+      rateLimitManager.getLearnedLimits()[`tokenrouter:${connectionId}`].minTime,
+      300_000
+    );
+    await rateLimitManager.__flushLearnedLimitsForTests();
+
+    // Restart without the override: the budget is back to the 90s default.
+    await rateLimitManager.__resetRateLimitManagerForTests();
+    const captured = captureLimiters();
+    await rateLimitManager.initializeRateLimits();
+
+    const restored = rateLimitManager.getLearnedLimits()[`tokenrouter:${connectionId}`];
+    assert.equal(restored?.capRequests, 1, "the cap itself is still remembered");
+    const booted = captured.at(-1)!;
+    assert.ok(booted, "boot builds the auto-enabled connection's limiter");
+    assert.ok(
+      booted.updates.every((u) => u.reservoirRefreshAmount !== 1 && u.minTime !== 300_000),
+      "the restore path must not pace the live limiter with the oversized cap"
+    );
+
+    const before = captured.length;
+    rateLimitManager.updateFromHeaders("tokenrouter", connectionId, {}, 429, null);
+    await rateLimitManager.withRateLimit("tokenrouter", connectionId, null, async () => "ok");
+    assert.equal(captured.length, before + 1, "the 429 rebuilds the limiter");
+    const rebuilt = captured.at(-1)!.options;
+    assert.notEqual(rebuilt.reservoir, 1, "the rebuild path must not carry the oversized cap");
+    assert.notEqual(rebuilt.minTime, 300_000);
+  } finally {
+    await providersDb.deleteProviderConnection(connectionId);
+  }
+});
+
+test("a persisted cap that fits the queue budget is applied to the boot-time limiter", async () => {
+  const connection = await providersDb.createProviderConnection({
+    provider: "tokenrouter",
+    authType: "apikey",
+    name: "budget-fits",
+    apiKey: "sk-budget-fits",
+    isActive: true,
+  });
+  const connectionId = connection.id;
+  try {
+    captureLimiters();
+    rateLimitManager.enableRateLimitProtection(connectionId);
+    rateLimitManager.updateFromHeaders("tokenrouter", connectionId, {}, 429, null);
+    rateLimitManager.updateFromResponseBody(
+      "tokenrouter",
+      connectionId,
+      TOKENROUTER_429,
+      429,
+      null
+    );
+    await rateLimitManager.__flushLearnedLimitsForTests();
+
+    await rateLimitManager.__resetRateLimitManagerForTests();
+    const captured = captureLimiters();
+    await rateLimitManager.initializeRateLimits();
+
+    const booted = captured.at(-1)!;
+    assert.equal(booted.options.id, `tokenrouter:${connectionId}`);
+    assert.ok(
+      booted.updates.some((u) => u.reservoirRefreshAmount === 5 && u.minTime === 12_000),
+      "the restore path paces the boot-time limiter with the persisted cap"
+    );
+  } finally {
+    await providersDb.deleteProviderConnection(connectionId);
+  }
 });
 
 test("isValidRequestCap bounds what the restore path accepts", () => {
