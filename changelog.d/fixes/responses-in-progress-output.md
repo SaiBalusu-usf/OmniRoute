@@ -1,0 +1,1 @@
+- **fix(responses):** include `output: []`, `background: false`, and `error: null` in the `response.in_progress` streaming event to satisfy strict client schema validation (e.g. OpenAI Responses SDK and Grok CLI).
