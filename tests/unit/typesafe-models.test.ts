@@ -30,7 +30,7 @@ test("typesafe is a registered API-key provider pointed at api.typesafe.ai", () 
   assert.equal(registry.baseUrl, "https://api.typesafe.ai/v1/systemone");
   assert.equal(registry.modelsUrl, "https://api.typesafe.ai/v1/models");
   assert.equal(registry.authHeader, "bearer");
-  assert.equal(registry.passthroughModels, true);
+  assert.notEqual(registry.passthroughModels, true);
   assert.deepEqual(
     registry.models.map((model) => model.id),
     ["jev-latest", "jev-preview"]

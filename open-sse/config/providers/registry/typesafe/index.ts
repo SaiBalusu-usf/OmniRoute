@@ -14,7 +14,6 @@ export const typesafeProvider: RegistryEntry = {
   modelsUrl: "https://api.typesafe.ai/v1/models",
   authType: "apikey",
   authHeader: "bearer",
-  passthroughModels: true,
   liveCatalogAuthoritative: false,
   models: [
     { id: "jev-latest", name: "Jev (latest stable)" },

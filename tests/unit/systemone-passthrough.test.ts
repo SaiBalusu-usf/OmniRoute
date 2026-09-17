@@ -1,13 +1,25 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
-import { handleSystemOneProxy } from "../../open-sse/handlers/systemone.ts";
-import {
-  JEV_INPUT_USD_PER_MTOK,
-  TYPESAFE_SYSTEMONE_URL,
-} from "../../src/lib/providers/typesafe.ts";
-import { computeCostFromPricing } from "../../src/lib/usage/costCalculator.ts";
-import { getDefaultPricing } from "../../src/shared/constants/pricing.ts";
+const TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "omniroute-systemone-passthrough-"));
+process.env.DATA_DIR = TEST_DATA_DIR;
+
+const { handleSystemOneProxy } = await import("../../open-sse/handlers/systemone.ts");
+const { JEV_INPUT_USD_PER_MTOK, TYPESAFE_SYSTEMONE_URL } =
+  await import("../../src/lib/providers/typesafe.ts");
+const { computeCostFromPricing } = await import("../../src/lib/usage/costCalculator.ts");
+const { getDefaultPricing } = await import("../../src/shared/constants/pricing.ts");
+const core = await import("../../src/lib/db/core.ts");
+const providersDb = await import("../../src/lib/db/providers.ts");
+const auth = await import("../../src/sse/services/auth.ts");
+
+test.after(() => {
+  core.resetDbInstance();
+  fs.rmSync(TEST_DATA_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+});
 
 const REQUEST_BODY = {
   state: "Help! My payouts have been failing for 3 days.",
@@ -112,11 +124,16 @@ test("systemone default pricing is input-only so output tokens do not add cost",
 
 test("systemone 429 returns upstream status and cools the credential using retry-after", async () => {
   const originalFetch = globalThis.fetch;
-  const cooldownCalls: Array<{
-    connectionId: string;
-    status: number;
-    headers: Headers | Record<string, string> | null | undefined;
-  }> = [];
+  const conn = await providersDb.createProviderConnection({
+    provider: "typesafe",
+    authType: "apikey",
+    apiKey: "ts-test-key",
+    isActive: true,
+    testStatus: "active",
+  });
+  const connId = String(conn.id);
+  const before = Date.now();
+
   globalThis.fetch = (async () =>
     new Response(JSON.stringify({ error: "Too Many Requests" }), {
       status: 429,
@@ -126,29 +143,38 @@ test("systemone 429 returns upstream status and cools the credential using retry
   try {
     const response = await handleSystemOneProxy({
       body: REQUEST_BODY,
-      credentials: { apiKey: "ts-test-key", connectionId: "conn-ts-429" },
+      credentials: { apiKey: "ts-test-key", connectionId: connId },
+      requestedModel: "jev-latest",
       saveCallLog: () => {},
-      markAccountUnavailable: async (
-        connectionId,
-        status,
-        _errorText,
-        _provider,
-        _model,
-        _profile,
-        options
-      ) => {
-        cooldownCalls.push({ connectionId, status, headers: options.headers });
-      },
     });
     assert.equal(response.status, 429);
     const json = (await response.json()) as { error: string };
     assert.equal(json.error, "Too Many Requests");
     assert.equal(response.headers.get("retry-after"), "12");
-    assert.equal(cooldownCalls.length, 1);
-    assert.equal(cooldownCalls[0].connectionId, "conn-ts-429");
-    assert.equal(cooldownCalls[0].status, 429);
-    const headers = cooldownCalls[0].headers as Headers;
-    assert.equal(headers.get("retry-after"), "12");
+
+    const after = await providersDb.getProviderConnectionById(connId);
+    assert.ok(after?.rateLimitedUntil, "connection cooldown timestamp must be persisted");
+    const untilMs = new Date(String(after.rateLimitedUntil)).getTime();
+    assert.ok(
+      Number.isFinite(untilMs),
+      `rateLimitedUntil must parse, got ${after.rateLimitedUntil}`
+    );
+    assert.ok(
+      untilMs >= before + 11_000 && untilMs <= before + 15_000,
+      `expected retry-after 12s cooldown, got ${untilMs - before}ms (until ${after.rateLimitedUntil})`
+    );
+
+    const credentials = await auth.getProviderCredentials("typesafe");
+    const skipped =
+      !credentials ||
+      (typeof credentials === "object" &&
+        "allRateLimited" in credentials &&
+        (credentials as { allRateLimited?: boolean }).allRateLimited === true);
+    assert.equal(
+      skipped,
+      true,
+      "cooled typesafe credential must not be selected until retry-after"
+    );
   } finally {
     globalThis.fetch = originalFetch;
   }
