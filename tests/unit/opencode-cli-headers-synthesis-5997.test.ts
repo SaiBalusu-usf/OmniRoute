@@ -27,10 +27,12 @@ const SESSION_ID_RE = /^ses_[0-9a-f]{12}[0-9A-Za-z]{14}$/;
 // the tests below — these are caller-supplied, independent of OpencodeExecutor's own
 // env-driven defaults (covered separately by the OPENCODE_DEFAULTS constant + the
 // OpencodeExecutor.buildHeaders tests further down).
-const CLI_DEFAULTS = { userAgent: "opencode/1.18.31", client: "desktop", project: "global" };
+const FULL_UA = "opencode/1.18.31 ai-sdk/provider-utils/4.0.23 runtime/bun/1.3.14";
+const CLI_DEFAULTS = { userAgent: FULL_UA, client: "desktop", project: "global" };
 
 // PR #10571's new synthesized defaults for OpencodeExecutor.buildHeaders() itself.
-const OPENCODE_DEFAULTS = { userAgent: "opencode/1.18.31", client: "desktop", project: "global" };
+// The UA is the full extension identity (opencode/<live-semver> + ai-sdk + bun runtime).
+const OPENCODE_DEFAULTS = { userAgent: FULL_UA, client: "desktop", project: "global" };
 
 function withEnv(key: string, value: string | undefined, fn: () => void) {
   const saved = process.env[key];
@@ -48,7 +50,7 @@ test("forwardOpencodeClientHeaders: cliDefaults synthesize all CLI identity head
   const headers: Record<string, string> = {};
   forwardOpencodeClientHeaders(headers, {}, { cliDefaults: CLI_DEFAULTS });
 
-  assert.equal(headers["User-Agent"], "opencode/1.18.31");
+  assert.equal(headers["User-Agent"], FULL_UA);
   assert.equal(headers["x-opencode-client"], "desktop");
   assert.equal(headers["x-opencode-project"], "global");
   assert.match(headers["x-opencode-request"] ?? "", REQUEST_ID_RE);
@@ -67,7 +69,7 @@ test("forwardOpencodeClientHeaders: non-CLI client UA is REPLACED with the CLI U
   };
   forwardOpencodeClientHeaders(headers, clientHeaders, { cliDefaults: CLI_DEFAULTS });
 
-  assert.equal(headers["User-Agent"], "opencode/1.18.31");
+  assert.equal(headers["User-Agent"], FULL_UA);
   assert.equal(headers["x-opencode-client"], "vscode");
   assert.equal(headers["x-opencode-project"], "acme");
   assert.equal(headers["x-opencode-request"], "msg_0123456789abABCDEFGHIJKLMN");
@@ -81,6 +83,12 @@ test("forwardOpencodeClientHeaders: a valid versioned OpenCode UA is preserved",
   assert.equal(headers["User-Agent"], "opencode/2.5.0");
 });
 
+test("forwardOpencodeClientHeaders: the full extension UA (ai-sdk + bun runtime) is preserved", () => {
+  const headers: Record<string, string> = {};
+  forwardOpencodeClientHeaders(headers, { "User-Agent": FULL_UA }, { cliDefaults: CLI_DEFAULTS });
+  assert.equal(headers["User-Agent"], FULL_UA);
+});
+
 test("forwardOpencodeClientHeaders: bare and outdated OpenCode UAs are upgraded", () => {
   for (const userAgent of ["opencode", "opencode/1.16.9", "curl/8.5.0"]) {
     const headers: Record<string, string> = {};
@@ -89,7 +97,7 @@ test("forwardOpencodeClientHeaders: bare and outdated OpenCode UAs are upgraded"
       { "User-Agent": userAgent },
       { cliDefaults: CLI_DEFAULTS }
     );
-    assert.equal(headers["User-Agent"], "opencode/1.18.31");
+    assert.equal(headers["User-Agent"], FULL_UA);
   }
 });
 

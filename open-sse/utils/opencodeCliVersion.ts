@@ -1,9 +1,12 @@
 /**
  * Live OpenCode CLI version for the synthesized `User-Agent` on Zen requests.
  *
- * Upstream's free tier validates the CLI identity (`opencode/<semver>`); a pinned
- * version rots on every release, so the UA resolves live from the npm registry
- * JSON API (`opencode-ai/latest`) — plain HTTPS fetch, NO npm binary needed, so
+ * The identity contract is pinned by the working OMP extension
+ * (`zen-patch.ts`): `opencode/<semver> ai-sdk/provider-utils/<semver>
+ * runtime/bun/<semver>`. Upstream validates this CLI identity on the free
+ * tier; a bare `opencode` or a stale pin rots on every release, so the
+ * `<semver>` resolves live from the npm registry JSON API
+ * (`opencode-ai/latest`) — plain HTTPS fetch, NO npm binary needed, so
  * machines without npm work fine. Offline or registry blocked → the pin below
  * stays valid and `OPENCODE_USER_AGENT` still overrides everything.
  *

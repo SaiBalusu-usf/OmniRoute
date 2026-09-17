@@ -3,7 +3,7 @@ import { setUserAgentHeader } from "../executors/base.ts";
 import { generateSessionId } from "../services/sessionManager.ts";
 import { getCachedOpencodeCliVersion } from "./opencodeCliVersion.ts";
 export function getDefaultOpencodeUserAgent(): string {
-  return `opencode/${getCachedOpencodeCliVersion()}`;
+  return `opencode/${getCachedOpencodeCliVersion()} ai-sdk/provider-utils/4.0.23 runtime/bun/1.3.14`;
 }
 export function isOpencodeCliSynthesisEnabled(): boolean {
   return !/^(0|false|no|off)$/i.test(process.env.OPENCODE_SYNTHESIZE_CLI_HEADERS?.trim() ?? "");
