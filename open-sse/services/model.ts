@@ -1,6 +1,9 @@
 import { PROVIDER_ID_TO_ALIAS, PROVIDER_MODELS } from "../config/providerModels.ts";
+import { ALIAS_TO_PROVIDER_ID, resolveProviderAlias } from "./providerAlias.ts";
 import { resolveWildcardAlias } from "./wildcardRouter.ts";
 import { getRegisteredProviderEffortBaseModelId } from "../utils/registeredEffortVariants.ts";
+
+export { resolveProviderAlias };
 
 type ProviderModelAliasMap = Record<string, Record<string, string>>;
 type ModelAliasValue = string | { provider?: string; model?: string };
@@ -27,8 +30,6 @@ export function stripContextWindowSuffix(
   return modelStr.replace(CONTEXT_WINDOW_SUFFIX_RE, "").trimEnd();
 }
 
-import { ALIAS_TO_PROVIDER_ID, resolveProviderAlias } from "./providerAlias.ts";
-export { resolveProviderAlias };
 
 // Provider-scoped legacy model aliases. Used to normalize provider/model inputs
 // and keep backward compatibility when upstream IDs change.
@@ -71,6 +72,14 @@ const PROVIDER_MODEL_ALIASES: ProviderModelAliasMap = {
     "claude-opus-4-6": "claude-opus-4.6",
     "claude-sonnet-4-6": "claude-sonnet-4.6",
     "claude-sonnet-4-5": "claude-sonnet-4.5",
+    "claude-haiku-4-5": "claude-haiku-4.5",
+  },
+  // #13364: zed-hosted's passthrough catalog exposes short hyphenated Claude ids
+  // that don't match modelSpecs' dotted canonical alias, so capMaxOutputTokens()
+  // resolves no cap and thinking+tools requests inflate max_tokens unbounded.
+  // Scoped to claude-haiku-4-5 (the reported/reproduced model) — add Sonnet/Opus
+  // entries only once confirmed against the live Zed catalog.
+  "zed-hosted": {
     "claude-haiku-4-5": "claude-haiku-4.5",
   },
 };
