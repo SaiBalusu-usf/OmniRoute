@@ -14,22 +14,14 @@ export function isTraySupported() {
   return true;
 }
 
-// systray2 is NOT a static dependency — it is lazily installed into
-// ~/.omniroute/runtime by trayRuntime.ts (loadSystray). The previous inline
-// loader called `require("module")`, which throws `ReferenceError: require is
-// not defined` in this ESM file (package "type":"module"); the throw was
-// silently swallowed, so the tray never appeared on macOS/Linux with no error
-// printed (#4605, regressed in v3.8.34). Delegate to the runtime loader, which
-// resolves systray2 from the runtime dir and surfaces install/import failures.
 async function loadSystray2() {
   const { loadSystray } = await import("../runtime/trayRuntime.ts");
   return loadSystray();
 }
 
 function getIconBase64() {
-  // Icon ships at bin/cli/tray/icon.png — the previous "icons/icon.png" path
-  // never existed, so the tray was created with an empty icon (#4605).
-  const iconPath = join(__dirname, "icon.png");
+  // systray2 expects an ICO payload on Windows; the PNG asset is used elsewhere.
+  const iconPath = join(__dirname, process.platform === "win32" ? "icon.ico" : "icon.png");
   if (existsSync(iconPath)) return readFileSync(iconPath).toString("base64");
   return "";
 }
@@ -58,9 +50,6 @@ export async function initSystrayUnix(
     tray = new SysTray({
       menu: {
         icon: getIconBase64(),
-        // isTemplateIcon must be false: icon.png is a full-color RGBA logo, and
-        // macOS template mode uses only the alpha channel → a solid white square
-        // (the icon looked "missing" even when the tray loaded). (PR #1080)
         isTemplateIcon: false,
         title: "",
         tooltip: `OmniRoute — port ${port}`,
@@ -102,11 +91,6 @@ export async function initSystrayUnix(
   return tray;
 }
 
-/**
- * Resolve the Go systray2 child subprocess PID from a tray instance.
- * systray2 exposes the spawned binary either as the `_process` field or via a
- * `process()` accessor depending on version. Returns the numeric PID or null.
- */
 export function getSystrayChildPid(tray) {
   if (!tray) return null;
   try {
@@ -118,10 +102,6 @@ export function getSystrayChildPid(tray) {
 
 export function killSystrayUnix(tray) {
   try {
-    // systray2.kill(false) closes the IPC channel but leaves the Go tray binary
-    // subprocess running, which keeps an orphan NSStatusItem on macOS and blocks
-    // a freshly spawned tray (e.g. on respawn / hide-to-tray) from registering.
-    // SIGKILL the child PID directly first, then close IPC.
     const pid = getSystrayChildPid(tray);
     if (pid) {
       try {
