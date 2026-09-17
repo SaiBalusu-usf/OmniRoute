@@ -1,1 +1,4 @@
-- **fix(responses):** include `output: []`, `background: false`, and `error: null` in the `response.in_progress` streaming event to satisfy strict client schema validation (e.g. OpenAI Responses SDK and Grok CLI).
+- **fix(responses):** ensure full compliance with the OpenAI Responses API streaming schema for strict deserializers (e.g. OpenAI Responses SDK, Grok CLI / pager):
+  - Include `output: []`, `background: false`, and `error: null` in the `response.in_progress` lifecycle event across both the Responses transformer and response translator.
+  - Include `status` (`in_progress` or `completed`) on all emitted output items (`message`, `reasoning`, `function_call`, `custom_tool_call`) in `response.output_item.added`, `response.output_item.done`, and `response.output[]`.
+  - Include `sequence_number: 0` in in-band Responses stream error frames (`OPENAI_RESPONSES_ERROR_FRAME` and `buildResponsesErrorDataLine`) emitted after early keepalive streams commit.
