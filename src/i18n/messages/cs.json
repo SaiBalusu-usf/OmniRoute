@@ -14068,7 +14068,12 @@
     "hour": "hodina",
     "day": "den",
     "unknownModel": "neznámý",
-    "pending": "čekající"
+    "pending": "čekající",
+    "allApiKeys": "All API keys",
+    "mcp": "MCP",
+    "mcpTool": "MCP tool",
+    "scope": "Scope",
+    "apiKey": "API key"
   },
   "metadata": {
     "compressionTitle": "Komprese",
