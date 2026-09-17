@@ -196,7 +196,7 @@ curl -X POST http://localhost:20128/v1/chat/completions \
 
 ## 모드 팩
 
-`open-sse/services/autoCombo/modePacks.ts`에 사전 정의된 가중치 프로필 6개가 있습니다. 각 팩은 기본 가중치를 완전히 대체하여 하나의 목표에 맞게 선택을 편향시킵니다. 모든 팩의 합계는 이미 `1.0`(소수점 넷째 자리까지 표시하면 `0.9999`)이므로, 팩이 활성화된 경우 `normalizeScoringWeights()`가 실질적으로 보정할 내용은 없습니다. 아래 값은 반올림 오차를 제외하면 스코어러가 적용하는 값입니다.
+`open-sse/services/autoCombo/modePacks.ts`에 사전 정의된 6개의 가중치 프로필이 있습니다. 각 팩은 기본 가중치를 완전히 대체하여 선택이 하나의 목표를 우선하도록 편향시킵니다. 모든 팩의 합계는 이미 `1.0`(소수점 넷째 자리까지 표시하면 `0.9999`)이므로, 팩이 활성화된 경우 `normalizeScoringWeights()`가 실질적으로 보정할 부분은 없습니다. 아래 값은 반올림 오차를 제외하면 스코어러가 적용하는 값입니다.
 
 | 요소                  | ship-fast  | cost-saver | quality-first | offline-friendly | reliability-first | chaos-mode |
 | :-------------------- | :--------- | :--------- | :------------ | :--------------- | :---------------- | :--------- |
@@ -218,28 +218,29 @@ curl -X POST http://localhost:20128/v1/chat/completions \
 
 참고:
 
-- **팩에는 `quality`와 `reliability`가 포함되며**(`quality 0.02`, `quality-first 0.03`; `reliability 0.03`, `reliability-first 0.04`), 가중치 맵 전체를 대체합니다(병합이 아니라 `weights = pack`). `DEFAULT_WEIGHTS`에는 `quality 0.03 / reliability 0`이 포함됩니다. `balanced`/`default`를 선택하면 이러한 기본값이 유지되고, 팩을 선택하면 위에 표시된 해당 팩의 값이 사용됩니다. 콜드 풀(아직 관측값이 없어 `quality 0.5`, `reliability 1`인 경우)에서는 이 두 요소가 일반 팩에서 `+0.04`(`0.03 + 0.01`), `quality-first`에서 `+0.045`, `reliability-first`에서 `+0.05`를 추가합니다.
-- `tierAffinity`, `specificityMatch`, `resetWindowAffinity`는 모든 팩에서 명시적으로 `0`입니다.
-- 각 팩의 핵심 특성:
-  - **ship-fast** → latencyInv 0.3048 + health 0.2667(지연 시간이 짧고 정상적인 연결)
-  - **cost-saver** → costInv 0.3324(토큰 비용이 가장 저렴한 항목 우선)
+- **팩에는 `quality`와 `reliability`가 포함되며**(`quality 0.02`, `quality-first 0.03`; `reliability 0.03`, `reliability-first 0.04`), 가중치 맵을 병합하지 않고 통째로 대체합니다(`weights = pack`). `DEFAULT_WEIGHTS`에는 `quality 0.03 / reliability 0`이 포함되어 있습니다. `balanced`/`default`를 선택하면 이러한 기본값이 유지되고, 팩을 선택하면 위에 나온 해당 팩의 값이 사용됩니다. 콜드 풀(아직 관측값이 없어 `quality 0.5`, `reliability 1`인 경우)에서는 이 두 요소가 일반 팩에서 `+0.04`(`0.03 + 0.01`), `quality-first`에서 `+0.045`, `reliability-first`에서 `+0.05`를 추가합니다.
+- 모든 팩에서 `tierAffinity`, `specificityMatch`, `resetWindowAffinity`는 명시적으로 `0`입니다.
+- 각 팩의 핵심 강조점을 요약하면 다음과 같습니다.
+  - **ship-fast** → latencyInv 0.3048 + health 0.2667(지연 시간이 짧고 정상 상태인 연결)
+  - **cost-saver** → costInv 0.3324(가장 저렴한 토큰이 우선)
   - **quality-first** → taskFit 0.3524 + stability 0.1429 + quality 0.03으로 모든 팩 중 가장 높음(작업에 가장 적합하고 일관된 모델)
   - **offline-friendly** → quota 0.3324 + health 0.2667(속도/비용과 관계없이 최대 여유 용량)
-  - **reliability-first** → health 0.3524 + stability 0.1905 + reliability 0.04로 모든 팩 중 가장 높음(예상치 못한 문제 최소화)
-  - **chaos-mode** → health 0.4000 + taskFit 0.1905(결함 주입 프로필)
+  - **reliability-first** → health 0.3524 + stability 0.1905 + reliability 0.04로 모든 팩 중 가장 높음(예상치 못한 상황 최소화)
+  - **chaos-mode** → health 0.4000 + taskFit 0.1905(장애 주입 프로필)
 
 ### 요청별 제어(헤더) — #6023 / #6024 / #6025 / #3470
 
-`auto` 콤보는 콤보에 저장된 구성을 변경하지 않고도 세 개의 헤더를 통해 **요청별로** 제어할 수 있습니다. 이러한 헤더는 `auto` 전략에만, 그리고 해당 헤더를 포함하는 요청에만 적용됩니다. 헤더가 없으면 콤보에 저장된 `modePack`/`budgetCap`/`budgetFallback`이 사용됩니다.
+콤보에 저장된 구성을 변경하지 않고도 세 가지 헤더를 통해 **요청별로** `auto` 콤보를 제어할 수 있습니다. 이 설정은 `auto` 전략에만 적용되며 해당 헤더가 포함된 요청에만 적용됩니다. 헤더가 없으면 콤보에 저장된 `modePack`/`budgetCap`/`budgetFallback`이 사용됩니다.
 
-| 헤더                          | 허용 값                                                                                                                                                                           | 효과                                                                                                                                                                                                                               |
-| :---------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `X-OmniRoute-Mode`            | 프리셋 별칭(`fast`, `balanced`, `quality`, `cheap`, `reliable`, `offline`) 또는 원시 팩 이름(`ship-fast`, `cost-saver`, `quality-first`, `offline-friendly`, `reliability-first`) | 이 요청의 점수 산정 가중치를 재정의합니다. `balanced`/`default`는 기본 가중치를 강제로 사용합니다(팩 없음). 알 수 없는 값은 무시됩니다(설정 유지).                                                                                 |
-| `X-OmniRoute-Budget`          | 양수(요청당 최대 USD)                                                                                                                                                             | 엄격한 비용 상한: 예상 비용이 상한을 초과하는 후보는 선택 전에 필터링됩니다. **모든** 후보가 상한을 초과할 때의 동작은 아래의 `X-OmniRoute-Budget-Fallback`으로 제어합니다.                                                        |
-| `X-OmniRoute-Budget-Fallback` | `cheapest`(기본값, 별칭: `cheapest-viable`, `soft`) 또는 `strict`(별칭: `block`, `hard`)                                                                                          | `cheapest`: 여전히 상한을 초과하더라도 전체 후보 중 가장 저렴한 후보로 폴백합니다(레거시 동작). `strict`: 선택을 거부합니다. 즉, 비용을 조용히 초과하는 대신 요청이 `HTTP 402`와 함께 즉시 실패합니다. 알 수 없는 값은 무시됩니다. |
+| 헤더                          | 허용 값                                                                                                                                                                           | 효과                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| :---------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `X-OmniRoute-Mode`            | 프리셋 별칭(`fast`, `balanced`, `quality`, `cheap`, `reliable`, `offline`) 또는 원시 팩 이름(`ship-fast`, `cost-saver`, `quality-first`, `offline-friendly`, `reliability-first`) | 이 요청의 점수 산정 가중치를 재정의합니다. `balanced`/`default`는 기본 가중치를 강제로 적용합니다(팩 없음). 알 수 없는 값은 무시됩니다(설정 유지).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `X-OmniRoute-Budget`          | 양수(요청당 최대 USD)                                                                                                                                                             | 엄격한 비용 상한: 예상 비용이 상한을 초과하는 후보는 선택 전에 필터링됩니다. **모든** 후보가 상한을 초과할 때의 동작은 아래의 `X-OmniRoute-Budget-Fallback`으로 제어됩니다.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `X-OmniRoute-Budget-Fallback` | `cheapest`(기본값, 별칭: `cheapest-viable`, `soft`) 또는 `strict`(별칭: `block`, `hard`)                                                                                          | `cheapest`: 여전히 상한을 초과하더라도 전체 후보 중 가장 저렴한 후보로 대체합니다(레거시 동작). `strict`: 선택을 거부합니다. 즉, 조용히 예산을 초과하는 대신 요청이 `HTTP 402`와 함께 즉시 실패합니다. 알 수 없는 값은 무시됩니다.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `X-OmniRoute-Effort`          | `auto`(다른 값은 예약됨)                                                                                                                                                          | 적응형 사고 예산: 요청에 어떤 형태의 추론 필드도(`reasoning_effort`, `reasoning`, `thinking`) **없는** 경우, 게이트웨이는 결정론적 요청 형태 신호(마지막 사용자 메시지 길이, 마지막 사용자 메시지까지의 컨텍스트 크기, 이전 도구 결과, 도구 루프 깊이)를 바탕으로 `auto`를 `low`/`medium`/`high`로 결정합니다. 신호는 현재 턴으로 범위가 제한되며, 마지막 사용자 메시지 이후의 모든 내용은 무시됩니다. 따라서 도구 루프의 모든 요청은 동일한 수준으로 결정됩니다(턴별 무상태 고정, 세션 상태 없음, 업스트림 프롬프트 캐시 접두사를 손상시킬 수 있는 루프 도중의 단계 상향 없음). 클라이언트가 명시적으로 지정한 추론 필드가 항상 우선합니다. 업스트림 디스패치가 OpenAI Chat Completions 형태(`targetFormat === FORMATS.OPENAI`)로 결정되는 요청으로 범위가 제한됩니다. `reasoning_effort`는 OpenAI 형태의 필드이므로 Claude 또는 Gemini를 대상으로 하는 요청에서는 이 헤더가 아무런 효과도 내지 않습니다(`open-sse/handlers/chatCore/adaptiveEffortWiring.ts` 참조). |
 
 ```bash
-# 가장 빠른 프로필을 강제로 사용하고, 이 요청의 상한을 $0.05로 설정하며, 비용을 초과하는 대신 엄격히 차단합니다
+# 가장 빠른 프로필을 강제하고, 이 요청의 비용을 $0.05로 제한하며, 예산 초과 지출 대신 강제로 차단합니다
 curl -sS http://localhost:20128/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "X-OmniRoute-Mode: fast" \
@@ -248,10 +249,7 @@ curl -sS http://localhost:20128/v1/chat/completions \
   -d '{"model":"auto","messages":[{"role":"user","content":"hi"}]}'
 ```
 
-해석은 순수 함수(`open-sse/services/autoCombo/requestControls.ts`)이며, 해석된
-값은 엔진의 기존 `config.modePack` / `config.budgetCap` /
-`config.budgetFallback` 입력으로 전달됩니다. 콤보에 저장된 `config.budgetFallback`("strict" |
-"cheapest")은 영구 정책을 설정하며, 헤더는 단일 요청에 대해 이를 재정의합니다.
+해석은 순수 함수(`open-sse/services/autoCombo/requestControls.ts`)로 수행되며, 해석된 값은 엔진의 기존 `config.modePack` / `config.budgetCap` / `config.budgetFallback` 입력으로 전달됩니다. 콤보에 저장된 `config.budgetFallback`("strict" | "cheapest")은 영구 정책을 설정하며, 헤더는 단일 요청에 한해 이를 재정의합니다.
 
 ## 모든 라우팅 전략
 

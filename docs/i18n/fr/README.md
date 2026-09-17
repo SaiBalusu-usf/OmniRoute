@@ -19,17 +19,17 @@
 
 <div align="center">
 
-## 💰 ~1,47 milliard de jetons gratuits / mois
+## 💰 ~1,47 Md de jetons gratuits / mois
 
 </div>
 
-> Cumuler manuellement les offres gratuites est pénible — des dizaines de SDK, des dizaines de limites de débit et aucune idée de la quantité réellement disponible. OmniRoute répertorie **446 entrées d’offres gratuites réparties sur 34 clés de pools récurrents** et calcule le nombre de jetons mis en avant à partir des **16 pools disposant d’un budget mensuel positif publié, auxquels s’ajoutent cinq plafonds Groq par modèle**, en dédupliquant les pools partagés. Les quotas qui ne deviennent accessibles qu’après une vérification d’identité régionale (actuellement : ModelScope) sont affichés séparément, avec ~6 millions supplémentaires soumis à cette vérification, et ne sont jamais inclus dans le total mis en avant. Le résultat reste visible dans le tableau de bord (`/dashboard/free-tiers`).
+> Cumuler manuellement les offres gratuites est pénible — des dizaines de SDK, des dizaines de limites de débit et aucune idée de ce dont vous disposez réellement. OmniRoute répertorie **452 entrées d’offres gratuites réparties sur 34 clés de pools récurrents** et calcule le total de jetons à partir des **16 pools disposant d’un budget mensuel positif publié, auxquels s’ajoutent cinq plafonds Groq par modèle**, avec déduplication des pools partagés. Les quotas qui ne deviennent accessibles qu’après une vérification d’identité régionale (actuellement : ModelScope) sont présentés séparément, soit +~6 M derrière une vérification d’identité régionale, et ne sont jamais inclus dans le total principal. Le résultat reste visible dans le tableau de bord (`/dashboard/free-tiers`).
 
-<img src="./docs/diagrams/free-tier-budget.svg" width="100%" alt="Carte du budget des offres gratuites d’OmniRoute : ~1,47 milliard de jetons gratuits par mois de manière récurrente, jusqu’à ~2,07 milliards le premier mois grâce aux crédits d’inscription, provenant de 34 clés de pools récurrents documentées couvrant 446 entrées d’offres gratuites répertoriées derrière un point de terminaison unique. Calcul transparent avec déduplication des pools — chaque pool partagé n’est compté qu’une seule fois, notamment 16 pools récurrents dotés d’un budget mensuel positif publié ainsi que cinq plafonds Groq par modèle ; 13 fournisseurs sont signalés comme étant à éviter dans le catalogue des risques liés aux conditions d’utilisation, afin que vous puissiez décider. La barre de budget comprend Mistral 1 milliard, Nara 210 millions, LLM7 150 millions, Groq 30 millions (cinq plafonds par modèle) et des pools plus petits, ainsi que les crédits d’inscription du premier mois et les fournisseurs gratuits en permanence sans plafond de jetons, présentés séparément afin qu’ils ne gonflent jamais le total mis en avant. Utilisation et solde restants en temps réel sur /dashboard/free-tiers."/>
+<img src="./docs/diagrams/free-tier-budget.svg" width="100%" alt="Carte du budget des offres gratuites d’OmniRoute : ~1,47 Md de jetons gratuits par mois de manière récurrente, jusqu’à ~2,07 Md le premier mois grâce aux crédits d’inscription, provenant de 34 clés documentées de pools récurrents couvrant 452 entrées d’offres gratuites répertoriées derrière un seul point de terminaison. Calcul transparent avec déduplication des pools — chaque pool partagé n’est compté qu’une fois, y compris 16 pools récurrents disposant d’un budget mensuel positif publié ainsi que cinq plafonds Groq par modèle ; 13 fournisseurs sont signalés comme étant à éviter dans le catalogue des risques liés aux conditions d’utilisation, afin que vous puissiez décider. La barre de budget inclut Mistral 1 Md, Nara 210 M, LLM7 150 M, Groq 30 M (cinq plafonds par modèle) et des pools plus petits, ainsi que les crédits d’inscription du premier mois et les fournisseurs gratuits en permanence sans plafond de jetons, présentés séparément afin qu’ils ne gonflent jamais le total principal. Utilisation et solde restants en direct sur /dashboard/free-tiers."/>
 
 > Résumé animé de la page `/dashboard/free-tiers` en direct. Méthodologie complète (déduplication des pools, niveaux de crédits, conditions des fournisseurs) : **[docs/reference/FREE_TIERS.md](docs/reference/FREE_TIERS.md)**.
 >
-> <sub>Ces chiffres sont à nouveau vérifiés toutes les deux semaines par rapport au catalogue en direct et **peuvent évoluer dans les deux sens** — si un fournisseur met fin à une offre gratuite, le chiffre baisse ; si une nouvelle offre apparaît, il augmente. Nous publions ce que le catalogue calcule réellement, jamais un scénario optimal arrondi à la hausse.</sub>
+> <sub>Ces chiffres sont réaudités toutes les deux semaines à partir du catalogue en direct et **évoluent dans les deux sens** — si un fournisseur met fin à une offre gratuite, le chiffre baisse ; si une nouvelle offre apparaît, il augmente. Nous publions ce que le catalogue calcule réellement, jamais un scénario idéal arrondi à la hausse.</sub>
 
 <br/>
 
@@ -37,7 +37,7 @@
 
 <h3>
 
-⭐ Ajoutez une étoile au dépôt si OMNIROUTE vous a permis d’économiser de l’argent et de simplifier votre travail.
+⭐ Ajoutez une étoile au dépôt si OMNIROUTE vous a aidé à économiser de l’argent et à faciliter votre travail.
 
 </h3>
 
@@ -48,18 +48,18 @@
 
 ### 💬 Rejoignez la communauté
 
-**👋 Suivez le mainteneur — découvrez en avant-première les nouveaux fournisseurs, les nouvelles versions et les conseils :**
+**👋 Suivez le mainteneur — découvrez en premier les nouveaux fournisseurs, les versions et les astuces :**
 
-[![Suivre Diego sur LinkedIn](https://img.shields.io/badge/Follow_Diego_on-LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/diegosouzapw/)
-[![Suivre @diegosouzapw sur GitHub](https://img.shields.io/github/followers/diegosouzapw?style=for-the-badge&logo=github&logoColor=white&label=Follow%20on%20GitHub&color=181717)](https://github.com/diegosouzapw)
+[![Suivez Diego sur LinkedIn](https://img.shields.io/badge/Follow_Diego_on-LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/diegosouzapw/)
+[![Suivez @diegosouzapw sur GitHub](https://img.shields.io/github/followers/diegosouzapw?style=for-the-badge&logo=github&logoColor=white&label=Follow%20on%20GitHub&color=181717)](https://github.com/diegosouzapw)
 
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/U47eFqAXCn)
 [![Telegram](https://img.shields.io/badge/Telegram-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/omnirouteOficial)
-[![WhatsApp international](https://img.shields.io/badge/WhatsApp_Global-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://chat.whatsapp.com/FvuCbrpZmQ6I85n2vW5QIC?s=cl&p=a&mlu=4)
+[![WhatsApp mondial](https://img.shields.io/badge/WhatsApp_Global-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://chat.whatsapp.com/FvuCbrpZmQ6I85n2vW5QIC?s=cl&p=a&mlu=4)
 [![WhatsApp Brésil](https://img.shields.io/badge/WhatsApp_Brasil-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://chat.whatsapp.com/KWgatljAjmbELQory59Oti?s=cl&p=a&mlu=4)
 [![Site web](https://img.shields.io/badge/Website-omniroute.online-blue?logo=google-chrome&logoColor=white)](https://omniroute.online)
 
-**Questions, conseils sur les fournisseurs, feuille de route et assistance → [Discord](https://discord.gg/U47eFqAXCn) · [Telegram](https://t.me/omnirouteOficial) · WhatsApp [🌍 International](https://chat.whatsapp.com/FvuCbrpZmQ6I85n2vW5QIC?s=cl&p=a&mlu=4) / [🇧🇷 Brésil](https://chat.whatsapp.com/KWgatljAjmbELQory59Oti?s=cl&p=a&mlu=4) / [Portail](https://portal.sthub.com.br/communities/groups/st-hub/channels/Omniroute-World-8kRjmK)**
+**Questions, suggestions de fournisseurs, feuille de route et assistance → [Discord](https://discord.gg/U47eFqAXCn) · [Telegram](https://t.me/omnirouteOficial) · WhatsApp [🌍 Mondial](https://chat.whatsapp.com/FvuCbrpZmQ6I85n2vW5QIC?s=cl&p=a&mlu=4) / [🇧🇷 Brésil](https://chat.whatsapp.com/KWgatljAjmbELQory59Oti?s=cl&p=a&mlu=4) / [Portail](https://portal.sthub.com.br/communities/groups/st-hub/channels/Omniroute-World-8kRjmK)**
 
 <br/>
 
@@ -1256,28 +1256,28 @@ Métriques canoniques au 2026-08-24 : **1.029 vidéos uniques** · **11.132.922 
 <br/>
 <div align="center">
 
-## 🛠️ Pile technologique
+## 🛠️ Stack technologique
 
 </div>
 
 <table>
   <tr><th align="left">Couche</th><th align="left">Technologie</th></tr>
   <tr><td nowrap><b>Environnement d’exécution</b></td><td>Node.js 22.x / 24.x LTS — <code>&gt;=22.22.2 &lt;23 || &gt;=24.0.0 &lt;27</code></td></tr>
-  <tr><td nowrap><b>Langage</b></td><td>TypeScript 6.0 — <b>100 % TypeScript</b> dans <code>src/</code> et <code>open-sse/</code> (aucun <code>any</code> dans le cœur depuis v2.0)</td></tr>
+  <tr><td nowrap><b>Langage</b></td><td>TypeScript 6.0 — <b>100 % TypeScript</b> dans <code>src/</code> et <code>open-sse/</code> (aucun <code>any</code> dans le cœur depuis la v2.0)</td></tr>
   <tr><td nowrap><b>Framework</b></td><td>Next.js 16 + React 19 + Tailwind CSS 4</td></tr>
-  <tr><td nowrap><b>Base de données</b></td><td>better-sqlite3 (SQLite, journalisation WAL) + LowDB (ancien format JSON) — 122 modules métier, 177 migrations</td></tr>
-  <tr><td nowrap><b>Mémoire</b></td><td>Recherche en texte intégral SQLite FTS5 + plongements vectoriels quantifiés en int8, décroissance typée</td></tr>
+  <tr><td nowrap><b>Base de données</b></td><td>better-sqlite3 (SQLite, journalisation WAL) + LowDB (ancien format JSON) — 122 modules métier, 176 migrations</td></tr>
+  <tr><td nowrap><b>Mémoire</b></td><td>Recherche plein texte SQLite FTS5 + plongements vectoriels quantifiés en int8, décroissance typée</td></tr>
   <tr><td nowrap><b>Schémas</b></td><td>Zod 4 — validation des entrées/sorties des outils MCP + contrats d’API</td></tr>
   <tr><td nowrap><b>Protocoles</b></td><td>MCP (stdio / HTTP / SSE) + A2A v0.3 (JSON-RPC 2.0 + SSE)</td></tr>
   <tr><td nowrap><b>Diffusion en continu</b></td><td>Server-Sent Events (SSE) + passerelle WebSocket (<code>/v1/ws</code>)</td></tr>
   <tr><td nowrap><b>Compression</b></td><td>Pipeline à 12 moteurs — RTK, Caveman, LLMLingua-2 (MobileBERT ONNX), GCF, OmniGlyph</td></tr>
-  <tr><td nowrap><b>Authentification et sécurité</b></td><td>OAuth 2.0 (PKCE) + JWT + clés d’API + authentification MCP à portée limitée · AES-256-GCM pour les données au repos · DOMPurify</td></tr>
+  <tr><td nowrap><b>Authentification &amp; sécurité</b></td><td>OAuth 2.0 (PKCE) + JWT + clés API + authentification MCP à portée limitée · AES-256-GCM pour les données au repos · DOMPurify</td></tr>
   <tr><td nowrap><b>Furtivité</b></td><td>wreq-js — usurpation d’empreintes TLS JA3 / JA4, proxy à 3 niveaux</td></tr>
-  <tr><td nowrap><b>Résilience</b></td><td>Disjoncteur, temporisation exponentielle, protection contre les accès simultanés massifs, auto-réparation des combos</td></tr>
-  <tr><td nowrap><b>Journalisation</b></td><td>pino — journaux JSON structurés avec contexte de requête</td></tr>
+  <tr><td nowrap><b>Résilience</b></td><td>Disjoncteur, temporisation exponentielle, protection contre les afflux simultanés, auto-réparation par combinaison automatique</td></tr>
+  <tr><td nowrap><b>Journalisation</b></td><td>pino — journaux JSON structurés avec le contexte des requêtes</td></tr>
   <tr><td nowrap><b>Tests</b></td><td>Exécuteur de tests Node.js + Vitest — <b>plus de 39 000 déclarations de tests statiques</b> réparties dans plus de 5 100 fichiers de test suivis (unitaires, intégration, E2E, sécurité, écosystème)</td></tr>
   <tr><td nowrap><b>Plateformes</b></td><td>Ordinateur de bureau (Electron) · Android (Termux) · PWA (tout navigateur)</td></tr>
-  <tr><td nowrap><b>CI/CD</b></td><td>GitHub Actions — publication automatique sur npm + Docker Hub lors d’une version</td></tr>
+  <tr><td nowrap><b>CI/CD</b></td><td>GitHub Actions — publication automatique sur npm + Docker Hub lors des versions</td></tr>
   <tr><td nowrap><b>Liens</b></td><td><a href="https://omniroute.online">Site web</a> · <a href="https://www.npmjs.com/package/omniroute">npm</a> · <a href="https://hub.docker.com/r/diegosouzapw/omniroute">Docker Hub</a></td></tr>
 </table>
 
@@ -1289,15 +1289,15 @@ Métriques canoniques au 2026-08-24 : **1.029 vidéos uniques** · **11.132.922 
 
 </div>
 
-### 📘 Prise en main
+### 📘 Bien démarrer
 
 <table>
   <tr><th align="left">Document</th><th align="left">Description</th></tr>
-  <tr><td nowrap><b><a href="docs/guides/USER_GUIDE.md">Guide de l’utilisateur</a></b></td><td>Fournisseurs, combos, intégration CLI, déploiement</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/SETUP_GUIDE.md">Guide de configuration</a></b></td><td>Toutes les méthodes d’installation, configurations des outils CLI, configuration des protocoles, réglage des délais d’expiration</td></tr>
-  <tr><td nowrap><b><a href="docs/reference/CLI-TOOLS.md">Guide des outils CLI</a></b></td><td>Configuration propre à chaque outil pour Claude Code, Codex, Cursor, Cline, OpenClaw, Kilo et Copilot</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/REMOTE-MODE.md">Mode distant</a></b></td><td>Pilotez un OmniRoute distant (VPS) depuis la CLI de votre ordinateur portable au moyen de jetons d’accès à portée limitée</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/CLAUDE-CODE-CONFIGURATION.md">Configuration de Claude Code</a></b></td><td>Connectez Claude Code à OmniRoute (local/distant) avec <code>launch</code> + des profils par modèle</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/USER_GUIDE.md">Guide de l’utilisateur</a></b></td><td>Fournisseurs, combinaisons, intégration CLI, déploiement</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/SETUP_GUIDE.md">Guide de configuration</a></b></td><td>Méthodes d’installation complètes, configurations des outils CLI, configuration des protocoles, réglage des délais d’expiration</td></tr>
+  <tr><td nowrap><b><a href="docs/reference/CLI-TOOLS.md">Guide des outils CLI</a></b></td><td>Configuration propre à chaque outil pour Claude Code, Codex, Cursor, Cline, OpenClaw, Kilo, Copilot</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/REMOTE-MODE.md">Mode distant</a></b></td><td>Piloter une instance OmniRoute distante (VPS) depuis le CLI de votre ordinateur portable à l’aide de jetons d’accès à portée limitée</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/CLAUDE-CODE-CONFIGURATION.md">Configuration de Claude Code</a></b></td><td>Connecter Claude Code à OmniRoute (local/distant) avec <code>launch</code> et des profils propres à chaque modèle</td></tr>
   <tr><td nowrap><b><a href="README.md#-quick-start">Démarrage rapide</a></b></td><td>Installation en 3 étapes → connexion → configuration</td></tr>
 </table>
 
@@ -1305,12 +1305,12 @@ Métriques canoniques au 2026-08-24 : **1.029 vidéos uniques** · **11.132.922 
 
 <table>
   <tr><th align="left">Document</th><th align="left">Description</th></tr>
-  <tr><td nowrap><b><a href="docs/guides/DOCKER_GUIDE.md">Guide Docker</a></b></td><td>Exécution de Docker, profils Compose, HTTPS avec Caddy, tunnels, étiquettes d’image</td></tr>
-  <tr><td nowrap><b><a href="contrib/podman/README.md">Guide Podman</a></b></td><td>Intégration de Quadlet à systemd, podman-compose, SELinux</td></tr>
-  <tr><td nowrap><b><a href="docs/ops/VM_DEPLOYMENT_GUIDE.md">Déploiement sur VM</a></b></td><td>Guide complet : configuration d’une VM + nginx + Cloudflare</td></tr>
-  <tr><td nowrap><b><a href="docs/ops/FLY_IO_DEPLOYMENT_GUIDE.md">Déploiement sur Fly.io</a></b></td><td>Déployez sur Fly.io avec un stockage persistant</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/TERMUX_GUIDE.md">Guide Termux</a></b></td><td>Exécutez OmniRoute sur Android via Termux</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/PWA_GUIDE.md">Guide PWA</a></b></td><td>Installation de la Progressive Web App, mise en cache, architecture</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/DOCKER_GUIDE.md">Guide Docker</a></b></td><td>Exécution de Docker, profils Compose, HTTPS avec Caddy, tunnels, étiquettes d’images</td></tr>
+  <tr><td nowrap><b><a href="contrib/podman/README.md">Guide Podman</a></b></td><td>Intégration de Quadlet avec systemd, podman-compose, SELinux</td></tr>
+  <tr><td nowrap><b><a href="docs/ops/VM_DEPLOYMENT_GUIDE.md">Déploiement sur une VM</a></b></td><td>Guide complet : configuration d’une VM, de nginx et de Cloudflare</td></tr>
+  <tr><td nowrap><b><a href="docs/ops/FLY_IO_DEPLOYMENT_GUIDE.md">Déploiement sur Fly.io</a></b></td><td>Déployer sur Fly.io avec un stockage persistant</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/TERMUX_GUIDE.md">Guide Termux</a></b></td><td>Exécuter OmniRoute sur Android via Termux</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/PWA_GUIDE.md">Guide PWA</a></b></td><td>Installation de l’application web progressive, mise en cache, architecture</td></tr>
   <tr><td nowrap><b><a href="docs/guides/UNINSTALL.md">Guide de désinstallation</a></b></td><td>Suppression propre pour toutes les méthodes d’installation</td></tr>
   <tr><td nowrap><b><a href="docs/reference/ENVIRONMENT.md">Configuration de l’environnement</a></b></td><td>Liste complète des variables <code>.env</code> et références</td></tr>
 </table>
@@ -1319,18 +1319,18 @@ Métriques canoniques au 2026-08-24 : **1.029 vidéos uniques** · **11.132.922 
 
 <table>
   <tr><th align="left">Document</th><th align="left">Description</th></tr>
-  <tr><td nowrap><b><a href="docs/architecture/ARCHITECTURE.md">Architecture</a></b></td><td>Architecture système, flux de données et fonctionnement interne</td></tr>
-  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_GUIDE.md">Guide de compression</a></b></td><td>Pipeline à 7 options : désactivé / léger / standard / agressif / ultra / RTK / empilé</td></tr>
+  <tr><td nowrap><b><a href="docs/architecture/ARCHITECTURE.md">Architecture</a></b></td><td>Architecture du système, flux de données et fonctionnement interne</td></tr>
+  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_GUIDE.md">Guide de compression</a></b></td><td>Pipeline à 7 options : désactivée / légère / standard / agressive / ultra / RTK / empilée</td></tr>
   <tr><td nowrap><b><a href="docs/compression/RTK_COMPRESSION.md">Compression RTK</a></b></td><td>Compression de la sortie des commandes, filtres, confiance, vérification, récupération de la sortie brute</td></tr>
   <tr><td nowrap><b><a href="docs/compression/COMPRESSION_ENGINES.md">Moteurs de compression</a></b></td><td>Caveman, RTK, pipelines empilés, interfaces de tableau de bord/API/MCP</td></tr>
-  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_RULES_FORMAT.md">Format des règles de compression</a></b></td><td>Schémas de paquets de règles JSON pour les filtres Caveman et RTK</td></tr>
-  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_LANGUAGE_PACKS.md">Paquets linguistiques de compression</a></b></td><td>Détection de la langue et création de paquets de règles Caveman</td></tr>
-  <tr><td nowrap><b><a href="docs/architecture/RESILIENCE_GUIDE.md">Guide de résilience</a></b></td><td>Disjoncteurs, délais de récupération, file d’attente, prévention des afflux massifs simultanés, usurpation TLS</td></tr>
-  <tr><td nowrap><b><a href="docs/routing/AUTO-COMBO.md">Moteur Auto-Combo</a></b></td><td>Notation à 16 facteurs, paquets de modes, autoréparation</td></tr>
+  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_RULES_FORMAT.md">Format des règles de compression</a></b></td><td>Schémas JSON des packs de règles pour les filtres Caveman et RTK</td></tr>
+  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_LANGUAGE_PACKS.md">Packs linguistiques de compression</a></b></td><td>Détection de la langue et création de packs de règles Caveman</td></tr>
+  <tr><td nowrap><b><a href="docs/architecture/RESILIENCE_GUIDE.md">Guide de résilience</a></b></td><td>Disjoncteurs, périodes de récupération, file d’attente, prévention des afflux simultanés, usurpation TLS</td></tr>
+  <tr><td nowrap><b><a href="docs/routing/AUTO-COMBO.md">Moteur Auto-Combo</a></b></td><td>Notation à 16 facteurs, packs de modes, autoréparation</td></tr>
   <tr><td nowrap><b><a href="docs/ops/PROXY_GUIDE.md">Guide des proxys</a></b></td><td>Système de proxys à 3 niveaux, place de marché 1proxy, opérations CRUD sur le registre</td></tr>
-  <tr><td nowrap><b><a href="docs/reference/FREE_TIERS.md">Offres gratuites</a></b></td><td>Répertoire consolidé : 34 pools récurrents documentés / 446 offres gratuites répertoriées</td></tr>
+  <tr><td nowrap><b><a href="docs/reference/FREE_TIERS.md">Offres gratuites</a></b></td><td>Répertoire consolidé : 34 pools récurrents documentés / 452 entrées d’offres gratuites cataloguées</td></tr>
   <tr><td nowrap><b><a href="docs/guides/FEATURES.md">Galerie des fonctionnalités</a></b></td><td>Visite visuelle du tableau de bord avec captures d’écran</td></tr>
-  <tr><td nowrap><b><a href="docs/architecture/CODEBASE_DOCUMENTATION.md">Documentation de la base de code</a></b></td><td>Présentation de la base de code adaptée aux débutants</td></tr>
+  <tr><td nowrap><b><a href="docs/architecture/CODEBASE_DOCUMENTATION.md">Documentation du code source</a></b></td><td>Présentation du code source adaptée aux débutants</td></tr>
 </table>
 
 ### 🤖 Protocoles et API
@@ -1349,11 +1349,11 @@ Métriques canoniques au 2026-08-24 : **1.029 vidéos uniques** · **11.132.922 
 
 <table>
   <tr><th align="left">Document</th><th align="left">Description</th></tr>
-  <tr><td nowrap><b><a href="CONTRIBUTING.md">Contribuer</a></b></td><td>Configuration de l’environnement de développement et directives</td></tr>
-  <tr><td nowrap><b><a href="docs/ops/BRANCHING_MODEL.md">Modèle de branches et de versions</a></b></td><td>Branches ciblées par les PR (<code>release/*</code>) et signification de <code>main</code> et des étiquettes</td></tr>
-  <tr><td nowrap><b><a href="CHANGELOG.md">Journal des modifications</a></b></td><td>Historique complet des versions, version par version</td></tr>
+  <tr><td nowrap><b><a href="CONTRIBUTING.md">Contribution</a></b></td><td>Configuration et directives de développement</td></tr>
+  <tr><td nowrap><b><a href="docs/ops/BRANCHING_MODEL.md">Modèle de branches et de publication</a></b></td><td>Branches ciblées par les PR (<code>release/*</code>), signification de <code>main</code> et des tags</td></tr>
+  <tr><td nowrap><b><a href="CHANGELOG.md">Journal des modifications</a></b></td><td>Historique complet des publications par version</td></tr>
   <tr><td nowrap><b><a href="SECURITY.md">Politique de sécurité</a></b></td><td>Signalement des vulnérabilités et pratiques de sécurité</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/I18N.md">Guide i18n</a></b></td><td>Prise en charge de 42 langues, processus de traduction, RTL</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/I18N.md">Guide d’internationalisation</a></b></td><td>Prise en charge de 42 langues, processus de traduction, RTL</td></tr>
   <tr><td nowrap><b><a href="docs/ops/RELEASE_CHECKLIST.md">Liste de contrôle de publication</a></b></td><td>Étapes de validation avant publication</td></tr>
   <tr><td nowrap><b><a href="docs/ops/COVERAGE_PLAN.md">Plan de couverture</a></b></td><td>Stratégie de couverture des tests pour plus de 39 000 déclarations de tests statiques réparties dans plus de 5 100 fichiers de test suivis</td></tr>
 </table>
@@ -1366,7 +1366,7 @@ Métriques canoniques au 2026-08-24 : **1.029 vidéos uniques** · **11.132.922 
 
 > OmniRoute est façonné par une communauté open source passionnée. Ces personnes ont apporté des contributions exceptionnelles qui ont un impact direct sur la qualité, la stabilité et la portée du projet. **Merci.**
 
-### Contributeurs externes classés par demandes de fusion intégrées
+### Contributeurs externes classés par demandes de tirage fusionnées
 
 <table>
   <tr><th align="center">Rang</th><th align="left">Contributeur</th><th align="center">PR fusionnées</th><th align="right">~Lignes modifiées</th></tr>
@@ -1393,7 +1393,7 @@ Métriques canoniques au 2026-08-24 : **1.029 vidéos uniques** · **11.132.922 
   <tr><td align="center">20</td><td align="left"><a href="https://github.com/Prudhvivuda"><b>Prudhvivuda</b></a></td><td align="center">24</td><td align="right">6,312</td></tr>
 </table>
 
-<sub>Figé à la pointe active de <code>release/v3.8.50</code>, au commit <code>dafb4ae808</code>, avec les fusions effectuées jusqu’au 2026-08-24 à 05:26:03 UTC. Le recensement paginé via GitHub GraphQL contient 5,911 PR fusionnées : 2,707 par le propriétaire du dépôt, 179 par Dependabot et <b>3,025 PR externes provenant de 535 contributeurs distincts</b>. Les « lignes modifiées » correspondent aux ajouts + suppressions indiqués par GitHub et incluent les fichiers générés, les fichiers de verrouillage, les catalogues, les traductions et la documentation ; elles représentent le volume de modifications, et non les lignes de code produites. Les ex æquo au seuil sont conservés.</sub>
+<sub>Classement arrêté à la pointe active de <code>release/v3.8.50</code>, commit <code>dafb4ae808</code>, avec les fusions effectuées jusqu’au 2026-08-24 à 05:26:03 UTC. Le recensement paginé via l’API GraphQL de GitHub contient 5 911 PR fusionnées : 2 707 par le propriétaire du dépôt, 179 par Dependabot et <b>3 025 PR externes provenant de 535 contributeurs distincts</b>. Les « lignes modifiées » correspondent aux ajouts et suppressions calculés par GitHub et incluent les fichiers générés, les fichiers de verrouillage, les catalogues, les traductions et la documentation ; elles mesurent le volume de modifications, et non les lignes de code écrites. Les ex æquo à la limite du classement sont conservés.</sub>
 
 ### Commits attribués par GitHub
 
@@ -1481,9 +1481,9 @@ Métriques canoniques au 2026-08-24 : **1.029 vidéos uniques** · **11.132.922 
   </tr>
 </table>
 
-<sub>Revérifié le 2026-08-24 à 06:14:31 UTC : commits attribués par GitHub signalés par l’API Contributors du dépôt pour la branche par défaut <code>release/v3.8.50</code>. L’API a renvoyé 525 identités (415 utilisateurs, 2 bots et 108 anonymes) ; ce tableau exclut le mainteneur, les bots et les identités anonymes, et conserve les ex æquo. Il est distinct à la fois du classement ci-dessus fondé sur les demandes d’extraction fusionnées et du recensement ci-dessous de 639 personnes fondé sur les métadonnées Git.</sub>
+<sub>Revérifié le 2026-08-24 à 06:14:31 UTC : commits attribués par GitHub, tels que rapportés par l’API Contributors du dépôt pour la branche par défaut <code>release/v3.8.50</code>. L’API a renvoyé 525 identités (415 utilisateurs, 2 bots, 108 anonymes) ; ce tableau exclut le mainteneur, les bots et les identités anonymes, et conserve les ex æquo. Il est distinct à la fois du classement des PR fusionnées ci-dessus et du recensement de 639 personnes fondé sur les métadonnées Git ci-dessous.</sub>
 
-> 🙏 Les fonctionnalités, les corrections de bogues et les améliorations de l’infrastructure apportées par ces contributeurs constituent une **composante essentielle** de ce qui rend OmniRoute fiable et riche en fonctionnalités. Chaque demande d’extraction, chaque cas de test et chaque fichier de traduction i18n compte. L’open source est construit par des personnes comme elles.
+> 🙏 Les fonctionnalités, les corrections de bugs et les améliorations de l’infrastructure apportées par ces contributeurs constituent une **partie essentielle** de ce qui rend OmniRoute fiable et riche en fonctionnalités. Chaque pull request, chaque cas de test et chaque fichier de traduction i18n compte. L’open source est construit par des personnes comme elles.
 
 </div>
 

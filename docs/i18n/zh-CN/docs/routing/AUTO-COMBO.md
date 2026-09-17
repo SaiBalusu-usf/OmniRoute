@@ -184,7 +184,7 @@ curl -X POST http://localhost:20128/v1/chat/completions \
 
 ## 模式包
 
-`open-sse/services/autoCombo/modePacks.ts` 中预定义了 6 个权重配置。每个模式包都会完全替换默认权重，使选择偏向某一目标。每个模式包的权重之和已经是 `1.0`（按四位小数显示时为 `0.9999`），因此当模式包处于启用状态时，`normalizeScoringWeights()` 没有任何需要实质校正的内容——考虑到舍入误差，以下数值就是评分器实际应用的数值。
+`open-sse/services/autoCombo/modePacks.ts` 中预定义了 6 个权重配置。每个配置都会完全替换默认权重，使选择偏向某一目标。每个配置的权重总和已经是 `1.0`（保留四位小数显示时为 `0.9999`），因此当模式包处于激活状态时，`normalizeScoringWeights()` 实际上没有需要修正的内容——考虑到舍入误差，以下数值就是评分器实际应用的数值。
 
 | 因素                  | ship-fast  | cost-saver | quality-first | offline-friendly | reliability-first | chaos-mode |
 | :-------------------- | :--------- | :--------- | :------------ | :--------------- | :---------------- | :--------- |
@@ -206,28 +206,29 @@ curl -X POST http://localhost:20128/v1/chat/completions \
 
 注意：
 
-- **模式包包含 `quality` 和 `reliability`**（`quality 0.02`，`quality-first 0.03`；`reliability 0.03`，`reliability-first 0.04`），并会整体替换权重映射（`weights = pack`，而不是合并）。`DEFAULT_WEIGHTS` 包含 `quality 0.03 / reliability 0`；选择 `balanced`/`default` 时会保留这些默认值，选择模式包时则使用上面的模式包值。在冷池中（尚无观测数据，因此 `quality 0.5` 且 `reliability 1`），这两个因素在通用模式包下会增加 `+0.04`（`0.03 + 0.01`），在 `quality-first` 下增加 `+0.045`，在 `reliability-first` 下增加 `+0.05`。
-- 每个模式包都将 `tierAffinity`、`specificityMatch` 和 `resetWindowAffinity` 明确设为 `0`。
+- **模式包包含 `quality` 和 `reliability`**（`quality 0.02`，`quality-first 0.03`；`reliability 0.03`，`reliability-first 0.04`），并会整体替换权重映射（`weights = pack`，而非合并）。`DEFAULT_WEIGHTS` 包含 `quality 0.03 / reliability 0`；选择 `balanced`/`default` 时会保留这些默认值，选择模式包时则使用上表中的模式包值。对于冷池（尚无观测数据，因此 `quality 0.5`、`reliability 1`），在通用模式包下，这两个因素会增加 `+0.04`（`0.03 + 0.01`）；在 `quality-first` 下增加 `+0.045`；在 `reliability-first` 下增加 `+0.05`。
+- 每个模式包中的 `tierAffinity`、`specificityMatch` 和 `resetWindowAffinity` 都明确设为 `0`。
 - 各模式包的侧重点概览：
   - **ship-fast** → latencyInv 0.3048 + health 0.2667（低延迟、健康的连接）
   - **cost-saver** → costInv 0.3324（最便宜的 token 胜出）
-  - **quality-first** → taskFit 0.3524 + stability 0.1429 + quality 0.03，是所有模式包中最高的（选择最适合任务且表现稳定的模型）
-  - **offline-friendly** → quota 0.3324 + health 0.2667（不考虑速度/成本，最大化可用余量）
-  - **reliability-first** → health 0.3524 + stability 0.1905 + reliability 0.04，是所有模式包中最高的（意外情况最少）
+  - **quality-first** → taskFit 0.3524 + stability 0.1429 + quality 0.03，为所有模式包中最高（选择最适合任务且表现稳定的模型）
+  - **offline-friendly** → quota 0.3324 + health 0.2667（无论速度或成本如何，都最大化余量）
+  - **reliability-first** → health 0.3524 + stability 0.1905 + reliability 0.04，为所有模式包中最高（意外情况最少）
   - **chaos-mode** → health 0.4000 + taskFit 0.1905（故障注入配置）
 
-### 单请求控制（请求头）— #6023 / #6024 / #6025 / #3470
+### 每请求控制（标头）— #6023 / #6024 / #6025 / #3470
 
-可以通过三个请求头**按请求**控制 `auto` 组合，而无需修改该组合存储的配置。这些请求头仅适用于 `auto` 策略，并且只对携带它们的请求生效；如果请求头不存在，则使用组合已保存的 `modePack`/`budgetCap`/`budgetFallback`。
+可以通过三个标头**按请求**控制 `auto` 组合，而无需修改该组合存储的配置。这些标头仅适用于 `auto` 策略，且仅对携带它们的请求生效；未提供标头时，将使用组合中保存的 `modePack`/`budgetCap`/`budgetFallback`。
 
-| 请求头                        | 接受的值                                                                                                                                                                     | 效果                                                                                                                                                        |
-| :---------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `X-OmniRoute-Mode`            | 预设别名（`fast`、`balanced`、`quality`、`cheap`、`reliable`、`offline`）或原始包名称（`ship-fast`、`cost-saver`、`quality-first`、`offline-friendly`、`reliability-first`） | 覆盖此请求的评分权重。`balanced`/`default` 强制使用默认权重（不使用包）。未知值将被忽略（保留配置）。                                                       |
-| `X-OmniRoute-Budget`          | 正数（每个请求的最高美元金额）                                                                                                                                               | 硬性成本上限：预计成本超过该上限的候选项将在选择前被过滤。当**所有**候选项均超过上限时的处理方式由下方的 `X-OmniRoute-Budget-Fallback` 控制。               |
-| `X-OmniRoute-Budget-Fallback` | `cheapest`（默认，别名：`cheapest-viable`、`soft`）或 `strict`（别名：`block`、`hard`）                                                                                      | `cheapest`：回退到全局最便宜的候选项，即使其仍然超过上限（旧版行为）。`strict`：拒绝选择——请求会立即失败并返回 `HTTP 402`，而不是静默超支。未知值将被忽略。 |
+| 请求头                        | 接受的值                                                                                                                                                                     | 效果                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| :---------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `X-OmniRoute-Mode`            | 预设别名（`fast`、`balanced`、`quality`、`cheap`、`reliable`、`offline`）或原始包名称（`ship-fast`、`cost-saver`、`quality-first`、`offline-friendly`、`reliability-first`） | 覆盖此请求的评分权重。`balanced`/`default` 强制使用默认权重（不使用包）。未知值将被忽略（保留配置）。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `X-OmniRoute-Budget`          | 正数（每个请求的最大美元金额）                                                                                                                                               | 硬性成本上限：在选择之前，会过滤掉预计成本超过该上限的候选项。当**所有**候选项都超过该上限时的处理方式由下方的 `X-OmniRoute-Budget-Fallback` 控制。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `X-OmniRoute-Budget-Fallback` | `cheapest`（默认值，别名：`cheapest-viable`、`soft`）或 `strict`（别名：`block`、`hard`）                                                                                    | `cheapest`：回退到全局成本最低的候选项，即使其仍超过上限（旧版行为）。`strict`：拒绝选择——请求会立即失败并返回 `HTTP 402`，而不是静默超支。未知值将被忽略。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `X-OmniRoute-Effort`          | `auto`（其他值保留）                                                                                                                                                         | 自适应思考预算：当请求中**没有**任何形式的推理字段（`reasoning_effort`、`reasoning`、`thinking`）时，网关会根据确定性的请求结构信号（最后一条用户消息的长度、截至最后一条用户消息的上下文大小、先前的工具结果、工具循环深度）将 `auto` 解析为 `low`/`medium`/`high`。信号范围仅限当前轮次——最后一条用户消息之后的所有内容都会被忽略——因此，工具循环中的每个请求都会解析为相同级别（每轮无状态固定，无会话状态，也不会在循环中途升级，以免破坏上游提示词缓存前缀）。客户端显式提供的推理字段始终优先。仅适用于上游分派解析为 OpenAI Chat Completions 格式的请求（`targetFormat === FORMATS.OPENAI`）——`reasoning_effort` 是 OpenAI 格式的字段，因此该请求头对以 Claude 或 Gemini 为目标的请求不起作用（请参阅 `open-sse/handlers/chatCore/adaptiveEffortWiring.ts`）。 |
 
 ```bash
-# 强制使用最快的配置文件，将此请求的成本上限设为 $0.05，并采用硬性阻止而非超支
+# 强制使用最快的配置，将此请求的费用上限设为 $0.05，并在超出预算时直接阻止，而不是继续消费
 curl -sS http://localhost:20128/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "X-OmniRoute-Mode: fast" \
@@ -236,8 +237,7 @@ curl -sS http://localhost:20128/v1/chat/completions \
   -d '{"model":"auto","messages":[{"role":"user","content":"hi"}]}'
 ```
 
-解析是一个纯函数（`open-sse/services/autoCombo/requestControls.ts`）；
-解析后的值将传递给引擎现有的 `config.modePack` / `config.budgetCap` /
+解析过程是一个纯函数（`open-sse/services/autoCombo/requestControls.ts`）；解析后的值会传入引擎现有的 `config.modePack` / `config.budgetCap` /
 `config.budgetFallback` 输入。组合中存储的 `config.budgetFallback`（"strict" |
 "cheapest"）用于设置持久策略；请求头可针对单个请求覆盖该策略。
 

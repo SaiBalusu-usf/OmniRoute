@@ -19,17 +19,17 @@
 
 <div align="center">
 
-## 💰 ~1,47 mrd. ilmaista tokenia kuukaudessa
+## 💰 ~1,47 mrd ilmaista tokenia / kuukausi
 
 </div>
 
-> Ilmaistasojen yhdistäminen käsin on työlästä — kymmeniä SDK:ita, kymmeniä käyttörajoja eikä mitään käsitystä siitä, kuinka paljon kapasiteettia sinulla todellisuudessa on. OmniRoute luetteloi **446 ilmaistason kohdetta 34 toistuvan resurssipoolin avaimen alla** ja laskee tokenien pääluvun **16 poolista, joille on julkaistu positiivinen kuukausibudjetti, sekä viidestä mallikohtaisesta Groq-rajasta**, jaetut poolit deduplikoiden. Kiintiöt, jotka avautuvat vasta alueellisen henkilöllisyystarkistuksen jälkeen (tällä hetkellä ModelScope), näytetään erikseen: +~6 milj. alueellisen henkilöllisyyden vahvistamisen takana, eikä niitä koskaan lasketa mukaan päälukuun. Tulos pysyy näkyvissä hallintapaneelissa (`/dashboard/free-tiers`).
+> Ilmaistasojen kokoaminen käsin on työlästä — kymmeniä SDK:ita, kymmeniä nopeusrajoituksia eikä mitään käsitystä siitä, kuinka paljon kapasiteettia sinulla todellisuudessa on. OmniRoute luetteloi **452 ilmaistason merkintää 34 toistuvan resurssipoolin avaimessa** ja laskee tokenien otsikkoluvun **16 poolista, joille on julkaistu positiivinen kuukausibudjetti, sekä viidestä mallikohtaisesta Groq-rajasta**, poistaen jaettujen poolien kaksoislaskennan. Kiintiöt, jotka avautuvat vasta alueellisen henkilöllisyyden tarkistuksen jälkeen (tällä hetkellä ModelScope), näytetään erikseen: +~6 milj. alueellisen henkilöllisyyden vahvistamisen takana, eikä niitä koskaan lasketa mukaan otsikkolukuun. Tulos pysyy näkyvissä hallintapaneelissa (`/dashboard/free-tiers`).
 
-<img src="./docs/diagrams/free-tier-budget.svg" width="100%" alt="OmniRouten ilmaistason budjettikortti: vakaasti ~1,47 mrd. ilmaista tokenia kuukaudessa ja rekisteröitymiskrediittien ansiosta jopa ~2,07 mrd. ensimmäisen kuukauden aikana, 34 dokumentoidusta toistuvan poolin avaimesta, jotka kattavat 446 luetteloitua ilmaistason kohdetta yhden rajapintapisteen takana. Rehellinen, poolit deduplikoiva laskenta — jokainen jaettu pooli lasketaan vain kerran, mukaan lukien 16 toistuvaa poolia, joille on julkaistu positiivinen kuukausittainen tokenbudjetti, sekä viisi mallikohtaista Groq-rajaa; käyttöehtojen riskiluettelossa 13 palveluntarjoajaa on merkitty vältettäviksi, joten päätös on sinun. Budjettipalkki sisältää Mistral 1B:n, Nara 210M:n, LLM7 150M:n, Groq 30M:n (viisi mallikohtaista rajaa) ja pienempiä pooleja sekä ensimmäisen kuukauden rekisteröitymiskrediitit. Pysyvästi ilmaiset palveluntarjoajat, joilla ei ole tokenrajaa, esitetään erikseen, jotta ne eivät koskaan paisuta päälukua. Reaaliaikainen käytetty/jäljellä oleva määrä osoitteessa /dashboard/free-tiers."/>
+<img src="./docs/diagrams/free-tier-budget.svg" width="100%" alt="OmniRouten ilmaistasobudjetin kortti: jatkuvasti ~1,47 mrd ilmaista tokenia kuukaudessa ja rekisteröitymiskrediittien ansiosta jopa ~2,07 mrd ensimmäisen kuukauden aikana, yhdestä päätepisteestä saatavilla olevista 34 dokumentoidusta toistuvan resurssipoolin avaimesta, jotka kattavat 452 luetteloitua ilmaistason merkintää. Rehellinen, poolien kaksoislaskennan poistava laskenta — jokainen jaettu pooli lasketaan vain kerran, mukaan lukien 16 toistuvaa poolia, joille on julkaistu positiivinen kuukausittainen token-budjetti, sekä viisi mallikohtaista Groq-rajaa; 13 palveluntarjoajaa on merkitty käyttöehtoriskien luettelossa vältettäviksi, joten päätös on sinun. Budjettipalkki sisältää Mistral 1 mrd, Nara 210 milj., LLM7 150 milj., Groq 30 milj. (viisi mallikohtaista rajaa) sekä pienempiä pooleja. Lisäksi ensimmäisen kuukauden rekisteröitymiskrediitit ja pysyvästi ilmaiset palveluntarjoajat, joilla ei ole token-rajaa, esitetään erikseen, jotta ne eivät koskaan kasvata otsikkolukua keinotekoisesti. Reaaliaikainen käytetty ja jäljellä oleva määrä osoitteessa /dashboard/free-tiers."/>
 
-> Animoitu yhteenveto reaaliaikaisesta `/dashboard/free-tiers`-sivusta. Koko menetelmä (poolien deduplikointi, krediittitasot, palveluntarjoajien ehdot): **[docs/reference/FREE_TIERS.md](docs/reference/FREE_TIERS.md)**.
+> Animoitu yhteenveto reaaliaikaisesta `/dashboard/free-tiers`-sivusta. Täydellinen menetelmäkuvaus (poolien kaksoislaskennan poisto, krediittitasot, palveluntarjoajien ehdot): **[docs/reference/FREE_TIERS.md](docs/reference/FREE_TIERS.md)**.
 >
-> <sub>Nämä luvut auditoidaan uudelleen kahden viikon välein reaaliaikaista luetteloa vasten, ja ne **muuttuvat molempiin suuntiin** — kun palveluntarjoaja lopettaa ilmaistason, luku pienenee; kun uusi tulee mukaan, se kasvaa. Julkaisemme sen, mitä luettelo todella laskee, emme koskaan ylöspäin pyöristettyä parasta mahdollista tapausta.</sub>
+> <sub>Nämä luvut tarkastetaan uudelleen kahden viikon välein reaaliaikaista luetteloa vasten, ja ne **voivat muuttua kumpaankin suuntaan** — jos palveluntarjoaja lopettaa ilmaistason, luku pienenee; uuden ilmaistason myötä se kasvaa. Julkaisemme aina sen, mitä luettelo todellisuudessa laskee, emmekä koskaan ylöspäin pyöristettyä parasta mahdollista arviota.</sub>
 
 <br/>
 
@@ -37,7 +37,7 @@
 
 <h3>
 
-⭐ Anna repositoriolle tähti, jos OMNIROUTE auttoi sinua säästämään rahaa ja helpotti työtäsi.
+⭐ Anna repolle tähti, jos OMNIROUTE auttoi sinua säästämään rahaa ja helpotti työskentelyäsi.
 
 </h3>
 
@@ -55,11 +55,11 @@
 
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/U47eFqAXCn)
 [![Telegram](https://img.shields.io/badge/Telegram-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/omnirouteOficial)
-[![WhatsApp Maailmanlaajuinen](https://img.shields.io/badge/WhatsApp_Global-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://chat.whatsapp.com/FvuCbrpZmQ6I85n2vW5QIC?s=cl&p=a&mlu=4)
-[![WhatsApp Brasilia](https://img.shields.io/badge/WhatsApp_Brasil-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://chat.whatsapp.com/KWgatljAjmbELQory59Oti?s=cl&p=a&mlu=4)
+[![WhatsApp Global](https://img.shields.io/badge/WhatsApp_Global-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://chat.whatsapp.com/FvuCbrpZmQ6I85n2vW5QIC?s=cl&p=a&mlu=4)
+[![WhatsApp Brasil](https://img.shields.io/badge/WhatsApp_Brasil-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://chat.whatsapp.com/KWgatljAjmbELQory59Oti?s=cl&p=a&mlu=4)
 [![Verkkosivusto](https://img.shields.io/badge/Website-omniroute.online-blue?logo=google-chrome&logoColor=white)](https://omniroute.online)
 
-**Kysymykset, palveluntarjoajavinkit, kehityssuunnitelma ja tuki → [Discord](https://discord.gg/U47eFqAXCn) · [Telegram](https://t.me/omnirouteOficial) · WhatsApp [🌍 Maailmanlaajuinen](https://chat.whatsapp.com/FvuCbrpZmQ6I85n2vW5QIC?s=cl&p=a&mlu=4) / [🇧🇷 Brasilia](https://chat.whatsapp.com/KWgatljAjmbELQory59Oti?s=cl&p=a&mlu=4) / [Portaali](https://portal.sthub.com.br/communities/groups/st-hub/channels/Omniroute-World-8kRjmK)**
+**Kysymykset, palveluntarjoajavinkit, etenemissuunnitelma ja tuki → [Discord](https://discord.gg/U47eFqAXCn) · [Telegram](https://t.me/omnirouteOficial) · WhatsApp [🌍 Kansainvälinen](https://chat.whatsapp.com/FvuCbrpZmQ6I85n2vW5QIC?s=cl&p=a&mlu=4) / [🇧🇷 Brasilia](https://chat.whatsapp.com/KWgatljAjmbELQory59Oti?s=cl&p=a&mlu=4) / [Portaali](https://portal.sthub.com.br/communities/groups/st-hub/channels/Omniroute-World-8kRjmK)**
 
 <br/>
 
@@ -1271,21 +1271,21 @@ Kanoniset mittarit 2026-08-24: **1.029 yksilöllistä videota** · **11.132.922 
 <table>
   <tr><th align="left">Kerros</th><th align="left">Teknologia</th></tr>
   <tr><td nowrap><b>Suoritusympäristö</b></td><td>Node.js 22.x / 24.x LTS — <code>&gt;=22.22.2 &lt;23 || &gt;=24.0.0 &lt;27</code></td></tr>
-  <tr><td nowrap><b>Ohjelmointikieli</b></td><td>TypeScript 6.0 — <b>100 % TypeScriptiä</b> hakemistoissa <code>src/</code> ja <code>open-sse/</code> (ei yhtään <code>any</code>-tyyppiä ytimessä versiosta v2.0 lähtien)</td></tr>
+  <tr><td nowrap><b>Kieli</b></td><td>TypeScript 6.0 — <b>100 % TypeScriptiä</b> hakemistoissa <code>src/</code> ja <code>open-sse/</code> (ei yhtään <code>any</code>-tyyppiä ytimessä versiosta v2.0 lähtien)</td></tr>
   <tr><td nowrap><b>Sovelluskehys</b></td><td>Next.js 16 + React 19 + Tailwind CSS 4</td></tr>
-  <tr><td nowrap><b>Tietokanta</b></td><td>better-sqlite3 (SQLite, WAL-lokikirjaus) + LowDB (vanha JSON-toteutus) — 122 toimialuemoduulia, 177 migraatiota</td></tr>
-  <tr><td nowrap><b>Muisti</b></td><td>SQLite FTS5 -kokotekstihaku + int8-kvantisoidut vektoriupotukset, tyypitetty vanheneminen</td></tr>
-  <tr><td nowrap><b>Skeemat</b></td><td>Zod 4 — MCP-työkalujen I/O-validointi + API-sopimukset</td></tr>
+  <tr><td nowrap><b>Tietokanta</b></td><td>better-sqlite3 (SQLite, WAL-kirjaus) + LowDB (vanha JSON-toteutus) — 122 toimialamoduulia, 176 migraatiota</td></tr>
+  <tr><td nowrap><b>Muisti</b></td><td>SQLite FTS5 -kokotekstihaku + int8-kvantisoidut vektoriupotukset, tyypitetty vaimeneminen</td></tr>
+  <tr><td nowrap><b>Skeemat</b></td><td>Zod 4 — MCP-työkalujen syötteiden ja tulosteiden validointi + API-sopimukset</td></tr>
   <tr><td nowrap><b>Protokollat</b></td><td>MCP (stdio / HTTP / SSE) + A2A v0.3 (JSON-RPC 2.0 + SSE)</td></tr>
   <tr><td nowrap><b>Suoratoisto</b></td><td>Server-Sent Events (SSE) + WebSocket-silta (<code>/v1/ws</code>)</td></tr>
-  <tr><td nowrap><b>Pakkaus</b></td><td>12 moottorin käsittelyketju — RTK, Caveman, LLMLingua-2 (MobileBERT ONNX), GCF, OmniGlyph</td></tr>
-  <tr><td nowrap><b>Todennus &amp; tietoturva</b></td><td>OAuth 2.0 (PKCE) + JWT + API-avaimet + käyttöalueisiin rajattu MCP-todennus · AES-256-GCM levossa olevalle tiedolle · DOMPurify</td></tr>
-  <tr><td nowrap><b>Huomaamattomuus</b></td><td>wreq-js — JA3- / JA4-TLS-sormenjälkien jäljittely, 3-tasoinen välityspalvelin</td></tr>
-  <tr><td nowrap><b>Vikasietoisuus</b></td><td>Katkaisija, eksponentiaalinen viive, ruuhkapiikkien esto, yhdistelmien automaattinen itsekorjaus</td></tr>
+  <tr><td nowrap><b>Pakkaus</b></td><td>12 moottorin käsittelyputki — RTK, Caveman, LLMLingua-2 (MobileBERT ONNX), GCF, OmniGlyph</td></tr>
+  <tr><td nowrap><b>Todennus ja tietoturva</b></td><td>OAuth 2.0 (PKCE) + JWT + API-avaimet + käyttöalueisiin rajattu MCP-todennus · AES-256-GCM levossa oleville tiedoille · DOMPurify</td></tr>
+  <tr><td nowrap><b>Häivetila</b></td><td>wreq-js — JA3-/JA4-TLS-sormenjälkien jäljittely, 3-tasoinen välityspalvelin</td></tr>
+  <tr><td nowrap><b>Vikasietoisuus</b></td><td>Katkaisija, eksponentiaalinen viive, kuormituspiikkien esto, automaattisesti itsekorjautuvat yhdistelmät</td></tr>
   <tr><td nowrap><b>Lokitus</b></td><td>pino — jäsennellyt JSON-lokit pyyntökontekstilla</td></tr>
-  <tr><td nowrap><b>Testaus</b></td><td>Node.js-testisuoritin + Vitest — <b>yli 39 000 staattista testimääritystä</b> yli 5 100 seuratussa testitiedostossa (yksikkö-, integraatio-, E2E-, tietoturva- ja ekosysteemitestit)</td></tr>
+  <tr><td nowrap><b>Testaus</b></td><td>Node.js-testiajoympäristö + Vitest — <b>yli 39 000 staattista testimääritystä</b> yli 5 100 seuratussa testitiedostossa (yksikkö-, integraatio-, E2E-, tietoturva- ja ekosysteemitestit)</td></tr>
   <tr><td nowrap><b>Alustat</b></td><td>Työpöytä (Electron) · Android (Termux) · PWA (mikä tahansa selain)</td></tr>
-  <tr><td nowrap><b>CI/CD</b></td><td>GitHub Actions — automaattinen julkaisu npm:ään + Docker Hubiin julkaisun yhteydessä</td></tr>
+  <tr><td nowrap><b>CI/CD</b></td><td>GitHub Actions — automaattinen julkaisu npm:ään ja Docker Hubiin julkaisun yhteydessä</td></tr>
   <tr><td nowrap><b>Linkit</b></td><td><a href="https://omniroute.online">Verkkosivusto</a> · <a href="https://www.npmjs.com/package/omniroute">npm</a> · <a href="https://hub.docker.com/r/diegosouzapw/omniroute">Docker Hub</a></td></tr>
 </table>
 
@@ -1301,47 +1301,47 @@ Kanoniset mittarit 2026-08-24: **1.029 yksilöllistä videota** · **11.132.922 
 
 <table>
   <tr><th align="left">Dokumentti</th><th align="left">Kuvaus</th></tr>
-  <tr><td nowrap><b><a href="docs/guides/USER_GUIDE.md">Käyttöopas</a></b></td><td>Palveluntarjoajat, yhdistelmät, CLI-integraatio, käyttöönotto</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/SETUP_GUIDE.md">Asennusopas</a></b></td><td>Kaikki asennustavat, CLI-työkalujen määritykset, protokollien määritys, aikakatkaisujen säätö</td></tr>
-  <tr><td nowrap><b><a href="docs/reference/CLI-TOOLS.md">CLI-työkalujen opas</a></b></td><td>Työkalukohtaiset määritykset työkaluille Claude Code, Codex, Cursor, Cline, OpenClaw, Kilo ja Copilot</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/REMOTE-MODE.md">Etätila</a></b></td><td>Ohjaa OmniRoute-etäinstanssia (VPS) kannettavan tietokoneesi CLI:stä käyttöalueisiin rajatuilla käyttöoikeustunnuksilla</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/CLAUDE-CODE-CONFIGURATION.md">Claude Code -määritys</a></b></td><td>Yhdistä Claude Code OmniRouteen (paikalliseen tai etäinstanssiin) käyttämällä <code>launch</code>-toimintoa ja mallikohtaisia profiileja</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/USER_GUIDE.md">Käyttöopas</a></b></td><td>Palveluntarjoajat, yhdistelmät, CLI-integraatio ja käyttöönotto</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/SETUP_GUIDE.md">Asennusopas</a></b></td><td>Kaikki asennustavat, CLI-työkalujen määritykset, protokollien käyttöönotto ja aikakatkaisujen hienosäätö</td></tr>
+  <tr><td nowrap><b><a href="docs/reference/CLI-TOOLS.md">CLI-työkalujen opas</a></b></td><td>Työkalukohtaiset määritykset: Claude Code, Codex, Cursor, Cline, OpenClaw, Kilo ja Copilot</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/REMOTE-MODE.md">Etätila</a></b></td><td>Ohjaa etäpalvelimella (VPS) toimivaa OmniRoutea kannettavan tietokoneesi CLI:stä rajattujen käyttöoikeustunnusten avulla</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/CLAUDE-CODE-CONFIGURATION.md">Claude Code -määritykset</a></b></td><td>Yhdistä Claude Code OmniRouteen (paikallinen/etäyhteys) käyttämällä <code>launch</code>-komentoa ja mallikohtaisia profiileja</td></tr>
   <tr><td nowrap><b><a href="README.md#-quick-start">Pika-aloitus</a></b></td><td>Kolme vaihetta: asenna → yhdistä → määritä</td></tr>
 </table>
 
-### 🔧 Käyttö & käyttöönotto
+### 🔧 Operointi ja käyttöönotto
 
 <table>
   <tr><th align="left">Dokumentti</th><th align="left">Kuvaus</th></tr>
-  <tr><td nowrap><b><a href="docs/guides/DOCKER_GUIDE.md">Docker-opas</a></b></td><td>Dockerin suoritus, Compose-profiilit, Caddy HTTPS, tunnelit, levykuvatunnisteet</td></tr>
-  <tr><td nowrap><b><a href="contrib/podman/README.md">Podman-opas</a></b></td><td>Quadlet systemd -integraatio, podman-compose, SELinux</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/DOCKER_GUIDE.md">Docker-opas</a></b></td><td>Docker run, Compose-profiilit, Caddy HTTPS, tunnelit ja näköistiedostotunnisteet</td></tr>
+  <tr><td nowrap><b><a href="contrib/podman/README.md">Podman-opas</a></b></td><td>Quadlet systemd -integraatio, podman-compose ja SELinux</td></tr>
   <tr><td nowrap><b><a href="docs/ops/VM_DEPLOYMENT_GUIDE.md">Virtuaalikonekäyttöönotto</a></b></td><td>Kattava opas: virtuaalikoneen, nginxin ja Cloudflaren määritys</td></tr>
-  <tr><td nowrap><b><a href="docs/ops/FLY_IO_DEPLOYMENT_GUIDE.md">Fly.io-käyttöönotto</a></b></td><td>Ota käyttöön Fly.io:ssa pysyvän tallennustilan kanssa</td></tr>
+  <tr><td nowrap><b><a href="docs/ops/FLY_IO_DEPLOYMENT_GUIDE.md">Fly.io-käyttöönotto</a></b></td><td>Käyttöönotto Fly.io:ssa pysyvän tallennustilan kanssa</td></tr>
   <tr><td nowrap><b><a href="docs/guides/TERMUX_GUIDE.md">Termux-opas</a></b></td><td>Suorita OmniRoute Androidissa Termuxin kautta</td></tr>
   <tr><td nowrap><b><a href="docs/guides/PWA_GUIDE.md">PWA-opas</a></b></td><td>Progressiivisen verkkosovelluksen asennus, välimuisti ja arkkitehtuuri</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/UNINSTALL.md">Asennuksen poisto-opas</a></b></td><td>Kaikkien asennustapojen puhdas poistaminen</td></tr>
-  <tr><td nowrap><b><a href="docs/reference/ENVIRONMENT.md">Ympäristömääritykset</a></b></td><td>Kaikki <code>.env</code>-muuttujat ja viitteet</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/UNINSTALL.md">Poisto-opas</a></b></td><td>Siisti poistaminen kaikilla asennustavoilla</td></tr>
+  <tr><td nowrap><b><a href="docs/reference/ENVIRONMENT.md">Ympäristömääritykset</a></b></td><td>Kaikki <code>.env</code>-muuttujat ja viitetiedot</td></tr>
 </table>
 
-### 🧠 Ominaisuudet & arkkitehtuuri
+### 🧠 Ominaisuudet ja arkkitehtuuri
 
 <table>
   <tr><th align="left">Dokumentti</th><th align="left">Kuvaus</th></tr>
   <tr><td nowrap><b><a href="docs/architecture/ARCHITECTURE.md">Arkkitehtuuri</a></b></td><td>Järjestelmäarkkitehtuuri, tietovirta ja sisäinen toiminta</td></tr>
-  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_GUIDE.md">Pakkausopas</a></b></td><td>7 vaihtoehdon käsittelyketju: pois käytöstä / kevyt / vakio / aggressiivinen / ultra / RTK / pinottu</td></tr>
-  <tr><td nowrap><b><a href="docs/compression/RTK_COMPRESSION.md">RTK-pakkaus</a></b></td><td>Komentotulosteiden pakkaus, suodattimet, luottamus, varmennus ja raakatulosteen palautus</td></tr>
-  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_ENGINES.md">Pakkausmoottorit</a></b></td><td>Caveman, RTK, pinotut käsittelyketjut sekä hallintapaneeli-, API- ja MCP-rajapinnat</td></tr>
-  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_RULES_FORMAT.md">Pakkaussääntöjen muoto</a></b></td><td>JSON-sääntöpakettien skeemat Caveman- ja RTK-suodattimille</td></tr>
+  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_GUIDE.md">Pakkausopas</a></b></td><td>Seitsemän vaihtoehdon käsittelyketju: pois käytöstä / kevyt / vakio / aggressiivinen / erittäin tehokas / RTK / pinottu</td></tr>
+  <tr><td nowrap><b><a href="docs/compression/RTK_COMPRESSION.md">RTK-pakkaus</a></b></td><td>Komentotulosteiden pakkaus, suodattimet, luottamus, varmennus ja raakamuotoisen tulosteen palautus</td></tr>
+  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_ENGINES.md">Pakkausmoottorit</a></b></td><td>Caveman, RTK, pinotut käsittelyketjut sekä koontinäyttö-, API- ja MCP-rajapinnat</td></tr>
+  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_RULES_FORMAT.md">Pakkaussääntöjen muoto</a></b></td><td>Caveman- ja RTK-suodattimien JSON-sääntöpakettien skeemat</td></tr>
   <tr><td nowrap><b><a href="docs/compression/COMPRESSION_LANGUAGE_PACKS.md">Pakkauksen kielipaketit</a></b></td><td>Kielen tunnistus ja Caveman-sääntöpakettien laatiminen</td></tr>
-  <tr><td nowrap><b><a href="docs/architecture/RESILIENCE_GUIDE.md">Vikasietoisuusopas</a></b></td><td>Katkaisijat, jäähdytysajat, jono, yhtäaikaisten pyyntöryöppyjen esto ja TLS-väärentäminen</td></tr>
+  <tr><td nowrap><b><a href="docs/architecture/RESILIENCE_GUIDE.md">Vikasietoisuusopas</a></b></td><td>Katkaisijat, jäähdytysajat, jono, samanaikaisten pyyntöryöppyjen esto ja TLS-väärentäminen</td></tr>
   <tr><td nowrap><b><a href="docs/routing/AUTO-COMBO.md">Auto-Combo-moottori</a></b></td><td>16 tekijän pisteytys, tilapaketit ja itsekorjautuvuus</td></tr>
-  <tr><td nowrap><b><a href="docs/ops/PROXY_GUIDE.md">Välityspalvelinopas</a></b></td><td>3-tasoinen välityspalvelinjärjestelmä, 1proxy-markkinapaikka ja rekisterin CRUD-toiminnot</td></tr>
-  <tr><td nowrap><b><a href="docs/reference/FREE_TIERS.md">Ilmaistasot</a></b></td><td>Koottu hakemisto: 34 dokumentoitua toistuvaa resurssipoolia / 446 luetteloitua ilmaistason kohdetta</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/FEATURES.md">Ominaisuusgalleria</a></b></td><td>Visuaalinen hallintapaneelikierros näyttökuvineen</td></tr>
-  <tr><td nowrap><b><a href="docs/architecture/CODEBASE_DOCUMENTATION.md">Koodikannan dokumentaatio</a></b></td><td>Aloittelijaystävällinen opastus koodikantaan</td></tr>
+  <tr><td nowrap><b><a href="docs/ops/PROXY_GUIDE.md">Välityspalvelinopas</a></b></td><td>Kolmitasoinen välityspalvelinjärjestelmä, 1proxy-markkinapaikka ja rekisterin CRUD-toiminnot</td></tr>
+  <tr><td nowrap><b><a href="docs/reference/FREE_TIERS.md">Ilmaistasot</a></b></td><td>Koottu hakemisto: 34 dokumentoitua toistuvaa resurssivarantoa / 452 luetteloitua ilmaistason kohdetta</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/FEATURES.md">Ominaisuusgalleria</a></b></td><td>Visuaalinen koontinäyttökierros kuvakaappauksineen</td></tr>
+  <tr><td nowrap><b><a href="docs/architecture/CODEBASE_DOCUMENTATION.md">Koodikannan dokumentaatio</a></b></td><td>Aloittelijaystävällinen koodikannan esittely</td></tr>
 </table>
 
-### 🤖 Protokollat ja API:t
+### 🤖 Protokollat ja API-rajapinnat
 
 <table>
   <tr><th align="left">Dokumentti</th><th align="left">Kuvaus</th></tr>
@@ -1356,25 +1356,25 @@ Kanoniset mittarit 2026-08-24: **1.029 yksilöllistä videota** · **11.132.922 
 ### 📋 Projekti ja laatu
 
 <table>
-  <tr><th align="left">Dokumentti</th><th align="left">Kuvaus</th></tr>
-  <tr><td nowrap><b><a href="CONTRIBUTING.md">Osallistuminen</a></b></td><td>Kehitysympäristön käyttöönotto ja ohjeet</td></tr>
+  <tr><th align="left">Asiakirja</th><th align="left">Kuvaus</th></tr>
+  <tr><td nowrap><b><a href="CONTRIBUTING.md">Osallistuminen</a></b></td><td>Kehitysympäristön määritys ja ohjeet</td></tr>
   <tr><td nowrap><b><a href="docs/ops/BRANCHING_MODEL.md">Haarautumis- ja julkaisumalli</a></b></td><td>Mihin PR:t kohdistetaan (<code>release/*</code>) sekä mitä <code>main</code> ja tunnisteet tarkoittavat</td></tr>
   <tr><td nowrap><b><a href="CHANGELOG.md">Muutosloki</a></b></td><td>Täydellinen versiokohtainen julkaisuhistoria</td></tr>
-  <tr><td nowrap><b><a href="SECURITY.md">Tietoturvakäytäntö</a></b></td><td>Haavoittuvuuksista ilmoittaminen ja tietoturvakäytännöt</td></tr>
+  <tr><td nowrap><b><a href="SECURITY.md">Tietoturvakäytäntö</a></b></td><td>Haavoittuvuuksien ilmoittaminen ja tietoturvakäytännöt</td></tr>
   <tr><td nowrap><b><a href="docs/guides/I18N.md">i18n-opas</a></b></td><td>42 kielen tuki, käännöstyönkulku ja RTL</td></tr>
   <tr><td nowrap><b><a href="docs/ops/RELEASE_CHECKLIST.md">Julkaisun tarkistuslista</a></b></td><td>Julkaisua edeltävät validointivaiheet</td></tr>
-  <tr><td nowrap><b><a href="docs/ops/COVERAGE_PLAN.md">Kattavuussuunnitelma</a></b></td><td>Testikattavuusstrategia yli 39 000 staattiselle testimääritykselle yli 5 100 seuratussa testitiedostossa</td></tr>
+  <tr><td nowrap><b><a href="docs/ops/COVERAGE_PLAN.md">Kattavuussuunnitelma</a></b></td><td>Testikattavuusstrategia yli 39 000 staattiselle testi-ilmoitukselle yli 5 100 seuratussa testitiedostossa</td></tr>
 </table>
 
 <br/>
 
 <div align="center">
 
-# ⭐ Merkittävimmät osallistujat
+# ⭐ Parhaat osallistujat
 
-> OmniRoutea muovaa intohimoinen avoimen lähdekoodin yhteisö. Nämä henkilöt ovat antaneet poikkeuksellisen panoksen, joka vaikuttaa suoraan projektin laatuun, vakauteen ja tavoittavuuteen. **Kiitos.**
+> Intohimoinen avoimen lähdekoodin yhteisö muovaa OmniRoutea. Nämä henkilöt ovat antaneet poikkeuksellisen panoksen, joka vaikuttaa suoraan projektin laatuun, vakauteen ja tavoittavuuteen. **Kiitos.**
 
-### Ulkopuoliset osallistujat yhdistettyjen vetopyyntöjen määrän mukaan
+### Ulkoiset osallistujat yhdistettyjen pull requestien määrän mukaan
 
 <table>
   <tr><th align="center">Sija</th><th align="left">Osallistuja</th><th align="center">Yhdistetyt PR:t</th><th align="right">~Muuttuneet rivit</th></tr>
@@ -1401,9 +1401,9 @@ Kanoniset mittarit 2026-08-24: **1.029 yksilöllistä videota** · **11.132.922 
   <tr><td align="center">20</td><td align="left"><a href="https://github.com/Prudhvivuda"><b>Prudhvivuda</b></a></td><td align="center">24</td><td align="right">6,312</td></tr>
 </table>
 
-<sub>Jäädytetty aktiivisen <code>release/v3.8.50</code>-haaran kärkeen <code>dafb4ae808</code>; mukana yhdistämiset 2026-08-24 05:26:03 UTC saakka. Sivutettu GitHub GraphQL -kartoitus sisältää 5,911 yhdistettyä PR:ää: 2,707 repositorion omistajalta, 179 Dependabotilta ja <b>3,025 ulkoista PR:ää 535 eri osallistujalta</b>. ”Muuttuneet rivit” tarkoittaa GitHubin lisäysten ja poistojen summaa ja sisältää generoidut tiedostot, lukitustiedostot, luettelot, käännökset sekä dokumentaation; kyse on muutosten määrästä, ei itse kirjoitettujen lähdekoodirivien määrästä. Katkaisukohdan tasatulokset on säilytetty.</sub>
+<sub>Jäädytetty aktiivisen <code>release/v3.8.50</code>-haaran kärkeen <code>dafb4ae808</code>, sisältäen yhdistämiset ajankohtaan 2026-08-24 05:26:03 UTC asti. Sivutettu GitHub GraphQL -kartoitus sisältää 5 911 yhdistettyä PR:ää: 2 707 tietovaraston omistajalta, 179 Dependabotilta ja <b>3 025 ulkoista PR:ää 535 eri osallistujalta</b>. ”Muuttuneet rivit” tarkoittaa GitHubin lisäysten ja poistojen summaa ja sisältää luodut tiedostot, lukitustiedostot, luettelot, käännökset ja dokumentaation; se kuvaa muutosten määrää, ei itse kirjoitettujen koodirivien määrää. Katkaisukohdan tasatulokset on säilytetty.</sub>
 
-### GitHubin määrittämät commitit
+### GitHubin tekijöille kohdistamat commitit
 
 <table>
   <tr>
@@ -1489,9 +1489,9 @@ Kanoniset mittarit 2026-08-24: **1.029 yksilöllistä videota** · **11.132.922 
   </tr>
 </table>
 
-<sub>Tarkistettu uudelleen 2026-08-24 06:14:31 UTC: repositorion Contributors API:n ilmoittamat GitHubiin liitetyt commitit oletushaaralle <code>release/v3.8.50</code>. API palautti 525 identiteettiä (415 käyttäjää, 2 bottia, 108 anonyymiä); tästä taulukosta on jätetty pois ylläpitäjä, botit ja anonyymit identiteetit, ja jaetut sijoitukset on säilytetty. Taulukko eroaa sekä yllä olevasta yhdistettyjen pull requestien sijoituksesta että alla olevasta 639 henkilön Git-metatietolaskennasta.</sub>
+<sub>Tarkistettu uudelleen 2026-08-24 06:14:31 UTC: repositorion Contributors API:n ilmoittamat GitHubiin liitetyt commitit oletushaaralle <code>release/v3.8.50</code>. API palautti 525 identiteettiä (415 käyttäjää, 2 bottia, 108 anonyymiä); tästä taulukosta on jätetty pois ylläpitäjä, botit ja anonyymit identiteetit, ja tasatilanteet on säilytetty. Tämä eroaa sekä yllä olevasta yhdistettyjen PR:ien sijoituksesta että alla olevasta 639 henkilön Git-metatietolaskennasta.</sub>
 
-> 🙏 Näiden osallistujien ominaisuudet, virheenkorjaukset ja infrastruktuuriparannukset ovat **keskeinen osa** sitä, mikä tekee OmniRoutesta luotettavan ja ominaisuuksiltaan monipuolisen. Jokaisella pull requestilla, jokaisella testitapauksella ja jokaisella i18n-käännöstiedostolla on merkitystä. Avoin lähdekoodi rakentuu heidän kaltaistensa ihmisten ansiosta.
+> 🙏 Näiden osallistujien ominaisuudet, virheenkorjaukset ja infrastruktuuriparannukset ovat **keskeinen osa** sitä, mikä tekee OmniRoutesta luotettavan ja monipuolisen. Jokaisella pull requestilla, testitapauksella ja i18n-käännöstiedostolla on merkitystä. Avoin lähdekoodi rakentuu heidän kaltaistensa ihmisten työn varaan.
 
 </div>
 

@@ -19,17 +19,17 @@
 
 <div align="center">
 
-## 💰 حدود 1.47 میلیارد توکن رایگان در ماه
+## 💰 حدود 1.47 میلیارد توکن رایگان / ماه
 
 </div>
 
-> ترکیب دستی سطحهای رایگان دشوار است — دهها SDK، دهها محدودیت نرخ و بدون اینکه بدانید واقعاً چه مقدار در اختیار دارید. OmniRoute **446 ورودی سطح رایگان را در 34 کلید استخر تکرارشونده** فهرست میکند و عدد اصلی توکن را از **16 استخری که بودجه ماهانه مثبت و منتشرشده دارند، بهعلاوه پنج سقف Groq برای هر مدل** محاسبه میکند؛ استخرهای مشترک نیز رفع تکرار میشوند. سهمیههایی که تنها پس از بررسی هویت منطقهای فعال میشوند (در حال حاضر: ModelScope)، جداگانه نمایش داده میشوند؛ حدود 6 میلیون توکن اضافی که نیازمند تأیید هویت منطقهای هستند و هرگز در عدد اصلی جمع نمیشوند. نتیجه در داشبورد (`/dashboard/free-tiers`) قابل مشاهده است.
+> ترکیب دستی پلنهای رایگان دردسرآفرین است — دهها SDK، دهها محدودیت نرخ و بدون اینکه بدانید واقعاً چه مقدار در اختیار دارید. OmniRoute تعداد **452 مورد پلن رایگان را در 34 کلید استخر تکرارشونده** فهرست میکند و عدد اصلی توکنها را بر اساس **16 استخر دارای بودجه ماهانه مثبت و منتشرشده، بهعلاوه پنج سقف مجزای Groq برای هر مدل** محاسبه میکند؛ استخرهای مشترک نیز فقط یکبار شمرده میشوند. سهمیههایی که تنها پس از تأیید هویت منطقهای فعال میشوند (در حال حاضر: ModelScope)، بهصورت جداگانه نمایش داده میشوند؛ حدود 6 میلیون توکن اضافه که پشت تأیید هویت منطقهای قرار دارند و هرگز در عدد اصلی جمع نمیشوند. نتیجه همواره در داشبورد (`/dashboard/free-tiers`) قابل مشاهده است.
 
-<img src="./docs/diagrams/free-tier-budget.svg" width="100%" alt="کارت بودجه سطح رایگان OmniRoute: حدود 1.47 میلیارد توکن رایگان پایدار در ماه، تا حدود 2.07 میلیارد در ماه نخست با اعتبارهای ثبتنام، از 34 کلید استخر تکرارشونده مستندشده که 446 ورودی سطح رایگان فهرستشده را پشت یک نقطه پایانی پوشش میدهند. محاسبه شفاف با رفع تکرار استخرها — هر استخر مشترک فقط یکبار محاسبه میشود، شامل 16 استخر تکرارشونده با بودجه ماهانه مثبت و منتشرشده توکن، بهعلاوه پنج سقف Groq برای هر مدل؛ 13 ارائهدهنده در فهرست ریسک شرایط استفاده با برچسب اجتناب مشخص شدهاند تا خودتان تصمیم بگیرید. نوار بودجه شامل Mistral با 1 میلیارد، Nara با 210 میلیون، LLM7 با 150 میلیون، Groq با 30 میلیون (پنج سقف برای هر مدل) و استخرهای کوچکتر است؛ اعتبارهای ثبتنام ماه نخست و ارائهدهندگان دائماً رایگان بدون سقف توکن نیز جداگانه نمایش داده میشوند تا هرگز عدد اصلی را بیش از واقع نشان ندهند. میزان مصرفشده/باقیمانده زنده در /dashboard/free-tiers."/>
+<img src="./docs/diagrams/free-tier-budget.svg" width="100%" alt="کارت بودجه پلن رایگان OmniRoute: حدود 1.47 میلیارد توکن رایگان ثابت در ماه، تا حدود 2.07 میلیارد در ماه اول با اعتبارهای ثبتنام، از 34 کلید مستندشده استخر تکرارشونده که 452 مورد فهرستشده پلن رایگان را پشت یک نقطه پایانی پوشش میدهند. محاسبه شفاف با حذف موارد تکراری استخر — هر استخر مشترک فقط یکبار شمرده میشود، شامل 16 استخر تکرارشونده با بودجه ماهانه مثبت و منتشرشده برای توکن، بهعلاوه پنج سقف مجزای Groq برای هر مدل؛ 13 ارائهدهنده در فهرست ریسک شرایط استفاده با برچسب اجتناب مشخص شدهاند تا خودتان تصمیم بگیرید. نوار بودجه شامل Mistral با 1 میلیارد، Nara با 210 میلیون، LLM7 با 150 میلیون، Groq با 30 میلیون (پنج سقف مجزای هر مدل) و استخرهای کوچکتر است؛ همچنین اعتبارهای ثبتنام ماه اول و ارائهدهندگان دائماً رایگان بدون سقف توکن، جداگانه نمایش داده میشوند تا هرگز عدد اصلی را بیش از واقعیت نشان ندهند. میزان مصرفشده/باقیمانده زنده در /dashboard/free-tiers."/>
 
-> خلاصه متحرکی از صفحه زنده `/dashboard/free-tiers`. روششناسی کامل (رفع تکرار استخرها، سطحهای اعتباری، شرایط ارائهدهندگان): **[docs/reference/FREE_TIERS.md](docs/reference/FREE_TIERS.md)**.
+> خلاصه متحرک صفحه زنده `/dashboard/free-tiers`. روششناسی کامل (حذف موارد تکراری استخر، سطوح اعتبار، شرایط ارائهدهندگان): **[docs/reference/FREE_TIERS.md](docs/reference/FREE_TIERS.md)**.
 >
-> <sub>این ارقام هر دو هفته یکبار بر اساس فهرست زنده دوباره ممیزی میشوند و **در هر دو جهت تغییر میکنند** — اگر ارائهدهندهای سطح رایگان خود را متوقف کند، عدد کاهش مییابد؛ اگر مورد جدیدی اضافه شود، افزایش پیدا میکند. ما همان چیزی را منتشر میکنیم که فهرست واقعاً محاسبه میکند، نه بهترین حالتِ گردشده به بالا.</sub>
+> <sub>این ارقام هر دو هفته یکبار با فهرست زنده مجدداً ممیزی میشوند و **در هر دو جهت تغییر میکنند** — اگر ارائهدهندهای پلن رایگان خود را پایان دهد، عدد کاهش مییابد؛ اگر مورد جدیدی اضافه شود، افزایش پیدا میکند. ما همان چیزی را منتشر میکنیم که فهرست واقعاً محاسبه میکند، نه بهترین حالتِ رو به بالا گرد شده.</sub>
 
 <br/>
 
@@ -37,7 +37,7 @@
 
 <h3>
 
-⭐ اگر OMNIROUTE به شما کمک کرده است در هزینه صرفهجویی کنید و کارتان را آسانتر سازید، به مخزن ستاره بدهید.
+⭐ اگر OMNIROUTE به شما کمک کرده است در هزینه صرفهجویی کنید و کارتان را آسانتر انجام دهید، به مخزن ستاره بدهید.
 
 </h3>
 
@@ -48,10 +48,10 @@
 
 ### 💬 به جامعه بپیوندید
 
-**👋 نگهدارنده پروژه را دنبال کنید — زودتر از همه از ارائهدهندگان جدید، نسخهها و نکتهها باخبر شوید:**
+**👋 نگهدارنده پروژه را دنبال کنید — زودتر از همه از ارائهدهندگان جدید، انتشارها و نکات باخبر شوید:**
 
-[![دنبالکردن Diego در LinkedIn](https://img.shields.io/badge/Follow_Diego_on-LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/diegosouzapw/)
-[![دنبالکردن @diegosouzapw در GitHub](https://img.shields.io/github/followers/diegosouzapw?style=for-the-badge&logo=github&logoColor=white&label=Follow%20on%20GitHub&color=181717)](https://github.com/diegosouzapw)
+[![Diego را در LinkedIn دنبال کنید](https://img.shields.io/badge/Follow_Diego_on-LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/diegosouzapw/)
+[![@diegosouzapw را در GitHub دنبال کنید](https://img.shields.io/github/followers/diegosouzapw?style=for-the-badge&logo=github&logoColor=white&label=Follow%20on%20GitHub&color=181717)](https://github.com/diegosouzapw)
 
 [![Discord](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/U47eFqAXCn)
 [![Telegram](https://img.shields.io/badge/Telegram-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/omnirouteOficial)
@@ -59,7 +59,7 @@
 [![WhatsApp برزیل](https://img.shields.io/badge/WhatsApp_Brasil-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://chat.whatsapp.com/KWgatljAjmbELQory59Oti?s=cl&p=a&mlu=4)
 [![وبسایت](https://img.shields.io/badge/Website-omniroute.online-blue?logo=google-chrome&logoColor=white)](https://omniroute.online)
 
-**پرسشها، نکتههای ارائهدهندگان، نقشه راه و پشتیبانی ← [Discord](https://discord.gg/U47eFqAXCn) · [Telegram](https://t.me/omnirouteOficial) · WhatsApp [🌍 جهانی](https://chat.whatsapp.com/FvuCbrpZmQ6I85n2vW5QIC?s=cl&p=a&mlu=4) / [🇧🇷 برزیل](https://chat.whatsapp.com/KWgatljAjmbELQory59Oti?s=cl&p=a&mlu=4) / [پرتال](https://portal.sthub.com.br/communities/groups/st-hub/channels/Omniroute-World-8kRjmK)**
+**پرسشها، پیشنهاد ارائهدهندگان، نقشه راه و پشتیبانی ← [Discord](https://discord.gg/U47eFqAXCn) · [Telegram](https://t.me/omnirouteOficial) · WhatsApp [🌍 جهانی](https://chat.whatsapp.com/FvuCbrpZmQ6I85n2vW5QIC?s=cl&p=a&mlu=4) / [🇧🇷 برزیل](https://chat.whatsapp.com/KWgatljAjmbELQory59Oti?s=cl&p=a&mlu=4) / [پرتال](https://portal.sthub.com.br/communities/groups/st-hub/channels/Omniroute-World-8kRjmK)**
 
 <br/>
 
@@ -1263,21 +1263,21 @@ OMNIROUTE_SKIP_POSTINSTALL=1 npm install -g omniroute   # CI=1 نیز از آن 
 <table>
   <tr><th align="left">لایه</th><th align="left">فناوری</th></tr>
   <tr><td nowrap><b>محیط اجرا</b></td><td>Node.js 22.x / 24.x LTS — <code>&gt;=22.22.2 &lt;23 || &gt;=24.0.0 &lt;27</code></td></tr>
-  <tr><td nowrap><b>زبان</b></td><td>TypeScript 6.0 — در سراسر <code>src/</code> و <code>open-sse/</code>، <b>۱۰۰٪ TypeScript</b> (از v2.0 تاکنون، بدون حتی یک <code>any</code> در هسته)</td></tr>
+  <tr><td nowrap><b>زبان</b></td><td>TypeScript 6.0 — <b>۱۰۰٪ TypeScript</b> در سراسر <code>src/</code> و <code>open-sse/</code> (از v2.0 تاکنون بدون هیچ <code>any</code> در هسته)</td></tr>
   <tr><td nowrap><b>فریمورک</b></td><td>Next.js 16 + React 19 + Tailwind CSS 4</td></tr>
-  <tr><td nowrap><b>پایگاه داده</b></td><td>better-sqlite3 (SQLite، ثبت وقایع WAL) + LowDB (JSON قدیمی) — ۱۲۲ ماژول دامنه، ۱۷۷ مهاجرت</td></tr>
-  <tr><td nowrap><b>حافظه</b></td><td>جستوجوی متن کامل SQLite FTS5 + جاسازیهای برداری کوانتیزهشده با int8، زوال نوعدار</td></tr>
+  <tr><td nowrap><b>پایگاه داده</b></td><td>better-sqlite3 (SQLite، ثبت رویداد WAL) + LowDB (JSON قدیمی) — ۱۲۲ ماژول دامنه، ۱۷۶ مهاجرت</td></tr>
+  <tr><td nowrap><b>حافظه</b></td><td>جستوجوی تماممتن SQLite FTS5 + تعبیههای برداری کوانتیزهشده با int8، زوال نوعدار</td></tr>
   <tr><td nowrap><b>طرحوارهها</b></td><td>Zod 4 — اعتبارسنجی ورودی/خروجی ابزار MCP + قراردادهای API</td></tr>
   <tr><td nowrap><b>پروتکلها</b></td><td>MCP (stdio / HTTP / SSE) + A2A v0.3 (JSON-RPC 2.0 + SSE)</td></tr>
-  <tr><td nowrap><b>جریاندهی</b></td><td>رویدادهای ارسالشده از سرور (SSE) + پل WebSocket (<code>/v1/ws</code>)</td></tr>
+  <tr><td nowrap><b>استریم</b></td><td>رویدادهای ارسالشده از سرور (SSE) + پل WebSocket (<code>/v1/ws</code>)</td></tr>
   <tr><td nowrap><b>فشردهسازی</b></td><td>خط لوله ۱۲ موتوره — RTK، Caveman، LLMLingua-2 (MobileBERT ONNX)، GCF، OmniGlyph</td></tr>
-  <tr><td nowrap><b>احراز هویت و امنیت</b></td><td>OAuth 2.0 (PKCE) + JWT + کلیدهای API + احراز هویت محدودهدار MCP · رمزگذاری AES-256-GCM برای دادههای ذخیرهشده · DOMPurify</td></tr>
+  <tr><td nowrap><b>احراز هویت و امنیت</b></td><td>OAuth 2.0 (PKCE) + JWT + کلیدهای API + احراز هویت محدودهبندیشده MCP · AES-256-GCM برای دادههای ذخیرهشده · DOMPurify</td></tr>
   <tr><td nowrap><b>اختفا</b></td><td>wreq-js — جعل اثر انگشت TLS از نوع JA3 / JA4، پراکسی سهسطحی</td></tr>
-  <tr><td nowrap><b>تابآوری</b></td><td>مدارشکن، عقبنشینی نمایی، جلوگیری از ازدحام ناگهانی درخواستها، خودترمیمی خودکار ترکیبها</td></tr>
+  <tr><td nowrap><b>تابآوری</b></td><td>مدارشکن، عقبنشینی نمایی، جلوگیری از هجوم همزمان درخواستها، خودترمیمی خودکار ترکیبها</td></tr>
   <tr><td nowrap><b>ثبت گزارش</b></td><td>pino — گزارشهای ساختاریافته JSON همراه با زمینه درخواست</td></tr>
-  <tr><td nowrap><b>آزمایش</b></td><td>اجراکننده آزمون Node.js + Vitest — <b>بیش از ۳۹٬۰۰۰ اعلان آزمون ایستا</b> در بیش از ۵٬۱۰۰ فایل آزمون ردیابیشده (واحد، یکپارچهسازی، سرتاسری، امنیت، اکوسیستم)</td></tr>
+  <tr><td nowrap><b>آزمایش</b></td><td>اجراکننده آزمون Node.js + Vitest — <b>بیش از ۳۹٬۰۰۰ اعلان آزمون ایستا</b> در بیش از ۵٬۱۰۰ فایل آزمون رهگیریشده (واحد، یکپارچهسازی، سرتاسری، امنیت، زیستبوم)</td></tr>
   <tr><td nowrap><b>پلتفرمها</b></td><td>دسکتاپ (Electron) · Android (Termux) · PWA (هر مرورگری)</td></tr>
-  <tr><td nowrap><b>CI/CD</b></td><td>GitHub Actions — انتشار خودکار در npm + Docker Hub هنگام انتشار نسخه</td></tr>
+  <tr><td nowrap><b>CI/CD</b></td><td>GitHub Actions — انتشار خودکار در npm و Docker Hub هنگام انتشار نسخه</td></tr>
   <tr><td nowrap><b>پیوندها</b></td><td><a href="https://omniroute.online">وبسایت</a> · <a href="https://www.npmjs.com/package/omniroute">npm</a> · <a href="https://hub.docker.com/r/diegosouzapw/omniroute">Docker Hub</a></td></tr>
 </table>
 
@@ -1294,25 +1294,25 @@ OMNIROUTE_SKIP_POSTINSTALL=1 npm install -g omniroute   # CI=1 نیز از آن 
 <table>
   <tr><th align="left">سند</th><th align="left">توضیحات</th></tr>
   <tr><td nowrap><b><a href="docs/guides/USER_GUIDE.md">راهنمای کاربر</a></b></td><td>ارائهدهندگان، ترکیبها، یکپارچهسازی CLI، استقرار</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/SETUP_GUIDE.md">راهنمای راهاندازی</a></b></td><td>تمام روشهای نصب، پیکربندی ابزارهای CLI، راهاندازی پروتکل، تنظیم مهلت زمانی</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/SETUP_GUIDE.md">راهنمای راهاندازی</a></b></td><td>روشهای کامل نصب، پیکربندی ابزارهای CLI، راهاندازی پروتکل، تنظیم زمان انقضا</td></tr>
   <tr><td nowrap><b><a href="docs/reference/CLI-TOOLS.md">راهنمای ابزارهای CLI</a></b></td><td>راهاندازی اختصاصی هر ابزار برای Claude Code، Codex، Cursor، Cline، OpenClaw، Kilo و Copilot</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/REMOTE-MODE.md">حالت راه دور</a></b></td><td>کنترل یک OmniRoute راه دور (VPS) از CLI لپتاپ از طریق توکنهای دسترسی محدودهدار</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/CLAUDE-CODE-CONFIGURATION.md">پیکربندی Claude Code</a></b></td><td>اتصال Claude Code به OmniRoute (محلی/راه دور) با <code>launch</code> + نمایههای اختصاصی هر مدل</td></tr>
-  <tr><td nowrap><b><a href="README.md#-quick-start">شروع سریع</a></b></td><td>نصب سهمرحلهای ← اتصال ← پیکربندی</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/REMOTE-MODE.md">حالت راه دور</a></b></td><td>کنترل یک OmniRoute راه دور (VPS) از CLI لپتاپ با استفاده از توکنهای دسترسی محدودشده</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/CLAUDE-CODE-CONFIGURATION.md">پیکربندی Claude Code</a></b></td><td>اتصال Claude Code به OmniRoute (محلی/راه دور) با <code>launch</code> و پروفایلهای اختصاصی هر مدل</td></tr>
+  <tr><td nowrap><b><a href="README.md#-quick-start">شروع سریع</a></b></td><td>نصب ۳مرحلهای ← اتصال ← پیکربندی</td></tr>
 </table>
 
 ### 🔧 عملیات و استقرار
 
 <table>
   <tr><th align="left">سند</th><th align="left">توضیحات</th></tr>
-  <tr><td nowrap><b><a href="docs/guides/DOCKER_GUIDE.md">راهنمای Docker</a></b></td><td>اجرای Docker، نمایههای Compose، HTTPS با Caddy، تونلها، برچسبهای ایمیج</td></tr>
-  <tr><td nowrap><b><a href="contrib/podman/README.md">راهنمای Podman</a></b></td><td>یکپارچهسازی Quadlet با systemd، podman-compose، SELinux</td></tr>
-  <tr><td nowrap><b><a href="docs/ops/VM_DEPLOYMENT_GUIDE.md">استقرار ماشین مجازی</a></b></td><td>راهنمای کامل: راهاندازی ماشین مجازی + nginx + Cloudflare</td></tr>
-  <tr><td nowrap><b><a href="docs/ops/FLY_IO_DEPLOYMENT_GUIDE.md">استقرار Fly.io</a></b></td><td>استقرار در Fly.io با فضای ذخیرهسازی پایدار</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/DOCKER_GUIDE.md">راهنمای Docker</a></b></td><td>اجرای Docker، پروفایلهای Compose، پروتکل HTTPS با Caddy، تونلها، برچسبهای ایمیج</td></tr>
+  <tr><td nowrap><b><a href="contrib/podman/README.md">راهنمای Podman</a></b></td><td>یکپارچهسازی Quadlet با systemd، ‏podman-compose، ‏SELinux</td></tr>
+  <tr><td nowrap><b><a href="docs/ops/VM_DEPLOYMENT_GUIDE.md">استقرار VM</a></b></td><td>راهنمای کامل: راهاندازی VM، ‏nginx و Cloudflare</td></tr>
+  <tr><td nowrap><b><a href="docs/ops/FLY_IO_DEPLOYMENT_GUIDE.md">استقرار در Fly.io</a></b></td><td>استقرار در Fly.io با فضای ذخیرهسازی پایدار</td></tr>
   <tr><td nowrap><b><a href="docs/guides/TERMUX_GUIDE.md">راهنمای Termux</a></b></td><td>اجرای OmniRoute در Android از طریق Termux</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/PWA_GUIDE.md">راهنمای PWA</a></b></td><td>نصب برنامه وب پیشرونده، ذخیرهسازی موقت، معماری</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/UNINSTALL.md">راهنمای حذف نصب</a></b></td><td>حذف کامل برای همه روشهای نصب</td></tr>
-  <tr><td nowrap><b><a href="docs/reference/ENVIRONMENT.md">پیکربندی محیط</a></b></td><td>متغیرهای کامل <code>.env</code> و مراجع آنها</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/PWA_GUIDE.md">راهنمای PWA</a></b></td><td>نصب برنامه وب پیشرونده، کشکردن، معماری</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/UNINSTALL.md">راهنمای حذف نصب</a></b></td><td>حذف پاک و کامل برای تمام روشهای نصب</td></tr>
+  <tr><td nowrap><b><a href="docs/reference/ENVIRONMENT.md">پیکربندی محیط</a></b></td><td>متغیرها و مراجع کامل <code>.env</code></td></tr>
 </table>
 
 ### 🧠 قابلیتها و معماری
@@ -1320,28 +1320,28 @@ OMNIROUTE_SKIP_POSTINSTALL=1 npm install -g omniroute   # CI=1 نیز از آن 
 <table>
   <tr><th align="left">سند</th><th align="left">توضیحات</th></tr>
   <tr><td nowrap><b><a href="docs/architecture/ARCHITECTURE.md">معماری</a></b></td><td>معماری سیستم، جریان داده و سازوکارهای داخلی</td></tr>
-  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_GUIDE.md">راهنمای فشردهسازی</a></b></td><td>خط لولهٔ ۷گزینهای: خاموش / سبک / استاندارد / تهاجمی / فوقفشرده / RTK / پشتهای</td></tr>
-  <tr><td nowrap><b><a href="docs/compression/RTK_COMPRESSION.md">فشردهسازی RTK</a></b></td><td>فشردهسازی خروجی فرمان، فیلترها، اعتماد، راستیآزمایی و بازیابی خروجی خام</td></tr>
-  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_ENGINES.md">موتورهای فشردهسازی</a></b></td><td>Caveman، RTK، خطوط لولهٔ پشتهای و رابطهای داشبورد/API/MCP</td></tr>
-  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_RULES_FORMAT.md">قالب قوانین فشردهسازی</a></b></td><td>طرحوارههای بستهٔ قوانین JSON برای فیلترهای Caveman و RTK</td></tr>
-  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_LANGUAGE_PACKS.md">بستههای زبانی فشردهسازی</a></b></td><td>تشخیص زبان و تألیف بستهٔ قوانین Caveman</td></tr>
-  <tr><td nowrap><b><a href="docs/architecture/RESILIENCE_GUIDE.md">راهنمای تابآوری</a></b></td><td>مدارشکنها، دورههای انتظار، صف، جلوگیری از ازدحام ناگهانی و جعل TLS</td></tr>
-  <tr><td nowrap><b><a href="docs/routing/AUTO-COMBO.md">موتور ترکیب خودکار</a></b></td><td>امتیازدهی ۱۶عاملی، بستههای حالت و خودترمیمی</td></tr>
-  <tr><td nowrap><b><a href="docs/ops/PROXY_GUIDE.md">راهنمای پروکسی</a></b></td><td>سامانهٔ پروکسی ۳سطحی، بازارگاه 1proxy و عملیات CRUD رجیستری</td></tr>
-  <tr><td nowrap><b><a href="docs/reference/FREE_TIERS.md">سطوح رایگان</a></b></td><td>فهرست یکپارچه: ۳۴ مخزن تکرارشوندهٔ مستندشده / ۴۴۶ مورد سطح رایگان فهرستشده</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/FEATURES.md">نگارخانهٔ قابلیتها</a></b></td><td>گشتوگذار تصویری در داشبورد همراه با اسکرینشاتها</td></tr>
-  <tr><td nowrap><b><a href="docs/architecture/CODEBASE_DOCUMENTATION.md">مستندات پایگاه کد</a></b></td><td>مرور گامبهگام و مناسب مبتدیان در پایگاه کد</td></tr>
+  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_GUIDE.md">راهنمای فشردهسازی</a></b></td><td>خط لوله ۷گزینهای: خاموش / سبک / استاندارد / تهاجمی / فوقفشرده / RTK / پشتهای</td></tr>
+  <tr><td nowrap><b><a href="docs/compression/RTK_COMPRESSION.md">فشردهسازی RTK</a></b></td><td>فشردهسازی خروجی فرمان، فیلترها، اعتماد، تأیید، بازیابی خروجی خام</td></tr>
+  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_ENGINES.md">موتورهای فشردهسازی</a></b></td><td>Caveman، ‏RTK، خطوط لوله پشتهای، رابطهای داشبورد/API/MCP</td></tr>
+  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_RULES_FORMAT.md">قالب قوانین فشردهسازی</a></b></td><td>طرحوارههای بسته قوانین JSON برای فیلترهای Caveman و RTK</td></tr>
+  <tr><td nowrap><b><a href="docs/compression/COMPRESSION_LANGUAGE_PACKS.md">بستههای زبانی فشردهسازی</a></b></td><td>تشخیص زبان و تدوین بسته قوانین Caveman</td></tr>
+  <tr><td nowrap><b><a href="docs/architecture/RESILIENCE_GUIDE.md">راهنمای تابآوری</a></b></td><td>قطعکنندههای مدار، دورههای انتظار، صف، جلوگیری از هجوم همزمان درخواستها، جعل TLS</td></tr>
+  <tr><td nowrap><b><a href="docs/routing/AUTO-COMBO.md">موتور ترکیب خودکار</a></b></td><td>امتیازدهی ۱۶عاملی، بستههای حالت، خودترمیمی</td></tr>
+  <tr><td nowrap><b><a href="docs/ops/PROXY_GUIDE.md">راهنمای پروکسی</a></b></td><td>سیستم پروکسی ۳سطحی، بازارچه 1proxy، عملیات CRUD رجیستری</td></tr>
+  <tr><td nowrap><b><a href="docs/reference/FREE_TIERS.md">سطوح رایگان</a></b></td><td>فهرست تجمیعی: ۳۴ مخزن دورهای مستندشده / ۴۵۲ مورد سطح رایگان فهرستشده</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/FEATURES.md">گالری قابلیتها</a></b></td><td>تور تصویری داشبورد همراه با نماگرفتها</td></tr>
+  <tr><td nowrap><b><a href="docs/architecture/CODEBASE_DOCUMENTATION.md">مستندات کدبیس</a></b></td><td>مرور گامبهگام کدبیس، مناسب برای مبتدیان</td></tr>
 </table>
 
 ### 🤖 پروتکلها و APIها
 
 <table>
   <tr><th align="left">سند</th><th align="left">توضیحات</th></tr>
-  <tr><td nowrap><b><a href="docs/reference/API_REFERENCE.md">مرجع API</a></b></td><td>همهٔ نقاط پایانی همراه با نمونهها</td></tr>
+  <tr><td nowrap><b><a href="docs/reference/API_REFERENCE.md">مرجع API</a></b></td><td>تمام نقاط پایانی همراه با مثال</td></tr>
   <tr><td nowrap><b><a href="docs/openapi.yaml">مشخصات OpenAPI</a></b></td><td>مشخصات OpenAPI 3.0</td></tr>
-  <tr><td nowrap><b><a href="open-sse/mcp-server/README.md">سرور MCP</a></b></td><td>۱۱۰ ابزار MCP، پیکربندیهای IDE و کلاینتهای Python/TS/Go</td></tr>
+  <tr><td nowrap><b><a href="open-sse/mcp-server/README.md">سرور MCP</a></b></td><td>۱۱۰ ابزار MCP، پیکربندیهای IDE، کلاینتهای Python/TS/Go</td></tr>
   <tr><td nowrap><b><a href="docs/frameworks/MCP-SERVER.md">راهنمای سرور MCP</a></b></td><td>نصب MCP، روشهای انتقال و مرجع ابزارها</td></tr>
-  <tr><td nowrap><b><a href="src/lib/a2a/README.md">سرور A2A</a></b></td><td>پروتکل JSON-RPC 2.0، مهارتها، استریم و مدیریت وظایف</td></tr>
+  <tr><td nowrap><b><a href="src/lib/a2a/README.md">سرور A2A</a></b></td><td>پروتکل JSON-RPC 2.0، مهارتها، استریم، مدیریت وظایف</td></tr>
   <tr><td nowrap><b><a href="docs/frameworks/A2A-SERVER.md">راهنمای سرور A2A</a></b></td><td>کارت عامل A2A، وظایف، مهارتها و استریم</td></tr>
 </table>
 
@@ -1350,12 +1350,12 @@ OMNIROUTE_SKIP_POSTINSTALL=1 npm install -g omniroute   # CI=1 نیز از آن 
 <table>
   <tr><th align="left">سند</th><th align="left">توضیحات</th></tr>
   <tr><td nowrap><b><a href="CONTRIBUTING.md">مشارکت</a></b></td><td>راهاندازی محیط توسعه و دستورالعملها</td></tr>
-  <tr><td nowrap><b><a href="docs/ops/BRANCHING_MODEL.md">مدل شاخهبندی و انتشار</a></b></td><td>شاخهٔ مقصد PRها (<code>release/*</code>) و معنای <code>main</code> و برچسبها</td></tr>
-  <tr><td nowrap><b><a href="CHANGELOG.md">تغییرات</a></b></td><td>تاریخچهٔ کامل انتشار به تفکیک نسخه</td></tr>
+  <tr><td nowrap><b><a href="docs/ops/BRANCHING_MODEL.md">مدل شاخهبندی و انتشار</a></b></td><td>شاخههای مقصد PRها (<code>release/*</code>) و معنای <code>main</code> و برچسبها</td></tr>
+  <tr><td nowrap><b><a href="CHANGELOG.md">تاریخچه تغییرات</a></b></td><td>تاریخچه کامل انتشار برای هر نسخه</td></tr>
   <tr><td nowrap><b><a href="SECURITY.md">سیاست امنیتی</a></b></td><td>گزارش آسیبپذیریها و شیوههای امنیتی</td></tr>
-  <tr><td nowrap><b><a href="docs/guides/I18N.md">راهنمای i18n</a></b></td><td>پشتیبانی از ۴۲ زبان، گردش کار ترجمه و RTL</td></tr>
+  <tr><td nowrap><b><a href="docs/guides/I18N.md">راهنمای i18n</a></b></td><td>پشتیبانی از ۴۲ زبان، گردشکار ترجمه، RTL</td></tr>
   <tr><td nowrap><b><a href="docs/ops/RELEASE_CHECKLIST.md">چکلیست انتشار</a></b></td><td>مراحل اعتبارسنجی پیش از انتشار</td></tr>
-  <tr><td nowrap><b><a href="docs/ops/COVERAGE_PLAN.md">برنامهٔ پوشش</a></b></td><td>راهبرد پوشش آزمون برای بیش از ۳۹٬۰۰۰ اعلان آزمون ایستا در بیش از ۵٬۱۰۰ فایل آزمون رهگیریشده</td></tr>
+  <tr><td nowrap><b><a href="docs/ops/COVERAGE_PLAN.md">برنامه پوشش</a></b></td><td>راهبرد پوشش آزمون برای بیش از ۳۹٬۰۰۰ اعلان آزمون ایستا در بیش از ۵٬۱۰۰ فایل آزمون رهگیریشده</td></tr>
 </table>
 
 <br/>
@@ -1364,9 +1364,9 @@ OMNIROUTE_SKIP_POSTINSTALL=1 npm install -g omniroute   # CI=1 نیز از آن 
 
 # ⭐ مشارکتکنندگان برتر
 
-> OmniRoute بهدست جامعهای پرشور از متنباز شکل گرفته است. این افراد مشارکتهای برجستهای داشتهاند که مستقیماً بر کیفیت، پایداری و دامنهٔ دسترسی پروژه تأثیر میگذارد. **سپاسگزاریم.**
+> OmniRoute به دست یک جامعه پرشور متنباز شکل گرفته است. این افراد مشارکتهای برجستهای داشتهاند که مستقیماً بر کیفیت، پایداری و گستره پروژه تأثیر میگذارد. **سپاسگزاریم.**
 
-### مشارکتکنندگان خارجی بر پایهٔ درخواستهای ادغامشده
+### مشارکتکنندگان خارجی بر اساس درخواستهای ادغامشده
 
 <table>
   <tr><th align="center">رتبه</th><th align="left">مشارکتکننده</th><th align="center">PRهای ادغامشده</th><th align="right">~خطوط تغییریافته</th></tr>
@@ -1393,9 +1393,9 @@ OMNIROUTE_SKIP_POSTINSTALL=1 npm install -g omniroute   # CI=1 نیز از آن 
   <tr><td align="center">20</td><td align="left"><a href="https://github.com/Prudhvivuda"><b>Prudhvivuda</b></a></td><td align="center">24</td><td align="right">6,312</td></tr>
 </table>
 
-<sub>این دادهها در نوک زندهٔ <code>release/v3.8.50</code> با شناسهٔ <code>dafb4ae808</code> و با احتساب ادغامها تا 2026-08-24 05:26:03 UTC ثابت شدهاند. سرشماری صفحهبندیشدهٔ GitHub GraphQL شامل 5,911 PR ادغامشده است: 2,707 مورد توسط مالک مخزن، 179 مورد توسط Dependabot و <b>3,025 PR خارجی از 535 مشارکتکنندهٔ متمایز</b>. «خطوط تغییریافته» مجموع افزودهها و حذفهای GitHub است و فایلهای تولیدشده، lockfileها، کاتالوگها، ترجمهها و مستندات را نیز شامل میشود؛ این معیار میزان تغییرات است، نه LOC تألیفشده. رتبههای مساوی در مرز برش حفظ شدهاند.</sub>
+<sub>این دادهها در آخرین وضعیت زنده <code>release/v3.8.50</code> با شناسه <code>dafb4ae808</code> و شامل ادغامها تا 2026-08-24 05:26:03 UTC تثبیت شدهاند. سرشماری صفحهبندیشده GitHub GraphQL شامل ۵٬۹۱۱ PR ادغامشده است: ۲٬۷۰۷ مورد توسط مالک مخزن، ۱۷۹ مورد توسط Dependabot و <b>۳٬۰۲۵ PR خارجی از ۵۳۵ مشارکتکننده متمایز</b>. «خطوط تغییریافته» مجموع افزودنها و حذفهای GitHub است و فایلهای تولیدشده، lockfileها، کاتالوگها، ترجمهها و مستندات را نیز شامل میشود؛ این معیار حجم تغییرات است، نه تعداد خطوط کد تألیفشده. رتبههای مساوی در مرز فهرست حفظ شدهاند.</sub>
 
-### کامیتهای منتسب به GitHub
+### commitهای منتسب به GitHub
 
 <table>
   <tr>
@@ -1439,7 +1439,7 @@ OMNIROUTE_SKIP_POSTINSTALL=1 npm install -g omniroute   # CI=1 نیز از آن 
         <img src="https://github.com/hartmark.png" width="40" style="border-radius:50%" alt="Markus Hartung"/><br/>
         <b>Markus Hartung</b>
       </a><br/>
-      <sub>🏅 69 کامیت منتسب به GitHub · رتبهٔ مشترک 6</sub>
+      <sub>🏅 69 کامیت منتسب به GitHub · رتبه مشترک 6</sub>
     </td>
   </tr>
   <tr>
@@ -1448,7 +1448,7 @@ OMNIROUTE_SKIP_POSTINSTALL=1 npm install -g omniroute   # CI=1 نیز از آن 
         <img src="https://github.com/maxmad64bis.png" width="40" style="border-radius:50%" alt="Dizzle"/><br/>
         <b>Dizzle</b>
       </a><br/>
-      <sub>🏅 69 کامیت منتسب به GitHub · رتبهٔ مشترک 6</sub>
+      <sub>🏅 69 کامیت منتسب به GitHub · رتبه مشترک 6</sub>
     </td>
     <td align="center" width="160">
       <a href="https://github.com/JxnLexn">
@@ -1469,21 +1469,21 @@ OMNIROUTE_SKIP_POSTINSTALL=1 npm install -g omniroute   # CI=1 نیز از آن 
         <img src="https://github.com/HouMinXi.png" width="40" style="border-radius:50%" alt="Bob.Hou"/><br/>
         <b>Bob.Hou</b>
       </a><br/>
-      <sub>🏅 51 کامیت منتسب به GitHub · رتبهٔ مشترک 10</sub>
+      <sub>🏅 51 کامیت منتسب به GitHub · رتبه مشترک 10</sub>
     </td>
     <td align="center" width="160">
       <a href="https://github.com/xz-dev">
         <img src="https://github.com/xz-dev.png" width="40" style="border-radius:50%" alt="Xiangzhe"/><br/>
         <b>Xiangzhe</b>
       </a><br/>
-      <sub>🏅 51 کامیت منتسب به GitHub · رتبهٔ مشترک 10</sub>
+      <sub>🏅 51 کامیت منتسب به GitHub · رتبه مشترک 10</sub>
     </td>
   </tr>
 </table>
 
-<sub>بازبینی مجدد در 2026-08-24 06:14:31 UTC: کامیتهای منتسب به GitHub که توسط API مشارکتکنندگان مخزن برای شاخهٔ پیشفرض <code>release/v3.8.50</code> گزارش شدهاند. API تعداد 525 هویت (415 کاربر، 2 ربات و 108 هویت ناشناس) را برگرداند؛ این جدول نگهدارنده، رباتها و هویتهای ناشناس را مستثنا میکند و رتبههای مشترک را حفظ میکند. این جدول هم با رتبهبندی درخواستهای کشش ادغامشده در بالا و هم با سرشماری 639 نفرهٔ فرادادههای Git در پایین متفاوت است.</sub>
+<sub>بازبینی مجدد در 2026-08-24 06:14:31 UTC: کامیتهای منتسب به GitHub که توسط Contributors API مخزن برای شاخه پیشفرض <code>release/v3.8.50</code> گزارش شدهاند. API تعداد 525 هویت (415 کاربر، 2 ربات و 108 ناشناس) را برگرداند؛ این جدول نگهدارنده، رباتها و هویتهای ناشناس را مستثنا میکند و رتبههای مشترک را حفظ میکند. این جدول هم از رتبهبندی PRهای ادغامشده در بالا و هم از سرشماری 639نفره فراداده Git در پایین متمایز است.</sub>
 
-> 🙏 قابلیتها، رفع اشکالها و بهبودهای زیرساختی این مشارکتکنندگان، **بخشی اساسی** از عواملی هستند که OmniRoute را قابلاعتماد و سرشار از قابلیت میسازند. هر درخواست کشش، هر مورد آزمون و هر فایل ترجمهٔ i18n اهمیت دارد. متنباز توسط افرادی مانند آنها ساخته میشود.
+> 🙏 قابلیتها، رفع اشکالها و بهبودهای زیرساختی این مشارکتکنندگان، **بخش اصلی** چیزی هستند که OmniRoute را قابلاعتماد و غنی از امکانات میسازد. هر pull request، هر مورد آزمایشی و هر فایل ترجمه i18n اهمیت دارد. متنباز را افرادی مانند آنها میسازند.
 
 </div>
 

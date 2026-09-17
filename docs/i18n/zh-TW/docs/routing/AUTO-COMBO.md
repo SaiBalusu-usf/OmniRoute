@@ -196,7 +196,7 @@ curl -X POST http://localhost:20128/v1/chat/completions \
 
 ## 模式套件
 
-`open-sse/services/autoCombo/modePacks.ts` 中有 6 個預先定義的權重設定檔。每個套件都會直接取代預設權重，以使選擇偏向某一目標。每個套件的總和都已是 `1.0`（以四位小數顯示時為 `0.9999`），因此套件啟用時，`normalizeScoringWeights()` 沒有任何需要實質修正之處——以下數值在四捨五入誤差範圍內，就是評分器實際套用的數值。
+`open-sse/services/autoCombo/modePacks.ts` 中有 6 個預先定義的權重設定檔。每個套件都會完全取代預設權重，使選擇偏向特定目標。每個套件的權重總和都已是 `1.0`（以四位小數顯示時為 `0.9999`），因此當套件啟用時，`normalizeScoringWeights()` 實際上沒有需要修正的內容——以下數值在四捨五入的誤差範圍內，就是評分器所套用的值。
 
 | 因素                  | ship-fast  | cost-saver | quality-first | offline-friendly | reliability-first | chaos-mode |
 | :-------------------- | :--------- | :--------- | :------------ | :--------------- | :---------------- | :--------- |
@@ -218,28 +218,31 @@ curl -X POST http://localhost:20128/v1/chat/completions \
 
 注意事項：
 
-- **套件包含 `quality` 和 `reliability`**（`quality 0.02`、`quality-first 0.03`；`reliability 0.03`、`reliability-first 0.04`），並且會完整取代權重對應表（`weights = pack`，而非合併）。`DEFAULT_WEIGHTS` 包含 `quality 0.03 / reliability 0`；選擇 `balanced`/`default` 時會保留這些預設值，而選擇套件時則使用上表中的套件數值。在冷啟動集區中（尚無觀測資料，因此 `quality 0.5`、`reliability 1`），這兩個因素在一般套件下會增加 `+0.04`（`0.03 + 0.01`），在 `quality-first` 下增加 `+0.045`，在 `reliability-first` 下增加 `+0.05`。
-- `tierAffinity`、`specificityMatch` 和 `resetWindowAffinity` 在每個套件中都明確設為 `0`。
+- **套件包含 `quality` 和 `reliability`**（`quality 0.02`、`quality-first 0.03`；`reliability 0.03`、`reliability-first 0.04`），並且會完整取代權重映射（`weights = pack`，而非合併）。`DEFAULT_WEIGHTS` 包含 `quality 0.03 / reliability 0`；選擇 `balanced`/`default` 時會保留這些預設值，選擇套件時則會使用上表中的套件值。對於冷啟動的池（尚無觀測資料，因此 `quality 0.5`、`reliability 1`），這兩項因素在一般套件下會增加 `+0.04`（`0.03 + 0.01`），在 `quality-first` 下增加 `+0.045`，在 `reliability-first` 下增加 `+0.05`。
+- 每個套件中的 `tierAffinity`、`specificityMatch` 和 `resetWindowAffinity` 都明確設為 `0`。
 - 各套件的重點一覽：
   - **ship-fast** → latencyInv 0.3048 + health 0.2667（低延遲、健康的連線）
-  - **cost-saver** → costInv 0.3324（最便宜的 token 勝出）
+  - **cost-saver** → costInv 0.3324（最便宜的權杖勝出）
   - **quality-first** → taskFit 0.3524 + stability 0.1429 + quality 0.03，為所有套件中最高（最適合任務且表現一致的模型）
-  - **offline-friendly** → quota 0.3324 + health 0.2667（不考慮速度／成本，最大化餘裕）
-  - **reliability-first** → health 0.3524 + stability 0.1905 + reliability 0.04，為所有套件中最高（最少意外狀況）
+  - **offline-friendly** → quota 0.3324 + health 0.2667（不論速度或成本，優先提供最大餘裕）
+  - **reliability-first** → health 0.3524 + stability 0.1905 + reliability 0.04，為所有套件中最高（最少意外情況）
   - **chaos-mode** → health 0.4000 + taskFit 0.1905（故障注入設定檔）
 
 ### 每個請求的控制項（標頭）— #6023 / #6024 / #6025 / #3470
 
-`auto` 組合可透過三個標頭**針對每個請求**進行引導，而不會修改該組合儲存的設定。這些標頭僅適用於 `auto` 策略，也僅對攜帶它們的請求生效；若未提供標頭，則會使用該組合已儲存的 `modePack`/`budgetCap`/`budgetFallback`。
+`auto` 組合可透過三個標頭，**針對每個請求**進行調整，而不會變更該
+組合已儲存的設定。這些控制項僅適用於 `auto` 策略，且僅套用至攜帶這些
+標頭的請求；若標頭不存在，則使用該組合已儲存的 `modePack`/`budgetCap`/`budgetFallback`。
 
-| 標頭                          | 接受值                                                                                                                                                                         | 效果                                                                                                                                                          |
-| :---------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `X-OmniRoute-Mode`            | 預設別名（`fast`、`balanced`、`quality`、`cheap`、`reliable`、`offline`）或原始套件名稱（`ship-fast`、`cost-saver`、`quality-first`、`offline-friendly`、`reliability-first`） | 覆寫此請求的評分權重。`balanced`/`default` 會強制使用預設權重（不使用套件）。未知值會被忽略（保留設定）。                                                     |
-| `X-OmniRoute-Budget`          | 正數（每個請求的最高美元金額）                                                                                                                                                 | 硬性成本上限：在選擇前，會篩除預估成本超過此上限的候選項目。當**每個**候選項目都超出上限時的處理方式，由下方的 `X-OmniRoute-Budget-Fallback` 控制。           |
-| `X-OmniRoute-Budget-Fallback` | `cheapest`（預設，別名：`cheapest-viable`、`soft`）或 `strict`（別名：`block`、`hard`）                                                                                        | `cheapest`：即使仍超出上限，也會回退至全域成本最低的候選項目（舊版行為）。`strict`：拒絕選擇——請求會快速失敗並傳回 `HTTP 402`，而非默默超支。未知值會被忽略。 |
+| 標頭                          | 接受的值                                                                                                                                                                       | 效果                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| :---------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `X-OmniRoute-Mode`            | 預設別名（`fast`、`balanced`、`quality`、`cheap`、`reliable`、`offline`）或原始套件名稱（`ship-fast`、`cost-saver`、`quality-first`、`offline-friendly`、`reliability-first`） | 覆寫此請求的評分權重。`balanced`/`default` 會強制使用預設權重（不使用套件）。未知值將被忽略（保留設定）。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `X-OmniRoute-Budget`          | 正數（每個請求的最高美元金額）                                                                                                                                                 | 硬性成本上限：預估成本超過此上限的候選項目會在選擇前被篩除。當**所有**候選項目都超過上限時的處理方式，由下方的 `X-OmniRoute-Budget-Fallback` 控制。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `X-OmniRoute-Budget-Fallback` | `cheapest`（預設；別名：`cheapest-viable`、`soft`）或 `strict`（別名：`block`、`hard`）                                                                                        | `cheapest`：即使全域最便宜的候選項目仍超過上限，也會改用該候選項目（舊版行為）。`strict`：拒絕進行選擇——請求會立即失敗並回傳 `HTTP 402`，而不是在未提示的情況下超支。未知值將被忽略。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `X-OmniRoute-Effort`          | `auto`（其他值保留供未來使用）                                                                                                                                                 | 自適應思考預算：當請求**沒有**攜帶任何形式的推理欄位（`reasoning_effort`、`reasoning`、`thinking`）時，閘道會根據確定性的請求結構訊號（最後一則使用者訊息的長度、截至最後一則使用者訊息為止的上下文大小、先前的工具結果、工具迴圈深度），將 `auto` 解析為 `low`/`medium`/`high`。訊號的範圍限定於目前回合——最後一則使用者訊息之後的所有內容都會被忽略——因此工具迴圈中的每個請求都會解析為相同層級（每回合無狀態固定、不保留工作階段狀態，也不會在迴圈中途升級，以免破壞上游提示詞快取前綴）。用戶端明確指定的推理欄位一律優先。僅適用於上游分派解析為 OpenAI Chat Completions 格式的請求（`targetFormat === FORMATS.OPENAI`）——`reasoning_effort` 是 OpenAI 格式的欄位，因此此標頭對以 Claude 或 Gemini 為目標的請求不起作用（請參閱 `open-sse/handlers/chatCore/adaptiveEffortWiring.ts`）。 |
 
 ```bash
-# 強制使用最快的設定檔，將此請求的上限設為 $0.05，並在超出預算時直接封鎖，而非繼續超支
+# 強制使用最快的設定檔、將此請求的費用上限設為 $0.05，並在超出預算時直接阻擋，而非繼續支出
 curl -sS http://localhost:20128/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "X-OmniRoute-Mode: fast" \
@@ -250,7 +253,7 @@ curl -sS http://localhost:20128/v1/chat/completions \
 
 解析是一個純函式（`open-sse/services/autoCombo/requestControls.ts`）；解析後的值會傳入引擎現有的 `config.modePack` / `config.budgetCap` /
 `config.budgetFallback` 輸入。組合中儲存的 `config.budgetFallback`（"strict" |
-"cheapest"）會設定持續生效的政策；標頭則會針對單一請求覆寫該政策。
+"cheapest"）會設定持久性原則；標頭則會針對單一請求覆寫該原則。
 
 ## 所有路由策略
 
