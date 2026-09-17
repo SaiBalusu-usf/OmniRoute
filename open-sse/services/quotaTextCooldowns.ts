@@ -169,7 +169,7 @@ export function buildSessionQuotaFallback(errorStr: string): QuotaTextFallback |
 // xAI Grok Build free-tier per-model rolling 24h token cap. Live 429:
 // "You've used all the included free usage for model grok-4.6 for now.
 //  Usage resets over a rolling 24-hour window — tokens (actual/limit): N/M."
-// Grok Build is passthroughModels, so this stays a model lockout (not a)
+// Grok Build is passthroughModels, so this stays a model lockout (not a
 // connection park). Combo must treat it as quota_exhausted so it does not
 // wait comboCooldownWait.maxWaitMs (~30s) and retry the same login.
 const ROLLING_24H_QUOTA_COOLDOWN_MS = 24 * 60 * 60 * 1000;
