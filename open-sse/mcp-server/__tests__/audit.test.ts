@@ -18,13 +18,23 @@ function createStatementMock() {
   };
 }
 
-// #8959 made the production loader use createRequire() (Electron/global-install
+// #8959 made the production loader bypass the ESM graph (Electron/global-install
 // resolution), which vi.doMock CANNOT intercept — it only patches Vitest's ESM
 // module graph. The old better-sqlite3 doMock therefore never engaged: the code
 // opened a REAL sqlite file in the temp DATA_DIR ("no such table" on stderr)
 // and every mock assertion counted 0 calls. The shutdown tests now inject the
 // mock through the audit connection cache (globalThis.__omnirouteMcpAuditDb),
 // and the fallback test uses the __setBetterSqliteLoaderForTests seam.
+// The production path must use runtimeRequire(): a dynamic node:module import is
+// compiled incorrectly in the standalone webpack bundle (`createRequire` becomes
+// a non-function), disabling every MCP audit write at runtime.
+it("uses the bundle-safe runtime loader for better-sqlite3", () => {
+  const source = fs.readFileSync(path.join(process.cwd(), "open-sse/mcp-server/audit.ts"), "utf8");
+  expect(source).toContain('runtimeRequire("better-sqlite3")');
+  expect(source).not.toContain('await import("node:module")');
+  expect(source).not.toContain("createRequire(import.meta.url)");
+});
+
 describe("MCP audit shutdown", () => {
   let dataDir: string;
   let dbFile: string;
@@ -44,34 +54,30 @@ describe("MCP audit shutdown", () => {
     vi.restoreAllMocks();
   });
 
-  it(
-    "checkpoints and closes the audit database during shutdown",
-    async () => {
-      const mockDb: MockAuditDb = {
-        prepare: vi.fn(() => createStatementMock()),
-        pragma: vi.fn(),
-        close: vi.fn(),
-        open: true,
-      };
+  it("checkpoints and closes the audit database during shutdown", async () => {
+    const mockDb: MockAuditDb = {
+      prepare: vi.fn(() => createStatementMock()),
+      pragma: vi.fn(),
+      close: vi.fn(),
+      open: true,
+    };
 
-      const audit = await import("../audit.ts");
-      // Inject through the connection cache — the seam the module itself uses.
-      globalThis.__omnirouteMcpAuditDb = mockDb as unknown as typeof globalThis.__omnirouteMcpAuditDb;
+    const audit = await import("../audit.ts");
+    // Inject through the connection cache — the seam the module itself uses.
+    globalThis.__omnirouteMcpAuditDb = mockDb as unknown as typeof globalThis.__omnirouteMcpAuditDb;
 
-      await audit.logToolCall("omniroute_get_health", { ok: true }, { ok: true }, 12, true);
-      expect(mockDb.prepare).toHaveBeenCalledTimes(1);
+    await audit.logToolCall("omniroute_get_health", { ok: true }, { ok: true }, 12, true);
+    expect(mockDb.prepare).toHaveBeenCalledTimes(1);
 
-      expect(audit.closeAuditDb()).toBe(true);
-      expect(mockDb.pragma).toHaveBeenCalledWith("wal_checkpoint(TRUNCATE)");
-      expect(mockDb.close).toHaveBeenCalledTimes(1);
-      expect(audit.closeAuditDb()).toBe(false);
-    },
-    // Explicit generous timeout (vitest default is 5000ms): under contended
-    // CI-runner load, vi.resetModules() + a fresh dynamic import + mocked DB
-    // calls can exceed the default budget though the behavior is correct
-    // (issue #6803).
-    30000
-  );
+    expect(audit.closeAuditDb()).toBe(true);
+    expect(mockDb.pragma).toHaveBeenCalledWith("wal_checkpoint(TRUNCATE)");
+    expect(mockDb.close).toHaveBeenCalledTimes(1);
+    expect(audit.closeAuditDb()).toBe(false);
+  }, // Explicit generous timeout (vitest default is 5000ms): under contended
+  // CI-runner load, vi.resetModules() + a fresh dynamic import + mocked DB
+  // calls can exceed the default budget though the behavior is correct
+  // (issue #6803).
+  30000);
 
   it("still closes the audit database when checkpoint fails", async () => {
     const mockDb: MockAuditDb = {

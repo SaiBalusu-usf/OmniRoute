@@ -1,0 +1,1 @@
+- **fix(mcp):** read-only MCP tools now authenticate internal management API hops with the configured service token, including the advanced telemetry and cache helpers, while audit logging loads `better-sqlite3` through the standalone-safe runtime loader instead of failing after webpack bundling
