@@ -6157,8 +6157,8 @@ export async function handleChatCore({
     !isDroidCLI;
   const streamStateBody = finalBody || body;
 
-  // Anthropic clients explicitly opt into reasoning with enabled or adaptive
-  // thinking. The shared helper keeps request and response interpretation aligned.
+  // Anthropic enabled/adaptive thinking opts into Claude thinking-block emission.
+  // Without that opt-in, reasoning-only output may still be relayed as ordinary text.
   const requestedThinking = hasActiveClaudeThinking((body ?? {}) as Record<string, unknown>);
 
   if (needsResponsesTranslation) {
@@ -6180,7 +6180,9 @@ export async function handleChatCore({
       false,
       requestedThinking,
       customToolNames,
-      // Preserve Responses namespace identity for Codex round trips (#7936).
+      // openai-responses -> openai translation still wants the namespace identity
+      // map for #7936-style round-trip closure when the client also speaks
+      // Responses (Codex CLI).
       requestToolIdentityMap
     );
   } else if (needsTranslation(targetFormat, clientResponseFormat)) {
@@ -6199,7 +6201,8 @@ export async function handleChatCore({
       apiKeyInfo,
       handleStreamFailure,
       copilotCompatibleReasoning,
-      // Responses suppress `</think>`; otherwise the header overrides UA policy (#5245, #5312).
+      // Responses always suppress `</think>`; otherwise the explicit header
+      // overrides the default-suppressed policy (#5312, #8245).
       resolveSuppressThinkClose({
         userAgent: streamUserAgent,
         thinkingMarkerHeader,

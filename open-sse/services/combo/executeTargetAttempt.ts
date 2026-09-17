@@ -15,7 +15,6 @@ import {
   recordModelLockoutFailure,
   recordProviderFailure,
   recordProviderSuccess,
-  retryHintBypassesMaxCooldownMs,
   selectLockoutCooldownMs,
 } from "../accountFallback.ts";
 import {
@@ -83,10 +82,7 @@ import {
   isQuotaExhaustionResponse,
   recordQuotaExhaustionClassification,
 } from "./quotaExhaustion.ts";
-import {
-  getCachedClaudeQuotaScopeDecision,
-  markAccountExhaustedFromCredits,
-} from "../../../src/domain/quotaCache.ts";
+import { markAccountExhaustedFromCredits } from "../../../src/domain/quotaCache.ts";
 import { classifyComboOutcome, redactConnectionLabel } from "./comboErrorAggregation.ts";
 import { readConnectionForCooldownGate } from "./executeTargetGates.ts";
 import {
@@ -855,35 +851,7 @@ export async function executeTargetAttempt(opts: {
       await resolveComboDailyReset(provider)
     );
     const { cooldownMs } = fallbackResult;
-    // #6863: prefer a parsed upstream quota reset, even when shorter than the fallback.
-    // When the retry hint was already honored, `cooldownMs` is the upstream value.
-    // Small or absent hints retain #1308 exponential backoff in selectLockoutCooldownMs.
-    const fallbackLockoutHintMs =
-      fallbackResult.usedUpstreamRetryHint === true
-        ? cooldownMs
-        : (fallbackResult.quotaResetHintMs ?? 0);
-    // Only transport headers and google.rpc.RetryInfo bypass maxCooldownMs.
-    const fallbackLockoutHintVerified = retryHintBypassesMaxCooldownMs(
-      fallbackResult.retryHintSource
-    );
-    const selectedConnectionId =
-      result.headers?.get("X-OmniRoute-Selected-Connection-Id") ||
-      result.headers?.get("x-omniroute-selected-connection-id") ||
-      undefined;
-    const targetWithConnection = selectedConnectionId
-      ? { ...target, connectionId: selectedConnectionId }
-      : target;
-    const claudeQuotaScope = getCachedClaudeQuotaScopeDecision({
-      connectionId: targetWithConnection.connectionId,
-      provider,
-      status: result.status,
-      errorText,
-      model: rawModel,
-    });
-    const lockoutHintVerified = claudeQuotaScope.scope === "model" || fallbackLockoutHintVerified;
-
-    // #1731 / #1731v2: update shared exhaustion sets and return provider exhaustion.
-    const providerExhausted = applyComboTargetExhaustion(targetWithConnection, {
+    const targetFailure = applyComboTargetExhaustion(target, {
       result,
       fallbackResult,
       errorText,
@@ -901,7 +869,18 @@ export async function executeTargetAttempt(opts: {
       exhaustedLogLevel: "info",
       structuredError,
     });
-    // #6692: release an exhausted sticky connection now, before the next headroom check.
+    const {
+      target: targetWithConnection,
+      providerExhausted,
+      isModelScopedClaudeQuota,
+      hasConnectionScopedClaudeQuota,
+      modelScopedClaudeCooldownMs,
+      lockoutHintMs,
+      lockoutHintVerified,
+    } = targetFailure;
+    // #6692: this connection was just classified as provider/connection-level
+    // exhausted - if it's the currently sticky-bound one, release the pin now
+    // rather than waiting for the next turn's lazy headroom/status recheck.
     deps.releaseStickyPinOnFailure(deps.sticky.messageHash, targetWithConnection.connectionId);
     if (
       providerExhausted ||
@@ -1074,7 +1053,14 @@ export async function executeTargetAttempt(opts: {
       // once the model is cooling down, retrying it would waste an upstream
       // call and extend the cooldown via exponential backoff.
       let lockoutRecorded = false;
-      if (!protectedPriorityTarget && provider && rawModel && retry === 0 && !scopedFailure) {
+      if (
+        !protectedPriorityTarget &&
+        provider &&
+        rawModel &&
+        retry === 0 &&
+        !scopedFailure &&
+        !hasConnectionScopedClaudeQuota
+      ) {
         const mlSettings = resolveModelLockoutSettings(deps.settings);
         if (mlSettings.enabled && mlSettings.errorCodes.includes(result.status)) {
           recordModelLockoutFailure(
@@ -1088,12 +1074,10 @@ export async function executeTargetAttempt(opts: {
             {
               // #1308/#6863: honor a long upstream reset (e.g. "Resets in 160h") over
               // the short base cooldown / exponential backoff when present. #7940's
-              // maxCooldownMs cap only applies to synthetic values — a verified
-              // upstream reset (lockoutHintVerified) bypasses it.
+              // maxCooldownMs applies only to synthetic values. Authoritative
+              // transport hints and cached Claude resets bypass it.
               exactCooldownMs:
-                claudeQuotaScope.scope === "model"
-                  ? claudeQuotaScope.cooldownMs
-                  : selectLockoutCooldownMs(fallbackLockoutHintMs, mlSettings),
+                modelScopedClaudeCooldownMs ?? selectLockoutCooldownMs(lockoutHintMs, mlSettings),
               maxCooldownMs: mlSettings.maxCooldownMs,
               // Preserve authoritative structured/header resets; clamp body prose.
               exactCooldownIsUpstreamReset: lockoutHintVerified,
@@ -1137,8 +1121,11 @@ export async function executeTargetAttempt(opts: {
       strategy: deps.strategy,
       target: toRecordedTarget(target),
     });
-    // LKGP (#919): a failed target must not re-pin itself for the next request.
-    // Request-scoped failures do not trip the circuit breaker or model lockout.
+    // LKGP (#919) mirror of the success-path set below: a just-failed target
+    // must not keep re-pinning itself as the "last known good" choice for the
+    // *next* separate request. Circuit breaker / model lockout deliberately
+    // don't react to request-scoped failure classes (see scopedFailure below),
+    // so nothing else clears this stale pin.
     deps.clearStaleLKGP(deps.combo.name, target.executionKey, deps.combo.id, deps.log, "COMBO");
     state.recordedAttempts++;
     state.lastError = errorText || String(result.status);
@@ -1150,8 +1137,9 @@ export async function executeTargetAttempt(opts: {
     });
     state.lastStatus = result.status;
     if (i > 0) state.fallbackCount++;
-    // Record the model lockout separately from the provider-level cooldown below.
-    if (provider && rawModel && !scopedFailure) {
+    // Wire combo failures into the resilience dashboard (model-level lockout)
+    // alongside the provider-level cooldown below - they govern different scopes.
+    if (provider && rawModel && !scopedFailure && !hasConnectionScopedClaudeQuota) {
       const mlSettings = resolveModelLockoutSettings(deps.settings);
       if (mlSettings.enabled && mlSettings.errorCodes.includes(result.status)) {
         recordModelLockoutFailure(
@@ -1163,11 +1151,9 @@ export async function executeTargetAttempt(opts: {
           mlSettings.baseCooldownMs,
           profile,
           {
-            // #1308/#6863: honor verified upstream resets over synthetic cooldown caps.
+            // Authoritative transport hints and cached Claude resets bypass synthetic caps.
             exactCooldownMs:
-              claudeQuotaScope.scope === "model"
-                ? claudeQuotaScope.cooldownMs
-                : selectLockoutCooldownMs(fallbackLockoutHintMs, mlSettings),
+              modelScopedClaudeCooldownMs ?? selectLockoutCooldownMs(lockoutHintMs, mlSettings),
             maxCooldownMs: mlSettings.maxCooldownMs,
             // Preserve authoritative structured/header resets; clamp body prose.
             exactCooldownIsUpstreamReset: lockoutHintVerified,
@@ -1180,13 +1166,16 @@ export async function executeTargetAttempt(opts: {
       errorBody: redactConnectionLabel(errorText),
     });
 
-    // #5976: per-model-quota provider 500/429 failures must not cool sibling models.
+    // #5976: per-model-quota providers (Gemini, GitHub, etc.) multiplex models
+    // behind one connection. A model-level 500 or 429 (RPM) must NOT cool down
+    // the entire provider - sibling models may still succeed. Skip cooldown
+    // recording for these providers on 500/429 errors so the next target can try.
     if (
       deps.resilienceSettings.providerCooldown.enabled &&
       provider &&
       provider !== "unknown" &&
       !scopedFailure &&
-      claudeQuotaScope.scope !== "model" &&
+      !isModelScopedClaudeQuota &&
       !((result.status === 500 || result.status === 429) && hasPerModelQuota(provider, rawModel))
     ) {
       recordProviderCooldown(

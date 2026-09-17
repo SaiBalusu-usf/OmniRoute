@@ -9,6 +9,8 @@ import { toRecord } from "./scalars.ts";
 export type ClaudeQuotaKind = "session" | "weekly_all" | "weekly_scoped";
 
 const LEGACY_MODEL_DISPLAY_NAMES: Readonly<Record<string, string>> = {
+  // Legacy `seven_day_*` keys use Anthropic codenames, so preserve the public
+  // model-family label operators already recognize in quota displays and routing.
   omelette: "designer",
 };
 const MINUTE_RATE_LIMIT_RE =
@@ -34,7 +36,8 @@ function quotaObject(
   resetValue: unknown,
   claudeQuota: ClaudeQuotaMetadata
 ): UsageQuota {
-  const used = safePercentage(usedValue) ?? 0;
+  const reportedUsed = safePercentage(usedValue);
+  const used = reportedUsed ?? 0;
   const remaining = Math.max(0, 100 - used);
   return {
     used,
@@ -43,6 +46,7 @@ function quotaObject(
     resetAt: parseResetTime(resetValue),
     remainingPercentage: remaining,
     unlimited: false,
+    fractionReported: reportedUsed === undefined ? false : undefined,
     claudeQuota,
   };
 }
@@ -98,11 +102,9 @@ function normalizeCurrentLimits(limits: unknown[]): Record<string, UsageQuota> {
     const kind = nonEmptyString(limit.kind);
     if (kind !== "session" && kind !== "weekly_all" && kind !== "weekly_scoped") continue;
     const percent = currentLimitPercent(limit);
-    if (percent === undefined) continue;
 
     const { modelId, modelDisplayName } = currentLimitModel(limit);
     const scopeLabel = modelDisplayName ?? modelId;
-    if (kind === "weekly_scoped" && !scopeLabel) continue;
     const scopeToken = scopeLabel ? normalizedTokenKey(scopeLabel) : "";
     const metadata: ClaudeQuotaMetadata = {
       kind,
@@ -112,6 +114,8 @@ function normalizeCurrentLimits(limits: unknown[]): Record<string, UsageQuota> {
       modelId,
       modelDisplayName,
     };
+    // Current payload percentages are display metadata. Upstream `isActive`
+    // and severity decide whether the window blocks routing.
     quotas[quotaKey(kind, modelDisplayName ?? modelId)] = quotaObject(
       percent,
       currentLimitReset(limit),

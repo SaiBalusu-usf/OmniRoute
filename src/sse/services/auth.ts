@@ -49,6 +49,7 @@ import {
   getQuotaWindowStatus,
   hydrateCodexQuotaCacheForRequest,
   isQuotaExhaustedForRequest,
+  resolveClaudeQuotaCooldownMs as resolveClaudeCooldown,
 } from "@/domain/quotaCache";
 import { isClaudeExtraUsageAllowed } from "@/lib/providers/claudeExtraUsage";
 import {
@@ -3050,7 +3051,7 @@ export async function markAccountUnavailable(
               : (fallbackResult.quotaResetHintMs ?? null),
           maxCooldownMs: mlSettings.maxCooldownMs,
           scope: usesExactAntigravityLock ? "exact" : undefined,
-          // Authoritative transport or cached upstream resets may bypass the operator cap.
+          // Authoritative transport hints and cached Claude resets may bypass synthetic caps.
           exactCooldownIsUpstreamReset:
             retryHintBypassesMaxCooldownMs(fallbackResult.retryHintSource) ||
             isModelScopedClaudeQuota,
@@ -3180,12 +3181,10 @@ export async function markAccountUnavailable(
         ? getCachedQuotaResetAt(connectionId)
         : null;
     const cachedQuotaResetMs = parseFutureDateMs(cachedQuotaResetAt);
+    const cachedQuotaCooldownMs = cachedQuotaResetMs ? cachedQuotaResetMs - Date.now() : null;
     const cooldownMs = terminalStatus
       ? 0
-      : cachedQuotaResetMs
-        ? cachedQuotaResetMs - Date.now()
-        : rawCooldownMs;
-
+      : resolveClaudeCooldown(claudeQuotaScope, cachedQuotaCooldownMs, rawCooldownMs);
     // ── #3027 / #12242 (402 variant): per-model subscription (403) or
     // per-model billing (402) error on a passthrough/gateway provider →
     // model-only lockout, connection stays active. A 402 here is a specific
@@ -3337,7 +3336,7 @@ export async function markAccountUnavailable(
     } else if (cooldownMs > 0 && !disableCooling) {
       await updateProviderConnection(connectionId, {
         ...baseUpdate,
-        rateLimitedUntil: getUnavailableUntil(cooldownMs),
+        rateLimitedUntil: claudeQuotaScope.resetAt ?? getUnavailableUntil(cooldownMs),
         testStatus: "unavailable",
       });
     } else {

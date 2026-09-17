@@ -439,10 +439,21 @@ function isStandardQuotaExhausted(entry: QuotaCacheEntry, now: number): boolean 
   return true;
 }
 
-function isActiveClaudeExhaustion(quota: QuotaInfo, now: number): boolean {
-  if (!quota.claudeQuota?.active || quota.remainingPercentage > 0 || !quota.resetAt) return false;
+function isBlockingClaudeQuota(quota: QuotaInfo): boolean {
+  const metadata = quota.claudeQuota;
+  if (!metadata?.active) return false;
+  const severity = metadata.severity?.trim().toLowerCase() || null;
+  return severity === null || severity === "critical";
+}
+
+function activeClaudeResetMs(quota: QuotaInfo, now: number): number | null {
+  if (!isBlockingClaudeQuota(quota) || !quota.resetAt) return null;
   const resetMs = parseDate(quota.resetAt);
-  return resetMs !== null && resetMs > now;
+  return resetMs !== null && resetMs > now ? resetMs : null;
+}
+
+function isActiveClaudeExhaustion(quota: QuotaInfo, now: number): boolean {
+  return activeClaudeResetMs(quota, now) !== null;
 }
 
 function isClaudeQuotaExhaustedForRequest(
@@ -474,15 +485,57 @@ function isClaudeQuotaExhaustedForRequest(
 
 export type ClaudeQuotaScopeDecision = {
   scope: "model" | "connection";
+  evidence: "none" | "blocking";
   resetAt: string | null;
   cooldownMs: number | null;
 };
 
+export function resolveClaudeQuotaCooldownMs(
+  decision: ClaudeQuotaScopeDecision,
+  cachedQuotaCooldownMs: number | null,
+  fallbackCooldownMs: number
+): number {
+  if (decision.cooldownMs !== null) return decision.cooldownMs;
+  if (decision.evidence === "blocking") return fallbackCooldownMs;
+  return cachedQuotaCooldownMs ?? fallbackCooldownMs;
+}
+
 const CONNECTION_SCOPED_CLAUDE_QUOTA: ClaudeQuotaScopeDecision = {
   scope: "connection",
+  evidence: "none",
   resetAt: null,
   cooldownMs: null,
 };
+
+const BLOCKING_CONNECTION_SCOPED_CLAUDE_QUOTA: ClaudeQuotaScopeDecision = {
+  scope: "connection",
+  evidence: "blocking",
+  resetAt: null,
+  cooldownMs: null,
+};
+
+function decisionForLatestClaudeReset(
+  quotas: QuotaInfo[],
+  scope: ClaudeQuotaScopeDecision["scope"],
+  now: number
+): ClaudeQuotaScopeDecision | null {
+  let selected: { resetAt: string; resetMs: number } | null = null;
+  for (const quota of quotas) {
+    const resetMs = activeClaudeResetMs(quota, now);
+    if (resetMs === null || !quota.resetAt) continue;
+    if (!selected || resetMs > selected.resetMs) {
+      selected = { resetAt: quota.resetAt, resetMs };
+    }
+  }
+  return selected
+    ? {
+        scope,
+        evidence: "blocking",
+        resetAt: selected.resetAt,
+        cooldownMs: selected.resetMs - now,
+      }
+    : null;
+}
 
 export function getCachedClaudeQuotaScopeDecision(input: {
   connectionId: string | null | undefined;
@@ -503,6 +556,7 @@ export function getCachedClaudeQuotaScopeDecision(input: {
     return CONNECTION_SCOPED_CLAUDE_QUOTA;
   }
 
+  const requestedModel = input.model;
   const now = input.nowMs ?? Date.now();
   const entry = getState().cache.get(input.connectionId);
   if (
@@ -513,33 +567,38 @@ export function getCachedClaudeQuotaScopeDecision(input: {
     return CONNECTION_SCOPED_CLAUDE_QUOTA;
   }
 
-  const windows = Object.values(entry.quotas);
-  const hasGlobalExhaustion = windows.some(
-    (quota) =>
-      quota.claudeQuota !== undefined &&
-      quota.claudeQuota.kind !== "weekly_scoped" &&
-      isActiveClaudeExhaustion(quota, now)
+  const windows = Object.values(entry.quotas).filter(
+    (quota): quota is QuotaInfo & { claudeQuota: ClaudeQuotaMetadata } =>
+      quota.claudeQuota !== undefined
   );
-  if (hasGlobalExhaustion) return CONNECTION_SCOPED_CLAUDE_QUOTA;
+  const globalWindows = windows.filter(
+    (quota) => quota.claudeQuota.kind !== "weekly_scoped" && isBlockingClaudeQuota(quota)
+  );
+  if (globalWindows.length > 0) {
+    return (
+      decisionForLatestClaudeReset(globalWindows, "connection", now) ??
+      BLOCKING_CONNECTION_SCOPED_CLAUDE_QUOTA
+    );
+  }
 
-  for (const quota of windows) {
-    const metadata = quota.claudeQuota;
-    if (
-      !metadata ||
-      metadata.kind !== "weekly_scoped" ||
-      !isActiveClaudeExhaustion(quota, now) ||
-      !claudeQuotaMatchesModel(metadata, input.model) ||
-      !quota.resetAt
-    ) {
-      continue;
-    }
-    const resetMs = parseDate(quota.resetAt);
-    if (resetMs === null || resetMs <= now) continue;
-    return {
-      scope: "model",
-      resetAt: quota.resetAt,
-      cooldownMs: resetMs - now,
-    };
+  const scopedWindows = windows.filter(
+    (quota) => quota.claudeQuota.kind === "weekly_scoped" && isBlockingClaudeQuota(quota)
+  );
+  const matchingWindows = scopedWindows.filter((quota) =>
+    claudeQuotaMatchesModel(quota.claudeQuota, requestedModel)
+  );
+  if (matchingWindows.length > 0) {
+    return (
+      decisionForLatestClaudeReset(matchingWindows, "model", now) ??
+      BLOCKING_CONNECTION_SCOPED_CLAUDE_QUOTA
+    );
+  }
+
+  if (scopedWindows.length > 0) {
+    return (
+      decisionForLatestClaudeReset(scopedWindows, "connection", now) ??
+      BLOCKING_CONNECTION_SCOPED_CLAUDE_QUOTA
+    );
   }
 
   return CONNECTION_SCOPED_CLAUDE_QUOTA;

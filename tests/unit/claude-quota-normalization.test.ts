@@ -79,6 +79,25 @@ test("normalizes the evidenced snake-case current Claude limit shape", () => {
   assert.equal(quotas["weekly Fable (7d)"].claudeQuota?.active, true);
 });
 
+test("preserves active current Claude limits when utilization is unreported", () => {
+  const resetAt = new Date(Date.now() + 120_000).toISOString();
+  const quotas = normalizeClaudeUsageQuotas({
+    limits: [
+      {
+        kind: "weekly_scoped",
+        resetsAt: resetAt,
+        isActive: true,
+        severity: "critical",
+        scope: { model: { displayName: "Fable" } },
+      },
+    ],
+  });
+
+  assert.equal(quotas["weekly Fable (7d)"].fractionReported, false);
+  assert.equal(quotas["weekly Fable (7d)"].resetAt, resetAt);
+  assert.equal(quotas["weekly Fable (7d)"].claudeQuota?.active, true);
+});
+
 test("adapts previous Claude quota fields into the same representation", () => {
   const resetAt = new Date(Date.now() + 120_000).toISOString();
   const quotas = normalizeClaudeUsageQuotas({

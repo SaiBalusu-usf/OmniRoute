@@ -477,3 +477,91 @@ test("priority combo retry lock branch preserves a scoped Claude reset shorter t
 test("priority combo canonicalizes the cc alias for scoped Claude quota routing", async () => {
   assertScopedClaudeQuotaAttempt(await runScopedClaudeQuotaAttempt(0, "cc"));
 });
+
+test("priority combo exhausts a connection-scoped Claude quota without a model lock", async () => {
+  const { executeTargetAttempt } =
+    await import("../../../open-sse/services/combo/executeTargetAttempt.ts");
+  clearQuotaCache();
+  clearCooldownState();
+  clearAllModelLockouts();
+
+  const connectionId = "claude-global-combo";
+  const resetWindowMs = 10_000;
+  const resetAt = new Date(Date.now() + resetWindowMs).toISOString();
+  setQuotaCache(connectionId, "claude", {
+    "session (5h)": {
+      remainingPercentage: 50,
+      resetAt: new Date(Date.now() + 2_000).toISOString(),
+      claudeQuota: {
+        kind: "session",
+        active: false,
+        severity: "normal",
+        scopeKey: null,
+        modelId: null,
+        modelDisplayName: null,
+      },
+    },
+    "weekly (7d)": {
+      remainingPercentage: 60,
+      resetAt,
+      claudeQuota: {
+        kind: "weekly_all",
+        active: true,
+        severity: "critical",
+        scopeKey: null,
+        modelId: null,
+        modelDisplayName: null,
+      },
+    },
+  });
+
+  const target = modelTarget({
+    provider: "claude",
+    modelStr: "claude/claude-fable-5-1",
+    connectionId,
+  });
+  let attempts = 0;
+  const deps = baseDeps({
+    maxRetries: 1,
+    settings: {
+      modelLockout: {
+        enabled: true,
+        errorCodes: [429],
+        baseCooldownMs: 60_000,
+        maxCooldownMs: 120_000,
+      },
+    },
+    handleSingleModelWithTimeout: async () => {
+      attempts += 1;
+      return Response.json(
+        {
+          error: {
+            message: "This request would exceed your account's rate limit. Please try again later.",
+          },
+        },
+        {
+          status: 429,
+          headers: { "x-omniroute-selected-connection-id": connectionId },
+        }
+      );
+    },
+  });
+  const state = emptyState({
+    orderedTargets: [target],
+    abortControllers: new Map([[0, new AbortController()]]),
+  });
+
+  await executeTargetAttempt({
+    index: 0,
+    state,
+    deps,
+    targetForAttempt: target,
+    profile: {},
+    protectedPriorityTarget: false,
+  });
+
+  const lockout = getModelLockoutInfo("claude", connectionId, "claude-fable-5-1");
+  assert.equal(attempts, 1);
+  assert.equal(lockout, null);
+  assert.ok(state.exhaustedConnections.has(`claude:${connectionId}`));
+});

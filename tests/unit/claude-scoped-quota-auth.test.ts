@@ -71,6 +71,40 @@ test.after(async () => {
   fs.rmSync(TEST_DATA_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
+test("Claude quota cooldown resolution preserves evidence precedence", () => {
+  const modelReset = {
+    scope: "model" as const,
+    evidence: "blocking" as const,
+    resetAt: "2030-01-01T00:00:00.000Z",
+    cooldownMs: 12_000,
+  };
+  assert.equal(quotaCache.resolveClaudeQuotaCooldownMs(modelReset, 30_000, 60_000), 12_000);
+  assert.equal(
+    quotaCache.resolveClaudeQuotaCooldownMs(
+      { ...modelReset, scope: "connection", resetAt: null, cooldownMs: null },
+      30_000,
+      60_000
+    ),
+    60_000
+  );
+  assert.equal(
+    quotaCache.resolveClaudeQuotaCooldownMs(
+      { scope: "connection", evidence: "none", resetAt: null, cooldownMs: null },
+      30_000,
+      60_000
+    ),
+    30_000
+  );
+  assert.equal(
+    quotaCache.resolveClaudeQuotaCooldownMs(
+      { scope: "connection", evidence: "none", resetAt: null, cooldownMs: null },
+      null,
+      60_000
+    ),
+    60_000
+  );
+});
+
 test("cached Claude quota scope requires fresh matching scoped-only evidence", () => {
   assert.equal(fallback.hasPerModelQuota("claude"), false);
   const connectionId = "claude-cached-scope";
@@ -101,6 +135,7 @@ test("cached Claude quota scope requires fresh matching scoped-only evidence", (
   });
   assert.deepEqual(decide(), {
     scope: "model",
+    evidence: "blocking",
     resetAt: futureReset,
     cooldownMs: 120_000,
   });
@@ -189,8 +224,344 @@ test("verified current Claude payload flows from parser through live cache to mo
       model: "claude-fable-5-1",
       nowMs: now,
     }),
-    { scope: "model", resetAt, cooldownMs: 120_000 }
+    { scope: "model", evidence: "blocking", resetAt, cooldownMs: 120_000 }
   );
+});
+
+test("active critical current limits route by upstream state without a percent threshold", () => {
+  const connectionId = "claude-current-active-state";
+  const now = Date.now();
+  const resetAt = new Date(now + 120_000).toISOString();
+
+  for (const [index, percent] of [undefined, 37].entries()) {
+    const quotas = normalizeClaudeUsageQuotas({
+      limits: [
+        {
+          kind: "weekly_scoped",
+          ...(percent === undefined ? {} : { percent }),
+          resetsAt: resetAt,
+          isActive: true,
+          severity: "critical",
+          scope: { model: { displayName: "Fable" } },
+        },
+      ],
+    });
+    quotaCache.setQuotaCache(`${connectionId}-${index}`, "claude", quotas);
+
+    assert.deepEqual(
+      quotaCache.getCachedClaudeQuotaScopeDecision({
+        connectionId: `${connectionId}-${index}`,
+        provider: "claude",
+        status: 429,
+        errorText: EXPLICIT_QUOTA_ERROR,
+        model: "claude-fable-5-1",
+        nowMs: now,
+      }),
+      { scope: "model", evidence: "blocking", resetAt, cooldownMs: 120_000 }
+    );
+  }
+});
+
+test("explicit noncritical severity does not produce model-scoped Claude exhaustion", () => {
+  const now = Date.now();
+  const resetAt = new Date(now + 120_000).toISOString();
+
+  for (const severity of ["normal", "warning"]) {
+    const connectionId = `claude-${severity}-scope`;
+    quotaCache.setQuotaCache(
+      connectionId,
+      "claude",
+      normalizeClaudeUsageQuotas({
+        limits: [
+          {
+            kind: "weekly_scoped",
+            percent: 100,
+            resetsAt: resetAt,
+            isActive: true,
+            severity,
+            scope: { model: { displayName: "Fable" } },
+          },
+        ],
+      })
+    );
+
+    assert.deepEqual(
+      quotaCache.getCachedClaudeQuotaScopeDecision({
+        connectionId,
+        provider: "claude",
+        status: 429,
+        errorText: EXPLICIT_QUOTA_ERROR,
+        model: "claude-fable-5-1",
+        nowMs: now,
+      }),
+      { scope: "connection", evidence: "none", resetAt: null, cooldownMs: null },
+      severity
+    );
+  }
+});
+
+test("active Claude global limits take precedence with the latest proven reset", () => {
+  const now = Date.now();
+  const sessionReset = new Date(now + 60_000).toISOString();
+  const weeklyReset = new Date(now + 180_000).toISOString();
+  const decide = (connectionId: string) =>
+    quotaCache.getCachedClaudeQuotaScopeDecision({
+      connectionId,
+      provider: "claude",
+      status: 429,
+      errorText: EXPLICIT_QUOTA_ERROR,
+      model: "claude-fable-5-1",
+      nowMs: now,
+    });
+
+  for (const [kind, resetAt] of [
+    ["session", sessionReset],
+    ["weekly_all", weeklyReset],
+  ] as const) {
+    const connectionId = `claude-${kind}-precedence`;
+    quotaCache.setQuotaCache(connectionId, "claude", {
+      [kind]: {
+        remainingPercentage: 75,
+        resetAt,
+        claudeQuota: {
+          kind,
+          active: true,
+          severity: "critical",
+          scopeKey: null,
+          modelId: null,
+          modelDisplayName: null,
+        },
+      },
+      "weekly Fable (7d)": scopedQuota(new Date(now + 30_000).toISOString()),
+    });
+    assert.deepEqual(decide(connectionId), {
+      scope: "connection",
+      evidence: "blocking",
+      resetAt,
+      cooldownMs: new Date(resetAt).getTime() - now,
+    });
+  }
+
+  const connectionId = "claude-global-precedence";
+  quotaCache.setQuotaCache(connectionId, "claude", {
+    "session (5h)": {
+      remainingPercentage: 55,
+      resetAt: sessionReset,
+      claudeQuota: {
+        kind: "session",
+        active: true,
+        severity: "critical",
+        scopeKey: null,
+        modelId: null,
+        modelDisplayName: null,
+      },
+    },
+    "weekly (7d)": {
+      remainingPercentage: 80,
+      resetAt: weeklyReset,
+      claudeQuota: {
+        kind: "weekly_all",
+        active: true,
+        severity: null,
+        scopeKey: null,
+        modelId: null,
+        modelDisplayName: null,
+      },
+    },
+    "weekly Fable (7d)": scopedQuota(new Date(now + 120_000).toISOString()),
+  });
+
+  assert.deepEqual(decide(connectionId), {
+    scope: "connection",
+    evidence: "blocking",
+    resetAt: weeklyReset,
+    cooldownMs: 180_000,
+  });
+
+  quotaCache.setQuotaCache("claude-global-missing-reset", "claude", {
+    "session (5h)": {
+      remainingPercentage: 10,
+      resetAt: null,
+      claudeQuota: {
+        kind: "session",
+        active: true,
+        severity: "critical",
+        scopeKey: null,
+        modelId: null,
+        modelDisplayName: null,
+      },
+    },
+    "weekly Fable (7d)": scopedQuota(new Date(now + 120_000).toISOString()),
+  });
+  assert.deepEqual(decide("claude-global-missing-reset"), {
+    scope: "connection",
+    evidence: "blocking",
+    resetAt: null,
+    cooldownMs: null,
+  });
+});
+
+test("unknown and unmatched active Claude model scopes fail connection-wide with their reset", () => {
+  const now = Date.now();
+  const resetAt = new Date(now + 120_000).toISOString();
+
+  const scenarios = [
+    {
+      connectionId: "claude-unknown-scope",
+      scope: null,
+    },
+    {
+      connectionId: "claude-unmatched-scope",
+      scope: { model: { id: "claude-opus-5", displayName: "Opus" } },
+    },
+  ];
+
+  for (const scenario of scenarios) {
+    quotaCache.setQuotaCache(
+      scenario.connectionId,
+      "claude",
+      normalizeClaudeUsageQuotas({
+        limits: [
+          {
+            kind: "weekly_scoped",
+            resetsAt: resetAt,
+            isActive: true,
+            severity: "critical",
+            scope: scenario.scope,
+          },
+        ],
+      })
+    );
+
+    assert.deepEqual(
+      quotaCache.getCachedClaudeQuotaScopeDecision({
+        connectionId: scenario.connectionId,
+        provider: "claude",
+        status: 429,
+        errorText: EXPLICIT_QUOTA_ERROR,
+        model: "claude-fable-5-1",
+        nowMs: now,
+      }),
+      { scope: "connection", evidence: "blocking", resetAt, cooldownMs: 120_000 },
+      scenario.connectionId
+    );
+  }
+});
+
+test("connection-scoped Claude persistence uses its exact blocker reset", async () => {
+  const connection = await seedConnection("claude", {
+    name: "claude-exact-connection-reset",
+    authType: "oauth",
+    accessToken: "claude-exact-connection-reset-access",
+    refreshToken: "claude-exact-connection-reset-refresh",
+  });
+  const now = Date.now();
+  const unrelatedReset = new Date(now + 30_000).toISOString();
+  const blockerReset = new Date(now + 180_000).toISOString();
+  quotaCache.setQuotaCache(connection.id, "claude", {
+    "session (5h)": {
+      remainingPercentage: 50,
+      resetAt: unrelatedReset,
+      claudeQuota: {
+        kind: "session",
+        active: false,
+        severity: "normal",
+        scopeKey: null,
+        modelId: null,
+        modelDisplayName: null,
+      },
+    },
+    "weekly (7d)": {
+      remainingPercentage: 42,
+      resetAt: blockerReset,
+      claudeQuota: {
+        kind: "weekly_all",
+        active: true,
+        severity: "critical",
+        scopeKey: null,
+        modelId: null,
+        modelDisplayName: null,
+      },
+    },
+  });
+
+  const result = await auth.markAccountUnavailable(
+    connection.id,
+    429,
+    EXPLICIT_QUOTA_ERROR,
+    "claude",
+    "claude-fable-5-1"
+  );
+  await flushWrites();
+  const updated = await providersDb.getProviderConnectionById(connection.id);
+
+  assert.ok(result.cooldownMs > 170_000 && result.cooldownMs <= 180_000);
+  assert.equal(updated.rateLimitedUntil, blockerReset);
+});
+
+test("proven Claude blockers without a future reset use the classified fallback cooldown", async () => {
+  for (const resetKind of ["missing", "past"] as const) {
+    const connection = await seedConnection("claude", {
+      name: `claude-${resetKind}-blocker-reset`,
+      authType: "oauth",
+      accessToken: `claude-${resetKind}-blocker-access`,
+      refreshToken: `claude-${resetKind}-blocker-refresh`,
+    });
+    const now = Date.now();
+    const unrelatedReset = new Date(now + 90_000).toISOString();
+    quotaCache.setQuotaCache(connection.id, "claude", {
+      "session (5h)": {
+        remainingPercentage: 90,
+        resetAt: unrelatedReset,
+        claudeQuota: {
+          kind: "session",
+          active: false,
+          severity: "normal",
+          scopeKey: null,
+          modelId: null,
+          modelDisplayName: null,
+        },
+      },
+      "weekly (7d)": {
+        remainingPercentage: 20,
+        resetAt: resetKind === "missing" ? null : new Date(now - 60_000).toISOString(),
+        claudeQuota: {
+          kind: "weekly_all",
+          active: true,
+          severity: "critical",
+          scopeKey: null,
+          modelId: null,
+          modelDisplayName: null,
+        },
+      },
+    });
+
+    const decision = quotaCache.getCachedClaudeQuotaScopeDecision({
+      connectionId: connection.id,
+      provider: "claude",
+      status: 429,
+      errorText: EXPLICIT_QUOTA_ERROR,
+      model: "claude-fable-5-1",
+      nowMs: now,
+    });
+    assert.equal(decision.evidence, "blocking");
+    assert.equal(decision.resetAt, null);
+
+    const result = await auth.markAccountUnavailable(
+      connection.id,
+      429,
+      EXPLICIT_QUOTA_ERROR,
+      "claude",
+      "claude-fable-5-1"
+    );
+    await flushWrites();
+    const updated = await providersDb.getProviderConnectionById(connection.id);
+    const persistedResetMs = Date.parse(String(updated.rateLimitedUntil));
+
+    assert.ok(result.cooldownMs >= 5 * 60_000, resetKind);
+    assert.ok(persistedResetMs >= now + 5 * 60_000, resetKind);
+    assert.notEqual(updated.rateLimitedUntil, unrelatedReset, resetKind);
+  }
 });
 
 test("matching native Claude quota locks only the failed model until the scoped reset", async () => {

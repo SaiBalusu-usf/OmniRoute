@@ -19,6 +19,7 @@ import {
   classifyErrorText,
   hasPerModelQuota,
   isProviderExhaustedReason,
+  retryHintBypassesMaxCooldownMs,
 } from "../accountFallback.ts";
 import {
   isAlibabaFreeQuotaExhaustedError,
@@ -95,6 +96,10 @@ export type ApplyComboTargetExhaustionOptions = {
      * HONORS_RULE_LOCK_SCOPE_PROVIDERS (agentrouter + opencode family). */
     ruleScope?: "model" | "provider" | "connection";
     permanent?: boolean;
+    cooldownMs?: number;
+    usedUpstreamRetryHint?: boolean;
+    quotaResetHintMs?: number;
+    retryHintSource?: Parameters<typeof retryHintBypassesMaxCooldownMs>[0];
   };
   errorText: string;
   rawModel: string;
@@ -109,17 +114,85 @@ export type ApplyComboTargetExhaustionOptions = {
   structuredError?: { code?: string; type?: string; message?: string };
 };
 
+export type ComboTargetExhaustionResult = {
+  target: ResolvedComboTarget;
+  providerExhausted: boolean;
+  isModelScopedClaudeQuota: boolean;
+  hasConnectionScopedClaudeQuota: boolean;
+  modelScopedClaudeCooldownMs: number | null;
+  effectiveTargetCooldownMs: number;
+  lockoutHintMs: number;
+  lockoutHintVerified: boolean;
+};
+
+type DerivedTargetFailure = Omit<ComboTargetExhaustionResult, "providerExhausted">;
+
+function deriveTargetFailure(
+  target: ResolvedComboTarget,
+  opts: ApplyComboTargetExhaustionOptions
+): DerivedTargetFailure {
+  const fallbackCooldownMs = opts.fallbackResult.cooldownMs ?? 0;
+  // #6863: a parsed upstream quota reset (e.g. Antigravity "Resets in 92h27m28s")
+  // arrives in `quotaResetHintMs` - it bypasses the operator-gated
+  // `useUpstreamRetryHints` connection-cooldown setting. Mirror the
+  // single-model path (src/sse/services/auth.ts): when the retry hint was
+  // already honored, `cooldownMs` IS the upstream value; otherwise prefer the
+  // parsed quota reset - even when it is SHORTER than the fallback cooldown
+  // (e.g. subscription-quota 1h default vs a real "resets in 10m").
+  // `selectLockoutCooldownMs` still ignores hints at/below the base cooldown,
+  // so absent/tiny hints keep the #1308 exponential-backoff behavior.
+  const lockoutHintMs =
+    opts.fallbackResult.usedUpstreamRetryHint === true
+      ? fallbackCooldownMs
+      : (opts.fallbackResult.quotaResetHintMs ?? 0);
+  // Only a transport header or google.rpc.RetryInfo is authoritative enough
+  // to bypass maxCooldownMs. Prose and generic JSON remain useful exact hints,
+  // but the operator cap still bounds them.
+  const fallbackLockoutHintVerified = retryHintBypassesMaxCooldownMs(
+    opts.fallbackResult.retryHintSource
+  );
+  const selectedConnectionId =
+    opts.result.headers?.get("X-OmniRoute-Selected-Connection-Id") ||
+    opts.result.headers?.get("x-omniroute-selected-connection-id") ||
+    undefined;
+  const effectiveTarget = selectedConnectionId
+    ? { ...target, connectionId: selectedConnectionId }
+    : target;
+  const claudeQuotaScope = getCachedClaudeQuotaScopeDecision({
+    connectionId: effectiveTarget.connectionId,
+    provider: effectiveTarget.provider,
+    status: opts.result.status,
+    errorText: opts.errorText,
+    model: opts.rawModel,
+  });
+  const isModelScopedClaudeQuota = claudeQuotaScope.scope === "model";
+  const modelScopedClaudeCooldownMs = isModelScopedClaudeQuota ? claudeQuotaScope.cooldownMs : null;
+
+  return {
+    target: effectiveTarget,
+    isModelScopedClaudeQuota,
+    hasConnectionScopedClaudeQuota:
+      claudeQuotaScope.scope === "connection" && claudeQuotaScope.evidence === "blocking",
+    modelScopedClaudeCooldownMs,
+    effectiveTargetCooldownMs: claudeQuotaScope.cooldownMs ?? fallbackCooldownMs,
+    lockoutHintMs,
+    lockoutHintVerified: modelScopedClaudeCooldownMs !== null || fallbackLockoutHintVerified,
+  };
+}
+
 /**
  * Update the per-request exhaustion sets from a target's upstream error.
- * @returns providerExhausted — callers gate the connection-level branch and the same-provider
- *          retry decision on this (was a `const providerExhausted` local in both dispatchers).
+ * Returns the resolved target, quota-derived cooldown and lockout metadata, and whether the
+ * provider is exhausted. Both dispatchers consume this single failed-target result.
  */
 export function applyComboTargetExhaustion(
   target: ResolvedComboTarget,
   opts: ApplyComboTargetExhaustionOptions
-): boolean {
+): ComboTargetExhaustionResult {
+  const derived = deriveTargetFailure(target, opts);
+  const effectiveTarget = derived.target;
   const { result, sets, log, tag, errorText, structuredError } = opts;
-  const provider = target.provider;
+  const provider = effectiveTarget.provider;
   const canonicalProvider = provider ? resolveProviderId(provider) : provider;
 
   // #10334: connection-scope account-wide quota exhaustion (agentrouter "额度不足";
@@ -169,13 +242,13 @@ export function applyComboTargetExhaustion(
   // can now resolve to "no credentials available" instead of retrying a
   // rate-limited sibling account, which is the intended, safer outcome.
   if (isAgentrouterConnectionQuotaScope(provider, opts.fallbackResult)) {
-    markAgentrouterConnectionQuotaExhaustion(target, { sets, log, tag });
-    return true;
+    markAgentrouterConnectionQuotaExhaustion(effectiveTarget, { sets, log, tag });
+    return { ...derived, providerExhausted: true };
   }
 
   if (isSharedWalletCredits402(provider, result.status, opts.errorText)) {
-    markSharedWalletCreditsExhaustion(target, { sets, log, tag });
-    return true;
+    markSharedWalletCreditsExhaustion(effectiveTarget, { sets, log, tag });
+    return { ...derived, providerExhausted: true };
   }
 
   if (
@@ -183,24 +256,19 @@ export function applyComboTargetExhaustion(
     result.status === 429 &&
     isExplicitClaudeQuota429Text(errorText)
   ) {
-    const quotaScope = getCachedClaudeQuotaScopeDecision({
-      connectionId: target.connectionId,
-      provider,
-      status: result.status,
-      errorText,
-      model: opts.rawModel,
-    });
-    if (quotaScope.scope === "model") return false;
-    if (target.connectionId) {
-      sets.exhaustedConnections.add(`${provider}:${target.connectionId}`);
+    if (derived.isModelScopedClaudeQuota) {
+      return { ...derived, providerExhausted: false };
+    }
+    if (effectiveTarget.connectionId) {
+      sets.exhaustedConnections.add(`${provider}:${effectiveTarget.connectionId}`);
     } else {
       sets.exhaustedProviders.add(provider);
     }
     log.info?.(
       tag,
-      `Native Claude quota exhausted for ${target.connectionId ? "connection" : "provider"}`
+      `Native Claude quota exhausted for ${effectiveTarget.connectionId ? "connection" : "provider"}`
     );
-    return true;
+    return { ...derived, providerExhausted: true };
   }
 
   // #8133/#8137: auth-level failures (401/403) mean that connection's credentials are bad.
@@ -247,21 +315,26 @@ export function applyComboTargetExhaustion(
       isAlibabaModelStudioProvider(provider) &&
       isAlibabaFreeQuotaExhaustedError(opts.errorText)
     ) {
-      return false;
+      return { ...derived, providerExhausted: false };
     }
-    markAuthLevelExhaustion(target, { result, sets, log, tag });
-    return true;
+    markAuthLevelExhaustion(effectiveTarget, { result, sets, log, tag });
+    return { ...derived, providerExhausted: true };
   }
 
-  // #1731: full provider quota exhausted → skip remaining same-provider targets this request.
+  // #1731: If the entire provider quota is exhausted, mark it so subsequent
+  // same-provider targets are skipped immediately. API-key 429s still use
+  // the short resilience cooldown, but explicit quota text should stop the
+  // combo from trying another target for the same provider in this request.
+  // #1731 / #1731v2: classify the upstream error and update the exhaustion sets
+  // shared by both combo dispatchers.
   const providerExhausted = isProviderQuotaExhausted(provider, opts);
   if (providerExhausted) {
     markProviderQuotaExhaustion(provider as string, opts);
   } else {
-    markTransientOrConnectionLevel(target, opts);
+    markTransientOrConnectionLevel(effectiveTarget, opts);
   }
 
-  return providerExhausted;
+  return { ...derived, providerExhausted };
 }
 
 /**

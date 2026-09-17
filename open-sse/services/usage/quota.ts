@@ -29,7 +29,8 @@ export type UsageQuota = {
   /**
    * True when the upstream provider reported the remaining fraction. False
    * means the API didn't include the field and the 0 value here is a sentinel,
-   * NOT a confirmed-exhausted state. Antigravity-specific.
+   * NOT a confirmed-exhausted state. Provider-specific active metadata may
+   * still prove that the quota blocks routing.
    */
   fractionReported?: boolean;
   quotaSource?: "retrieveUserQuota" | "fetchAvailableModels" | "localUsageHistory";

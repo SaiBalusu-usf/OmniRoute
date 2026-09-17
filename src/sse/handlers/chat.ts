@@ -19,7 +19,6 @@ import {
 } from "../services/auth";
 import {
   getRuntimeProviderProfile,
-  shouldMarkAccountExhaustedFrom429,
   clearModelLock,
   lockModel,
   recordModelLockoutFailure,
@@ -141,10 +140,7 @@ import { resolveUseUpstream429BreakerHints } from "@/shared/utils/providerHints"
 import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
 import { shouldIsolateProbeFailures } from "@/shared/utils/probeOrigin";
 import { getCircuitBreaker, isLocalStreamLifecycleError } from "../../shared/utils/circuitBreaker";
-import {
-  getCachedClaudeQuotaScopeDecision,
-  markAccountExhaustedFrom429,
-} from "../../domain/quotaCache";
+import { maybeMarkChatAccountExhaustedFrom429 } from "../services/chatQuotaExhaustion";
 import { resolveForcedConnectionForCredentialPool } from "../services/sessionAffinityPin.ts";
 import { RequestTelemetry, recordTelemetry } from "../../shared/utils/requestTelemetry";
 import { generateRequestId } from "../../shared/utils/requestId";
@@ -2337,10 +2333,14 @@ async function handleSingleModelChat(
         }
       }
 
-      // Classify daily quota before markAccountUnavailable so its reset wins.
+      // 6. Daily quota error check - must be executed before markAccountUnavailable
+      // Check if it's a daily quota exhausted error (e.g., ModelScope/Kimi "today's quota for model")
+      // Daily quota lockout overrides subsequent rate_limited lockout, ensuring lockout until tomorrow 0:00
       let dailyQuotaExhausted = false;
-      // #7360: use the full upstream text because Gemini's TPM/RPD metric and retry hint
-      // can appear after the client-truncated first line.
+      // #7360: prefer the full un-sanitized upstream text over result.error
+      // (truncated to its first line for the client response body) - Gemini's
+      // TPM/RPD metric name and retry hint live on lines 2-3, after the
+      // generic "quota exceeded" preamble on line 1.
       const errorStr = String(result.rawMessage ?? result.error ?? "");
       const failureKind =
         result.status === 429
@@ -2349,8 +2349,10 @@ async function handleSingleModelChat(
             : classify429FromError({ status: result.status, message: errorStr })
           : undefined;
       if (result.status === 429 && isDailyQuotaExhausted(errorStr)) {
+        // Parse which model is quota-limited
         const match = errorStr.match(/today's quota for model ([^,]+)/);
         const limitedModel = match ? match[1].trim() : model;
+
         const mlSettings = resolveModelLockoutSettings(runtimeOptions.cachedSettings);
         if (mlSettings.enabled && mlSettings.errorCodes.includes(result.status)) {
           // Lock until tomorrow 00:00. Antigravity meters per exact model (#8630).
@@ -2365,6 +2367,7 @@ async function handleSingleModelChat(
             providerProfile,
             { maxCooldownMs: mlSettings.maxCooldownMs, scope: lockScope }
           );
+
           log.info(
             "MODEL_DAILY_QUOTA",
             JSON.stringify({
@@ -2375,30 +2378,32 @@ async function handleSingleModelChat(
             })
           );
         }
+
         dailyQuotaExhausted = true;
       }
-      // Mark the account exhausted only for explicit long-window quota signals, not plain 429s.
+
       if (!dailyQuotaExhausted) {
-        const passthroughModels = credentials.providerSpecificData?.passthroughModels;
-        const claudeQuotaScope = getCachedClaudeQuotaScopeDecision({
+        await maybeMarkChatAccountExhaustedFrom429({
           connectionId: credentials.connectionId,
           provider,
           status: result.status,
           errorText: errorStr,
           model,
+          passthroughModels: credentials.providerSpecificData?.passthroughModels,
+          failureKind,
         });
-        if (
-          result.status === 429 &&
-          shouldMarkAccountExhaustedFrom429(provider, model, passthroughModels, failureKind) &&
-          claudeQuotaScope.scope !== "model" &&
-          // T-PROBE: a probe must not poison the 5min quotaCache for real traffic (#9817).
-          !(await shouldIsolateProbeFailures())
-        ) {
-          markAccountExhaustedFrom429(credentials.connectionId, provider);
-        }
       }
-      // #9708: retry a pre-output transport failure once on the same account before cooling.
-      // Skip emergency fallbacks, which promise one call, and combos, whose router owns retries.
+
+      // #9708: retry a retryable pre-output transport failure once on the same
+      // account (jittered 2-3s) before cooling the connection. A first 503/507
+      // must not rotate away from a still-healthy Codex prompt-cache partition.
+      // Skipped inside an emergency-fallback hop: that path guarantees exactly one
+      // upstream call against the free fallback model (#1731) - an extra retry there
+      // burns a second call against a provider we're already treating as a last resort.
+      // Skipped for combo targets too: combo routing owns its own target-level
+      // fallback/retry policy (per-target error handling in handleSingleModel,
+      // then the next combo target) - a same-account retry here just delays that
+      // policy and can surface the wrong terminal status when a later hop throws.
       const transportAttempts = sameAccountTransportRetries.get(credentials.connectionId) || 0;
       if (
         !runtimeOptions.emergencyFallbackTried &&
