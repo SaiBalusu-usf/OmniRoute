@@ -81,6 +81,10 @@ async function extractEndpointFromConfig(
         const match = content.match(/base_url\s*=\s*["']([^"'\n]+)["']/i);
         return match ? match[1] : null;
       }
+      case "omp": {
+        const match = content.match(/baseUrl:\s*["']?([^"'\r\n]+)["']?/i);
+        return match ? match[1].trim() : null;
+      }
       default:
         return null;
     }

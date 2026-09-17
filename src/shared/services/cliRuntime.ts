@@ -664,6 +664,10 @@ export const getKnownToolPaths = (toolId: string): string[] => {
       ["qodercli.exe", "qodercli"],
     ],
     qwen: [["qwen.cmd", "qwen"]],
+    omp: [
+      ["omp.cmd", "omp"],
+      ["omp.exe", "omp"],
+    ],
     devin: [
       ["devin.exe", "devin"],
       ["devin.cmd", "devin"],
@@ -708,6 +712,13 @@ export const getKnownToolPaths = (toolId: string): string[] => {
       paths.push(path.join(localAppData, "devin", "cli", "bin", "devin.exe"));
     }
 
+    if (toolId === "omp") {
+      if (localAppData) {
+        paths.push(path.join(localAppData, "omp", "omp.exe"));
+      }
+      paths.push(path.join(home, ".omp", "bin", "omp.exe"));
+    }
+
     for (const [winName] of bins) {
       if (npmPrefix) paths.push(path.join(npmPrefix, winName));
       if (appData) {
@@ -744,6 +755,9 @@ export const getKnownToolPaths = (toolId: string): string[] => {
       }
       if (toolId === "claude") {
         paths.push(path.join(home, ".claude", "bin", posixName));
+      }
+      if (toolId === "omp") {
+        paths.push(path.join(home, ".omp", "bin", posixName));
       }
       // Devin CLI installs to ~/.local/share/devin/bin/devin (Linux)
       // or via shell installer to ~/.devin/bin/devin

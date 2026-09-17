@@ -125,7 +125,7 @@ export async function POST(request: Request) {
       api: "openai-completions",
       authHeader: true,
       disableStrictTools: true,
-      discovery: { type: "proxy" },
+      discovery: { type: "openai-models-list", injectV1: false },
     };
 
     await fs.writeFile(getOmpModelsYmlPath(), yamlDump(modelsYml, { lineWidth: -1 }), "utf-8");
