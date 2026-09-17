@@ -40,6 +40,13 @@ import {
 } from "@omniroute/open-sse/services/codexAccount/index.ts";
 import { selectAntigravityQuotaWindowNames } from "@omniroute/open-sse/services/antigravityQuotaFamily.ts";
 import { isClaudeExtraUsageAllowed } from "@/lib/providers/claudeExtraUsage";
+import { resolveProviderId } from "@/shared/constants/providers";
+import {
+  claudeQuotaMatchesModel,
+  isExplicitClaudeQuota429Text,
+  isClaudeQuotaMetadata,
+} from "@omniroute/open-sse/services/usage/claudeQuota.ts";
+import type { ClaudeQuotaMetadata } from "@omniroute/open-sse/services/usage/quota.ts";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -55,6 +62,7 @@ interface QuotaInfo {
   fractionReported?: boolean;
   displayName?: string;
   windowSeconds?: number | null;
+  claudeQuota?: ClaudeQuotaMetadata;
 }
 
 interface QuotaCacheEntry {
@@ -250,28 +258,40 @@ export function quotaSnapshotChanged(
   );
 }
 
-function normalizeQuotas(rawQuotas: Record<string, any>): Record<string, QuotaInfo> {
+function remainingPercentageFromQuota(quota: Record<string, unknown>): number {
+  const direct = safePercentage(quota.remainingPercentage);
+  if (direct !== undefined) return direct;
+  const total = Number(quota.total);
+  const used = Number(quota.used ?? 0);
+  return total > 0 && Number.isFinite(total) && Number.isFinite(used)
+    ? Math.round(((total - used) / total) * 100)
+    : 0;
+}
+
+function normalizeQuotas(rawQuotas: Record<string, unknown>): Record<string, QuotaInfo> {
   const result: Record<string, QuotaInfo> = {};
   for (const [key, q] of Object.entries(rawQuotas)) {
     if (q && typeof q === "object") {
+      const quota = q as Record<string, unknown>;
       const windowSeconds =
-        typeof q.windowSeconds === "number" && Number.isFinite(q.windowSeconds)
-          ? q.windowSeconds
-          : typeof q.window_seconds === "number" && Number.isFinite(q.window_seconds)
-            ? q.window_seconds
+        typeof quota.windowSeconds === "number" && Number.isFinite(quota.windowSeconds)
+          ? quota.windowSeconds
+          : typeof quota.window_seconds === "number" && Number.isFinite(quota.window_seconds)
+            ? quota.window_seconds
             : null;
       result[key] = {
-        remainingPercentage:
-          safePercentage(q.remainingPercentage) ??
-          (q.total > 0 ? Math.round(((q.total - (q.used || 0)) / q.total) * 100) : 0),
-        resetAt: q.resetAt || null,
+        remainingPercentage: remainingPercentageFromQuota(quota),
+        resetAt: typeof quota.resetAt === "string" ? quota.resetAt : null,
         // #10095 — thread through the "did upstream actually report this
         // window's fraction" signal (see UsageQuota in usage/quota.ts).
-        fractionReported: q.fractionReported === false ? false : undefined,
-        ...(typeof q.displayName === "string" && q.displayName.trim()
-          ? { displayName: q.displayName.trim() }
+        fractionReported: quota.fractionReported === false ? false : undefined,
+        ...(typeof quota.displayName === "string" && quota.displayName.trim()
+          ? { displayName: quota.displayName.trim() }
           : {}),
         ...(windowSeconds != null ? { windowSeconds } : {}),
+        ...(isClaudeQuotaMetadata(quota.claudeQuota)
+          ? { claudeQuota: { ...quota.claudeQuota } }
+          : {}),
       };
     }
   }
@@ -419,6 +439,112 @@ function isStandardQuotaExhausted(entry: QuotaCacheEntry, now: number): boolean 
   return true;
 }
 
+function isActiveClaudeExhaustion(quota: QuotaInfo, now: number): boolean {
+  if (!quota.claudeQuota?.active || quota.remainingPercentage > 0 || !quota.resetAt) return false;
+  const resetMs = parseDate(quota.resetAt);
+  return resetMs !== null && resetMs > now;
+}
+
+function isClaudeQuotaExhaustedForRequest(
+  entry: QuotaCacheEntry,
+  requestedModel: string | null,
+  now: number
+): boolean {
+  const typedWindows = Object.values(entry.quotas).filter(
+    (quota): quota is QuotaInfo & { claudeQuota: ClaudeQuotaMetadata } =>
+      quota.claudeQuota !== undefined
+  );
+  if (typedWindows.length === 0 || !requestedModel) {
+    return isStandardQuotaExhausted(entry, now);
+  }
+  if (
+    typedWindows.some(
+      (quota) => quota.claudeQuota.kind !== "weekly_scoped" && isActiveClaudeExhaustion(quota, now)
+    )
+  ) {
+    return true;
+  }
+  return typedWindows.some(
+    (quota) =>
+      quota.claudeQuota.kind === "weekly_scoped" &&
+      isActiveClaudeExhaustion(quota, now) &&
+      claudeQuotaMatchesModel(quota.claudeQuota, requestedModel)
+  );
+}
+
+export type ClaudeQuotaScopeDecision = {
+  scope: "model" | "connection";
+  resetAt: string | null;
+  cooldownMs: number | null;
+};
+
+const CONNECTION_SCOPED_CLAUDE_QUOTA: ClaudeQuotaScopeDecision = {
+  scope: "connection",
+  resetAt: null,
+  cooldownMs: null,
+};
+
+export function getCachedClaudeQuotaScopeDecision(input: {
+  connectionId: string | null | undefined;
+  provider: string | null | undefined;
+  status: number;
+  errorText: string;
+  model: string | null | undefined;
+  nowMs?: number;
+}): ClaudeQuotaScopeDecision {
+  const canonicalProvider = input.provider ? resolveProviderId(input.provider) : input.provider;
+  if (
+    canonicalProvider !== "claude" ||
+    input.status !== 429 ||
+    !input.connectionId ||
+    !input.model ||
+    !isExplicitClaudeQuota429Text(input.errorText)
+  ) {
+    return CONNECTION_SCOPED_CLAUDE_QUOTA;
+  }
+
+  const now = input.nowMs ?? Date.now();
+  const entry = getState().cache.get(input.connectionId);
+  if (
+    !entry ||
+    resolveProviderId(entry.provider) !== canonicalProvider ||
+    now - entry.fetchedAt >= ACTIVE_TTL_MS
+  ) {
+    return CONNECTION_SCOPED_CLAUDE_QUOTA;
+  }
+
+  const windows = Object.values(entry.quotas);
+  const hasGlobalExhaustion = windows.some(
+    (quota) =>
+      quota.claudeQuota !== undefined &&
+      quota.claudeQuota.kind !== "weekly_scoped" &&
+      isActiveClaudeExhaustion(quota, now)
+  );
+  if (hasGlobalExhaustion) return CONNECTION_SCOPED_CLAUDE_QUOTA;
+
+  for (const quota of windows) {
+    const metadata = quota.claudeQuota;
+    if (
+      !metadata ||
+      metadata.kind !== "weekly_scoped" ||
+      !isActiveClaudeExhaustion(quota, now) ||
+      !claudeQuotaMatchesModel(metadata, input.model) ||
+      !quota.resetAt
+    ) {
+      continue;
+    }
+    const resetMs = parseDate(quota.resetAt);
+    if (resetMs === null || resetMs <= now) continue;
+    return {
+      scope: "model",
+      resetAt: quota.resetAt,
+      cooldownMs: resetMs - now,
+    };
+  }
+
+  return CONNECTION_SCOPED_CLAUDE_QUOTA;
+}
+
 export function isQuotaExhaustedForRequest(
   connectionId: string,
   provider: string,
@@ -444,6 +570,10 @@ export function isQuotaExhaustedForRequest(
     return isCodexQuotaExhausted(connectionId, entry, requestedModel);
   }
 
+  if (provider === "claude") {
+    return isClaudeQuotaExhaustedForRequest(entry, requestedModel, now);
+  }
+
   // Standard (non-per-model-quota) providers: check connection-wide aggregate
   return isStandardQuotaExhausted(entry, now);
 }
@@ -454,7 +584,7 @@ export function isQuotaExhaustedForRequest(
 export function setQuotaCache(
   connectionId: string,
   provider: string,
-  rawQuotas: Record<string, any>
+  rawQuotas: Record<string, unknown>
 ) {
   const quotas = normalizeQuotas(rawQuotas);
   const exhausted = isExhausted(quotas);
@@ -474,16 +604,13 @@ export function setQuotaCache(
   if (entry && rawQuotas) {
     for (const [windowKey, quotaInfo] of Object.entries(rawQuotas)) {
       if (!quotaInfo || typeof quotaInfo !== "object") continue;
-      const remainingPercentage =
-        safePercentage(quotaInfo.remainingPercentage) ??
-        (quotaInfo.total > 0
-          ? Math.round(((quotaInfo.total - (quotaInfo.used || 0)) / quotaInfo.total) * 100)
-          : 0);
+      const quota = quotaInfo as Record<string, unknown>;
+      const remainingPercentage = remainingPercentageFromQuota(quota);
       recordProviderQuotaResetEventIfChanged({
         provider,
         connectionId,
         windowKey,
-        currentResetAt: quotaInfo.resetAt ?? null,
+        currentResetAt: typeof quota.resetAt === "string" ? quota.resetAt : null,
         currentRemainingPercentage: remainingPercentage,
         previousObservation: prior?.quotas?.[windowKey]
           ? {
@@ -506,7 +633,7 @@ export function setQuotaCache(
           window_key: windowKey,
           remaining_percentage: remainingPercentage,
           is_exhausted: windowExhausted ? 1 : 0,
-          next_reset_at: quotaInfo.resetAt ?? null,
+          next_reset_at: typeof quota.resetAt === "string" ? quota.resetAt : null,
           window_duration_ms: entry.windowDurationMs ?? null,
           raw_data: null,
         });

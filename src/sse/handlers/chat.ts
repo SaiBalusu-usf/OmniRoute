@@ -140,7 +140,10 @@ import { resolveUseUpstream429BreakerHints } from "@/shared/utils/providerHints"
 import { isFeatureFlagEnabled } from "@/shared/utils/featureFlags";
 import { shouldIsolateProbeFailures } from "@/shared/utils/probeOrigin";
 import { getCircuitBreaker, isLocalStreamLifecycleError } from "../../shared/utils/circuitBreaker";
-import { markAccountExhaustedFrom429 } from "../../domain/quotaCache";
+import {
+  getCachedClaudeQuotaScopeDecision,
+  markAccountExhaustedFrom429,
+} from "../../domain/quotaCache";
 import { resolveForcedConnectionForCredentialPool } from "../services/sessionAffinityPin.ts";
 import { RequestTelemetry, recordTelemetry } from "../../shared/utils/requestTelemetry";
 import { generateRequestId } from "../../shared/utils/requestId";
@@ -2320,10 +2323,8 @@ async function handleSingleModelChat(
             : classify429FromError({ status: result.status, message: errorStr })
           : undefined;
       if (result.status === 429 && isDailyQuotaExhausted(errorStr)) {
-        // Parse which model is quota-limited
         const match = errorStr.match(/today's quota for model ([^,]+)/);
         const limitedModel = match ? match[1].trim() : model;
-
         const mlSettings = resolveModelLockoutSettings(runtimeOptions.cachedSettings);
         if (mlSettings.enabled && mlSettings.errorCodes.includes(result.status)) {
           // Lock until tomorrow 00:00. Antigravity meters per exact model (#8630).
@@ -2338,7 +2339,6 @@ async function handleSingleModelChat(
             providerProfile,
             { maxCooldownMs: mlSettings.maxCooldownMs, scope: lockScope }
           );
-
           log.info(
             "MODEL_DAILY_QUOTA",
             JSON.stringify({
@@ -2349,36 +2349,30 @@ async function handleSingleModelChat(
             })
           );
         }
-
         dailyQuotaExhausted = true;
       }
-
-      // 7. Mark account as quota-exhausted only for explicit long-window quota signals.
-      // A plain 429/high-traffic response should trigger fallback/cooldown, not poison
-      // quotaCache as exhausted for 5 minutes while usage quota may still be available.
+      // Mark the account exhausted only for explicit long-window quota signals, not plain 429s.
       if (!dailyQuotaExhausted) {
         const passthroughModels = credentials.providerSpecificData?.passthroughModels;
+        const claudeQuotaScope = getCachedClaudeQuotaScopeDecision({
+          connectionId: credentials.connectionId,
+          provider,
+          status: result.status,
+          errorText: errorStr,
+          model,
+        });
         if (
           result.status === 429 &&
           shouldMarkAccountExhaustedFrom429(provider, model, passthroughModels, failureKind) &&
-          // T-PROBE: a probe must not poison the 5min quotaCache for real
-          // traffic (#9817).
+          claudeQuotaScope.scope !== "model" &&
+          // T-PROBE: a probe must not poison the 5min quotaCache for real traffic (#9817).
           !(await shouldIsolateProbeFailures())
         ) {
           markAccountExhaustedFrom429(credentials.connectionId, provider);
         }
       }
-
-      // #9708: retry a retryable pre-output transport failure once on the same
-      // account (jittered 2-3s) before cooling the connection. A first 503/507
-      // must not rotate away from a still-healthy Codex prompt-cache partition.
-      // Skipped inside an emergency-fallback hop: that path guarantees exactly one
-      // upstream call against the free fallback model (#1731) — an extra retry there
-      // burns a second call against a provider we're already treating as a last resort.
-      // Skipped for combo targets too: combo routing owns its own target-level
-      // fallback/retry policy (per-target error handling in handleSingleModel,
-      // then the next combo target) — a same-account retry here just delays that
-      // policy and can surface the wrong terminal status when a later hop throws.
+      // #9708: retry a pre-output transport failure once on the same account before cooling.
+      // Skip emergency fallbacks, which promise one call, and combos, whose router owns retries.
       const transportAttempts = sameAccountTransportRetries.get(credentials.connectionId) || 0;
       if (
         !runtimeOptions.emergencyFallbackTried &&

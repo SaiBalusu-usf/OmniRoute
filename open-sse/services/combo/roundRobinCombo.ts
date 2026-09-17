@@ -116,6 +116,7 @@ import {
 } from "./comboStructure.ts";
 import { releaseStickyPinOnFailure, clearStaleLKGP } from "../combo.ts";
 import { resolveComboDailyReset } from "./comboDailyResetClock.ts";
+import { getCachedClaudeQuotaScopeDecision } from "@/domain/quotaCache";
 
 /** Per-connection TPM budget for quota reservation. Undefined = store keeps prior limit. */
 async function resolveTargetTokenLimit(target: {
@@ -902,17 +903,12 @@ export async function handleRoundRobinCombo({
             return result;
           }
 
-          // Round-robin uses the same target-level fallback rule as other combo
-          // strategies: non-ok target responses fall through to the next target.
-          // Classification stays here only to support cooldown/semaphore pacing,
-          // not to decide whether fallback is allowed.
+          // Non-ok targets fall through; classification only controls cooldown pacing.
           const rawError = errorBody?.error;
           const structuredError =
             rawError && typeof rawError === "object"
               ? {
-                  // Upstream JSON may carry a numeric `code`/`type` (e.g. {"code":40001}).
-                  // Coerce to string if present instead of discarding, so downstream string
-                  // ops (.toLowerCase, .startsWith) can run safely without type crashes.
+                  // Coerce upstream numeric code/type values for safe downstream string use.
                   code:
                     (rawError as Record<string, unknown>).code !== undefined &&
                     (rawError as Record<string, unknown>).code !== null
@@ -946,24 +942,27 @@ export async function handleRoundRobinCombo({
           const targetWithConnection = selectedConnectionId
             ? { ...target, connectionId: selectedConnectionId }
             : target;
-
+          const rawModel = parseModel(modelStr).model || modelStr;
+          const claudeQuotaScope = getCachedClaudeQuotaScopeDecision({
+            connectionId: targetWithConnection.connectionId,
+            provider,
+            status: result.status,
+            errorText,
+            model: rawModel,
+          });
+          const targetCooldownMs = claudeQuotaScope.cooldownMs ?? cooldownMs;
           const isAllAccountsRateLimited = isAllAccountsRateLimitedResponse(
             result.status,
             result.headers?.get("content-type") ?? null,
             errorText
           );
 
-          // #1731: If the entire provider quota is exhausted, mark it so subsequent
-          // same-provider targets are skipped immediately. API-key 429s still use
-          // the short resilience cooldown, but explicit quota text should stop the
-          // combo from trying another target for the same provider in this request.
-          // #1731 / #1731v2: classify the upstream error and update the exhaustion sets
-          // (shared with handleComboChat). Returns whether the provider is fully exhausted.
+          // #1731 / #1731v2: update shared exhaustion sets and return provider exhaustion.
           const providerExhausted = applyComboTargetExhaustion(targetWithConnection, {
             result,
             fallbackResult,
             errorText,
-            rawModel: parseModel(modelStr).model || modelStr,
+            rawModel,
             isTokenLimitBreach,
             allAccountsRateLimited: isAllAccountsRateLimited,
             requestScopedFailure: scopedFailure,
@@ -985,19 +984,20 @@ export async function handleRoundRobinCombo({
           ) {
             clearStaleLKGP(combo.name, target.executionKey, combo.id, log, "COMBO-RR");
           }
-
           // Transient errors → mark in semaphore so round-robin stops stampeding this target.
           if (
             !isStreamReadinessFailure &&
             !isTokenLimitBreach &&
             !scopedFailure &&
             TRANSIENT_FOR_SEMAPHORE.includes(result.status) &&
-            cooldownMs > 0
+            targetCooldownMs > 0
           ) {
-            semaphore.markRateLimited(semaphoreKey, cooldownMs);
-            log.warn("COMBO-RR", `${modelStr} error ${result.status}, cooldown ${cooldownMs}ms`);
+            semaphore.markRateLimited(semaphoreKey, targetCooldownMs);
+            log.warn(
+              "COMBO-RR",
+              `${modelStr} error ${result.status}, cooldown ${targetCooldownMs}ms`
+            );
           }
-
           if (isAllAccountsRateLimited) {
             log.info(
               "COMBO-RR",
@@ -1005,25 +1005,19 @@ export async function handleRoundRobinCombo({
             );
           }
 
-          // Transient error → retry same model.
-          // A token-limit 429 is terminal for the client — never retry it.
+          // Retry transient same-model failures, but never terminal token-limit 429s.
           const isTransient =
             !isStreamReadinessFailure &&
             !isTokenLimitBreach &&
             !scopedFailure &&
             [408, 429, 500, 502, 503, 504].includes(result.status);
-          // See the same guard's comment in the "auto" strategy loop above —
-          // failoverBeforeRetry must prevent this same-model retry too, not
-          // just the lower-level skipUpstreamRetry mechanism. Only skip when
-          // `offset + 1 < modelCount` means a sibling target is actually left
-          // in this rotation; with none left, skipping just wastes the attempt.
-          // #10217 round-4 fix: opt-in only — read failoverBeforeRetryExplicit,
-          // not config.failoverBeforeRetry (see comboConfig.ts comment).
+          // #10217: explicit failover-before-retry skips only when a sibling target remains.
           const hasNextRrTarget = offset + 1 < modelCount;
           if (
             retry < maxRetries &&
             isTransient &&
             !providerExhausted &&
+            claudeQuotaScope.scope !== "model" &&
             (!config.failoverBeforeRetryExplicit || !hasNextRrTarget)
           ) {
             continue;
@@ -1038,9 +1032,7 @@ export async function handleRoundRobinCombo({
             strategy: "round-robin",
             target: toRecordedTarget(target),
           });
-          // LKGP (#919) mirror of handleComboChat's failure-path clear above — see
-          // that comment for why this must happen (nothing else clears a pin left
-          // by a request-scoped failure class like a stream-readiness timeout).
+          // LKGP (#919): clear pins left by request-scoped failures such as stream readiness.
           clearStaleLKGP(combo.name, target.executionKey, combo.id, log, "COMBO-RR");
           recordedAttempts++;
           lastError = errorText || String(result.status);
@@ -1062,9 +1054,10 @@ export async function handleRoundRobinCombo({
             provider &&
             provider !== "unknown" &&
             !scopedFailure &&
+            claudeQuotaScope.scope !== "model" &&
             !(
               (result.status === 500 || result.status === 429) &&
-              hasPerModelQuota(provider, parseModel(modelStr).model || modelStr)
+              hasPerModelQuota(provider, rawModel)
             )
           ) {
             recordProviderCooldown(
@@ -1105,8 +1098,7 @@ export async function handleRoundRobinCombo({
       }
     }
   } catch (err) {
-    // G4: unexpected exception in the round-robin loop must never crash the
-    // request silently — surface a 500 instead of hanging the client.
+    // G4: surface unexpected loop errors instead of hanging the request.
     log.error?.("COMBO-RR", "Unexpected error in round-robin loop", err);
     return errorResponse(500, "Unexpected error in round-robin combo");
   } finally {
@@ -1116,8 +1108,7 @@ export async function handleRoundRobinCombo({
     }
   }
 
-  // G4: if the safety timer fired between iterations (no race captured it),
-  // terminate with the actionable 504 instead of the generic exhaustion path.
+  // G4: report a safety-timer expiry instead of generic exhaustion.
   if (rrExpired) {
     return errorResponse(
       504,

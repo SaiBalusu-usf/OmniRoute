@@ -12,6 +12,18 @@ import type {
   AttemptLoopState,
 } from "../../../open-sse/services/combo/attemptLoopTypes.ts";
 import type { ResolvedComboTarget } from "../../../open-sse/services/combo/types.ts";
+import {
+  __clearForTests as clearQuotaCache,
+  setQuotaCache,
+} from "../../../src/domain/quotaCache.ts";
+import {
+  clearCooldownState,
+  isProviderInCooldown,
+} from "../../../open-sse/services/providerCooldownTracker.ts";
+import {
+  clearAllModelLockouts,
+  getModelLockoutInfo,
+} from "../../../open-sse/services/accountFallback.ts";
 
 function emptyState(overrides: Partial<AttemptLoopState> = {}): AttemptLoopState {
   return {
@@ -352,4 +364,116 @@ test("injection: dropping fallbackAttempts from the dispatch target goes red", a
     protectedPriorityTarget: false,
   });
   assert.equal(Object.prototype.hasOwnProperty.call(seen as object, "fallbackAttempts"), true);
+});
+
+async function runScopedClaudeQuotaAttempt(maxRetries: number, provider = "claude") {
+  const { executeTargetAttempt } =
+    await import("../../../open-sse/services/combo/executeTargetAttempt.ts");
+  clearQuotaCache();
+  clearCooldownState();
+  clearAllModelLockouts();
+
+  const connectionId = "claude-scoped-combo";
+  const resetWindowMs = 10_000;
+  const resetAt = new Date(Date.now() + resetWindowMs).toISOString();
+  setQuotaCache(connectionId, "claude", {
+    "weekly Fable (7d)": {
+      remainingPercentage: 0,
+      resetAt,
+      claudeQuota: {
+        kind: "weekly_scoped",
+        active: true,
+        severity: "critical",
+        scopeKey: "model:fable",
+        modelId: "claude-fable-5-1",
+        modelDisplayName: "Fable",
+      },
+    },
+  });
+
+  const target = modelTarget({
+    provider,
+    modelStr: `${provider}/claude-fable-5-1`,
+    connectionId,
+  });
+  const resilienceSettings = {
+    providerCooldown: {
+      enabled: true,
+      minRetryCooldownMs: 1_000,
+      maxRetryCooldownMs: 120_000,
+    },
+  } as AttemptLoopDeps["resilienceSettings"];
+  const deps = baseDeps({
+    maxRetries,
+    resilienceSettings,
+    settings: {
+      modelLockout: {
+        enabled: true,
+        errorCodes: [429],
+        baseCooldownMs: 60_000,
+        maxCooldownMs: 120_000,
+      },
+    },
+    handleSingleModelWithTimeout: async () =>
+      new Response(
+        JSON.stringify({
+          error: {
+            message: "This request would exceed your account's rate limit. Please try again later.",
+          },
+        }),
+        {
+          status: 429,
+          headers: {
+            "content-type": "application/json",
+            "x-omniroute-selected-connection-id": connectionId,
+          },
+        }
+      ),
+  });
+  const state = emptyState({
+    orderedTargets: [target],
+    abortControllers: new Map([[0, new AbortController()]]),
+  });
+
+  await executeTargetAttempt({
+    index: 0,
+    state,
+    deps,
+    targetForAttempt: target,
+    profile: {},
+    protectedPriorityTarget: false,
+  });
+
+  return {
+    connectionId,
+    lockout: getModelLockoutInfo(provider, connectionId, "claude-fable-5-1"),
+    provider,
+    resetWindowMs,
+    resilienceSettings,
+    state,
+  };
+}
+
+function assertScopedClaudeQuotaAttempt(
+  result: Awaited<ReturnType<typeof runScopedClaudeQuotaAttempt>>
+) {
+  const { connectionId, lockout, provider, resetWindowMs, resilienceSettings, state } = result;
+  assert.equal(isProviderInCooldown(provider, connectionId, resilienceSettings), false);
+  assert.equal(state.exhaustedProviders.size, 0);
+  assert.equal(state.exhaustedConnections.size, 0);
+  assert.equal(state.transientRateLimitedProviders.size, 0);
+  assert.ok(lockout);
+  assert.ok(lockout.remainingMs > 0 && lockout.remainingMs <= resetWindowMs);
+}
+
+test("priority combo final lock branch preserves a scoped Claude reset shorter than base", async () => {
+  assertScopedClaudeQuotaAttempt(await runScopedClaudeQuotaAttempt(0));
+});
+
+test("priority combo retry lock branch preserves a scoped Claude reset shorter than base", async () => {
+  assertScopedClaudeQuotaAttempt(await runScopedClaudeQuotaAttempt(1));
+});
+
+test("priority combo canonicalizes the cc alias for scoped Claude quota routing", async () => {
+  assertScopedClaudeQuotaAttempt(await runScopedClaudeQuotaAttempt(0, "cc"));
 });

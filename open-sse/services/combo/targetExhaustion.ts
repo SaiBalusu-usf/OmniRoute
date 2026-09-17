@@ -34,6 +34,9 @@ import { isCloudflareFingerprintRejection } from "../errorClassifier.ts";
 // rule matches 403 today, so only agentrouter reaches this predicate via 403.
 import { isAgentrouterConnectionQuotaScope } from "@/sse/services/auth";
 import { isSharedWalletCredits402 } from "../accountFallback/sharedWalletCredits.ts";
+import { isClaudeMinuteRateLimitText, isExplicitClaudeQuota429Text } from "../usage/claudeQuota.ts";
+import { getCachedClaudeQuotaScopeDecision } from "@/domain/quotaCache";
+import { resolveProviderId } from "@/shared/constants/providers";
 import type { ComboLogger, ResolvedComboTarget } from "./types.ts";
 
 // Connection-level failure statuses: the provider connection itself is likely bad (upstream
@@ -117,6 +120,7 @@ export function applyComboTargetExhaustion(
 ): boolean {
   const { result, sets, log, tag, errorText, structuredError } = opts;
   const provider = target.provider;
+  const canonicalProvider = provider ? resolveProviderId(provider) : provider;
 
   // #10334: connection-scope account-wide quota exhaustion (agentrouter "额度不足";
   // exclusive in practice — no opencode-family rule matches 403 today)
@@ -171,6 +175,31 @@ export function applyComboTargetExhaustion(
 
   if (isSharedWalletCredits402(provider, result.status, opts.errorText)) {
     markSharedWalletCreditsExhaustion(target, { sets, log, tag });
+    return true;
+  }
+
+  if (
+    canonicalProvider === "claude" &&
+    result.status === 429 &&
+    isExplicitClaudeQuota429Text(errorText)
+  ) {
+    const quotaScope = getCachedClaudeQuotaScopeDecision({
+      connectionId: target.connectionId,
+      provider,
+      status: result.status,
+      errorText,
+      model: opts.rawModel,
+    });
+    if (quotaScope.scope === "model") return false;
+    if (target.connectionId) {
+      sets.exhaustedConnections.add(`${provider}:${target.connectionId}`);
+    } else {
+      sets.exhaustedProviders.add(provider);
+    }
+    log.info?.(
+      tag,
+      `Native Claude quota exhausted for ${target.connectionId ? "connection" : "provider"}`
+    );
     return true;
   }
 
@@ -261,10 +290,12 @@ function isProviderQuotaExhausted(
     allAccountsRateLimited,
     requestScopedFailure,
   } = opts;
+  const canonicalProvider = provider ? resolveProviderId(provider) : provider;
   return (
     Boolean(provider && provider !== "unknown") &&
     !(requestScopedFailure || isRequestScopedUpstreamFailure(structuredError)) &&
     !hasPerModelQuota(provider as string, rawModel) &&
+    !(canonicalProvider === "claude" && isClaudeMinuteRateLimitText(errorText)) &&
     (isProviderExhaustedReason(fallbackResult) ||
       classifyErrorText(structuredError?.code || errorText) === RateLimitReason.QUOTA_EXHAUSTED ||
       allAccountsRateLimited)

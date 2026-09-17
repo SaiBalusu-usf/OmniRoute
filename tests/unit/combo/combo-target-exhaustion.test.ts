@@ -2,14 +2,22 @@
 // Characterization of applyComboTargetExhaustion — the de-duplicated #1731/#1731v2 upstream-error
 // → exhaustion-set classification shared by both combo dispatchers. Locks the SET mutations
 // (which drive same-request target skipping) and the providerExhausted return.
-import { test } from "node:test";
+import { beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
 import {
   applyComboTargetExhaustion,
   type ComboExhaustionSets,
 } from "../../../open-sse/services/combo/targetExhaustion.ts";
+import {
+  __clearForTests as clearQuotaCache,
+  setQuotaCache,
+} from "../../../src/domain/quotaCache.ts";
 
 const log = { info() {}, warn() {}, error() {}, debug() {} };
+
+beforeEach(() => {
+  clearQuotaCache();
+});
 
 function sets(): ComboExhaustionSets {
   return {
@@ -199,6 +207,175 @@ test("does NOT mark provider exhausted for per-model-quota providers (different 
   assert.equal(exhausted, false);
   assert.equal(s.exhaustedProviders.has("gemini"), false);
   assert.ok(s.transientRateLimitedProviders.has("gemini"));
+});
+
+test("native Claude scoped quota evidence leaves sibling combo targets eligible", () => {
+  const s = sets();
+  const resetAt = new Date(Date.now() + 120_000).toISOString();
+  setQuotaCache("claude-conn-1", "claude", {
+    "weekly Fable (7d)": {
+      remainingPercentage: 0,
+      resetAt,
+      claudeQuota: {
+        kind: "weekly_scoped",
+        active: true,
+        severity: "critical",
+        scopeKey: "model:fable",
+        modelId: "claude-fable-5-1",
+        modelDisplayName: "Fable",
+      },
+    },
+  });
+
+  const exhausted = applyComboTargetExhaustion(
+    target({
+      provider: "claude",
+      connectionId: "claude-conn-1",
+      modelStr: "claude/claude-fable-5-1",
+    }),
+    {
+      ...baseOpts,
+      result: { status: 429 },
+      fallbackResult: { reason: "quota_exhausted" },
+      errorText: "This request would exceed your account's rate limit. Please try again later.",
+      rawModel: "claude-fable-5-1",
+      sets: s,
+    }
+  );
+
+  assert.equal(exhausted, false);
+  assert.equal(s.exhaustedProviders.size, 0);
+  assert.equal(s.exhaustedConnections.size, 0);
+  assert.equal(s.transientRateLimitedProviders.size, 0);
+});
+
+test("native Claude cc alias uses canonical scoped quota evidence without changing combo keys", () => {
+  const s = sets();
+  setQuotaCache("claude-conn-1", "claude", {
+    "weekly Fable (7d)": {
+      remainingPercentage: 0,
+      resetAt: new Date(Date.now() + 120_000).toISOString(),
+      claudeQuota: {
+        kind: "weekly_scoped",
+        active: true,
+        severity: "critical",
+        scopeKey: "model:fable",
+        modelId: "claude-fable-5-1",
+        modelDisplayName: "Fable",
+      },
+    },
+  });
+
+  const exhausted = applyComboTargetExhaustion(
+    target({
+      provider: "cc",
+      connectionId: "claude-conn-1",
+      modelStr: "cc/claude-fable-5-1",
+    }),
+    {
+      ...baseOpts,
+      result: { status: 429 },
+      fallbackResult: { reason: "quota_exhausted" },
+      errorText: "This request would exceed your account's rate limit. Please try again later.",
+      rawModel: "claude-fable-5-1",
+      sets: s,
+    }
+  );
+
+  assert.equal(exhausted, false);
+  assert.equal(s.exhaustedProviders.size, 0);
+  assert.equal(s.exhaustedConnections.size, 0);
+  assert.equal(s.transientRateLimitedProviders.size, 0);
+});
+
+test("native Claude minute throttles keep existing combo transient handling", () => {
+  const s = sets();
+  setQuotaCache("claude-conn-1", "claude", {
+    "weekly Fable (7d)": {
+      remainingPercentage: 0,
+      resetAt: new Date(Date.now() + 120_000).toISOString(),
+      claudeQuota: {
+        kind: "weekly_scoped",
+        active: true,
+        severity: "critical",
+        scopeKey: "model:fable",
+        modelId: "claude-fable-5-1",
+        modelDisplayName: "Fable",
+      },
+    },
+  });
+
+  const exhausted = applyComboTargetExhaustion(
+    target({ provider: "claude", connectionId: "claude-conn-1" }),
+    {
+      ...baseOpts,
+      result: { status: 429 },
+      fallbackResult: { reason: "rate_limited" },
+      errorText: "RPM usage limit exceeded",
+      rawModel: "claude-fable-5-1",
+      sets: s,
+    }
+  );
+
+  assert.equal(exhausted, false);
+  assert.equal(s.exhaustedProviders.size, 0);
+  assert.equal(s.exhaustedConnections.size, 0);
+  assert.ok(s.transientRateLimitedProviders.has("claude"));
+});
+
+test("native Claude cc alias minute throttles stay transient under the original combo key", () => {
+  const s = sets();
+  const exhausted = applyComboTargetExhaustion(
+    target({ provider: "cc", connectionId: "claude-conn-1", modelStr: "cc/claude-fable-5-1" }),
+    {
+      ...baseOpts,
+      result: { status: 429 },
+      fallbackResult: { reason: "rate_limited" },
+      errorText: "RPM usage limit exceeded",
+      rawModel: "claude-fable-5-1",
+      sets: s,
+    }
+  );
+
+  assert.equal(exhausted, false);
+  assert.equal(s.exhaustedProviders.size, 0);
+  assert.equal(s.exhaustedConnections.size, 0);
+  assert.deepEqual([...s.transientRateLimitedProviders], ["cc"]);
+});
+
+test("native Claude global quota evidence exhausts only the selected combo connection", () => {
+  const s = sets();
+  setQuotaCache("claude-conn-1", "claude", {
+    "weekly (7d)": {
+      remainingPercentage: 0,
+      resetAt: new Date(Date.now() + 120_000).toISOString(),
+      claudeQuota: {
+        kind: "weekly_all",
+        active: true,
+        severity: "critical",
+        scopeKey: null,
+        modelId: null,
+        modelDisplayName: null,
+      },
+    },
+  });
+
+  const exhausted = applyComboTargetExhaustion(
+    target({ provider: "claude", connectionId: "claude-conn-1" }),
+    {
+      ...baseOpts,
+      result: { status: 429 },
+      fallbackResult: { reason: "quota_exhausted" },
+      errorText: "This request would exceed your account's rate limit. Please try again later.",
+      rawModel: "claude-fable-5-1",
+      sets: s,
+    }
+  );
+
+  assert.equal(exhausted, true);
+  assert.equal(s.exhaustedProviders.size, 0);
+  assert.ok(s.exhaustedConnections.has("claude:claude-conn-1"));
+  assert.equal(s.transientRateLimitedProviders.size, 0);
 });
 
 test("does NOT mark provider exhausted for empty provider strings", () => {
