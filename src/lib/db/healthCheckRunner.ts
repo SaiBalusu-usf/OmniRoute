@@ -12,6 +12,11 @@ export interface DbHealthJob {
   pagerCorruption: PagerCorruptionNote | null;
 }
 
+/**
+ * `skipIntegrityCheck` (#13149): a caller may waive the integrity scan — the dashboard
+ * poll does. It is part of the job identity, so a waived scan is never replayed from the
+ * cache to a caller that asked for a full one (the reverse direction is safe).
+ */
 export function createDbHealthCoordinator(
   execute: (autoRepair: boolean, skipIntegrityCheck: boolean) => Promise<DbHealthCheckResult>,
   options: { now?: () => number; cacheMs?: number } = {}
