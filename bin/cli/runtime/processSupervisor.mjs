@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { writePidFile, cleanupPidFile, killAllSubprocesses, isPidRunning } from "../utils/pid.mjs";
 import {
   RESTART_RESET_MS,
@@ -13,9 +14,28 @@ import { stopProcessGracefully } from "../../../src/shared/platform/windowsProce
 import {
   isFatalInstrumentationHookFailure,
   formatAndroidInstrumentationFailureHint,
+  isFatalStartupDiagnostic,
 } from "../utils/ensureAndroidCacheDir.mjs";
 
 const CRASH_LOG_LINES = 50;
+
+const PACKAGE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+// Bun needs the Node-compat polyfill preloaded (#9761). The file ships at the
+// package root via package.json "files" (see scripts/build/pack-artifact-policy.ts)
+// and is never copied into dist/, so the path must resolve against the package
+// root — resolving it next to the server bundle fails with "preload not found" (#11980).
+export const BUN_PRELOAD_PATH = join(PACKAGE_ROOT, "open-sse", "utils", "setupPolyfill.ts");
+
+/**
+ * Argument vector for the server child. Kept pure so tests can assert on it
+ * directly: the bare `import { spawn }` above cannot be intercepted without
+ * --experimental-test-module-mocks (same seam as #8131).
+ */
+export function buildServerSpawnArgs(serverPath, memoryLimit, env = process.env) {
+  return process.versions.bun
+    ? ["--preload", BUN_PRELOAD_PATH, serverPath]
+    : buildNodeRuntimeArgs(env, memoryLimit, serverPath);
+}
 
 export class ServerSupervisor {
   constructor({
@@ -36,12 +56,14 @@ export class ServerSupervisor {
     this.child = null;
     this.isShuttingDown = false;
     this.instrumentationFailureHintPrinted = false;
+    this.fatalStartupDiagnosticPrinted = false;
   }
 
   start() {
     this.startedAt = Date.now();
     this.crashLog = [];
     this.instrumentationFailureHintPrinted = false;
+    this.fatalStartupDiagnosticPrinted = false;
 
     const showLog = process.env.OMNIROUTE_SHOW_LOG === "1";
     // #6321: stdout used to be discarded (`"ignore"`) whenever `--log`/OMNIROUTE_SHOW_LOG
@@ -55,25 +77,15 @@ export class ServerSupervisor {
     // Node args come from buildNodeRuntimeArgs (#9209 IPv4-first DNS + #5238
     // heap flag handling); the Bun branch keeps #9761's polyfill preload —
     // Bun does not accept the Node-only flags.
-    this.child = spawn(
-      process.execPath,
-      process.versions.bun
-        ? [
-            "--preload",
-            join(dirname(this.serverPath), "open-sse/utils/setupPolyfill.ts"),
-            this.serverPath,
-          ]
-        : buildNodeRuntimeArgs(process.env, this.memoryLimit, this.serverPath),
-      {
-        cwd: dirname(this.serverPath),
-        env: this.env,
-        stdio: showLog ? "inherit" : ["ignore", "pipe", "pipe"],
-        // Tray mode is launched without a console. Keep the supervised server
-        // hidden on Windows as well, including when it is restarted after a crash.
-        // Without this, every supervised spawn can create a visible terminal window.
-        windowsHide: true,
-      }
-    );
+    this.child = spawn(process.execPath, buildServerSpawnArgs(this.serverPath, this.memoryLimit), {
+      cwd: dirname(this.serverPath),
+      env: this.env,
+      stdio: showLog ? "inherit" : ["ignore", "pipe", "pipe"],
+      // Tray mode has no visible console. Keep the supervised server hidden on Windows,
+      // including when it is restarted after a crash. Without this, each supervised
+      // spawn can create a visible terminal window.
+      windowsHide: true,
+    });
 
     writePidFile("server", this.child.pid);
 
@@ -93,6 +105,15 @@ export class ServerSupervisor {
             this.env?.XDG_CACHE_HOME || process.env.XDG_CACHE_HOME
           )
         );
+      }
+      // #13314: surface any `[STARTUP] Fatal:`-guarded boot diagnostic
+      // immediately, even without --log — otherwise it is only buffered and
+      // reaches the operator on exit/crash, which never happens when the
+      // HTTP listener still comes up after the fatal failure (every route
+      // then 500s with zero visible diagnostic anywhere).
+      if (!this.fatalStartupDiagnosticPrinted && isFatalStartupDiagnostic(text)) {
+        this.fatalStartupDiagnosticPrinted = true;
+        process.stderr.write(text.endsWith("\n") ? text : `${text}\n`);
       }
     };
 
