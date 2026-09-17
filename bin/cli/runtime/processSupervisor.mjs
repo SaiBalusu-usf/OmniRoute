@@ -68,6 +68,10 @@ export class ServerSupervisor {
         cwd: dirname(this.serverPath),
         env: this.env,
         stdio: showLog ? "inherit" : ["ignore", "pipe", "pipe"],
+        // Tray mode is launched without a console. Keep the supervised server
+        // hidden on Windows as well, including when it is restarted after a crash.
+        // Without this, every supervised spawn can create a visible terminal window.
+        windowsHide: true,
       }
     );
 
