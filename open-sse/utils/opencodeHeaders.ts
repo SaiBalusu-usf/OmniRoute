@@ -1,95 +1,97 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "crypto";
 import { setUserAgentHeader } from "../executors/base.ts";
 import { generateSessionId } from "../services/sessionManager.ts";
 
+/**
+ * Default synthesized User-Agent. The upstream only parses the version, so this literal
+ * exists to be recent enough, not to impersonate a build: any `opencode/<>=1.17>` passes.
+ * Overridable through the existing OPENCODE_USER_AGENT (or <PROVIDER>_USER_AGENT) knob.
+ */
 export const DEFAULT_OPENCODE_USER_AGENT = "opencode/1.18.31";
-export const OPENCODE_SESSION_RE = /^ses_[0-9a-f]{12}[0-9A-Za-z]{14}$/;
-export const OPENCODE_REQUEST_RE = /^msg_[0-9a-f]{12}[0-9A-Za-z]{14}$/;
 
-const BASE62_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-const MINIMUM_OPENCODE_MINOR_VERSION = 17;
+/** Canonical OpenCode session id shape: `ses_` + 12 hex + 14 base62. */
+export const OPENCODE_SESSION_PATTERN = /^ses_[0-9a-f]{12}[0-9A-Za-z]{14}$/;
+/** Same shape for the request id, which the upstream accepts but does not validate. */
+export const OPENCODE_REQUEST_PATTERN = /^msg_[0-9a-f]{12}[0-9A-Za-z]{14}$/;
 
-let lastSessionTimestamp = 0;
-let sessionCounter = 0;
+const MINIMUM_USER_AGENT_MINOR = 17;
+const USER_AGENT_VERSION_RE = /opencode\/(?:[a-z]+\/)?v?(\d+)\.(\d+)/i;
 
-function randomBase62(length: number): string {
-  const bytes = randomBytes(length);
-  return Array.from(bytes, (byte) => BASE62_CHARS[byte % BASE62_CHARS.length]).join("");
-}
-
-function generateOpenCodeIdentifier(prefix: "ses_" | "msg_"): string {
-  const timestamp = Date.now();
-  let sequence = 1;
-  if (prefix === "ses_") {
-    if (timestamp === lastSessionTimestamp) {
-      sessionCounter += 1;
-    } else {
-      lastSessionTimestamp = timestamp;
-      sessionCounter = 1;
-    }
-    sequence = sessionCounter;
-  }
-
-  const rawValue = BigInt(timestamp) * 0x1000n + BigInt(sequence);
-  const value = prefix === "ses_" ? ~rawValue : rawValue;
-  const encodedTimestamp = Array.from({ length: 6 }, (_, index) =>
-    Number((value >> BigInt(40 - 8 * index)) & 0xffn)
-      .toString(16)
-      .padStart(2, "0")
-  ).join("");
-
-  return `${prefix}${encodedTimestamp}${randomBase62(14)}`;
-}
-
-function hasValidOpencodeVersion(userAgent: string): boolean {
-  const match = userAgent.match(/opencode\/(\d+)\.(\d+)(?:\.(\d+))?/i);
+/** Whether a User-Agent already satisfies the upstream contract, so it must be kept. */
+export function satisfiesOpencodeUserAgentContract(userAgent: string | null | undefined): boolean {
+  const match = String(userAgent || "").match(USER_AGENT_VERSION_RE);
   if (!match) return false;
-
   const major = Number.parseInt(match[1], 10);
   const minor = Number.parseInt(match[2], 10);
-  return major > 1 || (major === 1 && minor >= MINIMUM_OPENCODE_MINOR_VERSION);
+  if (!Number.isFinite(major) || !Number.isFinite(minor)) return false;
+  return major > 1 || (major === 1 && minor >= MINIMUM_USER_AGENT_MINOR);
 }
 
-function translateSessionId(sessionId: string, clientTool: string): string {
-  const normalized = sessionId.trim();
-  if (OPENCODE_SESSION_RE.test(normalized)) return normalized;
-
-  const digest = createHash("sha256")
-    .update(`opencode\0${clientTool || "generic"}\0${normalized}`)
-    .digest();
-  const translatedSuffix = Array.from(
-    digest.subarray(6, 20),
-    (byte) => BASE62_CHARS[byte % BASE62_CHARS.length]
-  ).join("");
-  return `ses_${digest.subarray(0, 6).toString("hex")}${translatedSuffix}`;
+/**
+ * The session id the caller supplied, if any.
+ *
+ * Only a client-supplied value joins two requests of one conversation: a synthesized one
+ * is derived from the body, and the body of a build request and of the title request that
+ * follows it differ — including in their tool list, which is the very thing being joined.
+ */
+export function clientSuppliedOpencodeSession(
+  clientHeaders: Record<string, string> | null | undefined
+): string | undefined {
+  if (!clientHeaders) return undefined;
+  const value =
+    findHeader(clientHeaders, "x-opencode-session") ?? findHeader(clientHeaders, "x-session-id");
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
 }
 
-function normalizeRequestId(requestId: string | undefined): string {
-  const normalized = requestId?.trim();
-  return normalized && OPENCODE_REQUEST_RE.test(normalized)
-    ? normalized
-    : generateOpenCodeIdentifier("msg_");
+/**
+ * The CLI identity defaults the upstream expects, or `undefined` when synthesis is off.
+ *
+ * Lives here rather than in the executor because this module already owns the default
+ * user-agent and the contract that validates one. `gated` says the free tier will inspect
+ * this request: outside the gate a configured user-agent is honoured as-is (the #5997
+ * contract, which `opencode-go` and paid models rely on), while on a gated request one
+ * that does not satisfy the version rule is replaced — an operator still carrying the
+ * previous unversioned default would otherwise be refused.
+ */
+export function resolveOpencodeCliDefaults(
+  providerId: string,
+  gated: boolean
+): { userAgent: string; client: string; project: string } | undefined {
+  if (/^(0|false|no|off)$/i.test(process.env.OPENCODE_SYNTHESIZE_CLI_HEADERS?.trim() ?? "")) {
+    return undefined;
+  }
+  const envUAKey = `${providerId.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_USER_AGENT`;
+  const configuredUA = process.env[envUAKey]?.trim() || process.env.OPENCODE_USER_AGENT?.trim();
+  return {
+    userAgent:
+      configuredUA && (!gated || satisfiesOpencodeUserAgentContract(configuredUA))
+        ? configuredUA
+        : DEFAULT_OPENCODE_USER_AGENT,
+    client: process.env.OPENCODE_CLIENT?.trim() || "desktop",
+    project: process.env.OPENCODE_PROJECT?.trim() || "global",
+  };
 }
 
-function normalizeSessionId(
-  sessionId: string | undefined,
-  sessionBody:
-    | {
-        model?: string;
-        system?: unknown;
-        messages?: Array<{ role?: string; content?: unknown }>;
-        input?: Array<{ role?: string; content?: unknown }>;
-        tools?: Array<{ name?: string; function?: { name?: string } }>;
-      }
-    | undefined,
-  clientTool: string
-): string {
-  if (sessionId?.trim()) return translateSessionId(sessionId, clientTool);
+const BASE62 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-  const fingerprint = generateSessionId(sessionBody ?? null);
-  return fingerprint
-    ? translateSessionId(fingerprint, clientTool)
-    : generateOpenCodeIdentifier("ses_");
+function base62From(bytes: Buffer, length: number): string {
+  return Array.from(bytes.subarray(0, length), (byte) => BASE62[byte % 62]).join("");
+}
+
+/**
+ * Render an id in the canonical OpenCode shape (`<prefix>` + 12 hex + 14 base62).
+ *
+ * The upstream checks the shape and not the value: 12 arbitrary hex digits pass, so
+ * there is no need to reproduce the client's own id algorithm (timestamp plus counter).
+ * With a seed the result is deterministic, which is what keeps a conversation on one
+ * upstream session — and therefore keeps prompt caching warm — across requests.
+ */
+function canonicalId(prefix: "ses_" | "msg_", seed?: string): string {
+  const bytes = seed
+    ? createHash("sha256").update(`opencode\u0000${prefix}\u0000${seed}`).digest()
+    : randomBytes(32);
+  return `${prefix}${bytes.subarray(0, 6).toString("hex")}${base62From(bytes.subarray(6), 14)}`;
 }
 
 /**
@@ -136,16 +138,16 @@ function findHeader(headers: Record<string, string>, name: string): string | und
  *   missing, and synthesizes a UUID for x-opencode-request if also missing.
  * @param options.cliDefaults - When provided (OpencodeExecutor only), synthesize
  *   the OpenCode CLI identity headers that Cloudflare requires on VPS egress
- *   (User-Agent, x-opencode-client, x-opencode-project) plus canonical request/session
- *   IDs. Client values are retained when they already satisfy the upstream contract;
- *   foreign session IDs are translated deterministically and invalid request IDs are
- *   replaced. A non-OpenCode or outdated User-Agent is replaced with the versioned
- *   OpenCode default required by the free tier. (#4101, #4105)
+ *   (User-Agent, x-opencode-client, x-opencode-project) plus fresh request/session
+ *   UUIDs, but ONLY for keys the client did not already supply. Client values always
+ *   win; these defaults only fill gaps. User-Agent is the one exception: a client UA
+ *   that is not already the OpenCode CLI (e.g. curl/8.5.0) is REPLACED with the
+ *   synthesized CLI UA, because opencode.ai's free tier rejects generic client UAs
+ *   from datacenter IPs with FreeUsageLimitError 429. (#5997, follow-up #10229)
  * @param options.sessionBody - Request body fields used to generate a
- *   conversation-stable session fingerprint (model, system, messages, tools).
- *   When provided, x-opencode-session is deterministically translated into the
- *   canonical OpenCode format, so upstream prompt caching hits across requests in
- *   the same conversation.
+ *   conversation-stable session fingerprint (model, system, messages or input, tools).
+ *   When provided, x-opencode-session is a deterministic hash instead of a random
+ *   UUID, so upstream prompt caching hits across requests in the same conversation.
  */
 export function forwardOpencodeClientHeaders(
   headers: Record<string, string>,
@@ -189,6 +191,9 @@ export function forwardOpencodeClientHeaders(
     const sessionAffinity =
       findHeader(clientHeaders, "x-session-affinity") || findHeader(clientHeaders, "x-session-id");
     if (sessionAffinity) {
+      // Kept as-is here. When identity synthesis is on, applyCliDefaults renders it in the
+      // canonical shape below; with the synthesis opted out this path stays byte-identical
+      // to before, since opting out means no fabricated identity at all.
       headers["x-opencode-session"] = sessionAffinity;
 
       if (!headers["x-opencode-request"]) {
@@ -205,9 +210,13 @@ export function forwardOpencodeClientHeaders(
 }
 
 /**
- * Fill the OpenCode CLI identity headers required by the free tier. Native canonical
- * identifiers are preserved, foreign session identifiers are translated, and invalid
- * request identifiers are regenerated for the current request.
+ * Fill the OpenCode CLI identity headers Cloudflare requires on VPS egress. For
+ * x-opencode-* headers, client values always win (defaults only fill gaps). The
+ * User-Agent is the exception: a non-CLI client UA (curl, python, SDKs) is replaced
+ * with the synthesized CLI UA, because opencode.ai's free tier flags generic client
+ * UAs from datacenter IPs (FreeUsageLimitError 429). A client UA that already looks
+ * like the OpenCode CLI (opencode-cli/...) is preserved so the real CLI's versioned
+ * identity stays intact. (#5997, follow-up)
  */
 function applyCliDefaults(
   headers: Record<string, string>,
@@ -220,21 +229,27 @@ function applyCliDefaults(
     tools?: Array<{ name?: string; function?: { name?: string } }>;
   }
 ): void {
+  // A client User-Agent is kept only when it already satisfies the upstream contract.
+  // The previous rule kept anything starting with `opencode-cli/`, which carries no
+  // parsable version and is refused by the free tier.
   const existingUa = headers["User-Agent"] || headers["user-agent"];
-  const fallbackUa = hasValidOpencodeVersion(cliDefaults.userAgent)
-    ? cliDefaults.userAgent
-    : DEFAULT_OPENCODE_USER_AGENT;
-  const effectiveUa =
-    typeof existingUa === "string" && hasValidOpencodeVersion(existingUa.trim())
-      ? existingUa.trim()
-      : fallbackUa;
-  setUserAgentHeader(headers, effectiveUa);
+  if (!satisfiesOpencodeUserAgentContract(existingUa)) {
+    setUserAgentHeader(headers, cliDefaults.userAgent);
+  }
   headers["x-opencode-client"] ||= cliDefaults.client;
   headers["x-opencode-project"] ||= cliDefaults.project;
-  headers["x-opencode-request"] = normalizeRequestId(headers["x-opencode-request"]);
-  headers["x-opencode-session"] = normalizeSessionId(
-    headers["x-opencode-session"],
-    sessionBody,
-    headers["x-opencode-client"]
-  );
+  // Both ids go out in the canonical shape. A client value already in that shape is kept;
+  // anything else (a UUID from a generic client, an opaque conversation key) is translated
+  // deterministically, so one client conversation still maps to one upstream session.
+  const clientRequestId = headers["x-opencode-request"]?.trim();
+  headers["x-opencode-request"] =
+    clientRequestId && OPENCODE_REQUEST_PATTERN.test(clientRequestId)
+      ? clientRequestId
+      : canonicalId("msg_", clientRequestId || undefined);
+  const clientSessionId = headers["x-opencode-session"]?.trim();
+  headers["x-opencode-session"] = clientSessionId
+    ? OPENCODE_SESSION_PATTERN.test(clientSessionId)
+      ? clientSessionId
+      : canonicalId("ses_", clientSessionId)
+    : canonicalId("ses_", generateSessionId(sessionBody ?? null) ?? undefined);
 }
