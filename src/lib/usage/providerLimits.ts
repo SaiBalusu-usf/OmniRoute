@@ -750,7 +750,12 @@ async function fetchLiveProviderLimitsWithOptions(
       )) as JsonRecord
     );
     if (isRecord(usage.quotas)) {
-      setQuotaCache(connectionId, connection.provider, usage.quotas);
+      setQuotaCache(
+        connectionId,
+        connection.provider,
+        usage.quotas,
+        isRecord(usage.modelQuotas) ? usage.modelQuotas : {}
+      );
     }
     connection = await syncExpiredStatusIfNeeded(connection, usage);
     connection = await syncClaudeExtraUsageStateIfNeeded(connection, usage);
@@ -865,7 +870,12 @@ async function fetchLiveProviderLimitsWithOptions(
   }
 
   if (isRecord(result.usage.quotas)) {
-    setQuotaCache(connectionId, connection.provider, result.usage.quotas);
+    setQuotaCache(
+      connectionId,
+      connection.provider,
+      result.usage.quotas,
+      isRecord(result.usage.modelQuotas) ? result.usage.modelQuotas : {}
+    );
   }
   connection = await syncExpiredStatusIfNeeded(connection, result.usage);
   connection = await syncClaudeExtraUsageStateIfNeeded(connection, result.usage);
@@ -902,6 +912,7 @@ export async function fetchAndPersistProviderLimits(
     const staleUsage: JsonRecord = {
       ...usage,
       quotas: previous.quotas,
+      modelQuotas: previous.modelQuotas,
       plan: previous.plan ?? usage.plan ?? null,
       bankedResetCredits: previous.bankedResetCredits,
       billing: previous.billing,

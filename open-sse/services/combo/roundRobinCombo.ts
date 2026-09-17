@@ -1001,19 +1001,19 @@ export async function handleRoundRobinCombo({
             );
           }
 
-          // Transient error -> retry same model.
-          // A token-limit 429 is terminal for the client - never retry it.
+          // Transient error → retry same model.
+          // A token-limit 429 is terminal for the client — never retry it.
           const isTransient =
             !isStreamReadinessFailure &&
             !isTokenLimitBreach &&
             !scopedFailure &&
             [408, 429, 500, 502, 503, 504].includes(result.status);
-          // See the same guard's comment in the "auto" strategy loop above -
+          // See the same guard's comment in the "auto" strategy loop above —
           // failoverBeforeRetry must prevent this same-model retry too, not
           // just the lower-level skipUpstreamRetry mechanism. Only skip when
           // `offset + 1 < modelCount` means a sibling target is actually left
           // in this rotation; with none left, skipping just wastes the attempt.
-          // #10217 round-4 fix: opt-in only - read failoverBeforeRetryExplicit,
+          // #10217 round-4 fix: opt-in only — read failoverBeforeRetryExplicit,
           // not config.failoverBeforeRetry (see comboConfig.ts comment).
           const hasNextRrTarget = offset + 1 < modelCount;
           if (
@@ -1035,7 +1035,7 @@ export async function handleRoundRobinCombo({
             strategy: "round-robin",
             target: toRecordedTarget(target),
           });
-          // LKGP (#919) mirror of handleComboChat's failure-path clear above - see
+          // LKGP (#919) mirror of handleComboChat's failure-path clear above — see
           // that comment for why this must happen (nothing else clears a pin left
           // by a request-scoped failure class like a stream-readiness timeout).
           clearStaleLKGP(combo.name, target.executionKey, combo.id, log, "COMBO-RR");
@@ -1104,7 +1104,7 @@ export async function handleRoundRobinCombo({
     }
   } catch (err) {
     // G4: unexpected exception in the round-robin loop must never crash the
-    // request silently - surface a 500 instead of hanging the client.
+    // request silently — surface a 500 instead of hanging the client.
     log.error?.("COMBO-RR", "Unexpected error in round-robin loop", err);
     return errorResponse(500, "Unexpected error in round-robin combo");
   } finally {

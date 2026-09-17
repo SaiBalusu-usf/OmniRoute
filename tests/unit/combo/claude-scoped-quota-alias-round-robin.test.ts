@@ -50,20 +50,25 @@ test.after(() => {
 
 test("round-robin canonicalizes cc scoped quota and keeps the sibling model eligible", async () => {
   const resetAt = new Date(Date.now() + 10_000).toISOString();
-  quotaCache.setQuotaCache(connectionId, "claude", {
-    "weekly Fable (7d)": {
-      remainingPercentage: 0,
-      resetAt,
-      claudeQuota: {
-        kind: "weekly_scoped",
-        active: true,
-        severity: "critical",
-        scopeKey: "model:fable",
-        modelId: "claude-fable-5-1",
-        modelDisplayName: "Fable",
+  quotaCache.setQuotaCache(
+    connectionId,
+    "claude",
+    {},
+    {
+      "weekly Fable (7d)": {
+        remainingPercentage: 0,
+        resetAt,
+        claudeQuota: {
+          kind: "weekly_scoped",
+          active: true,
+          severity: "critical",
+          scopeKey: "model:fable",
+          modelId: "claude-fable-5-1",
+          modelDisplayName: "Fable",
+        },
       },
-    },
-  });
+    }
+  );
 
   const combo = {
     name: "claude-cc-scoped-quota-rr",

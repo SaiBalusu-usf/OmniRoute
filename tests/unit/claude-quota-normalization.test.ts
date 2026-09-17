@@ -2,11 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { normalizeClaudeUsageQuotas } from "../../open-sse/services/usage/claudeQuota.ts";
 
-test("normalizes current Claude limits as the authoritative scoped representation", () => {
+test("normalizes current Claude limits into account and model quota collections", () => {
   const sessionReset = new Date(Date.now() + 60_000).toISOString();
   const weeklyReset = new Date(Date.now() + 120_000).toISOString();
   const scopedReset = new Date(Date.now() + 180_000).toISOString();
-  const quotas = normalizeClaudeUsageQuotas({
+  const { quotas, modelQuotas } = normalizeClaudeUsageQuotas({
     five_hour: null,
     seven_day: null,
     limits: [
@@ -47,8 +47,9 @@ test("normalizes current Claude limits as the authoritative scoped representatio
 
   assert.equal(quotas["session (5h)"].remaining, 70);
   assert.equal(quotas["weekly (7d)"].remaining, 50);
-  assert.equal(quotas["weekly Fable (7d)"].remaining, 0);
-  assert.deepEqual(quotas["weekly Fable (7d)"].claudeQuota, {
+  assert.deepEqual(Object.keys(quotas).sort(), ["session (5h)", "weekly (7d)"]);
+  assert.equal(modelQuotas["weekly fable (7d)"].remaining, 0);
+  assert.deepEqual(modelQuotas["weekly fable (7d)"].claudeQuota, {
     kind: "weekly_scoped",
     active: true,
     severity: "critical",
@@ -56,13 +57,13 @@ test("normalizes current Claude limits as the authoritative scoped representatio
     modelId: null,
     modelDisplayName: "Fable",
   });
-  assert.equal(quotas["weekly Opus (7d)"].claudeQuota?.modelId, "claude-opus-5");
-  assert.equal(quotas["weekly Fable (7d)"].resetAt, scopedReset);
+  assert.equal(modelQuotas["weekly opus (7d)"].claudeQuota?.modelId, "claude-opus-5");
+  assert.equal(modelQuotas["weekly fable (7d)"].resetAt, scopedReset);
 });
 
 test("normalizes the evidenced snake-case current Claude limit shape", () => {
   const resetAt = new Date(Date.now() + 120_000).toISOString();
-  const quotas = normalizeClaudeUsageQuotas({
+  const { modelQuotas } = normalizeClaudeUsageQuotas({
     limits: [
       {
         kind: "weekly_scoped",
@@ -74,14 +75,13 @@ test("normalizes the evidenced snake-case current Claude limit shape", () => {
       },
     ],
   });
-
-  assert.equal(quotas["weekly Fable (7d)"].resetAt, resetAt);
-  assert.equal(quotas["weekly Fable (7d)"].claudeQuota?.active, true);
+  assert.equal(modelQuotas["weekly fable (7d)"].resetAt, resetAt);
+  assert.equal(modelQuotas["weekly fable (7d)"].claudeQuota?.active, true);
 });
 
-test("preserves active current Claude limits when utilization is unreported", () => {
+test("preserves active current Claude model limits when utilization is unreported", () => {
   const resetAt = new Date(Date.now() + 120_000).toISOString();
-  const quotas = normalizeClaudeUsageQuotas({
+  const { modelQuotas } = normalizeClaudeUsageQuotas({
     limits: [
       {
         kind: "weekly_scoped",
@@ -92,24 +92,22 @@ test("preserves active current Claude limits when utilization is unreported", ()
       },
     ],
   });
-
-  assert.equal(quotas["weekly Fable (7d)"].fractionReported, false);
-  assert.equal(quotas["weekly Fable (7d)"].resetAt, resetAt);
-  assert.equal(quotas["weekly Fable (7d)"].claudeQuota?.active, true);
+  assert.equal(modelQuotas["weekly fable (7d)"].fractionReported, false);
+  assert.equal(modelQuotas["weekly fable (7d)"].resetAt, resetAt);
+  assert.equal(modelQuotas["weekly fable (7d)"].claudeQuota?.active, true);
 });
 
-test("adapts previous Claude quota fields into the same representation", () => {
+test("adapts previous Claude fields into the same split representation", () => {
   const resetAt = new Date(Date.now() + 120_000).toISOString();
-  const quotas = normalizeClaudeUsageQuotas({
+  const { quotas, modelQuotas } = normalizeClaudeUsageQuotas({
     five_hour: { utilization: 90, resets_at: resetAt },
     seven_day: { utilization: 20, resets_at: resetAt },
     seven_day_sonnet: { utilization: 35, resets_at: resetAt },
   });
-
   assert.equal(quotas["session (5h)"].remaining, 10);
   assert.equal(quotas["weekly (7d)"].remaining, 80);
-  assert.equal(quotas["weekly sonnet (7d)"].remaining, 65);
-  assert.deepEqual(quotas["weekly sonnet (7d)"].claudeQuota, {
+  assert.equal(modelQuotas["weekly sonnet (7d)"].remaining, 65);
+  assert.deepEqual(modelQuotas["weekly sonnet (7d)"].claudeQuota, {
     kind: "weekly_scoped",
     active: false,
     severity: null,
@@ -119,21 +117,64 @@ test("adapts previous Claude quota fields into the same representation", () => {
   });
 });
 
-test("an empty current limits array does not fall through to previous fields", () => {
-  assert.deepEqual(
-    normalizeClaudeUsageQuotas({
-      limits: [],
-      five_hour: { utilization: 100, resets_at: new Date(Date.now() + 60_000).toISOString() },
-    }),
-    {}
-  );
+test("merges current and previous limits by semantic window", () => {
+  const currentReset = new Date(Date.now() + 60_000).toISOString();
+  const legacyReset = new Date(Date.now() + 120_000).toISOString();
+  const { quotas, modelQuotas } = normalizeClaudeUsageQuotas({
+    five_hour: { utilization: 90, resets_at: legacyReset },
+    seven_day: { utilization: 20, resets_at: legacyReset },
+    seven_day_fable: { utilization: 75, resets_at: legacyReset },
+    seven_day_sonnet: { utilization: 35, resets_at: legacyReset },
+    limits: [
+      { kind: "session", percent: 30, resetsAt: currentReset, isActive: false, severity: "normal" },
+      {
+        kind: "weekly_scoped",
+        percent: 100,
+        resetsAt: currentReset,
+        isActive: true,
+        severity: "critical",
+        scope: { model: { displayName: "Fable" } },
+      },
+    ],
+  });
+  assert.equal(quotas["session (5h)"].used, 30);
+  assert.equal(quotas["session (5h)"].resetAt, currentReset);
+  assert.equal(quotas["weekly (7d)"].used, 20);
+  assert.equal(modelQuotas["weekly fable (7d)"].used, 100);
+  assert.equal(modelQuotas["weekly fable (7d)"].resetAt, currentReset);
+  assert.equal(modelQuotas["weekly sonnet (7d)"].used, 35);
 });
 
-test("any present invalid limits value remains authoritative", () => {
+test("current upstream model IDs replace matching legacy display-name windows", () => {
+  const legacyReset = new Date(Date.now() + 120_000).toISOString();
+  const currentReset = new Date(Date.now() + 60_000).toISOString();
+  const { modelQuotas } = normalizeClaudeUsageQuotas({
+    seven_day_fable: { utilization: 75, resets_at: legacyReset },
+    limits: [
+      {
+        kind: "weekly_scoped",
+        percent: 100,
+        resetsAt: currentReset,
+        isActive: true,
+        severity: "critical",
+        scope: { model: { id: "claude-fable-5-1" } },
+      },
+    ],
+  });
+
+  assert.deepEqual(Object.keys(modelQuotas), ["weekly claude-fable-5-1 (7d)"]);
+  assert.equal(modelQuotas["weekly claude-fable-5-1 (7d)"].resetAt, currentReset);
+});
+
+test("empty or invalid current limits retain valid previous windows", () => {
+  const resetAt = new Date(Date.now() + 60_000).toISOString();
   const previous = {
-    five_hour: { utilization: 100, resets_at: new Date(Date.now() + 60_000).toISOString() },
+    five_hour: { utilization: 100, resets_at: resetAt },
+    seven_day_sonnet: { utilization: 25, resets_at: resetAt },
   };
-  for (const limits of [null, { kind: "weekly_all" }, 42, "invalid"]) {
-    assert.deepEqual(normalizeClaudeUsageQuotas({ ...previous, limits }), {});
+  for (const limits of [[], null, { kind: "weekly_all" }, 42, "invalid"]) {
+    const { quotas, modelQuotas } = normalizeClaudeUsageQuotas({ ...previous, limits });
+    assert.equal(quotas["session (5h)"].used, 100);
+    assert.equal(modelQuotas["weekly sonnet (7d)"].used, 25);
   }
 });

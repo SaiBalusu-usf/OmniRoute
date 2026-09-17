@@ -79,7 +79,7 @@ export async function getClaudeUsage(accessToken?: string) {
 
     if (oauthResponse.ok) {
       const data = toRecord(await oauthResponse.json());
-      const quotas = normalizeClaudeUsageQuotas(data);
+      const { quotas, modelQuotas } = normalizeClaudeUsageQuotas(data);
 
       const bootstrap = await bootstrapPromise;
       const plan =
@@ -93,6 +93,7 @@ export async function getClaudeUsage(accessToken?: string) {
       return {
         ...(plan ? { plan } : {}),
         quotas,
+        modelQuotas,
         extraUsage: data.extra_usage ?? null,
         bootstrap,
       };

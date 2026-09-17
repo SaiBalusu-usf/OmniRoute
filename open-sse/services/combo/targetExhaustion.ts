@@ -118,7 +118,7 @@ export type ComboTargetExhaustionResult = {
   target: ResolvedComboTarget;
   providerExhausted: boolean;
   isModelScopedClaudeQuota: boolean;
-  hasConnectionScopedClaudeQuota: boolean;
+  isConnectionScopedClaudeQuota: boolean;
   modelScopedClaudeCooldownMs: number | null;
   effectiveTargetCooldownMs: number;
   lockoutHintMs: number;
@@ -133,11 +133,11 @@ function deriveTargetFailure(
 ): DerivedTargetFailure {
   const fallbackCooldownMs = opts.fallbackResult.cooldownMs ?? 0;
   // #6863: a parsed upstream quota reset (e.g. Antigravity "Resets in 92h27m28s")
-  // arrives in `quotaResetHintMs` - it bypasses the operator-gated
+  // arrives in `quotaResetHintMs` — it bypasses the operator-gated
   // `useUpstreamRetryHints` connection-cooldown setting. Mirror the
   // single-model path (src/sse/services/auth.ts): when the retry hint was
   // already honored, `cooldownMs` IS the upstream value; otherwise prefer the
-  // parsed quota reset - even when it is SHORTER than the fallback cooldown
+  // parsed quota reset — even when it is SHORTER than the fallback cooldown
   // (e.g. subscription-quota 1h default vs a real "resets in 10m").
   // `selectLockoutCooldownMs` still ignores hints at/below the base cooldown,
   // so absent/tiny hints keep the #1308 exponential-backoff behavior.
@@ -158,6 +158,9 @@ function deriveTargetFailure(
   const effectiveTarget = selectedConnectionId
     ? { ...target, connectionId: selectedConnectionId }
     : target;
+  const canonicalProvider = effectiveTarget.provider
+    ? resolveProviderId(effectiveTarget.provider)
+    : effectiveTarget.provider;
   const claudeQuotaScope = getCachedClaudeQuotaScopeDecision({
     connectionId: effectiveTarget.connectionId,
     provider: effectiveTarget.provider,
@@ -166,13 +169,17 @@ function deriveTargetFailure(
     model: opts.rawModel,
   });
   const isModelScopedClaudeQuota = claudeQuotaScope.scope === "model";
+  const isConnectionScopedClaudeQuota =
+    canonicalProvider === "claude" &&
+    opts.result.status === 429 &&
+    isExplicitClaudeQuota429Text(opts.errorText) &&
+    claudeQuotaScope.scope === "connection";
   const modelScopedClaudeCooldownMs = isModelScopedClaudeQuota ? claudeQuotaScope.cooldownMs : null;
 
   return {
     target: effectiveTarget,
     isModelScopedClaudeQuota,
-    hasConnectionScopedClaudeQuota:
-      claudeQuotaScope.scope === "connection" && claudeQuotaScope.evidence === "blocking",
+    isConnectionScopedClaudeQuota,
     modelScopedClaudeCooldownMs,
     effectiveTargetCooldownMs: claudeQuotaScope.cooldownMs ?? fallbackCooldownMs,
     lockoutHintMs,

@@ -69,6 +69,7 @@ interface QuotaCacheEntry {
   connectionId: string;
   provider: string;
   quotas: Record<string, QuotaInfo>;
+  modelQuotas: Record<string, QuotaInfo>;
   fetchedAt: number;
   exhausted: boolean;
   nextResetAt: string | null;
@@ -386,6 +387,7 @@ export function hydrateCodexQuotaCacheForRequest(
       connectionId: connection.id,
       provider: connection.provider,
       quotas: {},
+      modelQuotas: {},
       fetchedAt: Date.now(),
       exhausted: false,
       nextResetAt: null,
@@ -461,23 +463,23 @@ function isClaudeQuotaExhaustedForRequest(
   requestedModel: string | null,
   now: number
 ): boolean {
-  const typedWindows = Object.values(entry.quotas).filter(
+  const globalWindows = Object.values(entry.quotas).filter(
     (quota): quota is QuotaInfo & { claudeQuota: ClaudeQuotaMetadata } =>
-      quota.claudeQuota !== undefined
+      quota.claudeQuota !== undefined && quota.claudeQuota.kind !== "weekly_scoped"
   );
-  if (typedWindows.length === 0 || !requestedModel) {
+  const scopedWindows = Object.values(entry.modelQuotas).filter(
+    (quota): quota is QuotaInfo & { claudeQuota: ClaudeQuotaMetadata } =>
+      quota.claudeQuota?.kind === "weekly_scoped"
+  );
+  if (globalWindows.length === 0 && scopedWindows.length === 0) {
     return isStandardQuotaExhausted(entry, now);
   }
-  if (
-    typedWindows.some(
-      (quota) => quota.claudeQuota.kind !== "weekly_scoped" && isActiveClaudeExhaustion(quota, now)
-    )
-  ) {
+  if (globalWindows.some((quota) => isActiveClaudeExhaustion(quota, now))) {
     return true;
   }
-  return typedWindows.some(
+  if (!requestedModel) return isStandardQuotaExhausted(entry, now);
+  return scopedWindows.some(
     (quota) =>
-      quota.claudeQuota.kind === "weekly_scoped" &&
       isActiveClaudeExhaustion(quota, now) &&
       claudeQuotaMatchesModel(quota.claudeQuota, requestedModel)
   );
@@ -567,22 +569,21 @@ export function getCachedClaudeQuotaScopeDecision(input: {
     return CONNECTION_SCOPED_CLAUDE_QUOTA;
   }
 
-  const windows = Object.values(entry.quotas).filter(
+  const globalWindows = Object.values(entry.quotas).filter(
     (quota): quota is QuotaInfo & { claudeQuota: ClaudeQuotaMetadata } =>
-      quota.claudeQuota !== undefined
+      quota.claudeQuota !== undefined && quota.claudeQuota.kind !== "weekly_scoped"
   );
-  const globalWindows = windows.filter(
-    (quota) => quota.claudeQuota.kind !== "weekly_scoped" && isBlockingClaudeQuota(quota)
-  );
-  if (globalWindows.length > 0) {
+  const blockingGlobalWindows = globalWindows.filter(isBlockingClaudeQuota);
+  if (blockingGlobalWindows.length > 0) {
     return (
-      decisionForLatestClaudeReset(globalWindows, "connection", now) ??
+      decisionForLatestClaudeReset(blockingGlobalWindows, "connection", now) ??
       BLOCKING_CONNECTION_SCOPED_CLAUDE_QUOTA
     );
   }
 
-  const scopedWindows = windows.filter(
-    (quota) => quota.claudeQuota.kind === "weekly_scoped" && isBlockingClaudeQuota(quota)
+  const scopedWindows = Object.values(entry.modelQuotas).filter(
+    (quota): quota is QuotaInfo & { claudeQuota: ClaudeQuotaMetadata } =>
+      quota.claudeQuota?.kind === "weekly_scoped" && isBlockingClaudeQuota(quota)
   );
   const matchingWindows = scopedWindows.filter((quota) =>
     claudeQuotaMatchesModel(quota.claudeQuota, requestedModel)
@@ -629,7 +630,7 @@ export function isQuotaExhaustedForRequest(
     return isCodexQuotaExhausted(connectionId, entry, requestedModel);
   }
 
-  if (provider === "claude") {
+  if (resolveProviderId(provider) === "claude") {
     return isClaudeQuotaExhaustedForRequest(entry, requestedModel, now);
   }
 
@@ -643,9 +644,11 @@ export function isQuotaExhaustedForRequest(
 export function setQuotaCache(
   connectionId: string,
   provider: string,
-  rawQuotas: Record<string, unknown>
+  rawQuotas: Record<string, unknown>,
+  rawModelQuotas: Record<string, unknown> = {}
 ) {
   const quotas = normalizeQuotas(rawQuotas);
+  const modelQuotas = normalizeQuotas(rawModelQuotas);
   const exhausted = isExhausted(quotas);
   // #4438 — capture the prior entry BEFORE overwriting the cache so we can skip
   // redundant snapshot writes for idle connections whose quota didn't change.
@@ -654,6 +657,7 @@ export function setQuotaCache(
     connectionId,
     provider,
     quotas,
+    modelQuotas,
     fetchedAt: Date.now(),
     exhausted,
     nextResetAt: exhausted ? earliestResetAt(quotas) : null,
@@ -762,6 +766,7 @@ function hydrateQuotaCacheFromSnapshots(connectionId: string): QuotaCacheEntry |
     connectionId,
     provider,
     quotas,
+    modelQuotas: {},
     fetchedAt: fetchedAt || Date.now(),
     exhausted,
     nextResetAt: exhausted ? earliestResetAt(quotas) : null,
@@ -917,6 +922,7 @@ export function markAccountExhaustedFrom429(connectionId: string, provider: stri
     connectionId,
     provider,
     quotas: {},
+    modelQuotas: {},
     fetchedAt: Date.now(),
     exhausted: true,
     nextResetAt: null,
@@ -943,7 +949,12 @@ async function refreshEntry(entry: QuotaCacheEntry) {
     );
 
     if (usage?.quotas) {
-      setQuotaCache(entry.connectionId, entry.provider, usage.quotas);
+      setQuotaCache(
+        entry.connectionId,
+        entry.provider,
+        usage.quotas,
+        usage.modelQuotas && typeof usage.modelQuotas === "object" ? usage.modelQuotas : {}
+      );
     }
   } catch (err) {
     console.warn(

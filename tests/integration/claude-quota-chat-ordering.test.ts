@@ -73,20 +73,25 @@ test("chat preserves an unresolved Claude scoped reset through account fallback"
   });
   await settingsDb.updateSettings({ requestRetry: 0, maxRetryIntervalSec: 0 });
   const resetAt = new Date(Date.now() + 10 * 60_000).toISOString();
-  quotaCache.setQuotaCache(connection.id, "claude", {
-    [scenario]: {
-      remainingPercentage: 42,
-      resetAt,
-      claudeQuota: {
-        kind: "weekly_scoped",
-        active: true,
-        severity: "critical",
-        scopeKey: "model:unknown",
-        modelId: null,
-        modelDisplayName: null,
+  quotaCache.setQuotaCache(
+    connection.id,
+    "claude",
+    {},
+    {
+      [scenario]: {
+        remainingPercentage: 42,
+        resetAt,
+        claudeQuota: {
+          kind: "weekly_scoped",
+          active: true,
+          severity: "critical",
+          scopeKey: "model:unknown",
+          modelId: null,
+          modelDisplayName: null,
+        },
       },
-    },
-  });
+    }
+  );
 
   globalThis.fetch = async () =>
     Response.json(

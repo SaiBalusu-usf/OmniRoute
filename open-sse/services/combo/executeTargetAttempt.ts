@@ -298,14 +298,13 @@ export async function executeTargetAttempt(opts: {
       }
     }
 
-    // Universal handoff: inject existing handoff if model changed. i === 0
-    // only: a fallback target (i > 0) serves the SAME client request the
-    // failed primary target would have served, with the original messages
-    // already intact -- there's nothing to hand off, since the client never
-    // saw the earlier target fail. Injecting a handoff note there replaces
-    // real context with a context-free note, which weaker fallback models
-    // have been observed treating as license to fabricate content instead
-    // of just answering the actual request (#12227 follow-up).
+    // Universal handoff: inject on model change only when i === 0. A fallback
+    // target (i > 0) serves the SAME client request the failed primary target
+    // would have served, with the original messages already intact -- there is
+    // nothing to hand off, since the client never saw the earlier target fail.
+    // Injecting a handoff note there replaces real context with a context-free
+    // note, which weaker fallback models have been observed treating as license
+    // to fabricate content instead of answering the request (#12227 follow-up).
     if (
       i === 0 &&
       universalHandoffConfig.enabled &&
@@ -321,7 +320,8 @@ export async function executeTargetAttempt(opts: {
           modelStr,
           `Model routing: ${lastModel} → ${modelStr}`,
           existingHandoff,
-          universalHandoffConfig.relayMode
+          universalHandoffConfig.relayMode,
+          deps.sourceFormat
         );
       }
     }
@@ -873,13 +873,13 @@ export async function executeTargetAttempt(opts: {
       target: targetWithConnection,
       providerExhausted,
       isModelScopedClaudeQuota,
-      hasConnectionScopedClaudeQuota,
+      isConnectionScopedClaudeQuota,
       modelScopedClaudeCooldownMs,
       lockoutHintMs,
       lockoutHintVerified,
     } = targetFailure;
     // #6692: this connection was just classified as provider/connection-level
-    // exhausted - if it's the currently sticky-bound one, release the pin now
+    // exhausted — if it's the currently sticky-bound one, release the pin now
     // rather than waiting for the next turn's lazy headroom/status recheck.
     deps.releaseStickyPinOnFailure(deps.sticky.messageHash, targetWithConnection.connectionId);
     if (
@@ -1059,7 +1059,7 @@ export async function executeTargetAttempt(opts: {
         rawModel &&
         retry === 0 &&
         !scopedFailure &&
-        !hasConnectionScopedClaudeQuota
+        !isConnectionScopedClaudeQuota
       ) {
         const mlSettings = resolveModelLockoutSettings(deps.settings);
         if (mlSettings.enabled && mlSettings.errorCodes.includes(result.status)) {
@@ -1074,8 +1074,8 @@ export async function executeTargetAttempt(opts: {
             {
               // #1308/#6863: honor a long upstream reset (e.g. "Resets in 160h") over
               // the short base cooldown / exponential backoff when present. #7940's
-              // maxCooldownMs applies only to synthetic values. Authoritative
-              // transport hints and cached Claude resets bypass it.
+              // maxCooldownMs cap only applies to synthetic values — a verified
+              // upstream reset (including a cached Claude reset) bypasses it.
               exactCooldownMs:
                 modelScopedClaudeCooldownMs ?? selectLockoutCooldownMs(lockoutHintMs, mlSettings),
               maxCooldownMs: mlSettings.maxCooldownMs,
@@ -1138,8 +1138,8 @@ export async function executeTargetAttempt(opts: {
     state.lastStatus = result.status;
     if (i > 0) state.fallbackCount++;
     // Wire combo failures into the resilience dashboard (model-level lockout)
-    // alongside the provider-level cooldown below - they govern different scopes.
-    if (provider && rawModel && !scopedFailure && !hasConnectionScopedClaudeQuota) {
+    // alongside the provider-level cooldown below — they govern different scopes.
+    if (provider && rawModel && !scopedFailure && !isConnectionScopedClaudeQuota) {
       const mlSettings = resolveModelLockoutSettings(deps.settings);
       if (mlSettings.enabled && mlSettings.errorCodes.includes(result.status)) {
         recordModelLockoutFailure(
@@ -1151,7 +1151,9 @@ export async function executeTargetAttempt(opts: {
           mlSettings.baseCooldownMs,
           profile,
           {
-            // Authoritative transport hints and cached Claude resets bypass synthetic caps.
+            // #1308/#6863: honor a long upstream reset over base/exponential cooldown.
+            // #7940's maxCooldownMs cap only applies to synthetic values — a verified
+            // upstream reset (including a cached Claude reset) bypasses it.
             exactCooldownMs:
               modelScopedClaudeCooldownMs ?? selectLockoutCooldownMs(lockoutHintMs, mlSettings),
             maxCooldownMs: mlSettings.maxCooldownMs,
@@ -1168,7 +1170,7 @@ export async function executeTargetAttempt(opts: {
 
     // #5976: per-model-quota providers (Gemini, GitHub, etc.) multiplex models
     // behind one connection. A model-level 500 or 429 (RPM) must NOT cool down
-    // the entire provider - sibling models may still succeed. Skip cooldown
+    // the entire provider — sibling models may still succeed. Skip cooldown
     // recording for these providers on 500/429 errors so the next target can try.
     if (
       deps.resilienceSettings.providerCooldown.enabled &&

@@ -36,6 +36,8 @@ function quotaObject(
   resetValue: unknown,
   claudeQuota: ClaudeQuotaMetadata
 ): UsageQuota {
+  // Anthropic reports utilization and current-limit percent as percentage used,
+  // so the display and routing remainder is always 100 minus that value (#299).
   const reportedUsed = safePercentage(usedValue);
   const used = reportedUsed ?? 0;
   const remaining = Math.max(0, 100 - used);
@@ -52,11 +54,11 @@ function quotaObject(
 }
 
 function currentLimitPercent(limit: Record<string, unknown>): number | undefined {
-  return (
+  const percent =
     safePercentage(limit.percent) ??
     safePercentage(limit.utilization) ??
-    safePercentage(limit.percentage)
-  );
+    safePercentage(limit.percentage);
+  return percent !== undefined && percent >= 0 && percent <= 100 ? percent : undefined;
 }
 
 function currentLimitReset(limit: Record<string, unknown>): unknown {
@@ -92,12 +94,23 @@ function currentLimitModel(limit: Record<string, unknown>): {
 function quotaKey(kind: ClaudeQuotaKind, displayName: string | null): string {
   if (kind === "session") return "session (5h)";
   if (kind === "weekly_all") return "weekly (7d)";
-  return `weekly ${displayName || "scoped"} (7d)`;
+  return `weekly ${(displayName || "scoped").toLowerCase()} (7d)`;
 }
 
-function normalizeCurrentLimits(limits: unknown[]): Record<string, UsageQuota> {
-  const quotas: Record<string, UsageQuota> = {};
-  for (const value of limits) {
+export interface NormalizedClaudeUsageQuotas {
+  quotas: Record<string, UsageQuota>;
+  modelQuotas: Record<string, UsageQuota>;
+}
+
+interface NormalizedClaudeWindow {
+  semanticKey: string;
+  displayKey: string;
+  quota: UsageQuota;
+}
+
+function normalizeCurrentLimits(limits: unknown[]): NormalizedClaudeWindow[] {
+  const windows: NormalizedClaudeWindow[] = [];
+  for (const [index, value] of limits.entries()) {
     const limit = toRecord(value);
     const kind = nonEmptyString(limit.kind);
     if (kind !== "session" && kind !== "weekly_all" && kind !== "weekly_scoped") continue;
@@ -116,13 +129,18 @@ function normalizeCurrentLimits(limits: unknown[]): Record<string, UsageQuota> {
     };
     // Current payload percentages are display metadata. Upstream `isActive`
     // and severity decide whether the window blocks routing.
-    quotas[quotaKey(kind, modelDisplayName ?? modelId)] = quotaObject(
-      percent,
-      currentLimitReset(limit),
-      metadata
-    );
+    windows.push({
+      semanticKey:
+        kind === "session"
+          ? "session"
+          : kind === "weekly_all"
+            ? "weekly_all"
+            : (metadata.scopeKey ?? `weekly_scoped:unknown:${index}`),
+      displayKey: quotaKey(kind, modelDisplayName ?? modelId),
+      quota: quotaObject(percent, currentLimitReset(limit), metadata),
+    });
   }
-  return quotas;
+  return windows;
 }
 
 function legacyQuota(
@@ -143,31 +161,66 @@ function legacyQuota(
   });
 }
 
-function normalizePreviousLimits(data: Record<string, unknown>): Record<string, UsageQuota> {
-  const quotas: Record<string, UsageQuota> = {};
+function normalizePreviousLimits(data: Record<string, unknown>): NormalizedClaudeWindow[] {
+  const windows: NormalizedClaudeWindow[] = [];
   const session = legacyQuota("session", toRecord(data.five_hour), null);
-  if (session) quotas["session (5h)"] = session;
+  if (session) windows.push({ semanticKey: "session", displayKey: "session (5h)", quota: session });
 
   const weekly = legacyQuota("weekly_all", toRecord(data.seven_day), null);
-  if (weekly) quotas["weekly (7d)"] = weekly;
+  if (weekly) {
+    windows.push({ semanticKey: "weekly_all", displayKey: "weekly (7d)", quota: weekly });
+  }
 
   for (const [key, value] of Object.entries(data)) {
     if (!key.startsWith("seven_day_") || key === "seven_day") continue;
     const codename = key.slice("seven_day_".length);
     const modelDisplayName = LEGACY_MODEL_DISPLAY_NAMES[codename] ?? codename;
     const scoped = legacyQuota("weekly_scoped", toRecord(value), modelDisplayName);
-    if (scoped) quotas[`weekly ${modelDisplayName} (7d)`] = scoped;
+    if (scoped) {
+      windows.push({
+        semanticKey: `model:${normalizedTokenKey(modelDisplayName)}`,
+        displayKey: `weekly ${modelDisplayName} (7d)`,
+        quota: scoped,
+      });
+    }
   }
-  return quotas;
+  return windows;
 }
 
 export function normalizeClaudeUsageQuotas(
   payload: Record<string, unknown>
-): Record<string, UsageQuota> {
-  if (!Object.prototype.hasOwnProperty.call(payload, "limits")) {
-    return normalizePreviousLimits(payload);
+): NormalizedClaudeUsageQuotas {
+  const windows = new Map<string, NormalizedClaudeWindow>();
+  for (const window of normalizePreviousLimits(payload)) {
+    windows.set(window.semanticKey, window);
   }
-  return Array.isArray(payload.limits) ? normalizeCurrentLimits(payload.limits) : {};
+  if (Array.isArray(payload.limits)) {
+    for (const window of normalizeCurrentLimits(payload.limits)) {
+      const metadata = window.quota.claudeQuota;
+      if (metadata?.kind === "weekly_scoped" && metadata.modelId) {
+        for (const [semanticKey, previous] of windows) {
+          const previousMetadata = previous.quota.claudeQuota;
+          if (
+            previousMetadata?.kind === "weekly_scoped" &&
+            claudeQuotaMatchesModel(previousMetadata, metadata.modelId)
+          ) {
+            windows.delete(semanticKey);
+          }
+        }
+      }
+      windows.set(window.semanticKey, window);
+    }
+  }
+
+  const normalized: NormalizedClaudeUsageQuotas = { quotas: {}, modelQuotas: {} };
+  for (const window of windows.values()) {
+    const target =
+      window.quota.claudeQuota?.kind === "weekly_scoped"
+        ? normalized.modelQuotas
+        : normalized.quotas;
+    target[window.displayKey] = window.quota;
+  }
+  return normalized;
 }
 
 export function isClaudeQuotaMetadata(value: unknown): value is ClaudeQuotaMetadata {

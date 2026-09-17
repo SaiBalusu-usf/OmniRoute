@@ -215,20 +215,25 @@ test("does NOT mark provider exhausted for per-model-quota providers (different 
 test("native Claude scoped quota evidence leaves sibling combo targets eligible", () => {
   const s = sets();
   const resetAt = new Date(Date.now() + 120_000).toISOString();
-  setQuotaCache("claude-selected", "claude", {
-    "weekly Fable (7d)": {
-      remainingPercentage: 0,
-      resetAt,
-      claudeQuota: {
-        kind: "weekly_scoped",
-        active: true,
-        severity: "critical",
-        scopeKey: "model:fable",
-        modelId: "claude-fable-5-1",
-        modelDisplayName: "Fable",
+  setQuotaCache(
+    "claude-selected",
+    "claude",
+    {},
+    {
+      "weekly Fable (7d)": {
+        remainingPercentage: 0,
+        resetAt,
+        claudeQuota: {
+          kind: "weekly_scoped",
+          active: true,
+          severity: "critical",
+          scopeKey: "model:fable",
+          modelId: "claude-fable-5-1",
+          modelDisplayName: "Fable",
+        },
       },
-    },
-  });
+    }
+  );
 
   const failure = applyComboTargetExhaustion(
     target({
@@ -252,7 +257,7 @@ test("native Claude scoped quota evidence leaves sibling combo targets eligible"
   assert.equal(failure.providerExhausted, false);
   assert.equal(failure.target.connectionId, "claude-selected");
   assert.equal(failure.isModelScopedClaudeQuota, true);
-  assert.equal(failure.hasConnectionScopedClaudeQuota, false);
+  assert.equal(failure.isConnectionScopedClaudeQuota, false);
   assert.equal(failure.lockoutHintVerified, true);
   assert.ok((failure.modelScopedClaudeCooldownMs ?? 0) > 0);
   assert.equal(failure.effectiveTargetCooldownMs, failure.modelScopedClaudeCooldownMs);
@@ -263,20 +268,25 @@ test("native Claude scoped quota evidence leaves sibling combo targets eligible"
 
 test("native Claude cc alias uses canonical scoped quota evidence without changing combo keys", () => {
   const s = sets();
-  setQuotaCache("claude-conn-1", "claude", {
-    "weekly Fable (7d)": {
-      remainingPercentage: 0,
-      resetAt: new Date(Date.now() + 120_000).toISOString(),
-      claudeQuota: {
-        kind: "weekly_scoped",
-        active: true,
-        severity: "critical",
-        scopeKey: "model:fable",
-        modelId: "claude-fable-5-1",
-        modelDisplayName: "Fable",
+  setQuotaCache(
+    "claude-conn-1",
+    "claude",
+    {},
+    {
+      "weekly Fable (7d)": {
+        remainingPercentage: 0,
+        resetAt: new Date(Date.now() + 120_000).toISOString(),
+        claudeQuota: {
+          kind: "weekly_scoped",
+          active: true,
+          severity: "critical",
+          scopeKey: "model:fable",
+          modelId: "claude-fable-5-1",
+          modelDisplayName: "Fable",
+        },
       },
-    },
-  });
+    }
+  );
 
   const { providerExhausted: exhausted } = applyComboTargetExhaustion(
     target({
@@ -302,20 +312,25 @@ test("native Claude cc alias uses canonical scoped quota evidence without changi
 
 test("native Claude minute throttles keep existing combo transient handling", () => {
   const s = sets();
-  setQuotaCache("claude-conn-1", "claude", {
-    "weekly Fable (7d)": {
-      remainingPercentage: 0,
-      resetAt: new Date(Date.now() + 120_000).toISOString(),
-      claudeQuota: {
-        kind: "weekly_scoped",
-        active: true,
-        severity: "critical",
-        scopeKey: "model:fable",
-        modelId: "claude-fable-5-1",
-        modelDisplayName: "Fable",
+  setQuotaCache(
+    "claude-conn-1",
+    "claude",
+    {},
+    {
+      "weekly Fable (7d)": {
+        remainingPercentage: 0,
+        resetAt: new Date(Date.now() + 120_000).toISOString(),
+        claudeQuota: {
+          kind: "weekly_scoped",
+          active: true,
+          severity: "critical",
+          scopeKey: "model:fable",
+          modelId: "claude-fable-5-1",
+          modelDisplayName: "Fable",
+        },
       },
-    },
-  });
+    }
+  );
 
   const { providerExhausted: exhausted } = applyComboTargetExhaustion(
     target({ provider: "claude", connectionId: "claude-conn-1" }),

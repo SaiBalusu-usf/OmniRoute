@@ -11,7 +11,11 @@ function isRecord(value: unknown): value is JsonRecord {
 }
 
 function hasUsableCachedData(cache: ProviderLimitsCacheEntry | null | undefined): boolean {
-  return Boolean(cache?.billing || (cache?.quotas && Object.keys(cache.quotas).length > 0));
+  return Boolean(
+    cache?.billing ||
+    (cache?.quotas && Object.keys(cache.quotas).length > 0) ||
+    (cache?.modelQuotas && Object.keys(cache.modelQuotas).length > 0)
+  );
 }
 
 export function toProviderLimitsCacheEntry(
@@ -22,6 +26,7 @@ export function toProviderLimitsCacheEntry(
   const bankedResetCredits = Number(usage.bankedResetCredits);
   return {
     quotas: isRecord(usage.quotas) ? usage.quotas : null,
+    ...(isRecord(usage.modelQuotas) ? { modelQuotas: usage.modelQuotas } : {}),
     plan: usage.plan ?? null,
     message: typeof usage.message === "string" ? usage.message : null,
     fetchedAt,

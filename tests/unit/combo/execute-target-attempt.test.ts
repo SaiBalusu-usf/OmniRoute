@@ -376,20 +376,25 @@ async function runScopedClaudeQuotaAttempt(maxRetries: number, provider = "claud
   const connectionId = "claude-scoped-combo";
   const resetWindowMs = 10_000;
   const resetAt = new Date(Date.now() + resetWindowMs).toISOString();
-  setQuotaCache(connectionId, "claude", {
-    "weekly Fable (7d)": {
-      remainingPercentage: 0,
-      resetAt,
-      claudeQuota: {
-        kind: "weekly_scoped",
-        active: true,
-        severity: "critical",
-        scopeKey: "model:fable",
-        modelId: "claude-fable-5-1",
-        modelDisplayName: "Fable",
+  setQuotaCache(
+    connectionId,
+    "claude",
+    {},
+    {
+      "weekly Fable (7d)": {
+        remainingPercentage: 0,
+        resetAt,
+        claudeQuota: {
+          kind: "weekly_scoped",
+          active: true,
+          severity: "critical",
+          scopeKey: "model:fable",
+          modelId: "claude-fable-5-1",
+          modelDisplayName: "Fable",
+        },
       },
-    },
-  });
+    }
+  );
 
   const target = modelTarget({
     provider,
@@ -564,4 +569,121 @@ test("priority combo exhausts a connection-scoped Claude quota without a model l
   assert.equal(attempts, 1);
   assert.equal(lockout, null);
   assert.ok(state.exhaustedConnections.has(`claude:${connectionId}`));
+});
+
+async function runUnprovenClaudeQuotaAttempt({
+  provider,
+  stale,
+}: {
+  provider: "claude" | "cc";
+  stale: boolean;
+}) {
+  const { executeTargetAttempt } =
+    await import("../../../open-sse/services/combo/executeTargetAttempt.ts");
+  clearQuotaCache();
+  clearCooldownState();
+  clearAllModelLockouts();
+
+  const connectionId = `claude-${stale ? "stale" : "cold"}-combo`;
+  const originalNow = Date.now;
+  const cachedAt = originalNow();
+  if (stale) {
+    setQuotaCache(
+      connectionId,
+      "claude",
+      {},
+      {
+        "weekly Fable (7d)": {
+          remainingPercentage: 0,
+          resetAt: new Date(cachedAt + 10 * 60_000).toISOString(),
+          claudeQuota: {
+            kind: "weekly_scoped",
+            active: true,
+            severity: "critical",
+            scopeKey: "model:fable",
+            modelId: "claude-fable-5-1",
+            modelDisplayName: "Fable",
+          },
+        },
+      }
+    );
+    Date.now = () => cachedAt + 5 * 60_000;
+  }
+
+  const target = modelTarget({
+    provider,
+    modelStr: `${provider}/claude-fable-5-1`,
+    connectionId,
+  });
+  let attempts = 0;
+  const deps = baseDeps({
+    maxRetries: 1,
+    settings: {
+      modelLockout: {
+        enabled: true,
+        errorCodes: [429],
+        baseCooldownMs: 60_000,
+        maxCooldownMs: 120_000,
+      },
+    },
+    handleSingleModelWithTimeout: async () => {
+      attempts += 1;
+      return Response.json(
+        {
+          error: {
+            message: "This request would exceed your account's rate limit. Please try again later.",
+          },
+        },
+        {
+          status: 429,
+          headers: { "x-omniroute-selected-connection-id": connectionId },
+        }
+      );
+    },
+  });
+  const state = emptyState({
+    orderedTargets: [target],
+    abortControllers: new Map([[0, new AbortController()]]),
+  });
+
+  try {
+    await executeTargetAttempt({
+      index: 0,
+      state,
+      deps,
+      targetForAttempt: target,
+      profile: {},
+      protectedPriorityTarget: false,
+    });
+  } finally {
+    Date.now = originalNow;
+  }
+
+  return {
+    attempts,
+    connectionId,
+    lockout: getModelLockoutInfo(provider, connectionId, "claude-fable-5-1"),
+    provider,
+    state,
+  };
+}
+
+function assertUnprovenClaudeQuotaAttempt(
+  result: Awaited<ReturnType<typeof runUnprovenClaudeQuotaAttempt>>
+) {
+  assert.equal(result.attempts, 1);
+  assert.equal(result.lockout, null);
+  assert.ok(result.state.exhaustedConnections.has(`${result.provider}:${result.connectionId}`));
+}
+
+test("priority combo treats a cold native Claude quota 429 as connection-only", async () => {
+  assertUnprovenClaudeQuotaAttempt(
+    await runUnprovenClaudeQuotaAttempt({ provider: "claude", stale: false })
+  );
+});
+
+test("priority combo treats a stale native Claude alias quota 429 as connection-only", async () => {
+  assertUnprovenClaudeQuotaAttempt(
+    await runUnprovenClaudeQuotaAttempt({ provider: "cc", stale: true })
+  );
 });

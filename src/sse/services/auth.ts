@@ -3051,7 +3051,8 @@ export async function markAccountUnavailable(
               : (fallbackResult.quotaResetHintMs ?? null),
           maxCooldownMs: mlSettings.maxCooldownMs,
           scope: usesExactAntigravityLock ? "exact" : undefined,
-          // Authoritative transport hints and cached Claude resets may bypass synthetic caps.
+          // Only a transport header, google.rpc.RetryInfo, or cached Claude reset can bypass
+          // maxCooldownMs. Prose and generic JSON hints remain exact but operator-capped.
           exactCooldownIsUpstreamReset:
             retryHintBypassesMaxCooldownMs(fallbackResult.retryHintSource) ||
             isModelScopedClaudeQuota,

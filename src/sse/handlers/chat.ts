@@ -1895,7 +1895,7 @@ async function handleSingleModelChat(
         if (handoff && handoff.fromAccount !== credentials.connectionId) {
           // Inject only after a real account switch. The combo loop itself cannot
           // reliably detect this because account selection happens inside auth.
-          requestBody = injectHandoffIntoBody(requestBody, handoff);
+          requestBody = injectHandoffIntoBody(requestBody, handoff, undefined, sourceFormat);
           injectedHandoff = handoff;
           log.info(
             "CONTEXT_RELAY",
@@ -2338,7 +2338,7 @@ async function handleSingleModelChat(
       // Daily quota lockout overrides subsequent rate_limited lockout, ensuring lockout until tomorrow 0:00
       let dailyQuotaExhausted = false;
       // #7360: prefer the full un-sanitized upstream text over result.error
-      // (truncated to its first line for the client response body) - Gemini's
+      // (truncated to its first line for the client response body) — Gemini's
       // TPM/RPD metric name and retry hint live on lines 2-3, after the
       // generic "quota exceeded" preamble on line 1.
       const errorStr = String(result.rawMessage ?? result.error ?? "");
@@ -2398,11 +2398,11 @@ async function handleSingleModelChat(
       // account (jittered 2-3s) before cooling the connection. A first 503/507
       // must not rotate away from a still-healthy Codex prompt-cache partition.
       // Skipped inside an emergency-fallback hop: that path guarantees exactly one
-      // upstream call against the free fallback model (#1731) - an extra retry there
+      // upstream call against the free fallback model (#1731) — an extra retry there
       // burns a second call against a provider we're already treating as a last resort.
       // Skipped for combo targets too: combo routing owns its own target-level
       // fallback/retry policy (per-target error handling in handleSingleModel,
-      // then the next combo target) - a same-account retry here just delays that
+      // then the next combo target) — a same-account retry here just delays that
       // policy and can surface the wrong terminal status when a later hop throws.
       const transportAttempts = sameAccountTransportRetries.get(credentials.connectionId) || 0;
       if (

@@ -10,6 +10,7 @@ import {
 } from "../services/auth";
 import { maybeReactivateAfterExplicitProbe } from "../services/explicitInactiveProbe";
 import { connectionHasExtraKeys } from "@omniroute/open-sse/services/apiKeyRotator.ts";
+import { clearRequestRejectedStreak } from "@omniroute/open-sse/services/requestRejectedStreak.ts";
 import { createBuiltinAutoCombo } from "@omniroute/open-sse/services/autoCombo/builtinCatalog.ts";
 import * as log from "../utils/logger";
 import { updateProviderCredentials } from "../services/tokenRefresh";
@@ -537,6 +538,9 @@ export async function executeChatWithBreaker({
             },
             onRequestSuccess: async () => {
               if (isShadowTraffic) return;
+              // A healthy response ends any run of per-request refusals
+              // (#12859) — only a real success does, not an elapsed cooldown.
+              if (credentials.connectionId) clearRequestRejectedStreak(credentials.connectionId);
               await clearAccountError(credentials.connectionId, credentials);
               await maybeReactivateAfterExplicitProbe({
                 connectionId: credentials.connectionId,
@@ -826,7 +830,7 @@ export function handleNoCredentials(
     return errorResponse(httpStatus, message);
   }
   if (credentials?.blockedByKeyPolicy) {
-    // #13832: the provider HAS active connections - they were filtered out by the
+    // #13832: the provider HAS active connections — they were filtered out by the
     // gateway API key's connection allowlist (`allowed_connections`) or its quota
     // scope, so the pool arrived empty and the generic "No active credentials"
     // below was indistinguishable from "this provider was never configured". That
