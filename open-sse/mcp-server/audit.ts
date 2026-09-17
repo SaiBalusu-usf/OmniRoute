@@ -228,7 +228,7 @@ async function openBetterSqliteAuditDb(dbPath: string): Promise<AuditDatabase> {
   }
   const Database = ((mod as { default?: unknown })?.default || mod) as unknown;
   if (typeof Database !== "function") {
-    throw new TypeError("a is not a function");
+    throw new TypeError("better-sqlite3 export is not a function");
   }
   return new (Database as new (dbPath: string) => AuditDatabase)(dbPath);
 }
@@ -287,8 +287,9 @@ async function openFallbackAuditDb(
  */
 async function getDb(): Promise<AuditDatabase | null> {
   const cachedDb = getCachedAuditDb();
-  // undefined = never tried; null = tried and failed. Cache the miss so
-  // dashboard 30s polls do not reopen and reprint the same error.
+  // undefined = never tried / retryable; null = the driver itself failed to load.
+  // Only that second case is cached, so dashboard 30s polls do not reopen and
+  // reprint the same binding error.
   if (cachedDb !== undefined) return cachedDb;
 
   try {
@@ -301,8 +302,10 @@ async function getDb(): Promise<AuditDatabase | null> {
       : join(homedir(), ".omniroute", "storage.sqlite");
 
     if (!existsSync(dbPath)) {
+      // Do NOT cache this miss: an MCP server can start before the app creates
+      // storage.sqlite, and the file appearing is exactly how it recovers. A
+      // cached null would disable audit logging for the whole process lifetime.
       console.error(`[MCP Audit] Database not found at ${dbPath} — audit logging disabled`);
-      setCachedAuditDb(null);
       return null;
     }
 

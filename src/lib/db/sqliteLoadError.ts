@@ -24,7 +24,8 @@ export function isNativeSqliteLoadError(error: unknown): boolean {
     message.includes("Cannot find module 'better-sqlite3'") ||
     // Webpack/standalone can resolve better-sqlite3 to a stub or a non-callable
     // export. `new (mod.default || mod)(path)` then throws TypeError
-    // "a is not a function" / "X is not a constructor" instead of MODULE_NOT_FOUND.
+    // "<name> is not a function" / "X is not a constructor" instead of MODULE_NOT_FOUND
+    // — minified bundles shorten the name to a single letter ("a is not a function").
     message.includes("is not a function") ||
     message.includes("is not a constructor") ||
     code === "ERR_DLOPEN_FAILED" ||
