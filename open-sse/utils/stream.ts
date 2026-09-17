@@ -157,12 +157,7 @@ type StreamOptions = {
   copilotCompatibleReasoning?: boolean;
   /** Suppress the `</think>` close marker for clients that render it verbatim (#5245). */
   suppressThinkClose?: boolean;
-  /**
-   * True when the CLIENT explicitly asked for thinking (body.thinking.type ===
-   * "enabled"). The response translator only relays upstream reasoning_content
-   * as Claude thinking blocks when this is set — otherwise DeepSeek/GLM
-   * reasoning would leak into UIs that never opted in.
-   */
+  /** Relays upstream reasoning only when the client explicitly requested thinking. */
   requestedThinking?: boolean;
   /**
    * Drop internal commentary-phase output items from Responses API passthrough
@@ -635,21 +630,9 @@ const STREAM_MODE = {
 };
 
 /**
- * Create unified SSE transform stream with idle timeout protection.
- * If the upstream provider stops sending data for STREAM_IDLE_TIMEOUT_MS,
- * the stream emits an error event and closes to prevent indefinite hanging.
- *
- * @param {object} options
- * @param {string} options.mode - Stream mode: translate, passthrough
- * @param {string} options.targetFormat - Provider format (for translate mode)
- * @param {string} options.sourceFormat - Client format (for translate mode)
- * @param {string} options.provider - Provider name
- * @param {object} options.reqLogger - Request logger instance
- * @param {string} options.model - Model name
- * @param {string} options.connectionId - Connection ID for usage tracking
- * @param {object|null} options.apiKeyInfo - API key metadata for usage attribution
- * @param {object} options.body - Request body (for input token estimation)
- * @param {function} options.onComplete - Callback when stream finishes: ({ status, usage }) => void
+ * Creates a unified SSE transform with idle timeout protection.
+ * The stream emits an error and closes when the upstream remains idle for
+ * STREAM_IDLE_TIMEOUT_MS.
  */
 export function createSSEStream(options: StreamOptions = {}) {
   const {

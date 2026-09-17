@@ -6089,17 +6089,8 @@ export async function handleChatCore({
     !isDroidCLI;
   const streamStateBody = finalBody || body;
 
-  // Client's explicit thinking intent (Anthropic Messages shape). Claude Code
-  // sends `{type:"enabled"}` or `{type:"adaptive"}` to opt into relaying
-  // upstream reasoning_content as Claude thinking blocks; `{type:"disabled"}`
-  // or an omitted `thinking` field opts out. Kept false for every other
-  // client schema (OpenAI / Responses), which never express intent through
-  // `body.thinking`. Mirrors hasActiveClaudeThinking() so the request and
-  // response sides agree on what counts as "thinking requested" — a prior
-  // inline `=== "enabled"` check silently suppressed `adaptive` (the intent
-  // Claude Code actually sends), leaking the mismatch as a broken tool-call
-  // turn (call log 1787566395384-bab9ab: reasoning dropped → model emitted
-  // DSML tool-call markers as plain text → incomplete `stop` finish).
+  // Anthropic clients explicitly opt into reasoning with enabled or adaptive
+  // thinking. The shared helper keeps request and response interpretation aligned.
   const requestedThinking = hasActiveClaudeThinking((body ?? {}) as Record<string, unknown>);
 
   if (needsResponsesTranslation) {
@@ -6121,9 +6112,7 @@ export async function handleChatCore({
       false,
       requestedThinking,
       customToolNames,
-      // openai-responses → openai translation still wants the namespace identity
-      // map for #7936-style round-trip closure when the client also speaks
-      // Responses (Codex CLI).
+      // Preserve Responses namespace identity for Codex round trips (#7936).
       requestToolIdentityMap
     );
   } else if (needsTranslation(targetFormat, clientResponseFormat)) {
@@ -6142,12 +6131,7 @@ export async function handleChatCore({
       apiKeyInfo,
       handleStreamFailure,
       copilotCompatibleReasoning,
-      // Suppress the `</think>` close marker for clients that render it verbatim
-      // (e.g. OpenCode by UA; any client via `x-omniroute-thinking-marker: off`);
-      // preserved for Claude Code / Cursor and unknown clients by default (#5245 /
-      // #5312). Responses API clients always suppress it (structured reasoning
-      // items make the marker meaningless); otherwise the header wins over the
-      // UA allowlist.
+      // Responses suppress `</think>`; otherwise the header overrides UA policy (#5245, #5312).
       resolveSuppressThinkClose({
         userAgent: streamUserAgent,
         thinkingMarkerHeader,
