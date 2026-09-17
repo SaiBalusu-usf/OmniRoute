@@ -519,8 +519,7 @@ export function planSectionReuse({ previousHashes, sections, mirrorSections }) {
     // Section 0 of a mirror that starts with a YAML block is the old extractor's leaked
     // frontmatter (24 newer locales, 2026-09-16) — always rebuild it.
     const leakedFrontmatter = i === 0 && /^---\s*\n/.test(mirrorSections[i]);
-    const untranslated =
-      mirrorSections[i].trim() === sections[i].trim() && /[A-Za-z]{3,}/.test(sections[i]);
+    const untranslated = looksUntranslated(mirrorSections[i], sections[i]);
     if (h === previousHashes[i] && !untranslated && !leakedFrontmatter)
       reuse.set(i, mirrorSections[i]);
     else translate.push(i);
@@ -537,19 +536,32 @@ export function planSectionReuse({ previousHashes, sections, mirrorSections }) {
  * locales were plain English copies adopted as translated. Both are invisible to the hash
  * comparison, so the task loop asks this before skipping an up-to-date pair.
  */
+/** Long prose lines (> 20 chars, not table/code/list scaffolding) of a markdown fragment. */
+function proseLines(text) {
+  return text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 20 && !/^[`|#\-*\d\s]+$/.test(l));
+}
+
+/**
+ * True when a mirror fragment is still (mostly) the English source: byte-equal, or ≥ 80 % of
+ * its prose lines appear verbatim in the source. Fragments with < 3 prose lines fall back to
+ * byte equality (code-only sections are legitimately identical).
+ */
+export function looksUntranslated(mirrorFragment, sourceFragment) {
+  if (mirrorFragment.trim() === sourceFragment.trim()) return /[A-Za-z]{3,}/.test(sourceFragment);
+  const mir = proseLines(mirrorFragment);
+  if (mir.length < 3) return false;
+  const src = new Set(proseLines(sourceFragment));
+  return mir.filter((l) => src.has(l)).length / mir.length >= 0.8;
+}
+
 export function mirrorNeedsRebuild(mirrorText, sourceText) {
   const body = extractMirrorBody(mirrorText);
   if (/^---\s*\n[\s\S]{0,600}?\n---\s*\n/.test(body)) return true; // leaked frontmatter
-  const longLines = (text) =>
-    stripTopHeading(text.replace(/^---\n[\s\S]*?\n---\n+/, ""))
-      .split("\n")
-      .map((l) => l.trim())
-      .filter((l) => l.length > 20 && !/^[`|#\-*\d\s]+$/.test(l));
-  const src = new Set(longLines(sourceText));
-  const mir = longLines(body);
-  if (mir.length < 3) return false;
-  const same = mir.filter((l) => src.has(l)).length;
-  return same / mir.length >= 0.8; // still English
+  const sourceBody = stripTopHeading(sourceText.replace(/^---\n[\s\S]*?\n---\n+/, ""));
+  return looksUntranslated(body, sourceBody); // still English
 }
 
 export function extractMirrorBody(mirrorText) {

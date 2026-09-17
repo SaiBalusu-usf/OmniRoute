@@ -14,7 +14,11 @@ import {
   extractTopHeading,
   stripTopHeading,
 } from "../../scripts/i18n/run-translation.mjs";
-import { mirrorNeedsRebuild, mergeStateUpdates } from "../../scripts/i18n/run-translation.mjs";
+import {
+  mirrorNeedsRebuild,
+  mergeStateUpdates,
+  looksUntranslated,
+} from "../../scripts/i18n/run-translation.mjs";
 
 // The docs translator remembers a short hash of every `## ` section of the
 // source at translation time and, on the next run, only sends the sections
@@ -200,4 +204,22 @@ test("mergeStateUpdates keeps other runners' entries and applies this run's reco
   assert.deepEqual(out.sources["a.md"].locales.de, { source_hash: "s1", target_hash: "t1" });
   assert.deepEqual(out.sources["a.md"].locales.fr, rec);
   assert.equal(out.sources["a.md"].source_hash, "s2");
+});
+
+test("planSectionReuse retranslates a section that is still mostly English even when not byte-equal", () => {
+  const sec =
+    "## Setup\n\nClone the repository and install the dependencies first.\n\nRun the development server and open the dashboard.\n\nCreate your env file from the template before starting.\n";
+  const sections = ["p", sec];
+  const prev = sectionHashes(sections);
+  const mirror = ["p-de", sec.replace("## Setup", "## Einrichtung")];
+  const plan = planSectionReuse({ previousHashes: prev, sections, mirrorSections: mirror });
+  assert.deepEqual(plan.translate, [1]);
+  assert.equal(looksUntranslated(mirror[1], sec), true);
+  assert.equal(
+    looksUntranslated(
+      "## Einrichtung\n\nKlone das Repository und installiere zuerst die Abhängigkeiten.\n\nStarte den Entwicklungsserver und öffne das Dashboard.\n\nErstelle deine env-Datei aus der Vorlage.\n",
+      sec
+    ),
+    false
+  );
 });
