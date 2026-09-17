@@ -167,14 +167,14 @@ describe("RequestLoggerV2 detail modal lifecycle", () => {
     await act(async () => {
       row?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
-    expect(container.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="ariaLabel"]')).not.toBeNull();
 
     await act(async () => {
       container
         .querySelector<HTMLButtonElement>('[aria-label="close"]')
         ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
-    expect(container.querySelector('[role="dialog"]')).toBeNull();
+    expect(container.querySelector('[aria-label="ariaLabel"]')).toBeNull();
 
     await act(async () => {
       detail.resolve(
@@ -193,7 +193,7 @@ describe("RequestLoggerV2 detail modal lifecycle", () => {
       await detail.promise;
     });
 
-    expect(container.querySelector('[role="dialog"]')).toBeNull();
+    expect(container.querySelector('[aria-label="ariaLabel"]')).toBeNull();
   });
 });
 
