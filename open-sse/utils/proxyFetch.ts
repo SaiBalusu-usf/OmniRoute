@@ -110,9 +110,10 @@ const TLS_PROVIDER_PROFILE: Record<string, { browser: string; os: string }> = {
   maxai: { browser: "firefox_150", os: "windows" },
 };
 
-function tlsProfileForProvider(
-  provider: string | null | undefined
-): { browserProfile?: string; os?: string } {
+function tlsProfileForProvider(provider: string | null | undefined): {
+  browserProfile?: string;
+  os?: string;
+} {
   if (!provider) return {};
   const p = TLS_PROVIDER_PROFILE[provider.trim().toLowerCase()];
   return p ? { browserProfile: p.browser, os: p.os } : {};
@@ -849,7 +850,11 @@ async function patchedFetchUnrecorded(
       (deps.nativeFetch as FetchWithDispatcher | undefined) ?? originalFetchWithDispatcher;
     let lastDispatcherError: unknown = null;
     const directBodyForTimeout = typeof options.body === "string" ? options.body : null;
-    const directHeadersTimeoutMs = resolveDirectHeadersTimeoutMs(undefined, directBodyForTimeout);
+    const directHeadersTimeoutMs = resolveDirectHeadersTimeoutMs(
+      undefined,
+      directBodyForTimeout,
+      targetUrl
+    );
     let targetHostForLogs = "";
     try {
       targetHostForLogs = new URL(targetUrl).host;
