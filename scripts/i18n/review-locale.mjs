@@ -108,13 +108,20 @@ async function main() {
   const file = path.join(MESSAGES_DIR, `${o.locale}.json`);
   const rel = path.relative(ROOT, file);
   const after = JSON.parse(await fs.readFile(file, "utf8"));
-  const before = JSON.parse(
-    execFileSync("git", ["show", `${o.since}:${rel}`], {
-      cwd: ROOT,
-      encoding: "utf8",
-      maxBuffer: 1 << 28,
-    })
-  );
+  // A catalog that did not exist at --since (a locale created after it) is reviewed in full.
+  let before = {};
+  try {
+    before = JSON.parse(
+      execFileSync("git", ["show", `${o.since}:${rel}`], {
+        cwd: ROOT,
+        encoding: "utf8",
+        maxBuffer: 1 << 28,
+        stdio: ["ignore", "pipe", "ignore"],
+      })
+    );
+  } catch {
+    console.log(`[review] ${rel} does not exist at ${o.since} — reviewing every leaf`);
+  }
   const en = flat(JSON.parse(await fs.readFile(path.join(MESSAGES_DIR, "en.json"), "utf8")));
   const changed = changedLeaves(flat(before), flat(after));
   const ids = Object.keys(changed);
