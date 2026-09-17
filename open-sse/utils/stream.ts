@@ -659,7 +659,11 @@ export function createSSEStream(options: StreamOptions = {}) {
     clientResponseFormat = null,
     copilotCompatibleReasoning = false,
     suppressThinkClose = false,
-    requestedThinking = false,
+    // No default: "absent" must stay absent instead of being coerced into an
+    // explicit "thinking NOT requested". Mirrors translateNonStreamingResponse's
+    // `requestedThinking?: boolean` so both translation paths spell the
+    // no-intent case the same way.
+    requestedThinking,
     provider = null,
     reqLogger = null,
     toolNameMap = null,
@@ -3068,7 +3072,7 @@ export function createSSETransformStreamWithLogger(
   onFailure: ((payload: StreamFailurePayload) => boolean | void | Promise<void>) | null = null,
   copilotCompatibleReasoning = false,
   suppressThinkClose = false,
-  requestedThinking = false,
+  requestedThinking: boolean | undefined = undefined,
   customToolNames: ReadonlySet<string> = new Set(),
   requestToolIdentityMap: Map<string, { namespace: string; name: string }> | null = null,
   streamBufferBytes: number = DEFAULT_STREAM_BUFFER_BYTES
