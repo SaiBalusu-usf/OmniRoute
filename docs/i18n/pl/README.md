@@ -1135,7 +1135,7 @@ devbox run npm run dev
 # 1. Przygotuj katalog danych montowany przez dowiązanie
 mkdir -p data
 
-# 2. Tylko Linux + lokalny Podman bez uprawnień roota (nigdy zdalny klient Podman Machine):
+# 2. Tylko Linux + lokalny Podman bez roota (nigdy zdalny klient Podman Machine):
 podman unshare chown 1000:1000 ./data
 
 # 3. Ustaw wskazówkę dotyczącą środowiska uruchomieniowego, zbuduj lokalny obraz Compose i uruchom
