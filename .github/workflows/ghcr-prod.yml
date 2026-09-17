@@ -66,8 +66,8 @@ jobs:
           tags: ghcr.io/rafacpti23/omniroute:prod
           build-args: |
             OMNIROUTE_USE_TURBOPACK=0
-            OMNIROUTE_BUILD_MEMORY_MB=4096
-            OMNIROUTE_BUILD_WORKERS=1
+            OMNIROUTE_BUILD_MEMORY_MB=6144
+            OMNIROUTE_BUILD_WORKERS=2
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
