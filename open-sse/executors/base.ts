@@ -64,7 +64,7 @@ import {
   appendAnthropicBetaHeader,
   CLAUDE_CODE_COMPATIBLE_REDACT_THINKING_BETA,
   CONTEXT_1M_BETA_HEADER,
-  enforceThinkingTemperature,
+  finalizeClaudeBodyConstraints,
   modelHasNativeContext1m,
   modelSupportsContext1mBeta,
 } from "../services/claudeCodeCompatible.ts";
@@ -1354,9 +1354,8 @@ export class BaseExecutor {
             // drop any tool_result orphaned by that strip (discussion #2410).
             const adjacent = isClaude ? fixToolPairs(fixToolAdjacency(fixed)) : fixed;
             const stripped = stripTrailingAssistantOrphanToolUse(adjacent);
-            // Some providers (Mistral #3396, official Claude OAuth) reject a
-        // trailing text-only assistant turn with 400. Strip here so combo
-        // failover does not burn the next account on the same body.
+            // Some providers (e.g. Mistral) require the last message to be user
+            // or tool and reject trailing assistant text messages with 400 (#3396).
             tb.messages = stripTrailingAssistantForProvider(stripped, this.provider);
           }
         }
@@ -1369,7 +1368,7 @@ export class BaseExecutor {
         // routing mode (grouped/raw/combo) and the native passthrough share,
         // before fingerprinting and CCH signing serialize the body.
         if (this.provider === "claude" || usesClaudeCodeProtocol) {
-          enforceThinkingTemperature(transformedBody as Record<string, unknown>);
+          finalizeClaudeBodyConstraints(transformedBody as Record<string, unknown>);
         }
 
         // Delegated Context Editing (opt-in): attach the clear_tool_uses strategy so
