@@ -35,6 +35,7 @@ import {
 } from "../../services/modelFamilyFallback.ts";
 import { isEmptyContentResponse } from "../../services/errorClassifier.ts";
 import { FORMATS } from "../../translator/formats.ts";
+import { hasActiveClaudeThinking } from "../../utils/thinkingBudget.ts";
 
 /* -- exported types -------------------------------------------------------- */
 
@@ -289,6 +290,11 @@ function finishOk(
     reasoningCacheScope: input.reasoningCacheScope ?? null,
     clientHeaders: input.clientHeaders ?? null,
     isClaudeCodeCompatible: input.isClaudeCodeCompatible ?? false,
+    // Same intent the streaming path computes in chatCore before building the
+    // SSE transform. Threading it here is what makes `stream:false` and
+    // `stream:true` agree on whether upstream reasoning may surface as a
+    // thinking block; the non-streaming converter used to never receive it.
+    requestedThinking: hasActiveClaudeThinking(input.sourceBody ?? {}),
     phase: input.phase === "initial" ? "final" : "intermediate",
   });
   const receipt = buildReceipt(input, {
@@ -437,6 +443,9 @@ export async function runNonStreamingProviderLeg(
               { passthrough: input.sourceFormat === "claude" }
             ),
             response: outcome.result.response,
+            rawMessage: outcome.result.rawMessage || outcome.result.error,
+            upstreamErrorBody: outcome.result.upstreamErrorBody,
+            upstreamHeaders: outcome.result.upstreamHeaders ?? outcome.result.response?.headers,
           },
           receipt,
           usage: outcome.providerUsage,
@@ -760,6 +769,9 @@ export async function runNonStreamingProviderLeg(
       upstreamErrorType,
       { passthrough: sourceFormat === FORMATS.CLAUDE }
     );
+    errorResult.rawMessage = message;
+    errorResult.upstreamHeaders = providerResponse.headers;
+    errorResult.upstreamErrorBody = parsedErrorBody;
     return {
       kind: "error",
       result: errorResult as ChatCoreErrorResult,

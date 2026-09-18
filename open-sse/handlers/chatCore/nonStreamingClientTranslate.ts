@@ -31,6 +31,7 @@ import {
 } from "../responseSanitizer.ts";
 import { isStripReasoningRequested } from "./headers.ts";
 import { applyClientUsageBuffer } from "./clientUsageBuffer.ts";
+import { resolveRequestToolIdentity } from "../../translator/response/openai-responses/requestToolIdentity.ts";
 
 export type { NonStreamingClientTranslateInput, NonStreamingClientTranslateResult };
 
@@ -59,6 +60,7 @@ export function translateNonStreamingClientResponse(
     reasoningCacheScope,
     clientHeaders,
     isClaudeCodeCompatible,
+    requestedThinking,
     phase,
   } = input;
 
@@ -73,7 +75,8 @@ export function translateNonStreamingClientResponse(
         responsePayloadFormat,
         clientResponseFormat,
         responseToolNameMap,
-        responseToolSchemas
+        responseToolSchemas,
+        requestedThinking
       )
     : responseBody;
   const responseForMemoryExtraction = translatedResponse;
@@ -152,11 +155,27 @@ export function translateNonStreamingClientResponse(
       }
     }
 
-    // Restore {namespace, name} only after custom classification, which uses wire names.
-    if (requestToolIdentityMap && Array.isArray(sanitizedOutput)) {
+    // Restore {namespace, name} on function_call / custom_tool_call items for round-trip
+    // closure — only after custom classification above, which uses wire names.
+    // (#7936). Falls back to splitting the flattened `mcp__`-namespaced wire
+    // name itself when the per-request identity map has no entry — e.g. a
+    // follow-up turn in the same session that didn't re-declare its
+    // `type:"namespace"` tools (#12996).
+    if (Array.isArray(sanitizedOutput)) {
       for (const item of sanitizedOutput) {
         if (item?.type !== "function_call" && item?.type !== "custom_tool_call") continue;
-        const identity = requestToolIdentityMap.get(item.name);
+        // `requestToolIdentityMap` is typed as Map<string, NamespaceIdentity>, but
+        // extractRequestToolIdentityMap() (chatCore/requestToolIdentity.ts) falls
+        // back to `_toolNameMap` when no namespace tools were present — and that
+        // side channel is a plain Map<string, string> alias table published by the
+        // openai->gemini/claude pivot (#9780), not {namespace, name} identities.
+        // Applying that fallback unconditionally overwrote a perfectly valid
+        // `item.name` (e.g. "shell") with `("shell").name === undefined`, which
+        // JSON.stringify then drops the key entirely (#12370) — Codex receives a
+        // function_call with no name and cannot dispatch it. resolveRequestToolIdentity()
+        // returns only values that carry the full {namespace, name} shape, so the
+        // alias table can no longer reach the restore below.
+        const identity = resolveRequestToolIdentity(requestToolIdentityMap, item.name);
         if (identity) {
           item.namespace = identity.namespace;
           item.name = identity.name;
