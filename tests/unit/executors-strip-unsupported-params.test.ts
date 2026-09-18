@@ -181,8 +181,12 @@ test("STRIP_RULES is non-empty and every rule has a drop list or a clamp mechani
   assert.ok(__STRIP_RULES_FOR_TEST.length > 0);
   for (const rule of __STRIP_RULES_FOR_TEST) {
     const hasDrop = Array.isArray(rule.drop) && rule.drop.length > 0;
+    const hasDropIfNull = Array.isArray(rule.dropIfNull) && rule.dropIfNull.length > 0;
     const hasClamp = rule.clampToModelMaxOutput === true || Number.isFinite(rule.maxOutputCap);
-    assert.ok(hasDrop || hasClamp, "rule must either drop params or clamp max output");
+    assert.ok(
+      hasDrop || hasDropIfNull || hasClamp,
+      "rule must either drop params (always or only when null) or clamp max output"
+    );
     assert.ok(typeof rule.match === "function" || rule.match instanceof RegExp);
   }
 });
