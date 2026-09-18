@@ -83,6 +83,8 @@ import {
 } from "@/lib/combos/intelligentRouting";
 import { getComboStepTarget } from "@/lib/combos/steps";
 import { DEAD_COMBO_CONFIG_KEYS } from "@/lib/combos/deadConfigKeys";
+import { modelFamily } from "@/lib/combos/invariants";
+import { resolveCanonicalProviderModel } from "@omniroute/open-sse/services/model.ts";
 import { resolveServerErrorMessage } from "@/lib/api/serverErrorMessage";
 import { useTranslations } from "next-intl";
 
@@ -3046,11 +3048,12 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, combo
     // and clear legacy family restrictions so adding steps across providers never triggers COMBO_008
     if (isEdit) {
       const stepProviders = models
-        .map(
-          (m: { providerId?: string; model?: string }) =>
-            m.providerId ||
-            (typeof m.model === "string" && m.model.includes("/") ? m.model.split("/")[0] : "")
-        )
+        .map((m: { providerId?: string; model?: string }) => {
+          if (m.providerId) return m.providerId;
+          if (typeof m.model !== "string" || !m.model.includes("/")) return "";
+          const [aliasOrProvider, ...rest] = m.model.split("/");
+          return resolveCanonicalProviderModel(aliasOrProvider, rest.join("/")).provider || "";
+        })
         .filter((p: string): p is string => Boolean(p));
       const existingProviders = Array.isArray(combo?.allowedProviders)
         ? combo.allowedProviders
@@ -3058,8 +3061,17 @@ function ComboFormModal({ isOpen, combo, onClose, onSave, activeProviders, combo
       if (existingProviders.length > 0) {
         saveData.allowedProviders = Array.from(new Set([...existingProviders, ...stepProviders]));
       }
+      // Only clear the family restriction when a new step actually violates it —
+      // never wipe it just because the combo happens to have one (#13951).
       if (Array.isArray(combo?.allowedModelFamilies) && combo.allowedModelFamilies.length > 0) {
-        saveData.allowedModelFamilies = null;
+        const allowedFamilies = new Set(combo.allowedModelFamilies);
+        const stepViolatesFamilies = models.some((m: { model?: string }) => {
+          const family = typeof m.model === "string" ? modelFamily(m.model) : null;
+          return !family || !allowedFamilies.has(family);
+        });
+        if (stepViolatesFamilies) {
+          saveData.allowedModelFamilies = null;
+        }
       }
       saveData.overrideAllowedProviders = true;
     }
