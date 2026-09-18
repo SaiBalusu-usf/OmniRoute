@@ -1,0 +1,1 @@
+- **fix(opencode):** send free-tier requests with a versioned OpenCode User-Agent and canonical `ses_...` / `msg_...` identity headers (the header half of the upstream free-tier contract; body half tracked separately).
