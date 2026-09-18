@@ -5,6 +5,7 @@ import { isServiceBackendPluginId } from "@/lib/services/serviceBackends";
 import { getRegistryEntry } from "@omniroute/open-sse/config/providerRegistry.ts";
 import { getProviderById, getProviderByAlias } from "@/shared/constants/providers";
 import { isCompatibleProviderConnectionId } from "@/shared/utils/compatibleProviderId";
+import { stripStaleEncodingHeaders } from "@omniroute/open-sse/utils/upstreamResponseHeaders";
 
 /**
  * Handle CORS preflight
@@ -127,7 +128,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ prov
     },
     {
       status: response.status,
-      headers: response.headers,
+      headers: stripStaleEncodingHeaders(response.headers),
     }
   );
 }
