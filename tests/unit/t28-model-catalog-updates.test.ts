@@ -27,9 +27,11 @@ test("T28: antigravity static catalog exposes only callable Gemini tier IDs", ()
   assert.ok(staticIds.includes("gemini-3.7-flash-high"));
   assert.ok(staticIds.includes("gemini-3.7-flash-medium"));
   assert.ok(staticIds.includes("gemini-3.7-flash-low"));
-  assert.ok(!staticIds.includes("gemini-3.6-flash-high"));
-  assert.ok(!staticIds.includes("gemini-3.6-flash-medium"));
-  assert.ok(!staticIds.includes("gemini-3.6-flash-low"));
+  // #14017 — 3.6/3.8 Flash are no longer retired; they're callable IDE-only tiers.
+  assert.ok(staticIds.includes("gemini-3.6-flash-high"));
+  assert.ok(staticIds.includes("gemini-3.6-flash-medium"));
+  assert.ok(staticIds.includes("gemini-3.6-flash-low"));
+  assert.ok(staticIds.includes("gemini-3.8-flash-high"));
   assert.ok(!staticIds.includes("gemini-3.5-flash"));
   assert.ok(!staticIds.includes("gemini-3.5-flash-extra-low"));
   assert.ok(!staticIds.includes("gemini-3.5-flash-low"));

@@ -981,7 +981,10 @@ test("provider models route retries Antigravity discovery endpoints before retur
     { id: "gemini-pro-agent", name: "Gemini 3.1 Pro (High)" },
     { id: "gemini-3.7-flash-high", name: "Gemini 3.7 Flash (High)" },
     { id: "gemini-3.7-flash-medium", name: "Gemini 3.7 Flash (Medium)" },
-    { id: "gemini-3.8-flash-high", name: "Gemini 3.8 Flash High" },
+    { id: "gemini-3.8-flash-high", name: "Gemini 3.8 Flash (High)" }, // #14017: static catalog now, own name wins
+    { id: "gemini-3.6-flash-high", name: "Gemini 3.6 Flash (High)" },
+    { id: "gemini-3.6-flash-medium", name: "Gemini 3.6 Flash (Medium)" },
+    { id: "gemini-3.6-flash-low", name: "Gemini 3.6 Flash (Low)" },
   ]);
 });
 
