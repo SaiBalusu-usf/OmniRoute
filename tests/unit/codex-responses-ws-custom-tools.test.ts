@@ -25,6 +25,13 @@ test.before(async () => {
     isActive: true,
     testStatus: "active",
     providerSpecificData: { codexFingerprintMode: "off" },
+    // A reused WS connection re-prepares (and re-acquires a lease) per logical
+    // turn before releasing the previous one (scripts/dev/responses-ws-proxy.mjs
+    // runPrepare). maxConcurrent must allow at least 2 in-flight leases for a
+    // single session's sequential turns, matching how this account is
+    // configured in practice — the default of 1 (unset) is for accounts that
+    // never carry a multi-turn WS session.
+    maxConcurrent: 2,
   });
 });
 
@@ -52,6 +59,20 @@ async function prepare(response: Record<string, unknown>) {
   const body = await result.json();
   assert.equal(result.status, 200, JSON.stringify(body));
   assert.equal(body.response._nativeCodexPassthrough, undefined);
+  // The base's per-account WS lease (non-queued, process-local; landed on
+  // release/v3.8.51 after this branch's fork point) holds the connection's
+  // single default slot until released. Release it here so each independent
+  // `prepare()` call in this file does not starve the next one.
+  await POST(
+    new Request("http://omniroute.local/api/internal/codex-responses-ws", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-omniroute-ws-bridge-secret": "test-custom-tools-bridge",
+      },
+      body: JSON.stringify({ action: "release", leaseId: body.leaseId }),
+    })
+  );
   return body.response;
 }
 
