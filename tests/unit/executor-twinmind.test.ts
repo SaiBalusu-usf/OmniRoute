@@ -48,6 +48,12 @@ describe("TwinmindExecutor", () => {
   it("detects Twinmind tool-refusal openings", () => {
     assert.equal(mod.looksLikeTwinmindRefusal("I don't have access to the filesystem or bash tools."), true);
     assert.equal(mod.looksLikeTwinmindRefusal("Here is the listing of the folder."), false);
+    const preamble = `${"Thinking about the previous tool output. ".repeat(40)}I don't have access to local tools.`;
+    assert.equal(mod.looksLikeTwinmindRefusal(preamble), true);
+    assert.equal(
+      mod.looksLikeTwinmindRefusal('<tool_call>\n{"name":"bash","arguments":{}}\n</tool_call>'),
+      false
+    );
   });
 
   it("builds a Twinmind chat body with type app and model.model_name", () => {
@@ -74,7 +80,7 @@ describe("TwinmindExecutor", () => {
     assert.equal(query, "sys\n\nsecond");
   });
 
-  it("appends emulated tool instructions when tools are present", () => {
+  it("puts emulated tool instructions before history so follow-ups keep them", () => {
     const query = mod.buildTwinmindQuery({
       messages: [{ role: "user", content: "list files" }],
       tools: [
@@ -91,6 +97,34 @@ describe("TwinmindExecutor", () => {
     assert.match(query, /<user>\nlist files\n<\/user>/);
     assert.match(query, /<tool_call>/);
     assert.match(query, /### bash/);
+    assert.ok(query.indexOf("### bash") < query.indexOf("<user>\nlist files"));
+    assert.match(query, /Use the tools listed at the top/);
+  });
+
+  it("pins a continue reminder after tool results so turn 2 still uses tools", () => {
+    const query = mod.buildTwinmindQuery({
+      messages: [
+        { role: "user", content: "list files" },
+        {
+          role: "assistant",
+          content: "",
+          tool_calls: [
+            { type: "function", function: { name: "bash", arguments: "{\"command\":\"ls\"}" } },
+          ],
+        },
+        { role: "tool", name: "bash", content: "README.md" },
+      ],
+      tools: [
+        {
+          type: "function",
+          function: { name: "bash", parameters: { type: "object", properties: {} } },
+        },
+      ],
+    });
+    assert.match(query, /<tool_result name="bash">/);
+    assert.match(query, /YOUR local tools that already ran/);
+    assert.ok(query.indexOf("Available tools") < query.indexOf("<tool_result"));
+    assert.equal(mod.messagesHaveTwinmindToolTraffic([{ role: "tool", content: "ok" }]), true);
   });
 
   it("extracts text_start/text_delta SSE content and ignores other events", () => {
@@ -298,6 +332,60 @@ describe("TwinmindExecutor", () => {
       assert.equal(result.response.status, 200);
       assert.equal(json.choices[0].finish_reason, "tool_calls");
       assert.equal(json.choices[0].message.tool_calls[0].function.name, "bash");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("retries when a follow-up refuses tools after a long thinking preamble", async () => {
+    const originalFetch = globalThis.fetch;
+    let chatAttempts = 0;
+    const jwt =
+      "eyJhbGciOiJub25lIn0." +
+      Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64") +
+      ".x";
+    globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      chatAttempts += 1;
+      if (chatAttempts === 1) {
+        const thinking = "Let me review the previous output. ".repeat(20);
+        return new Response(
+          sseEvent("text_delta", thinking) + sseEvent("text_delta", "I don't have access to bash tools."),
+          { status: 200 }
+        );
+      }
+      const posted = JSON.parse(String(init?.body || "{}")) as { query?: string };
+      assert.match(posted.query || "", /Output a <tool_call> now/);
+      return new Response(
+        sseEvent("text_delta", '<tool_call>\n{"name":"bash","arguments":{"command":"ls"}}\n</tool_call>'),
+        { status: 200 }
+      );
+    }) as typeof fetch;
+
+    try {
+      const executor = new mod.TwinmindExecutor();
+      const result = await executor.execute({
+        model: "auto",
+        body: {
+          messages: [
+            { role: "user", content: "list files" },
+            {
+              role: "assistant",
+              content: "",
+              tool_calls: [{ type: "function", function: { name: "bash", arguments: "{}" } }],
+            },
+            { role: "tool", name: "bash", content: "ok" },
+          ],
+          tools: [{ type: "function", function: { name: "bash", parameters: { type: "object" } } }],
+        },
+        stream: false,
+        credentials: { apiKey: jwt },
+        signal: null,
+      });
+      const json = await result.response.json();
+      assert.equal(result.response.status, 200);
+      assert.equal(json.choices[0].finish_reason, "tool_calls");
+      assert.equal(json.choices[0].message.tool_calls[0].function.name, "bash");
+      assert.equal(chatAttempts, 2);
     } finally {
       globalThis.fetch = originalFetch;
     }

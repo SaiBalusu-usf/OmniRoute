@@ -63,7 +63,11 @@ Rules:
 
 export const TWINMIND_DEFAULT_MODEL = "gpt-5.6-sol-thinking";
 export const TWINMIND_TOOL_RETRY_NUDGE =
-  "\n\n<user>\nPlease use the tools listed above to do this.\n</user>";
+  "\n\n<user>\nPlease use the tools listed at the top of this message. You have them. Output a <tool_call> now.\n</user>";
+export const TWINMIND_TOOL_TAIL =
+  "\n\n<user>\nUse the tools listed at the top when they would help. You have them. Do not say you lack tools.\n</user>";
+export const TWINMIND_TOOL_CONTINUE =
+  "\n\n<user>\nThe <tool_result> blocks are output from YOUR local tools that already ran. Continue the task: more <tool_call> blocks if needed, or the final answer if done. You have these tools. Never say you do not.\n</user>";
 
 export function stripTwinmindModelPrefix(model: string): string {
   const raw = (model || "").trim();
@@ -79,10 +83,13 @@ export function mapTwinmindModel(model: string): string {
 }
 
 export function looksLikeTwinmindRefusal(text: string): boolean {
-  const sample = (text || "").slice(0, 260);
+  if (!text || text.includes(TOOL_MARK)) return false;
+  // Thinking models often emit a long preamble before the actual refusal.
+  const sample = text.length <= 4000 ? text : `${text.slice(0, 2500)}\n${text.slice(-800)}`;
   const phrase =
-    /don'?t have|do not have|no access|not equipped|cannot |can'?t (?:access|execute|run|read|list)|only have access/i;
-  const subject = /tool|file|filesystem|shell|bash|terminal|calendar|e-?mail|gmail|chat history|artifact/i;
+    /don'?t have|do not have|no access|not equipped|cannot |can'?t (?:access|execute|run|read|list|use)|only have access|not able to|unable to|no (?:ability|way) to|as an? (?:ai|language|chat|text) model/i;
+  const subject =
+    /tool|file|filesystem|shell|bash|terminal|calendar|e-?mail|gmail|chat history|artifact|command|local (?:machine|computer|system)/i;
   return phrase.test(sample) && subject.test(sample);
 }
 
@@ -123,6 +130,7 @@ export function makeTwinmindToolAwareStreamer(emitContent: (text: string) => voi
     },
     finish() {
       decide(true);
+      if (!toolMode) blocked = looksLikeTwinmindRefusal(full);
     },
     reset() {
       full = "";
@@ -251,10 +259,29 @@ export function formatTwinmindToolDefs(tools: unknown): string {
   return out;
 }
 
+export function messagesHaveTwinmindToolTraffic(messages: unknown): boolean {
+  if (!Array.isArray(messages)) return false;
+  for (const message of messages) {
+    if (!message || typeof message !== "object" || Array.isArray(message)) continue;
+    const rec = message as Record<string, unknown>;
+    const role = typeof rec.role === "string" ? rec.role : "";
+    if (role === "tool" || role === "function") return true;
+    if (role === "assistant" && Array.isArray(rec.tool_calls) && rec.tool_calls.length > 0) return true;
+    if (extractMessageText(rec.content).includes(TOOL_MARK)) return true;
+  }
+  return false;
+}
+
 export function buildTwinmindQuery(body: JsonRecord): string {
   const messages = body.messages;
   const tools = Array.isArray(body.tools) && body.tools.length > 0 ? body.tools : null;
-  if (tools) return `${flattenTwinmindMessages(messages)}\n${formatTwinmindToolDefs(tools)}`.trim();
+  const traffic = messagesHaveTwinmindToolTraffic(messages);
+  if (tools || traffic) {
+    const catalog = tools ? formatTwinmindToolDefs(tools) : TOOL_INSTRUCTIONS;
+    const history = flattenTwinmindMessages(messages);
+    const tail = traffic ? TWINMIND_TOOL_CONTINUE : TWINMIND_TOOL_TAIL;
+    return `${catalog}\n\n${history}${tail}`.trim();
+  }
   const sys = systemPrefix(messages);
   const query = lastUserText(messages);
   return (sys ? `${sys}\n\n${query}` : query).trim();
@@ -463,7 +490,9 @@ export class TwinmindExecutor extends BaseExecutor {
     const requestedModel = input.model || toStringOrEmpty(bodyObj.model) || "auto";
     const modelId = mapTwinmindModel(requestedModel);
     const baseQuery = buildTwinmindQuery(bodyObj);
-    const hasTools = Array.isArray(bodyObj.tools) && bodyObj.tools.length > 0;
+    const hasTools =
+      (Array.isArray(bodyObj.tools) && bodyObj.tools.length > 0) ||
+      messagesHaveTwinmindToolTraffic(bodyObj.messages);
     const maxToolTries = hasTools ? 4 : 1;
 
     if (!baseQuery) {
@@ -653,7 +682,7 @@ export class TwinmindExecutor extends BaseExecutor {
       parsed = hasTools ? parseTwinmindToolCalls(lastText) : { calls: [] as TwinmindToolCall[], content: lastText };
       if (!hasTools) break;
       if (parsed.calls.length > 0) break;
-      if (streamer ? !streamer.blocked : !looksLikeTwinmindRefusal(lastText)) break;
+      if (!looksLikeTwinmindRefusal(lastText)) break;
     }
 
     if (wantStream) {
