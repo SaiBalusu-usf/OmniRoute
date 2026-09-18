@@ -1347,6 +1347,69 @@ test("getTerminalBatches returns only terminal statuses ordered oldest first", a
   }
 });
 
+test("POST /api/v1/batches sanitizes error message on create failure (Hard Rule #12)", async () => {
+  const apiKey = await createApiKey("Batch Error Sanitization Key", "test-machine");
+
+  const file = createFile({
+    bytes: 10,
+    filename: "batch_error.jsonl",
+    purpose: "batch",
+    content: Buffer.from("{}"),
+    apiKeyId: apiKey.id,
+  });
+
+  const db = getDbInstance();
+  const originalPrepare = db.prepare.bind(db);
+
+  // Simulate an unexpected internal/filesystem error thrown during batch creation
+  db.prepare = ((sql: string) => {
+    if (sql.includes("INSERT INTO batches")) {
+      throw new Error(
+        "Failed to write to /var/run/secrets/db/batches.sqlite\n    at Database.prepare (/app/node_modules/better-sqlite3/index.js:42:15)"
+      );
+    }
+    return originalPrepare(sql);
+  }) as unknown as typeof db.prepare;
+
+  try {
+    const request = new Request("http://localhost/api/v1/batches", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey.key}`,
+      },
+      body: JSON.stringify({
+        input_file_id: file.id,
+        endpoint: "/v1/chat/completions",
+        completion_window: "24h",
+      }),
+    });
+
+    const response = await batchesRoute.POST(request);
+    const body = await response.json();
+
+    assert.strictEqual(response.status, 400);
+    assert.strictEqual(body.error?.type, "invalid_request_error");
+    assert.ok(body.error?.message, "Error response must include error message");
+    // Hard Rule #12: must not contain absolute paths or stack traces
+    assert.ok(
+      !body.error.message.includes("/var/run/secrets/db/batches.sqlite"),
+      "Error message must not contain filesystem paths"
+    );
+    assert.ok(
+      !body.error.message.includes("/app/node_modules"),
+      "Error message must not contain stack trace paths"
+    );
+    assert.ok(
+      !body.error.message.includes("\n"),
+      "Error message must be sanitized to a single line"
+    );
+    assert.strictEqual(body.error.message, "Failed to write to <path>");
+  } finally {
+    db.prepare = originalPrepare;
+  }
+});
+
 test.after(async () => {
   await cleanupTempDataDir(TEST_DATA_DIR);
 });
