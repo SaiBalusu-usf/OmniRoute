@@ -383,6 +383,8 @@ export function normalizeDiscoveredModels(
     const record = asRecord(item);
     const id =
       toNonEmptyString(record.id) ||
+      toNonEmptyString(record.model_name) ||
+      toNonEmptyString(record.modelName) ||
       toNonEmptyString(record.name) ||
       toNonEmptyString(record.model);
     if (!id) continue;
@@ -407,8 +409,11 @@ export function normalizeDiscoveredModels(
     const defaultThinkingEffort = detectDefaultThinkingEffort(record);
 
     const name =
-      toNonEmptyString(record.name) ||
+      toNonEmptyString(record.display_name) ||
       toNonEmptyString(record.displayName) ||
+      toNonEmptyString(record.name) ||
+      toNonEmptyString(record.model_name) ||
+      toNonEmptyString(record.modelName) ||
       toNonEmptyString(record.model) ||
       id;
     const supportedEndpoints = Array.isArray(record.supportedEndpoints)

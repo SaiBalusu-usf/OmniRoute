@@ -41,6 +41,8 @@ import {
   extractCommandCodeCredentialInput,
   normalizeAndValidateHttpBaseUrl,
   SILICONFLOW_ENDPOINTS,
+  getApiPath,
+  formatCompatibleEndpoint,
   type HeaderDraftRow,
   type CompatModelRow,
   type CompatModelMap,
@@ -92,6 +94,21 @@ test("routing-tags / excluded-models parse + format round-trip", () => {
   assert.equal(formatRoutingTagsInput(["x", "y"]), "x, y");
   assert.equal(formatExcludedModelsInput(["a", "b"]), "a, b");
   assert.equal(formatRoutingTagsInput(undefined), "");
+});
+
+test("formatCompatibleEndpoint keeps a full chat URL instead of joining it onto baseUrl", () => {
+  assert.equal(
+    formatCompatibleEndpoint("https://api.example.com/v3/", "https://api.example.com/v3/chat"),
+    "https://api.example.com/v3/chat"
+  );
+  assert.equal(
+    getApiPath(false, false, "chat", "https://api.example.com/v3/chat"),
+    "https://api.example.com/v3/chat"
+  );
+  assert.equal(
+    formatCompatibleEndpoint("https://api.openai.com/v1", "/chat/completions"),
+    "https://api.openai.com/v1/chat/completions"
+  );
 });
 
 // ---------------------------------------------------------------------------

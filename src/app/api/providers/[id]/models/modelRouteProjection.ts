@@ -19,14 +19,29 @@ export function filterModelsForRoute<
 }
 
 function toLiveModel(item: Record<string, unknown>): { id: string; name: string } | null {
-  const itemId = typeof item.id === "string" ? item.id.trim() : "";
+  const itemId =
+    typeof item.id === "string"
+      ? item.id.trim()
+      : typeof item.model_name === "string"
+        ? item.model_name.trim()
+        : typeof item.modelName === "string"
+          ? item.modelName.trim()
+          : typeof item.model === "string"
+            ? item.model.trim()
+            : typeof item.name === "string"
+              ? item.name.trim()
+              : "";
   if (!itemId) return null;
   const itemName =
     typeof item.display_name === "string"
       ? item.display_name
-      : typeof item.name === "string"
-        ? item.name
-        : itemId;
+      : typeof item.displayName === "string"
+        ? item.displayName
+        : typeof item.name === "string"
+          ? item.name
+          : typeof item.model_name === "string"
+            ? item.model_name
+            : itemId;
   return { id: itemId, name: itemName };
 }
 

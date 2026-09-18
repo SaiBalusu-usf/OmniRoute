@@ -1,31 +1,25 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-
-// Inline buildUrl logic from DefaultExecutor for unit testing
-// (avoids importing ESM modules with complex dependency chains)
+import { joinBaseUrlAndEndpoint } from "../../open-sse/utils/joinEndpointUrl.ts";
 
 function buildUrlOpenAI(_provider, credentials) {
   const psd = credentials?.providerSpecificData;
   const baseUrl = psd?.baseUrl || "https://api.openai.com/v1";
-  const normalized = baseUrl.replace(/\/$/, "");
   const customPath = typeof psd?.chatPath === "string" && psd.chatPath ? psd.chatPath : null;
-  if (customPath) return `${normalized}${customPath}`;
   const apiType = typeof psd?.apiType === "string" ? psd.apiType : "chat";
   const path = apiType === "responses" ? "/responses" : "/chat/completions";
-  return `${normalized}${path}`;
+  return joinBaseUrlAndEndpoint(baseUrl, customPath, path);
 }
 
 function buildUrlAnthropic(credentials) {
   const psd = credentials?.providerSpecificData;
   const baseUrl = psd?.baseUrl || "https://api.anthropic.com/v1";
-  const normalized = baseUrl.replace(/\/$/, "");
   const customPath = typeof psd?.chatPath === "string" && psd.chatPath ? psd.chatPath : null;
-  return `${normalized}${customPath || "/messages"}`;
+  return joinBaseUrlAndEndpoint(baseUrl, customPath, "/messages");
 }
 
 function buildModelsUrl(baseUrl, modelsPath) {
-  const normalized = baseUrl.replace(/\/$/, "");
-  return `${normalized}${modelsPath || "/models"}`;
+  return joinBaseUrlAndEndpoint(baseUrl, modelsPath, "/models");
 }
 
 describe("Custom Endpoint Paths", () => {
@@ -88,6 +82,16 @@ describe("Custom Endpoint Paths", () => {
       });
       assert.equal(url, "https://api.example.com/v1/v4/chat/completions");
     });
+
+    it("uses a full chat URL without concatenating the base host", () => {
+      const url = buildUrlOpenAI("openai-compatible-chat-split-host", {
+        providerSpecificData: {
+          baseUrl: "https://api.example.com/v3/",
+          chatPath: "https://api.example.com/v3/chat",
+        },
+      });
+      assert.equal(url, "https://api.example.com/v3/chat");
+    });
   });
 
   describe("Anthropic Compatible buildUrl", () => {
@@ -135,6 +139,14 @@ describe("Custom Endpoint Paths", () => {
     it("falls back to /models when modelsPath is undefined", () => {
       const url = buildModelsUrl("https://api.example.com/v1", undefined);
       assert.equal(url, "https://api.example.com/v1/models");
+    });
+
+    it("uses a full models URL on a different host than chat", () => {
+      const url = buildModelsUrl(
+        "https://api.example.com/v3/",
+        "https://app.example.com/api/v3/chat/models"
+      );
+      assert.equal(url, "https://app.example.com/api/v3/chat/models");
     });
   });
 

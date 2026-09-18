@@ -10,6 +10,7 @@ import {
   isBedrockNativeAuthError,
 } from "@omniroute/open-sse/services/bedrock.ts";
 import { addModelsSuffix, normalizeBaseUrl, resolveChatUrl } from "./urlHelpers";
+import { joinBaseUrlAndEndpoint } from "@omniroute/open-sse/utils/joinEndpointUrl.ts";
 import { applyCustomUserAgent, buildBearerHeaders } from "./headers";
 import { toValidationErrorResult, validationRead, validationWrite } from "./transport";
 import { validateDirectChatProvider } from "./directChatProbe";
@@ -426,10 +427,15 @@ export async function validateOpenAICompatibleProvider({ apiKey, providerSpecifi
       ? providerSpecificData.validationModelId.trim()
       : "";
 
-  // Step 1: Try GET /models
+  // Step 1: Try GET /models (or a full models URL when listing lives on another host)
   let modelsReachable = false;
+  const modelsUrl = joinBaseUrlAndEndpoint(
+    baseUrl,
+    providerSpecificData?.modelsPath,
+    "/models"
+  );
   try {
-    const modelsRes = await validationRead(`${baseUrl}/models`, {
+    const modelsRes = await validationRead(modelsUrl, {
       method: "GET",
       headers: buildBearerHeaders(apiKey, providerSpecificData),
     });
@@ -476,7 +482,7 @@ export async function validateOpenAICompatibleProvider({ apiKey, providerSpecifi
   // Many providers don't expose /models but accept chat completions fine
   const apiType = providerSpecificData.apiType || "chat";
   const chatSuffix = apiType === "responses" ? "/responses" : "/chat/completions";
-  const chatUrl = `${baseUrl}${chatSuffix}`;
+  const chatUrl = joinBaseUrlAndEndpoint(baseUrl, providerSpecificData?.chatPath, chatSuffix);
   const testModelId = validationModelId;
   const testBody =
     apiType === "responses"

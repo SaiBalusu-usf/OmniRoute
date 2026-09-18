@@ -10,6 +10,7 @@ import {
   CLAUDE_CODE_COMPATIBLE_DEFAULT_CHAT_PATH,
   joinClaudeCodeCompatibleUrl,
 } from "../services/claudeCodeCompatible.ts";
+import { joinBaseUrlAndEndpoint } from "../utils/joinEndpointUrl.ts";
 import { getGigachatAccessToken } from "../services/gigachatAuth.ts";
 import { getRegistryEntry, requireCompatibleBaseUrl } from "../config/providerRegistry.ts";
 import { getModelTargetFormat } from "../config/providerModels.ts";
@@ -232,15 +233,13 @@ export class DefaultExecutor extends BaseExecutor {
     if (this.provider?.startsWith?.("openai-compatible-")) {
       const psd = credentials?.providerSpecificData;
       const baseUrl = requireCompatibleBaseUrl(this.provider, psd); // #13452
-      const normalized = baseUrl.replace(/\/$/, "");
       const customPath = typeof psd?.chatPath === "string" && psd.chatPath ? psd.chatPath : null;
-      if (customPath) return `${normalized}${customPath}`;
       const forceResponses = psd?._omnirouteForceResponsesUpstream === true;
       const path =
         forceResponses || getOpenAICompatibleType(this.provider, psd) === "responses"
           ? "/responses"
           : "/chat/completions";
-      return `${normalized}${path}`;
+      return joinBaseUrlAndEndpoint(baseUrl, customPath, path);
     }
     if (this.provider?.startsWith?.("anthropic-compatible-")) {
       const psd = credentials?.providerSpecificData;
@@ -252,8 +251,7 @@ export class DefaultExecutor extends BaseExecutor {
           customPath || CLAUDE_CODE_COMPATIBLE_DEFAULT_CHAT_PATH
         );
       }
-      const normalized = baseUrl.replace(/\/$/, "");
-      return `${normalized}${customPath || "/messages"}`;
+      return joinBaseUrlAndEndpoint(baseUrl, customPath, "/messages");
     }
     // An alternate protocol selected on the connection carries a complete endpoint
     // URL, so it must bypass the per-provider normalizers in the switch below —

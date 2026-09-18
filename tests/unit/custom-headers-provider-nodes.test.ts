@@ -47,6 +47,32 @@ test.after(async () => {
   fs.rmSync(TEST_DATA_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
+test("createProviderNodeSchema accepts full http(s) chatPath and modelsPath", () => {
+  const result = createProviderNodeSchema.safeParse({
+    name: "split-host",
+    prefix: "split",
+    apiType: "chat",
+    baseUrl: "https://api.example.com/v3/",
+    chatPath: "https://api.example.com/v3/chat",
+    modelsPath: "https://app.example.com/api/v3/chat/models",
+  });
+  assert.equal(result.success, true);
+  if (result.success) {
+    assert.equal(result.data.chatPath, "https://api.example.com/v3/chat");
+    assert.equal(result.data.modelsPath, "https://app.example.com/api/v3/chat/models");
+  }
+});
+
+test("createProviderNodeSchema rejects javascript: chatPath", () => {
+  const result = createProviderNodeSchema.safeParse({
+    name: "split-host",
+    prefix: "split",
+    apiType: "chat",
+    chatPath: "javascript:alert(1)",
+  });
+  assert.equal(result.success, false);
+});
+
 test("createProviderNodeSchema accepts valid customHeaders as record of strings", () => {
   const validInputs = [
     { name: "Test", prefix: "test", apiType: "chat", customHeaders: { "X-Custom-1": "value1" } },

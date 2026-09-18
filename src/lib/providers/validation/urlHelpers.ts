@@ -5,6 +5,7 @@ import {
   stripAnthropicMessagesSuffix,
   stripClaudeCodeCompatibleEndpointSuffix,
 } from "@omniroute/open-sse/services/claudeCodeCompatible.ts";
+import { joinBaseUrlAndEndpoint } from "@omniroute/open-sse/utils/joinEndpointUrl.ts";
 import { isOpenAICompatibleProvider } from "@/shared/constants/providers";
 
 export const OPENAI_LIKE_FORMATS = new Set(["openai", "openai-responses"]);
@@ -68,7 +69,7 @@ export function resolveChatUrl(provider: string, baseUrl: string, providerSpecif
 
   if (isOpenAICompatibleProvider(provider)) {
     if (providerSpecificData?.chatPath) {
-      return `${normalized}${providerSpecificData.chatPath}`;
+      return joinBaseUrlAndEndpoint(normalized, providerSpecificData.chatPath);
     }
     if (providerSpecificData?.apiType === "responses") {
       return `${normalized}/responses`;

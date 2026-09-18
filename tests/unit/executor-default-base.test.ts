@@ -63,6 +63,17 @@ test("BaseExecutor: openai-compatible buildUrl sanitizes custom chat paths", () 
   assert.equal(invalidNullByte, "https://proxy.example/v1/chat/completions");
 });
 
+test("BaseExecutor: openai-compatible buildUrl accepts a full chat URL on another host", () => {
+  const executor = new BaseExecutor("openai-compatible-test", {});
+  const url = executor.buildUrl("example-model", true, 0, {
+    providerSpecificData: {
+      baseUrl: "https://api.example.com/v3/",
+      chatPath: "https://api.example.com/v3/chat",
+    },
+  });
+  assert.equal(url, "https://api.example.com/v3/chat");
+});
+
 test("BaseExecutor: legacy openai-compatible providers honor providerSpecificData.apiType", () => {
   const executor = new BaseExecutor("openai-compatible-sp-openai", {});
   const url = executor.buildUrl("gpt-5.4", true, 0, {

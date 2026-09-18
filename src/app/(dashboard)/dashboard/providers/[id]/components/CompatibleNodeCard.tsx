@@ -4,7 +4,7 @@
 import { useRouter } from "next/navigation";
 import { Card, Button } from "@/shared/components";
 import ProviderIcon from "@/shared/components/ProviderIcon";
-import { getApiLabel, getApiPath } from "../providerPageHelpers";
+import { formatCompatibleEndpoint, getApiLabel, getApiPath } from "../providerPageHelpers";
 import type { ProviderMessageTranslator } from "../providerPageHelpers";
 
 interface ProviderNode {
@@ -65,12 +65,14 @@ export default function CompatibleNodeCard({
             </h2>
             <p className="text-sm text-text-muted">
               {getApiLabel(t, isAnthropicProtocolCompatible, providerNode?.apiType)} ·{" "}
-              {(providerNode.baseUrl || "").replace(/\/$/, "")}/
-              {getApiPath(
-                isCcCompatible,
-                isAnthropicCompatible,
-                providerNode?.apiType,
-                providerNode?.chatPath
+              {formatCompatibleEndpoint(
+                providerNode.baseUrl,
+                getApiPath(
+                  isCcCompatible,
+                  isAnthropicCompatible,
+                  providerNode?.apiType,
+                  providerNode?.chatPath
+                )
               )}
             </p>
           </div>

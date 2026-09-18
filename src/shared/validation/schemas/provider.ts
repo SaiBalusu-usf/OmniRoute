@@ -74,6 +74,21 @@ const providerNodeIconUrlSchema = z
   })
   .optional();
 
+// Compatible chat/models endpoints may be a relative path on the node base URL
+// (`/v1/models`) or a full http(s) URL when listing and chat live on different hosts.
+const compatibleEndpointPathSchema = z
+  .string()
+  .trim()
+  .max(2000)
+  .refine(
+    (value) => value === "" || value.startsWith("/") || /^https?:\/\//i.test(value),
+    {
+      message: "Path must start with / or be a full http(s) URL",
+    }
+  )
+  .optional()
+  .or(z.literal(""));
+
 // #6715: the `apiKey` field is reused as the raw `Cookie:` header value for
 // cookie-based web providers (Gemini Business, Copilot M365, ChatGPT Web (Codex),
 // Claude Web, …). Real multi-cookie session headers (many `__Secure-*` entries,
@@ -362,8 +377,8 @@ export const createProviderNodeSchema = z
     // OpenAI-compatible local gateways so the operator only has to paste
     // a baseUrl. Currently just VibeProxy (github.com/automazeio/vibeproxy).
     preset: z.enum(["vibeproxy-openai"]).optional(),
-    chatPath: z.string().trim().startsWith("/").max(500).optional().or(z.literal("")),
-    modelsPath: z.string().trim().startsWith("/").max(500).optional().or(z.literal("")),
+    chatPath: compatibleEndpointPathSchema,
+    modelsPath: compatibleEndpointPathSchema,
     // #2166: optional operator-supplied remote icon URL for the provider node. Empty
     // string is accepted so callers can explicitly submit "no custom icon" (falls back
     // to the built-in @lobehub/static resolution). Length/scheme limits live in
@@ -448,8 +463,8 @@ export const updateProviderNodeSchema = z
       ])
       .optional(),
     baseUrl: z.string().trim().min(1, "Base URL is required"),
-    chatPath: z.string().trim().startsWith("/").max(500).optional().or(z.literal("")),
-    modelsPath: z.string().trim().startsWith("/").max(500).optional().or(z.literal("")),
+    chatPath: compatibleEndpointPathSchema,
+    modelsPath: compatibleEndpointPathSchema,
     // #2166: same optional remote icon URL as createProviderNodeSchema — empty string
     // clears a previously stored custom icon.
     iconUrl: providerNodeIconUrlSchema,
@@ -486,8 +501,8 @@ export const providerNodeValidateSchema = z.object({
       "images-generations",
     ])
     .optional(),
-  chatPath: z.string().trim().startsWith("/").max(500).optional().or(z.literal("")),
-  modelsPath: z.string().trim().startsWith("/").max(500).optional().or(z.literal("")),
+  chatPath: compatibleEndpointPathSchema,
+  modelsPath: compatibleEndpointPathSchema,
   modelId: z.string().trim().max(200).optional().or(z.literal("")),
 });
 

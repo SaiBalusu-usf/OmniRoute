@@ -102,7 +102,9 @@ import {
   type JsonRecord,
   asRecord,
   toNonEmptyString,
+  toCompatibleLiveModel,
   getProviderBaseUrl,
+  resolveCompatibleModelsUrl,
   normalizeAzureOpenAIBaseUrl,
   getAzureOpenAIApiVersion,
   isLocalOpenAIStyleProvider,
@@ -803,12 +805,20 @@ export async function GET(
         base = base.slice(0, -3);
       }
 
-      // T39: Try multiple endpoint formats
-      const endpoints = [
-        `${base}/v1/models`,
-        `${base}/models`,
-        `${baseUrl.replace(/\/$/, "")}/models`, // Original fallback
-      ];
+      const configuredModelsUrl = resolveCompatibleModelsUrl(
+        baseUrl,
+        connection.providerSpecificData
+      );
+
+      // Prefer an operator-supplied models path/URL when listing lives on a
+      // different host than chat. Fall back to the usual OpenAI-style probes.
+      const endpoints = configuredModelsUrl
+        ? [configuredModelsUrl]
+        : [
+            `${base}/v1/models`,
+            `${base}/models`,
+            `${baseUrl.replace(/\/$/, "")}/models`, // Original fallback
+          ];
 
       // #8347: opt-in `client_version` query param on the model-LIST request only (never on
       // any inference URL, and never on this path by default) — see discoveryClientVersion.ts.
@@ -842,9 +852,21 @@ export async function GET(
 
           if (response.ok) {
             const data = await response.json();
-            models = isNamedOpenAIStyleProvider(provider)
-              ? normalizeOpenAiLikeModelsResponse(data, provider)
-              : data.data || data.models || [];
+            if (isNamedOpenAIStyleProvider(provider)) {
+              models = normalizeOpenAiLikeModelsResponse(data, provider);
+            } else {
+              const payload = asRecord(data);
+              const rawItems = Array.isArray(data)
+                ? data
+                : payload.data || payload.models || payload.chat_models || [];
+              models = Array.isArray(rawItems)
+                ? rawItems.map((item) => {
+                    const record = asRecord(item);
+                    const live = toCompatibleLiveModel(record);
+                    return live ? { ...record, id: live.id, name: live.name } : item;
+                  })
+                : [];
+            }
             if (provider === "ollama-local")
               models = await enrichOllamaLocalModels(models, baseUrl, proxy, token);
             break; // Success!
@@ -1844,10 +1866,11 @@ export async function GET(
         baseUrl = baseUrl.slice(0, -9);
       }
 
-      // Use modelsPath from provider node if available, otherwise default to /models
+      // Use modelsPath from provider node if available, otherwise default to /models.
+      // Absolute modelsPath values (different host from chat) replace the base URL.
       const psd = asRecord(connection.providerSpecificData);
       const modelsPath = toNonEmptyString(psd.modelsPath) || "/models";
-      const url = `${baseUrl}${modelsPath}`;
+      const url = resolveCompatibleModelsUrl(baseUrl, { modelsPath }) || `${baseUrl}${modelsPath}`;
       const token = accessToken || apiKey;
       let response: Response;
       try {

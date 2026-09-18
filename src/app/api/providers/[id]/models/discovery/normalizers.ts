@@ -254,12 +254,17 @@ export function normalizeOpenAiLikeModelsResponse(
     .map((value) => {
       const item = asRecord(value);
       const id =
-        toNonEmptyString(item.id) || toNonEmptyString(item.model) || toNonEmptyString(item.name);
+        toNonEmptyString(item.id) ||
+        toNonEmptyString(item.model_name) ||
+        toNonEmptyString(item.modelName) ||
+        toNonEmptyString(item.model) ||
+        toNonEmptyString(item.name);
       if (!id) return null;
       const name =
         toNonEmptyString(item.display_name) ||
         toNonEmptyString(item.displayName) ||
         toNonEmptyString(item.name) ||
+        toNonEmptyString(item.model_name) ||
         id;
       const ownedBy =
         toNonEmptyString(item.owned_by) || toNonEmptyString(item.provider) || fallbackOwner;

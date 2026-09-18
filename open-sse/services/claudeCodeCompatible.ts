@@ -118,10 +118,11 @@ export function stripClaudeCodeCompatibleEndpointSuffix(
 }
 
 function joinNormalizedBaseUrlAndPath(baseUrl: string, path: string): string {
+  const resolvedPath = String(path || "").trim();
+  if (/^https?:\/\//i.test(resolvedPath)) return resolvedPath;
+
   const normalizedBase = String(baseUrl || "").replace(/\/$/, "");
-  const normalizedPath = String(path || "").startsWith("/")
-    ? String(path)
-    : `/${String(path || "")}`;
+  const normalizedPath = resolvedPath.startsWith("/") ? resolvedPath : `/${resolvedPath}`;
   const versionMatch = normalizedBase.match(/(\/v\d+)$/i);
   if (
     versionMatch &&

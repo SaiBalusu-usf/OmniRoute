@@ -1000,8 +1000,21 @@ export function getApiPath(
   apiType: string | undefined,
   chatPath: string | undefined
 ): string {
+  const trimmed = typeof chatPath === "string" ? chatPath.trim() : "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
   const defaultPath = getApiDefaultPath(isCcCompatible, isAnthropicCompatible, apiType);
-  return (chatPath || defaultPath).replace(/^\//, "");
+  return (trimmed || defaultPath).replace(/^\//, "");
+}
+
+export function formatCompatibleEndpoint(
+  baseUrl: string | undefined,
+  chatPath: string | undefined
+): string {
+  const trimmedPath = typeof chatPath === "string" ? chatPath.trim() : "";
+  if (/^https?:\/\//i.test(trimmedPath)) return trimmedPath;
+  const normalizedBase = (baseUrl || "").replace(/\/$/, "");
+  if (!trimmedPath) return normalizedBase;
+  return `${normalizedBase}/${trimmedPath.replace(/^\//, "")}`;
 }
 
 export function getHeaderIconProviderId(

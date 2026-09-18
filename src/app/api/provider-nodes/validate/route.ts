@@ -12,6 +12,7 @@ import { getProviderValidationGuard } from "@/shared/network/outboundUrlGuardPol
 import { isCcCompatibleProviderEnabled } from "@/shared/utils/featureFlags";
 import { providerNodeValidateSchema } from "@/shared/validation/schemas";
 import { isValidationFailure, validateBody } from "@/shared/validation/helpers";
+import { joinBaseUrlAndEndpoint } from "@omniroute/open-sse/utils/joinEndpointUrl.ts";
 
 // Matches a base URL whose host is localhost / 127.0.0.1 (with an optional port).
 const LOCALHOST_BASE_URL_RE = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(?:[/?#]|$)/i;
@@ -116,13 +117,15 @@ async function probeChatFallback({
   apiKey,
   modelId,
   extraHeaders = {},
+  chatPath,
 }: {
   baseUrl: string;
   apiKey: string;
   modelId: string;
   extraHeaders?: Record<string, string>;
+  chatPath?: string;
 }) {
-  const chatUrl = `${baseUrl.replace(/\/$/, "")}/chat/completions`;
+  const chatUrl = joinBaseUrlAndEndpoint(baseUrl, chatPath, "/chat/completions");
   return safeOutboundFetch(chatUrl, {
     ...SAFE_OUTBOUND_FETCH_PRESETS.validationRead,
     guard: getProviderValidationGuard(),
@@ -232,7 +235,7 @@ export async function POST(request) {
       const normalizedBase = sanitizeAnthropicBaseUrl(baseUrl);
 
       // Use /models endpoint for validation as many compatible providers support it (like OpenAI)
-      const modelsUrl = `${normalizedBase}${modelsPath || "/models"}`;
+      const modelsUrl = joinBaseUrlAndEndpoint(normalizedBase, modelsPath, "/models");
 
       const res = await safeOutboundFetch(modelsUrl, {
         ...SAFE_OUTBOUND_FETCH_PRESETS.validationRead,
@@ -258,6 +261,7 @@ export async function POST(request) {
           apiKey: apiKey ?? "",
           modelId: trimmedModelId,
           extraHeaders: { "x-api-key": apiKey ?? "", "anthropic-version": "2023-06-01" },
+          chatPath,
         });
         if (chatRes.ok) return NextResponse.json({ valid: true, error: null, method: "chat" });
         return NextResponse.json({
@@ -295,7 +299,7 @@ export async function POST(request) {
       });
     }
 
-    const modelsUrl = `${openAiBase}${modelsPath || "/models"}`;
+    const modelsUrl = joinBaseUrlAndEndpoint(openAiBase, modelsPath, "/models");
     const res = await safeOutboundFetch(modelsUrl, {
       ...SAFE_OUTBOUND_FETCH_PRESETS.validationRead,
       guard: getProviderValidationGuard(),
@@ -311,6 +315,7 @@ export async function POST(request) {
         baseUrl: openAiBase,
         apiKey: apiKey ?? "",
         modelId: trimmedModelId,
+        chatPath,
       });
       if (chatRes.ok) return NextResponse.json({ valid: true, error: null, method: "chat" });
       return NextResponse.json({

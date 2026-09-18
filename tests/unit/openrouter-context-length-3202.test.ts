@@ -12,6 +12,15 @@ import { normalizeDiscoveredModels } from "@/lib/providerModels/modelDiscovery";
 // OpenRouter models never carried `inputTokenLimit` and `/v1/models` fell back
 // to the 128K provider default for every model.
 
+test("normalizeDiscoveredModels accepts model_name records without OpenAI id", () => {
+  const [model] = normalizeDiscoveredModels([
+    { model_name: "example-flash-thinking", display_name: "Example Flash Thinking" },
+  ]);
+
+  assert.equal(model.id, "example-flash-thinking");
+  assert.equal(model.name, "Example Flash Thinking");
+});
+
 test("#3202 maps OpenRouter context_length into inputTokenLimit", () => {
   const [model] = normalizeDiscoveredModels([
     { id: "deepseek/deepseek-v4", context_length: 1048576 },

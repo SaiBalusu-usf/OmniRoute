@@ -126,23 +126,10 @@ export {
   stripStainlessHeadersForOpenAICompat,
 } from "./base/headers.ts";
 import { sanitizeReasoningEffortForProvider } from "./base/reasoningEffort.ts";
+import { joinBaseUrlAndEndpoint, sanitizeCompatibleEndpoint } from "../utils/joinEndpointUrl.ts";
 // Reasoning-effort sanitation extracted to a pure leaf; re-exported for external
 // importers (mimoThinking service + tests) that import it from "./base.ts".
 export { sanitizeReasoningEffortForProvider } from "./base/reasoningEffort.ts";
-
-/**
- * Sanitizes a custom API path to prevent path traversal attacks.
- * Valid paths must start with '/', contain no '..' segments,
- * no null bytes, and be reasonable in length.
- */
-function sanitizePath(path: string): boolean {
-  if (typeof path !== "string") return false;
-  if (!path.startsWith("/")) return false;
-  if (path.includes("\0")) return false; // null byte
-  if (path.includes("..")) return false; // path traversal
-  if (path.length > 512) return false; // sanity limit
-  return true;
-}
 
 type JsonRecord = Record<string, unknown>;
 
@@ -381,16 +368,13 @@ export class BaseExecutor {
     if (this.provider?.startsWith?.("openai-compatible-")) {
       const psd = credentials?.providerSpecificData;
       const baseUrl = requireCompatibleBaseUrl(this.provider, psd); // #13452
-      const normalized = baseUrl.replace(/\/$/, "");
-      // Sanitize custom path: must start with '/', no path traversal, no null bytes
       const rawPath = typeof psd?.chatPath === "string" && psd.chatPath ? psd.chatPath : null;
-      const customPath = rawPath && sanitizePath(rawPath) ? rawPath : null;
-      if (customPath) return `${normalized}${customPath}`;
+      const customPath = rawPath && sanitizeCompatibleEndpoint(rawPath) ? rawPath : null;
       const path =
         getOpenAICompatibleType(this.provider, psd) === "responses"
           ? "/responses"
           : "/chat/completions";
-      return `${normalized}${path}`;
+      return joinBaseUrlAndEndpoint(baseUrl, customPath, path);
     }
     const baseUrls = this.getBaseUrls();
     return baseUrls[urlIndex] || baseUrls[0] || this.config.baseUrl || "";

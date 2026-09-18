@@ -1,5 +1,6 @@
 import { isSelfHostedChatProvider } from "@/shared/constants/providers";
 import { getStaticModelsForProvider, type LocalCatalogModel } from "@/lib/providers/staticModels";
+import { joinBaseUrlAndEndpoint } from "@omniroute/open-sse/utils/joinEndpointUrl.ts";
 import { SAFE_OUTBOUND_FETCH_PRESETS, safeOutboundFetch } from "@/shared/network/safeOutboundFetch";
 import { getProviderValidationGuard } from "@/shared/network/outboundUrlGuardPolicy";
 import {
@@ -19,10 +20,42 @@ export function toNonEmptyString(value: unknown): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+export function toCompatibleLiveModel(
+  item: Record<string, unknown>
+): { id: string; name: string } | null {
+  const itemId =
+    toNonEmptyString(item.id) ||
+    toNonEmptyString(item.model_name) ||
+    toNonEmptyString(item.modelName) ||
+    toNonEmptyString(item.model) ||
+    toNonEmptyString(item.name);
+  if (!itemId) return null;
+  const itemName =
+    toNonEmptyString(item.display_name) ||
+    toNonEmptyString(item.displayName) ||
+    toNonEmptyString(item.name) ||
+    toNonEmptyString(item.model_name) ||
+    itemId;
+  return { id: itemId, name: itemName };
+}
+
 export function getProviderBaseUrl(providerSpecificData: unknown): string | null {
   const data = asRecord(providerSpecificData);
   const baseUrl = data.baseUrl;
   return typeof baseUrl === "string" && baseUrl.trim().length > 0 ? baseUrl : null;
+}
+
+export function getProviderModelsPath(providerSpecificData: unknown): string | null {
+  return toNonEmptyString(asRecord(providerSpecificData).modelsPath);
+}
+
+export function resolveCompatibleModelsUrl(
+  baseUrl: string,
+  providerSpecificData: unknown
+): string | null {
+  const modelsPath = getProviderModelsPath(providerSpecificData);
+  if (!modelsPath) return null;
+  return joinBaseUrlAndEndpoint(baseUrl, modelsPath);
 }
 
 export function normalizeAzureOpenAIBaseUrl(baseUrl: string) {
