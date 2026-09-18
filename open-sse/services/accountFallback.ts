@@ -1293,30 +1293,25 @@ export function recordProviderSuccess(
 
   // Clear failure-dedup windows so the next genuine failure is not suppressed.
   lastNetworkErrorByProvider.delete(provider);
-  if (connectionId) {
-    lastConnectionFailure.delete(`${provider}:${connectionId}`);
-  }
+  if (connectionId) lastConnectionFailure.delete(`${provider}:${connectionId}`);
 
   // Transition breaker on success, matching execute()'s behavior:
   // HALF_OPEN -> CLOSED (probe success), CLOSED/DEGRADED -> decay failureCount.
   breaker._onSuccess();
 }
 
-function clearProviderFailureDedupe(provider: string | null | undefined): void {
-  if (!provider) return;
-  lastNetworkErrorByProvider.delete(provider);
-  for (const key of [...lastConnectionFailure.keys()]) {
-    if (key.startsWith(`${provider}:`)) {
-      lastConnectionFailure.delete(key);
-    }
-  }
-}
-
 /**
  * Reset the shared provider breaker.
  */
 export function clearProviderFailure(provider: string | null | undefined): void {
-  clearProviderFailureDedupe(provider);
+  // Also clear the network-error dedup so a fresh blip right after a reset is counted
+  // instead of silently swallowed by the previous (now stale) dedup window (#13887).
+  if (provider) {
+    lastNetworkErrorByProvider.delete(provider);
+    for (const key of [...lastConnectionFailure.keys()]) {
+      if (key.startsWith(`${provider}:`)) lastConnectionFailure.delete(key);
+    }
+  }
   const breaker = getProviderBreaker(provider);
   breaker?.reset();
 }
