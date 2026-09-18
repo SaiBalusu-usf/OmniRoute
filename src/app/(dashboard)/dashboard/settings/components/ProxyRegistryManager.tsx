@@ -30,8 +30,12 @@ import {
   loadProxyUsage,
   repairRelayResponseSchema,
 } from "./proxyRegistryData";
+import {
+  PROXY_BULK_IMPORT_LIMIT_DEFAULT,
+  resolveProxyBulkImportLimit,
+} from "@/shared/constants/proxyBulkImport";
 
- export default function ProxyRegistryManager({
+export default function ProxyRegistryManager({
   onRedeployRelay,
   showVercelRelay = false,
   showDenoRelay = false,
@@ -83,6 +87,10 @@ import {
   const [bulkImportSkipped, setBulkImportSkipped] = useState(0);
   const [bulkImportParsedOnce, setBulkImportParsedOnce] = useState(false);
   const [bulkImporting, setBulkImporting] = useState(false);
+  // #13917: the ceiling is an operator setting. Resolved from the server rather
+  // than hardcoded so this pre-flight check and the API agree; a failed or slow
+  // settings read leaves the default in place, which is the previous behaviour.
+  const [bulkImportLimit, setBulkImportLimit] = useState(PROXY_BULK_IMPORT_LIMIT_DEFAULT);
   const [bulkImportResult, setBulkImportResult] = useState<{
     created: number;
     updated: number;
@@ -127,6 +135,14 @@ import {
     setLoading(true);
     setError(null);
     try {
+      void fetch("/api/settings")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((cfg) => {
+          if (cfg) setBulkImportLimit(resolveProxyBulkImportLimit(cfg.proxyBulkImportLimit));
+        })
+        .catch(() => {
+          /* keep the default; the server still enforces the real limit */
+        });
       const res = await fetch("/api/settings/proxies");
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -562,8 +578,8 @@ import {
 
   const handleBulkImportExecute = async () => {
     if (bulkImportParsed.length === 0) return;
-    if (bulkImportParsed.length > 100) {
-      setError(t("bulkImportMaxExceeded"));
+    if (bulkImportParsed.length > bulkImportLimit) {
+      setError(t("bulkImportMaxExceeded", { max: bulkImportLimit }));
       return;
     }
 

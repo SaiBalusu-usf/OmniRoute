@@ -10963,7 +10963,7 @@
     "bulkImportNoValidEntries": "ምንም የሚሰራ ግቤት አልተገኘም። ቅርጸቱን ያረጋግጡና እንደገና ይሞክሩ።",
     "bulkImportSuccess": "ማስመጣት ተጠናቋል፦ {created} ተፈጥረዋል፣ {updated} ተዘምነዋል፣ {failed} አልተሳኩም",
     "bulkImportErrorLine": "መስመር {line}፦ {reason}",
-    "bulkImportMaxExceeded": "በአንድ ማስመጣት ከፍተኛው 100 ፕሮክሲዎች ናቸው",
+    "bulkImportMaxExceeded": "በአንድ ማስመጣት ከፍተኛው {max} ፕሮክሲዎች ናቸው",
     "bulkImportPreview": "ቅድመ ዕይታ",
     "clearAssignment": "(ምደባን አጽዳ)",
     "bulkProxyAssignment": "የጅምላ ፕሮክሲ ምደባ",
