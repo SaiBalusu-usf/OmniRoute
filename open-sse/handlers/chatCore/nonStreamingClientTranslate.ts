@@ -20,6 +20,7 @@ import { translateNonStreamingResponse } from "../responseTranslator.ts";
 import { extractToolSchemaMap } from "../../translator/response/openai-responses/toolSchemas.ts";
 import { stripMarkdownCodeFence } from "../../utils/aiSdkCompat.ts";
 import { normalizeOpenAIToolFinishReasons } from "./passthroughToolNames.ts";
+import { resolveRequestToolIdentity } from "./requestToolIdentity.ts";
 import {
   cacheReasoningFromAssistantMessage,
   requiresReasoningReplay,
