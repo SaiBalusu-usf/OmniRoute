@@ -18,13 +18,23 @@ function createStatementMock() {
   };
 }
 
-// #8959 made the production loader use createRequire() (Electron/global-install
+// #8959 made the production loader bypass the ESM graph (Electron/global-install
 // resolution), which vi.doMock CANNOT intercept — it only patches Vitest's ESM
 // module graph. The old better-sqlite3 doMock therefore never engaged: the code
 // opened a REAL sqlite file in the temp DATA_DIR ("no such table" on stderr)
 // and every mock assertion counted 0 calls. The shutdown tests now inject the
 // mock through the audit connection cache (globalThis.__omnirouteMcpAuditDb),
 // and the fallback test uses the __setBetterSqliteLoaderForTests seam.
+// The production path must use runtimeRequire(): a dynamic node:module import is
+// compiled incorrectly in the standalone webpack bundle (`createRequire` becomes
+// a non-function), disabling every MCP audit write at runtime.
+it("uses the bundle-safe runtime loader for better-sqlite3", () => {
+  const source = fs.readFileSync(path.join(process.cwd(), "open-sse/mcp-server/audit.ts"), "utf8");
+  expect(source).toContain('runtimeRequire("better-sqlite3")');
+  expect(source).not.toContain('await import("node:module")');
+  expect(source).not.toContain("createRequire(import.meta.url)");
+});
+
 describe("MCP audit shutdown", () => {
   let dataDir: string;
   let dbFile: string;
