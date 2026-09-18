@@ -10963,7 +10963,7 @@
     "bulkImportNoValidEntries": "Níor aimsíodh aon iontráil bailí. Seiceáil an fhormáid agus déan iarracht eile.",
     "bulkImportSuccess": "Iompórtáil críochnaithe: {created} cruthaithe, {updated} nuashonraithe, {failed} theip orthu",
     "bulkImportErrorLine": "Líne {line}: {reason}",
-    "bulkImportMaxExceeded": "Uasmhéid 100 seachfhreastalai in aon iompórtáil amháin",
+    "bulkImportMaxExceeded": "Uasmhéid {max} seachfhreastalai in aon iompórtáil amháin",
     "bulkImportPreview": "Réamhamharc",
     "clearAssignment": "(glan ceapadh)",
     "bulkProxyAssignment": "Ceapadh Seachfhreastalai i dTollchluais",

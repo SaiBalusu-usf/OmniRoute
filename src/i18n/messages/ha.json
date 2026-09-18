@@ -10963,7 +10963,7 @@
     "bulkImportNoValidEntries": "Ba a sami ingantattun bayanai ba. Duba tsarin sannan a sake gwadawa.",
     "bulkImportSuccess": "An kammala shigowa: an ƙirƙiri {created}, an sabunta {updated}, {failed} sun gaza",
     "bulkImportErrorLine": "Layi na {line}: {reason}",
-    "bulkImportMaxExceeded": "Matsakaicin proxies 100 ne a kowane shigowa",
+    "bulkImportMaxExceeded": "Matsakaicin proxies {max} ne a kowane shigowa",
     "bulkImportPreview": "Samfoti",
     "clearAssignment": "(share sanyawa)",
     "bulkProxyAssignment": "Sanya Proxy Gaba ɗaya",
