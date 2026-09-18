@@ -3288,6 +3288,10 @@
     "models": "Modeļi",
     "autoBalance": "Automātiskā balansēšana",
     "advancedSettings": "Papildu iestatījumi",
+    "targetTimeout": "Mērķa taimauts (sekundēs)",
+    "comboTimeout": "Kombinācijas taimauts (sekundēs)",
+    "inheritRequestTimeout": "mantot",
+    "inheritComboSafetyTimeout": "mantot (10 min)",
     "retryDelay": "Atkārtotā mēģinājuma aizture (ms)",
     "concurrencyPerModel": "Vienlaicīgie pieprasījumi / modelis",
     "queueTimeout": "Rindas noildze (ms)",
@@ -3434,6 +3438,8 @@
       "failoverBeforeRetry": "Ja šī opcija ir iespējota, jebkura augšupstraumes kļūda izraisa tūlītēju kļūmjpārlēci uz nākamo kombinācijas mērķi, izlaižot visus atkārtotos mēģinājumus un rezerves URL.",
       "maxSetRetries": "Cik reižu atkārtoti izmēģināt visu mērķu kopu, ja visi mērķi neizdodas. 0 = neveikt atkārtotus mēģinājumus kopas līmenī.",
       "setRetryDelayMs": "Aizkave starp atkārtotiem mēģinājumiem kopas līmenī, dodot laiku īslaicīgām problēmām atrisināties.",
+      "targetTimeoutMs": "Neobligāts katra mērķa taimauts. Ja lauks ir tukšs, tiek mantots pašreizējais pieprasījuma taimauts; lielākas vērtības tiek ierobežotas līdz šim taimautam.",
+      "comboTimeoutMs": "Neobligāts kopējais kombinācijas izpildes laika ierobežojums visiem kļūmjpārlēces mērķiem. Ja lauks ir tukšs, tiek saglabāts 10 minūšu aizsardzības taimauts; pozitīva vērtība to aizstāj. Iestatiet to ilgāku par mērķa taimautu, lai kļūmjpārlēcei joprojām būtu pietiekami daudz laika.",
       "disableSessionStickiness": "Katrā pieprasījumā pārslēgties uz citu savienojumu, nevis piesaistīt visu sarunu vienam savienojumam pēc pirmās ziņas jaucējvērtības. Ignorē globālo noklusējuma iestatījumu. Atstājiet vērtību Mantot, lai vairāku gājienu tērzēšanā saglabātu uzvedņu kešatmiņas trāpījumus."
     },
     "templatesTitle": "Ātrās veidnes",
@@ -7202,6 +7208,12 @@
     "maxRetriesLabel": "Maksimālais atkārtojumu skaits",
     "retryDelayLabel": "Atkārtojuma aizture (ms)",
     "timeoutLabel": "Noildze (ms)",
+    "targetTimeout": "Mērķa taimauts (sekundēs)",
+    "comboTimeout": "Kombinācijas taimauts (sekundēs)",
+    "inheritRequestTimeout": "Mantot pieprasījuma taimautu",
+    "inheritComboSafetyTimeout": "Mantot 10 minūšu aizsardzības taimautu",
+    "targetTimeoutHint": "Pēc noklusējuma kombinācijas mērķi manto pašreizējo pieprasījuma taimautu. Iestatiet šeit mazāku vērtību tikai tad, ja vēlaties ātrāku pārslēgšanos uz rezerves mērķi.",
+    "comboTimeoutHint": "Kopējais kombinācijas izpildes laika ierobežojums visiem kļūmjpārlēces mērķiem. Ja lauks ir tukšs, tiek saglabāts 10 minūšu aizsardzības taimauts. Iestatiet to ilgāku par mērķa taimautu, lai kļūmjpārlēcei joprojām būtu pietiekami daudz laika.",
     "healthCheck": "Darbspējas pārbaude",
     "healthCheckDesc": "Iepriekš pārbaudīt nodrošinātāja darbspēju",
     "trackMetrics": "Izsekot metrikas",
@@ -7479,6 +7491,8 @@
     "clearSyncedPricing": "Dzēst sinhronizētās cenas",
     "compressionTitle": "Uzvednes saspiešana",
     "compressionDesc": "Samaziniet tokenu izlietojumu, saspiežot uzvednes pirms nosūtīšanas nodrošinātājiem",
+    "autoCombosTitle": "Automātiskās kombinācijas",
+    "autoCombosDesc": "Atļaut šai atslēgai izmantot iebūvētās auto/* kombinācijas, kas automātiski izvēlas modeli no visiem konfigurētajiem pakalpojumu sniedzējiem",
     "compressionGuidanceFullGuideLink": "Pilna saspiešanas rokasgrāmata",
     "compressionGuidanceShow": "Detaļas",
     "compressionGuidanceHide": "Slēpt detaļas",
@@ -8386,7 +8400,12 @@
     "cliproxyapiHealth": "Stāvoklis",
     "cliproxyapiPort": "Ports",
     "qdrantHost": "Resursdators",
-    "qdrantCollection": "Kolekcija"
+    "qdrantCollection": "Kolekcija",
+    "catalogScopeTitle": "Models API saraksts",
+    "catalogScopeDesc": "Ko GET /v1/models uzrāda šai atslēgai. Saraksta sašaurināšana nekad nemaina to, ko atslēga var izsaukt.",
+    "catalogScopeAll": "Abi",
+    "catalogScopeCombos": "Tikai kombinācijas",
+    "catalogScopeModels": "Tikai modeļi"
   },
   "contextRtk": {
     "title": "RTK dzinējs",
@@ -8596,7 +8615,11 @@
       },
       "compressToolResults": {
         "label": "Proaktīvi saīsināt garus rīka rezultātus",
-        "description": "Saīsina rīka rezultātus, kas Lite saspiešanas laikā pārsniedz 2 000 rakstzīmju. Avārijas pārpildes aizsardzība joprojām var apgriezt saturu, ja konteksts pārsniedz modeļa budžetu."
+        "description": "Truncates long tool results during Lite compression. The Maximum tool-result length field (or OMNIROUTE_LITE_MAX_TOOL_LENGTH when that field is unset) sets the cap. Emergency overflow protection may still trim content when the context exceeds the model budget."
+      },
+      "maxToolLength": {
+        "label": "Maximum tool-result length",
+        "description": "Character cap for proactive tool-result truncation. Default 2000. Override with OMNIROUTE_LITE_MAX_TOOL_LENGTH when this field is unset."
       }
     },
     "engineFields": {
@@ -9518,6 +9541,13 @@
     "confirmRedeemResetCreditButton": "Izmantot kredītu",
     "resetCreditRedeemed": "Atiestatīšanas kredīts izmantots",
     "resetCreditRedeemFailed": "Neizdevās izmantot atiestatīšanas kredītu",
+    "glmResetCreditsModalTitle": "GLM Coding Plan atiestatīšanas kartes",
+    "glmResetCreditsModalExplainer": "Atiestatīšanas kartes ir sakārtotas pēc derīguma termiņa beigām. Izvēlieties 5 stundu vai nedēļas periodu, kuru vēlaties atiestatīt.",
+    "glmResetCreditFiveHourTitle": "5 stundu perioda atiestatīšana",
+    "glmResetCreditWeekTitle": "Nedēļas perioda atiestatīšana",
+    "glmConfirmRedeemResetCredit": "Izmantojot karti, izvēlētais lietojuma periods tiek nekavējoties atiestatīts un karte tiek neatgriezeniski izlietota.",
+    "glmConfirmRedeemFiveHourResetCredit": "Izmantojot karti, 5 stundu lietojuma periods tiek nekavējoties atiestatīts un karte tiek neatgriezeniski izlietota.",
+    "glmConfirmRedeemWeekResetCredit": "Izmantojot karti, nedēļas lietojuma periods tiek nekavējoties atiestatīts un karte tiek neatgriezeniski izlietota.",
     "suiteBuilderSaveFailed": "Neizdevās saglabāt komplektu",
     "clone": "Klonēt",
     "exportSuite": "Eksportēt",

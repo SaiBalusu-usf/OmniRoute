@@ -3288,6 +3288,10 @@
     "models": "Samfura",
     "autoBalance": "Daidaita kai tsaye",
     "advancedSettings": "Saitunan Ci Gaba",
+    "targetTimeout": "Wa'adin jiran manufa (daƙiƙu)",
+    "comboTimeout": "Wa'adin jiran haɗin (daƙiƙu)",
+    "inheritRequestTimeout": "gado",
+    "inheritComboSafetyTimeout": "gado (minti 10)",
     "retryDelay": "Jinkirin Sake Gwada (ms)",
     "concurrencyPerModel": "Yawan Ayyuka a Lokaci Guda / Samfuri",
     "queueTimeout": "Iyakar Lokacin Jira a Layi (ms)",
@@ -3434,6 +3438,8 @@
       "failoverBeforeRetry": "Idan an kunna, duk wani kuskuren upstream zai jawo sauyawa nan take zuwa combo target na gaba, tare da tsallake duk sake-gwaje da fallback URLs.",
       "maxSetRetries": "Adadin lokutan sake gwada cikakken rukunin targets idan duk targets suka gaza. 0 = babu sake-gwaji a matakin rukuni.",
       "setRetryDelayMs": "Jinkiri tsakanin yunƙurin sake-gwaji a matakin rukuni, domin bai wa matsalolin wucin gadi lokaci su warware.",
+      "targetTimeoutMs": "Wa'adin jiran kowace manufa na zaɓi. Idan babu komai, zai gaji wa'adin jiran buƙata na yanzu; za a iyakance ƙimomin da suka fi wannan zuwa wannan wa'adin.",
+      "comboTimeoutMs": "Kasafin lokacin agogon bango na dukkan haɗin, wanda ya shafi duk manufofin sauya-fage. Idan babu komai, za a riƙe matakin dakatar da makalewa na minti 10; ƙima mai kyau za ta maye gurbinsa. Sanya wannan ya fi Wa'adin jiran manufa tsawo domin sauya-fage ya ci gaba da samun lokaci.",
       "disableSessionStickiness": "Sauya zuwa wata connection daban a kowace buƙata maimakon ɗaure duk tattaunawa da connection guda ta hanyar hash na saƙon farko. Wannan ya rinjayi saitin gama-gari na asali. Bar shi a Inherit domin kiyaye samun prompt-cache a tattaunawa masu zagaye da yawa."
     },
     "templatesTitle": "Templates na gaggawa",
@@ -7202,6 +7208,12 @@
     "maxRetriesLabel": "Matsakaicin Yawan Sake Gwaji",
     "retryDelayLabel": "Jinkirin Sake Gwaji (ms)",
     "timeoutLabel": "Iyakar Lokaci (ms)",
+    "targetTimeout": "Wa'adin jiran manufa (daƙiƙu)",
+    "comboTimeout": "Wa'adin jiran haɗin (daƙiƙu)",
+    "inheritRequestTimeout": "Gaji wa'adin jiran buƙata",
+    "inheritComboSafetyTimeout": "Gaji matakin dakatar da makalewa na minti 10",
+    "targetTimeoutHint": "Ta tsohuwa, manufofin haɗin suna gadon wa'adin jiran buƙata na yanzu. Sanya ƙima mafi ƙasa a nan kawai idan kana son a koma madadin da sauri.",
+    "comboTimeoutHint": "Kasafin lokacin agogon bango na dukkan haɗin, wanda ya shafi manufofin sauya-fage. Idan babu komai, za a riƙe matakin dakatar da makalewa na minti 10. Sanya wannan ya fi Wa'adin jiran manufa tsawo domin sauya-fage ya ci gaba da samun lokaci.",
     "healthCheck": "Duba Ingancin Aiki",
     "healthCheckDesc": "Duba samuwar mai bayarwa tun da farko",
     "trackMetrics": "Bibiyar Ma'aunai",
@@ -7479,6 +7491,8 @@
     "clearSyncedPricing": "Share Farashin da Aka Daidaita",
     "compressionTitle": "Matse Prompt",
     "compressionDesc": "Rage amfani da token ta hanyar matse prompts kafin aika su ga masu samarwa",
+    "autoCombosTitle": "Haɗe-haɗe na atomatik",
+    "autoCombosDesc": "Ba wa wannan maɓalli damar amfani da haɗe-haɗen auto/* da aka tanada, waɗanda ke zaɓar samfuri ta atomatik daga kowane mai samarwa da aka saita",
     "compressionGuidanceFullGuideLink": "Cikakken jagora kan matsewa",
     "compressionGuidanceShow": "Cikakkun bayanai",
     "compressionGuidanceHide": "Ɓoye cikakkun bayanai",
@@ -8386,7 +8400,12 @@
     "cliproxyapiHealth": "Matsayin aiki",
     "cliproxyapiPort": "Tashar jiragen ruwa",
     "qdrantHost": "Uwar garke",
-    "qdrantCollection": "Tarin"
+    "qdrantCollection": "Tarin",
+    "catalogScopeTitle": "Jerin Models API",
+    "catalogScopeDesc": "Abin da GET /v1/models ke nuna wa wannan maɓalli. Taƙaita jerin ba ya taɓa canza abin da maɓallin zai iya kira.",
+    "catalogScopeAll": "Duka biyun",
+    "catalogScopeCombos": "Haɗe-haɗe kawai",
+    "catalogScopeModels": "Samfura kawai"
   },
   "contextRtk": {
     "title": "Injin RTK",
@@ -8596,7 +8615,11 @@
       },
       "compressToolResults": {
         "label": "Datse dogayen sakamakon kayan aiki tun da wuri",
-        "description": "Yana datse sakamakon kayan aiki da ya wuce haruffa 2,000 yayin matsawar Mai Sauƙi. Kariyar gaggawa daga cikar mahalli na iya ci gaba da rage abun ciki idan mahallin ya wuce kasafin samfurin."
+        "description": "Truncates long tool results during Lite compression. The Maximum tool-result length field (or OMNIROUTE_LITE_MAX_TOOL_LENGTH when that field is unset) sets the cap. Emergency overflow protection may still trim content when the context exceeds the model budget."
+      },
+      "maxToolLength": {
+        "label": "Maximum tool-result length",
+        "description": "Character cap for proactive tool-result truncation. Default 2000. Override with OMNIROUTE_LITE_MAX_TOOL_LENGTH when this field is unset."
       }
     },
     "engineFields": {
@@ -9518,6 +9541,13 @@
     "confirmRedeemResetCreditButton": "Fanshi kiredit",
     "resetCreditRedeemed": "An fanshi kiredit ɗin sake saiti",
     "resetCreditRedeemFailed": "An kasa fansar kiredit ɗin sake saiti",
+    "glmResetCreditsModalTitle": "Katunan sake saita Tsarin Coding na GLM",
+    "glmResetCreditsModalExplainer": "An jera katunan sake saiti bisa lokacin ƙarewarsu. Zaɓi tagar awa 5 ko ta mako-mako da kake son sake saitawa.",
+    "glmResetCreditFiveHourTitle": "Sake saita tagar awa 5",
+    "glmResetCreditWeekTitle": "Sake saita tagar mako-mako",
+    "glmConfirmRedeemResetCredit": "Amfani da katin nan take zai sake saita zaɓaɓɓiyar tagar amfani kuma ya cinye wannan kati har abada.",
+    "glmConfirmRedeemFiveHourResetCredit": "Amfani da katin nan take zai sake saita tagar amfani ta awa 5 kuma ya cinye wannan kati har abada.",
+    "glmConfirmRedeemWeekResetCredit": "Amfani da katin nan take zai sake saita tagar amfani ta mako-mako kuma ya cinye wannan kati har abada.",
     "suiteBuilderSaveFailed": "An kasa adana rukunin gwaji",
     "clone": "Kwafi",
     "exportSuite": "Fitarwa",

@@ -3288,6 +3288,10 @@
     "models": "模型",
     "autoBalance": "自動平衡",
     "advancedSettings": "高階設定",
+    "targetTimeout": "目標逾時（秒）",
+    "comboTimeout": "組合逾時（秒）",
+    "inheritRequestTimeout": "沿用",
+    "inheritComboSafetyTimeout": "沿用（10 分鐘）",
     "retryDelay": "重試延遲（毫秒）",
     "concurrencyPerModel": "每模型併發數",
     "queueTimeout": "排隊超時（毫秒）",
@@ -3434,6 +3438,8 @@
       "failoverBeforeRetry": "啟用後，任何上游錯誤都會觸發立即故障轉移到下一個組合目標，跳過所有重試和回退 URL。",
       "maxSetRetries": "每個目標失敗時重試完整目標集的次數。 0 = 沒有設定級別重試。",
       "setRetryDelayMs": "設定級別重試嘗試之間的延遲，為暫時性問題提供解決時間。",
+      "targetTimeoutMs": "選用的個別目標逾時。留空會沿用目前的請求逾時；較大的值將以該逾時為上限。",
+      "comboTimeoutMs": "選用的整個組合執行時間上限，涵蓋所有容錯移轉目標。留空會保留 10 分鐘的防卡死限制；正值則會取代此限制。請將此值設為長於目標逾時，讓容錯移轉仍有足夠時間。",
       "disableSessionStickiness": "在每次請求時輪換到不同的連線，而不是根據首則訊息雜湊將整個對話固定到單一連線。覆寫全域預設值。保留為「繼承」以保留多輪對話的提示快取命中效果。"
     },
     "templatesTitle": "快捷模板",
@@ -7202,6 +7208,12 @@
     "maxRetriesLabel": "最大重試次數",
     "retryDelayLabel": "重試延遲（毫秒）",
     "timeoutLabel": "超時（毫秒）",
+    "targetTimeout": "目標逾時（秒）",
+    "comboTimeout": "組合逾時（秒）",
+    "inheritRequestTimeout": "沿用請求逾時",
+    "inheritComboSafetyTimeout": "沿用 10 分鐘防卡死限制",
+    "targetTimeoutHint": "組合目標預設會沿用目前的請求逾時。只有在您希望更快切換至備援時，才在此設定較低的值。",
+    "comboTimeoutHint": "涵蓋所有容錯移轉目標的整個組合執行時間上限。留空會保留 10 分鐘的防卡死限制。請將此值設為長於目標逾時，讓容錯移轉仍有足夠時間。",
     "healthCheck": "健康檢查",
     "healthCheckDesc": "預先檢查提供者的可用性",
     "trackMetrics": "跟蹤指標",
@@ -7479,6 +7491,8 @@
     "clearSyncedPricing": "清除同步定價",
     "compressionTitle": "提示詞壓縮",
     "compressionDesc": "在傳送給提供者之前壓縮提示詞，以減少 token 使用量",
+    "autoCombosTitle": "自動組合",
+    "autoCombosDesc": "允許此金鑰使用內建的 auto/* 組合，這些組合會自動從每個已設定的提供者中選擇模型",
     "compressionGuidanceFullGuideLink": "完整壓縮指南",
     "compressionGuidanceShow": "詳細資訊",
     "compressionGuidanceHide": "隱藏詳細資訊",
@@ -8386,7 +8400,12 @@
     "cliproxyapiHealth": "健康",
     "cliproxyapiPort": "埠",
     "qdrantHost": "主機",
-    "qdrantCollection": "集合"
+    "qdrantCollection": "集合",
+    "catalogScopeTitle": "Models API 列表",
+    "catalogScopeDesc": "GET /v1/models 針對此金鑰所列出的內容。縮小列表範圍絕不會變更此金鑰可呼叫的模型。",
+    "catalogScopeAll": "兩者",
+    "catalogScopeCombos": "僅組合",
+    "catalogScopeModels": "僅模型"
   },
   "contextRtk": {
     "title": "RTK 引擎",
@@ -8596,7 +8615,11 @@
       },
       "compressToolResults": {
         "label": "主動截斷長工具結果",
-        "description": "在輕量壓縮期間，截斷超過 2,000 個字符的工具結果。當上下文超過模型預算時，緊急溢出保護仍可能修剪內容。"
+        "description": "在輕量壓縮期間截斷過長的工具結果。截斷上限由「最大工具結果長度」欄位決定；該欄位未設定時使用 OMNIROUTE_LITE_MAX_TOOL_LENGTH。當上下文超過模型預算時，緊急溢出保護仍可能修剪內容。"
+      },
+      "maxToolLength": {
+        "label": "最大工具結果長度",
+        "description": "主動截斷工具結果的字元上限。預設 2000。該欄位未設定時可用 OMNIROUTE_LITE_MAX_TOOL_LENGTH 覆寫。"
       }
     },
     "engineFields": {
@@ -9518,6 +9541,13 @@
     "confirmRedeemResetCreditButton": "兌換額度",
     "resetCreditRedeemed": "重置已兌換",
     "resetCreditRedeemFailed": "兌換重置額度失敗",
+    "glmResetCreditsModalTitle": "GLM Coding Plan 重設卡",
+    "glmResetCreditsModalExplainer": "重設卡依到期時間排序。請選擇要重設的 5 小時或每週時段。",
+    "glmResetCreditFiveHourTitle": "重設 5 小時時段",
+    "glmResetCreditWeekTitle": "重設每週時段",
+    "glmConfirmRedeemResetCredit": "兌換後將立即重設所選的使用時段，並永久消耗此卡。",
+    "glmConfirmRedeemFiveHourResetCredit": "兌換後將立即重設 5 小時使用時段，並永久消耗此卡。",
+    "glmConfirmRedeemWeekResetCredit": "兌換後將立即重設每週使用時段，並永久消耗此卡。",
     "suiteBuilderSaveFailed": "儲存套件失敗",
     "clone": "克隆",
     "exportSuite": "匯出",

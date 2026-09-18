@@ -3288,6 +3288,10 @@
     "models": "Mudelid",
     "autoBalance": "Automaatne tasakaalustamine",
     "advancedSettings": "Täpsemad seaded",
+    "targetTimeout": "Sihtmärgi ajalõpp (sekundites)",
+    "comboTimeout": "Kombinatsiooni ajalõpp (sekundites)",
+    "inheritRequestTimeout": "päri",
+    "inheritComboSafetyTimeout": "päri (10 min)",
     "retryDelay": "Korduskatse viivitus (ms)",
     "concurrencyPerModel": "Samaaegsus mudeli kohta",
     "queueTimeout": "Järjekorra ajalõpp (ms)",
@@ -3434,6 +3438,8 @@
       "failoverBeforeRetry": "Kui see on lubatud, käivitab mis tahes ülesvooluviga kohese ümberlülitumise kombinatsiooni järgmisele sihtmärgile, jättes vahele kõik korduskatsed ja varu-URL-id.",
       "maxSetRetries": "Mitu korda proovitakse kogu sihtmärkide komplekti uuesti, kui kõik sihtmärgid ebaõnnestuvad. 0 = komplekti tasemel korduskatseid ei tehta.",
       "setRetryDelayMs": "Viivitus komplekti tasemel korduskatsete vahel, mis annab ajutistele probleemidele aega laheneda.",
+      "targetTimeoutMs": "Valikuline ajalõpp sihtmärgi kohta. Tühjaks jätmisel päritakse praeguse päringu ajalõpp; suuremad väärtused piiratakse selle ajalõpuga.",
+      "comboTimeoutMs": "Valikuline kogu kombinatsiooni täitmise ajapiirang kõigi tõrkesiirde sihtmärkide peale. Tühjaks jätmisel säilib 10-minutiline hangumise katkestus; positiivne väärtus asendab selle. Määra see sihtmärgi ajalõpust pikemaks, et tõrkesiirdeks jääks aega.",
       "disableSessionStickiness": "Esimese sõnumi räsi põhjal kogu vestluse ühe ühendusega sidumise asemel vaheta iga päringu puhul ühendust. See alistab globaalse vaikeseade. Mitmevooruliste vestluste viipade vahemälu tabamuste säilitamiseks jäta valikuks „Päri“."
     },
     "templatesTitle": "Kiirmallid",
@@ -7202,6 +7208,12 @@
     "maxRetriesLabel": "Korduskatsete maksimumarv",
     "retryDelayLabel": "Korduskatse viivitus (ms)",
     "timeoutLabel": "Ajalõpp (ms)",
+    "targetTimeout": "Sihtmärgi ajalõpp (sekundites)",
+    "comboTimeout": "Kombinatsiooni ajalõpp (sekundites)",
+    "inheritRequestTimeout": "Päri päringu ajalõpp",
+    "inheritComboSafetyTimeout": "Päri 10-minutiline hangumise katkestus",
+    "targetTimeoutHint": "Vaikimisi pärivad kombinatsiooni sihtmärgid praeguse päringu ajalõpu. Määra siin väiksem väärtus ainult siis, kui soovid kiiremat varuvariandile lülitumist.",
+    "comboTimeoutHint": "Kogu kombinatsiooni täitmise ajapiirang tõrkesiirde sihtmärkide peale. Tühjaks jätmisel säilib 10-minutiline hangumise katkestus. Määra see sihtmärgi ajalõpust pikemaks, et tõrkesiirdeks jääks aega.",
     "healthCheck": "Tervisekontroll",
     "healthCheckDesc": "Kontrolli eelnevalt teenusepakkuja saadavust",
     "trackMetrics": "Jälgi mõõdikuid",
@@ -7479,6 +7491,8 @@
     "clearSyncedPricing": "Kustuta sünkroonitud hinnastamine",
     "compressionTitle": "Viiba tihendamine",
     "compressionDesc": "Vähenda tokenite kasutust, tihendades viibad enne nende saatmist teenusepakkujatele",
+    "autoCombosTitle": "Automaatsed kombinatsioonid",
+    "autoCombosDesc": "Luba sellel võtmel kasutada sisseehitatud auto/* kombinatsioone, mis valivad mudeli automaatselt kõigi seadistatud teenusepakkujate seast",
     "compressionGuidanceFullGuideLink": "Põhjalik tihendamisjuhend",
     "compressionGuidanceShow": "Üksikasjad",
     "compressionGuidanceHide": "Peida üksikasjad",
@@ -8386,7 +8400,12 @@
     "cliproxyapiHealth": "Olek",
     "cliproxyapiPort": "Port",
     "qdrantHost": "Host",
-    "qdrantCollection": "Kogumik"
+    "qdrantCollection": "Kogumik",
+    "catalogScopeTitle": "Models API loend",
+    "catalogScopeDesc": "Mida GET /v1/models selle võtme kohta avaldab. Loendi kitsendamine ei muuda kunagi seda, milliseid mudeleid võti saab kutsuda.",
+    "catalogScopeAll": "Mõlemad",
+    "catalogScopeCombos": "Ainult kombinatsioonid",
+    "catalogScopeModels": "Ainult mudelid"
   },
   "contextRtk": {
     "title": "RTK Engine",
@@ -8596,7 +8615,11 @@
       },
       "compressToolResults": {
         "label": "Kärbi pikad tööriistatulemused ennetavalt",
-        "description": "Kärbib Lite-tihendamise ajal üle 2000 tähemärgi pikkuseid tööriistatulemusi. Kui kontekst ületab mudeli eelarve, võib erakorraline ületäitumiskaitse sisu siiski kärpida."
+        "description": "Truncates long tool results during Lite compression. The Maximum tool-result length field (or OMNIROUTE_LITE_MAX_TOOL_LENGTH when that field is unset) sets the cap. Emergency overflow protection may still trim content when the context exceeds the model budget."
+      },
+      "maxToolLength": {
+        "label": "Maximum tool-result length",
+        "description": "Character cap for proactive tool-result truncation. Default 2000. Override with OMNIROUTE_LITE_MAX_TOOL_LENGTH when this field is unset."
       }
     },
     "engineFields": {
@@ -9518,6 +9541,13 @@
     "confirmRedeemResetCreditButton": "Lunasta krediit",
     "resetCreditRedeemed": "Lähtestuskrediit lunastatud",
     "resetCreditRedeemFailed": "Lähtestuskrediidi lunastamine ebaõnnestus",
+    "glmResetCreditsModalTitle": "GLM Coding Plani lähtestuskaardid",
+    "glmResetCreditsModalExplainer": "Lähtestuskaardid on järjestatud aegumise järgi. Valige 5-tunnine või nädalane periood, mille soovite lähtestada.",
+    "glmResetCreditFiveHourTitle": "5-tunnise perioodi lähtestamine",
+    "glmResetCreditWeekTitle": "Nädalase perioodi lähtestamine",
+    "glmConfirmRedeemResetCredit": "Lunastamine lähtestab valitud kasutusperioodi kohe ja kasutab selle kaardi jäädavalt ära.",
+    "glmConfirmRedeemFiveHourResetCredit": "Lunastamine lähtestab 5-tunnise kasutusperioodi kohe ja kasutab selle kaardi jäädavalt ära.",
+    "glmConfirmRedeemWeekResetCredit": "Lunastamine lähtestab nädalase kasutusperioodi kohe ja kasutab selle kaardi jäädavalt ära.",
     "suiteBuilderSaveFailed": "Komplekti salvestamine ebaõnnestus",
     "clone": "Klooni",
     "exportSuite": "Ekspordi",

@@ -3288,6 +3288,10 @@
     "models": "Múnlaí",
     "autoBalance": "Cothromú uathoibríoch",
     "advancedSettings": "Socruithe Casta",
+    "targetTimeout": "Teorainn ama na sprice (soicindí)",
+    "comboTimeout": "Teorainn ama na teaglaime (soicindí)",
+    "inheritRequestTimeout": "faigh le hoidhreacht",
+    "inheritComboSafetyTimeout": "faigh le hoidhreacht (10 nóiméad)",
     "retryDelay": "Moill Athiarrachta (ms)",
     "concurrencyPerModel": "Comhreathacht / Múnla",
     "queueTimeout": "Teorainn Ama na Scuaine (ms)",
@@ -3434,6 +3438,8 @@
       "failoverBeforeRetry": "Nuair a chuirtear ar siúl é, spreagann aon earráid ón soláthraí réamhtheachtach failover láithreach chuig an gcéad sprioc comhcheangail eile, gan aon iarracht athrá ná fallback URL a dhéanamh.",
       "maxSetRetries": "An líon uaireanta a dhéantar iarracht eile leis an tacar iomlán spriocanna nuair a theipeann ar gach sprioc. 0 = gan aon iarracht athrá ar leibhéal tacair.",
       "setRetryDelayMs": "Moill idir iarrachtaí athrá ar leibhéal tacair, rud a thugann am d'fhadhbanna neamhbhuana réiteach.",
+      "targetTimeoutMs": "Teorainn ama roghnach do gach sprioc. Má fhágtar bán é, faightear teorainn ama reatha na hiarrata le hoidhreacht; cuirtear teorainn leis na luachanna is mó de réir na teorann ama sin.",
+      "comboTimeoutMs": "Buiséad roghnach ama clogbhunaithe don teaglaim iomlán thar na spriocanna aistrithe teipe go léir. Má fhágtar bán é, coinnítear an stopall crochta 10 nóiméad; cuirtear luach dearfach ina ionad. Coinnigh é seo níos faide ná Teorainn ama na sprice ionas go mbeidh am fós ag an aistriú teipe.",
       "disableSessionStickiness": "Athraigh chuig nasc difriúil le gach iarratas in ionad comhrá iomlán a phionnáil le nasc amháin de réir hash na chéad teachtaireachta. Sáraíonn sé seo an réamhshocrú domhanda. Fág ar Inherit é chun amasanna taisce leideanna a chaomhnú do chomhráite ilbhabhta."
     },
     "templatesTitle": "Teimpléid thapa",
@@ -7202,6 +7208,12 @@
     "maxRetriesLabel": "Uasmhéid Athiarrachtaí",
     "retryDelayLabel": "Moill Athiarrachta (ms)",
     "timeoutLabel": "Teorainn Ama (ms)",
+    "targetTimeout": "Teorainn ama na sprice (soicindí)",
+    "comboTimeout": "Teorainn ama na teaglaime (soicindí)",
+    "inheritRequestTimeout": "Faigh teorainn ama na hiarrata le hoidhreacht",
+    "inheritComboSafetyTimeout": "Faigh stopall crochta 10 nóiméad le hoidhreacht",
+    "targetTimeoutHint": "Faigheann spriocanna teaglaime teorainn ama reatha na hiarrata le hoidhreacht de réir réamhshocraithe. Ná socraigh luach níos ísle anseo ach amháin nuair is mian leat cúltaca níos tapúla.",
+    "comboTimeoutHint": "Buiséad ama clogbhunaithe don teaglaim iomlán thar na spriocanna aistrithe teipe. Má fhágtar bán é, coinnítear an stopall crochta 10 nóiméad. Coinnigh é seo níos faide ná Teorainn ama na sprice ionas go mbeidh am fós ag an aistriú teipe.",
     "healthCheck": "Seiceáil Sláinte",
     "healthCheckDesc": "Infhaighteacht soláthraithe a réamhsheiceáil",
     "trackMetrics": "Rianaigh Méadrachtaí",
@@ -7479,6 +7491,8 @@
     "clearSyncedPricing": "Glan an Phraghsáil Shioncronaithe",
     "compressionTitle": "Comhbhrú Leideanna",
     "compressionDesc": "Laghdaigh úsáid comharthaí trí leideanna a chomhbhrú sula seoltar chuig soláthraithe iad",
+    "autoCombosTitle": "Teaglamaí Uathoibríocha",
+    "autoCombosDesc": "Lig don eochair seo na teaglamaí ionsuite auto/* a úsáid, a roghnaíonn samhail go huathoibríoch ó gach soláthraí cumraithe",
     "compressionGuidanceFullGuideLink": "Treoir iomlán maidir le comhbhrú",
     "compressionGuidanceShow": "Sonraí",
     "compressionGuidanceHide": "Folaigh sonraí",
@@ -8386,7 +8400,12 @@
     "cliproxyapiHealth": "Sláinte",
     "cliproxyapiPort": "Port",
     "qdrantHost": "Óstach",
-    "qdrantCollection": "Bailiúchán"
+    "qdrantCollection": "Bailiúchán",
+    "catalogScopeTitle": "Liostú API na samhlacha",
+    "catalogScopeDesc": "An méid a fhógraíonn GET /v1/models don eochair seo. Ní athraíonn cúngú an liosta na samhlacha ar féidir leis an eochair glaoch orthu.",
+    "catalogScopeAll": "An dá cheann",
+    "catalogScopeCombos": "Teaglamaí amháin",
+    "catalogScopeModels": "Samhlacha amháin"
   },
   "contextRtk": {
     "title": "Inneall RTK",
@@ -8596,7 +8615,11 @@
       },
       "compressToolResults": {
         "label": "Bearr torthaí fada uirlisí go réamhghníomhach",
-        "description": "Gearrann sé torthaí uirlisí os cionn 2,000 carachtar le linn comhbhrú Éadrom. Féadfaidh cosaint éigeandála ar róshreabhadh inneachar a bhearradh fós nuair a sháraíonn an comhthéacs buiséad an mhúnla."
+        "description": "Truncates long tool results during Lite compression. The Maximum tool-result length field (or OMNIROUTE_LITE_MAX_TOOL_LENGTH when that field is unset) sets the cap. Emergency overflow protection may still trim content when the context exceeds the model budget."
+      },
+      "maxToolLength": {
+        "label": "Maximum tool-result length",
+        "description": "Character cap for proactive tool-result truncation. Default 2000. Override with OMNIROUTE_LITE_MAX_TOOL_LENGTH when this field is unset."
       }
     },
     "engineFields": {
@@ -9518,6 +9541,13 @@
     "confirmRedeemResetCreditButton": "Fuascail creidmheas",
     "resetCreditRedeemed": "Creidmheas athshocraithe fuascailte",
     "resetCreditRedeemFailed": "Níorbh fhéidir an creidmheas athshocraithe a fhuascailt",
+    "glmResetCreditsModalTitle": "Cártaí athshocraithe GLM Coding Plan",
+    "glmResetCreditsModalExplainer": "Tá na cártaí athshocraithe curtha in ord de réir a ndáta éaga. Roghnaigh an fhuinneog 5 huaire nó an fhuinneog sheachtainiúil is mian leat a athshocrú.",
+    "glmResetCreditFiveHourTitle": "Athshocrú na fuinneoige 5 huaire",
+    "glmResetCreditWeekTitle": "Athshocrú na fuinneoige seachtainiúla",
+    "glmConfirmRedeemResetCredit": "Má fhuasclaítear é, athshocraítear an fhuinneog úsáide roghnaithe láithreach agus ídítear an cárta seo go buan.",
+    "glmConfirmRedeemFiveHourResetCredit": "Má fhuasclaítear é, athshocraítear an fhuinneog úsáide 5 huaire láithreach agus ídítear an cárta seo go buan.",
+    "glmConfirmRedeemWeekResetCredit": "Má fhuasclaítear é, athshocraítear an fhuinneog úsáide sheachtainiúil láithreach agus ídítear an cárta seo go buan.",
     "suiteBuilderSaveFailed": "Níorbh fhéidir an tsraith a shábháil",
     "clone": "Clónáil",
     "exportSuite": "Easpórtáil",

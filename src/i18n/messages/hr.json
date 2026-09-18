@@ -3288,6 +3288,10 @@
     "models": "Modeli",
     "autoBalance": "Automatsko uravnotežavanje",
     "advancedSettings": "Napredne postavke",
+    "targetTimeout": "Vremensko ograničenje cilja (sekunde)",
+    "comboTimeout": "Vremensko ograničenje kombinacije (sekunde)",
+    "inheritRequestTimeout": "naslijedi",
+    "inheritComboSafetyTimeout": "naslijedi (10 min)",
     "retryDelay": "Odgoda ponovnog pokušaja (ms)",
     "concurrencyPerModel": "Istodobnost / model",
     "queueTimeout": "Vremensko ograničenje reda čekanja (ms)",
@@ -3434,6 +3438,8 @@
       "failoverBeforeRetry": "Kada je omogućeno, svaka pogreška uzvodnog poslužitelja pokreće trenutačno prebacivanje na sljedeći cilj kombinacije, uz preskakanje svih ponovnih pokušaja i rezervnih URL-ova.",
       "maxSetRetries": "Broj ponovnih pokušaja cijelog skupa ciljeva kada svaki cilj ne uspije. 0 = bez ponovnog pokušaja na razini skupa.",
       "setRetryDelayMs": "Odgoda između ponovnih pokušaja na razini skupa kako bi se privremeni problemi stigli riješiti.",
+      "targetTimeoutMs": "Neobavezno vremensko ograničenje po cilju. Ako je prazno, nasljeđuje se trenutačno vremensko ograničenje zahtjeva; veće vrijednosti ograničavaju se na to vremensko ograničenje.",
+      "comboTimeoutMs": "Neobavezni ukupni vremenski okvir kombinacije za sve ciljeve prebacivanja u slučaju pogreške. Ako je prazno, zadržava se 10-minutna zaštita od zastoja; pozitivna vrijednost zamjenjuje je. Postavite ga dulje od vremenskog ograničenja cilja kako bi ostalo dovoljno vremena za prebacivanje u slučaju pogreške.",
       "disableSessionStickiness": "Pri svakom zahtjevu prelazi na drugu vezu umjesto vezivanja cijelog razgovora za jednu vezu na temelju hash-vrijednosti prve poruke. Nadjačava globalnu zadanu postavku. Ostavite postavku Naslijedi kako biste sačuvali pogotke predmemorije upita za razgovore s više izmjena."
     },
     "templatesTitle": "Brzi predlošci",
@@ -7202,6 +7208,12 @@
     "maxRetriesLabel": "Maks. broj ponovnih pokušaja",
     "retryDelayLabel": "Odgoda ponovnog pokušaja (ms)",
     "timeoutLabel": "Vremensko ograničenje (ms)",
+    "targetTimeout": "Vremensko ograničenje cilja (sekunde)",
+    "comboTimeout": "Vremensko ograničenje kombinacije (sekunde)",
+    "inheritRequestTimeout": "Naslijedi vremensko ograničenje zahtjeva",
+    "inheritComboSafetyTimeout": "Naslijedi 10-minutnu zaštitu od zastoja",
+    "targetTimeoutHint": "Ciljevi kombinacije prema zadanim postavkama nasljeđuju trenutačno vremensko ograničenje zahtjeva. Ovdje postavite nižu vrijednost samo ako želite brže prebacivanje na zamjenski cilj.",
+    "comboTimeoutHint": "Ukupni vremenski okvir kombinacije za sve ciljeve prebacivanja u slučaju pogreške. Ako je prazno, zadržava se 10-minutna zaštita od zastoja. Postavite ga dulje od vremenskog ograničenja cilja kako bi ostalo dovoljno vremena za prebacivanje u slučaju pogreške.",
     "healthCheck": "Provjera stanja",
     "healthCheckDesc": "Prethodna provjera dostupnosti pružatelja",
     "trackMetrics": "Prati metrike",
@@ -7479,6 +7491,8 @@
     "clearSyncedPricing": "Očisti sinkronizirane cijene",
     "compressionTitle": "Kompresija upita",
     "compressionDesc": "Smanjite korištenje tokena komprimiranjem upita prije slanja pružateljima",
+    "autoCombosTitle": "Automatske kombinacije",
+    "autoCombosDesc": "Dopusti ovom ključu upotrebu ugrađenih kombinacija auto/*, koje automatski odabiru model među svim konfiguriranim pružateljima usluga",
     "compressionGuidanceFullGuideLink": "Potpuni vodič za kompresiju",
     "compressionGuidanceShow": "Detalji",
     "compressionGuidanceHide": "Sakrij detalje",
@@ -8386,7 +8400,12 @@
     "cliproxyapiHealth": "Stanje",
     "cliproxyapiPort": "Priključak",
     "qdrantHost": "Poslužitelj",
-    "qdrantCollection": "Kolekcija"
+    "qdrantCollection": "Kolekcija",
+    "catalogScopeTitle": "Popis API-ja modela",
+    "catalogScopeDesc": "Što GET /v1/models oglašava za ovaj ključ. Sužavanje popisa nikada ne mijenja koje modele ključ može pozvati.",
+    "catalogScopeAll": "Oboje",
+    "catalogScopeCombos": "Samo kombinacije",
+    "catalogScopeModels": "Samo modeli"
   },
   "contextRtk": {
     "title": "RTK mehanizam",
@@ -8596,7 +8615,11 @@
       },
       "compressToolResults": {
         "label": "Proaktivno skrati duge rezultate alata",
-        "description": "Skraćuje rezultate alata dulje od 2 000 znakova tijekom Lite kompresije. Zaštita od prekoračenja u hitnim slučajevima može i dalje skratiti sadržaj kada kontekst premaši proračun modela."
+        "description": "Truncates long tool results during Lite compression. The Maximum tool-result length field (or OMNIROUTE_LITE_MAX_TOOL_LENGTH when that field is unset) sets the cap. Emergency overflow protection may still trim content when the context exceeds the model budget."
+      },
+      "maxToolLength": {
+        "label": "Maximum tool-result length",
+        "description": "Character cap for proactive tool-result truncation. Default 2000. Override with OMNIROUTE_LITE_MAX_TOOL_LENGTH when this field is unset."
       }
     },
     "engineFields": {
@@ -9518,6 +9541,13 @@
     "confirmRedeemResetCreditButton": "Iskoristi kredit",
     "resetCreditRedeemed": "Kredit za reset iskorišten",
     "resetCreditRedeemFailed": "Iskorištavanje kredita za reset nije uspjelo",
+    "glmResetCreditsModalTitle": "Kartice za poništavanje ograničenja GLM Coding Plana",
+    "glmResetCreditsModalExplainer": "Kartice za poništavanje poredane su prema isteku. Odaberite 5-satno ili tjedno razdoblje koje želite poništiti.",
+    "glmResetCreditFiveHourTitle": "Poništi 5-satno razdoblje",
+    "glmResetCreditWeekTitle": "Poništi tjedno razdoblje",
+    "glmConfirmRedeemResetCredit": "Iskorištavanjem se odmah poništava odabrano razdoblje upotrebe, a ova se kartica trajno troši.",
+    "glmConfirmRedeemFiveHourResetCredit": "Iskorištavanjem se odmah poništava 5-satno razdoblje upotrebe, a ova se kartica trajno troši.",
+    "glmConfirmRedeemWeekResetCredit": "Iskorištavanjem se odmah poništava tjedno razdoblje upotrebe, a ova se kartica trajno troši.",
     "suiteBuilderSaveFailed": "Neuspješno spremanje paketa",
     "clone": "Kloniraj",
     "exportSuite": "Izvezi",

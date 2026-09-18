@@ -3288,6 +3288,10 @@
     "models": "ಮಾಡೆಲ್ಗಳು",
     "autoBalance": "ಸ್ವಯಂ ಸಮತೋಲನ",
     "advancedSettings": "ಸುಧಾರಿತ ಸೆಟ್ಟಿಂಗ್ಗಳು",
+    "targetTimeout": "ಗುರಿ ಸಮಯಮಿತಿ (ಸೆಕೆಂಡುಗಳು)",
+    "comboTimeout": "ಕಾಂಬೊ ಸಮಯಮಿತಿ (ಸೆಕೆಂಡುಗಳು)",
+    "inheritRequestTimeout": "ಅನುವಂಶಿಕವಾಗಿ ಪಡೆ",
+    "inheritComboSafetyTimeout": "ಅನುವಂಶಿಕವಾಗಿ ಪಡೆ (10 ನಿಮಿಷ)",
     "retryDelay": "ಮರುಪ್ರಯತ್ನ ವಿಳಂಬ (ms)",
     "concurrencyPerModel": "ಸಮಕಾಲೀನತೆ / ಮಾಡೆಲ್",
     "queueTimeout": "ಸರತಿಯ ಟೈಮ್ಔಟ್ (ms)",
@@ -3434,6 +3438,8 @@
       "failoverBeforeRetry": "ಸಕ್ರಿಯಗೊಳಿಸಿದಾಗ, ಯಾವುದೇ ಅಪ್ಸ್ಟ್ರೀಮ್ ದೋಷವು ಎಲ್ಲಾ ಮರುಪ್ರಯತ್ನಗಳು ಮತ್ತು ಫಾಲ್ಬ್ಯಾಕ್ URLಗಳನ್ನು ಬಿಟ್ಟು, ಮುಂದಿನ ಕಾಂಬೊ ಗುರಿಗೆ ತಕ್ಷಣದ ಫೇಲ್ಓವರ್ ಅನ್ನು ಪ್ರಚೋದಿಸುತ್ತದೆ.",
       "maxSetRetries": "ಎಲ್ಲಾ ಗುರಿಗಳೂ ವಿಫಲವಾದಾಗ ಸಂಪೂರ್ಣ ಗುರಿ ಸಮೂಹವನ್ನು ಮರುಪ್ರಯತ್ನಿಸುವ ಸಂಖ್ಯೆ. 0 = ಸಮೂಹ-ಮಟ್ಟದ ಮರುಪ್ರಯತ್ನವಿಲ್ಲ.",
       "setRetryDelayMs": "ಸೆಟ್-ಮಟ್ಟದ ಮರುಪ್ರಯತ್ನಗಳ ನಡುವಿನ ವಿಳಂಬವು ತಾತ್ಕಾಲಿಕ ಸಮಸ್ಯೆಗಳು ಪರಿಹಾರವಾಗಲು ಸಮಯ ನೀಡುತ್ತದೆ.",
+      "targetTimeoutMs": "ಪ್ರತಿ ಗುರಿಗೆ ಐಚ್ಛಿಕ ಸಮಯಮಿತಿ. ಖಾಲಿ ಬಿಟ್ಟರೆ ಪ್ರಸ್ತುತ ವಿನಂತಿಯ ಸಮಯಮಿತಿಯನ್ನು ಅನುವಂಶಿಕವಾಗಿ ಪಡೆಯುತ್ತದೆ; ಹೆಚ್ಚಿನ ಮೌಲ್ಯಗಳನ್ನು ಆ ಸಮಯಮಿತಿಗೆ ಸೀಮಿತಗೊಳಿಸಲಾಗುತ್ತದೆ.",
+      "comboTimeoutMs": "ಎಲ್ಲಾ ವಿಫಲಾಂತರ ಗುರಿಗಳಾದ್ಯಂತ ಇಡೀ ಕಾಂಬೊಗೆ ಐಚ್ಛಿಕ ವಾಲ್-ಕ್ಲಾಕ್ ಕಾಲಮಿತಿ. ಖಾಲಿ ಬಿಟ್ಟರೆ 10 ನಿಮಿಷದ ಹ್ಯಾಂಗ್-ಸ್ಟಾಪ್ ಹಾಗೆಯೇ ಉಳಿಯುತ್ತದೆ; ಧನಾತ್ಮಕ ಮೌಲ್ಯವು ಅದನ್ನು ಬದಲಿಸುತ್ತದೆ. ವಿಫಲಾಂತರಕ್ಕೆ ಇನ್ನೂ ಸಮಯ ದೊರೆಯುವಂತೆ ಇದನ್ನು ಗುರಿ ಸಮಯಮಿತಿಗಿಂತ ಹೆಚ್ಚು ಇರಿಸಿ.",
       "disableSessionStickiness": "ಮೊದಲ ಸಂದೇಶದ ಹ್ಯಾಶ್ ಆಧರಿಸಿ ಇಡೀ ಸಂಭಾಷಣೆಯನ್ನು ಒಂದೇ ಸಂಪರ್ಕಕ್ಕೆ ಸ್ಥಿರಗೊಳಿಸುವ ಬದಲು, ಪ್ರತಿ ವಿನಂತಿಯಲ್ಲೂ ಬೇರೆ ಸಂಪರ್ಕಕ್ಕೆ ಬದಲಾಯಿಸಿ. ಇದು ಜಾಗತಿಕ ಡೀಫಾಲ್ಟ್ ಅನ್ನು ಅತಿಕ್ರಮಿಸುತ್ತದೆ. ಬಹು-ತಿರುವಿನ ಚಾಟ್ಗಳಿಗೆ ಪ್ರಾಂಪ್ಟ್-ಕ್ಯಾಶ್ ಹಿಟ್ಗಳನ್ನು ಉಳಿಸಿಕೊಳ್ಳಲು Inherit ಆಯ್ಕೆಯಲ್ಲೇ ಬಿಡಿ."
     },
     "templatesTitle": "ತ್ವರಿತ ಟೆಂಪ್ಲೇಟ್ಗಳು",
@@ -7202,6 +7208,12 @@
     "maxRetriesLabel": "ಗರಿಷ್ಠ ಮರುಪ್ರಯತ್ನಗಳು",
     "retryDelayLabel": "ಮರುಪ್ರಯತ್ನ ವಿಳಂಬ (ms)",
     "timeoutLabel": "ಸಮಯ ಮಿತಿ (ms)",
+    "targetTimeout": "ಗುರಿ ಸಮಯಮಿತಿ (ಸೆಕೆಂಡುಗಳು)",
+    "comboTimeout": "ಕಾಂಬೊ ಸಮಯಮಿತಿ (ಸೆಕೆಂಡುಗಳು)",
+    "inheritRequestTimeout": "ವಿನಂತಿಯ ಸಮಯಮಿತಿಯನ್ನು ಅನುವಂಶಿಕವಾಗಿ ಪಡೆ",
+    "inheritComboSafetyTimeout": "10 ನಿಮಿಷದ ಹ್ಯಾಂಗ್-ಸ್ಟಾಪ್ ಅನ್ನು ಅನುವಂಶಿಕವಾಗಿ ಪಡೆ",
+    "targetTimeoutHint": "ಪೂರ್ವನಿಯೋಜಿತವಾಗಿ ಕಾಂಬೊ ಗುರಿಗಳು ಪ್ರಸ್ತುತ ವಿನಂತಿಯ ಸಮಯಮಿತಿಯನ್ನು ಅನುವಂಶಿಕವಾಗಿ ಪಡೆಯುತ್ತವೆ. ವೇಗವಾದ ಪರ್ಯಾಯಕ್ಕೆ ಬದಲಾಯಿಸಲು ಬಯಸಿದಾಗ ಮಾತ್ರ ಇಲ್ಲಿ ಕಡಿಮೆ ಮೌಲ್ಯವನ್ನು ಹೊಂದಿಸಿ.",
+    "comboTimeoutHint": "ವಿಫಲಾಂತರ ಗುರಿಗಳಾದ್ಯಂತ ಇಡೀ ಕಾಂಬೊಗೆ ವಾಲ್-ಕ್ಲಾಕ್ ಕಾಲಮಿತಿ. ಖಾಲಿ ಬಿಟ್ಟರೆ 10 ನಿಮಿಷದ ಹ್ಯಾಂಗ್-ಸ್ಟಾಪ್ ಹಾಗೆಯೇ ಉಳಿಯುತ್ತದೆ. ವಿಫಲಾಂತರಕ್ಕೆ ಇನ್ನೂ ಸಮಯ ದೊರೆಯುವಂತೆ ಇದನ್ನು ಗುರಿ ಸಮಯಮಿತಿಗಿಂತ ಹೆಚ್ಚು ಇರಿಸಿ.",
     "healthCheck": "ಸ್ಥಿತಿ ಪರಿಶೀಲನೆ",
     "healthCheckDesc": "ಪೂರೈಕೆದಾರರ ಲಭ್ಯತೆಯನ್ನು ಮುಂಚಿತವಾಗಿ ಪರಿಶೀಲಿಸಿ",
     "trackMetrics": "ಮೆಟ್ರಿಕ್ಗಳನ್ನು ಟ್ರ್ಯಾಕ್ ಮಾಡಿ",
@@ -7479,6 +7491,8 @@
     "clearSyncedPricing": "ಸಿಂಕ್ ಮಾಡಲಾದ ಬೆಲೆ ಮಾಹಿತಿಯನ್ನು ತೆರವುಗೊಳಿಸಿ",
     "compressionTitle": "ಪ್ರಾಂಪ್ಟ್ ಸಂಕೋಚನ",
     "compressionDesc": "ಪೂರೈಕೆದಾರರಿಗೆ ಕಳುಹಿಸುವ ಮೊದಲು ಪ್ರಾಂಪ್ಟ್ಗಳನ್ನು ಸಂಕುಚಿತಗೊಳಿಸುವ ಮೂಲಕ ಟೋಕನ್ ಬಳಕೆಯನ್ನು ಕಡಿಮೆ ಮಾಡಿ",
+    "autoCombosTitle": "ಸ್ವಯಂ ಕಾಂಬೊಗಳು",
+    "autoCombosDesc": "ಕಾನ್ಫಿಗರ್ ಮಾಡಲಾದ ಪ್ರತಿಯೊಂದು ಪೂರೈಕೆದಾರರಿಂದ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಒಂದು ಮಾದರಿಯನ್ನು ಆಯ್ಕೆಮಾಡುವ ಅಂತರ್ನಿರ್ಮಿತ auto/* ಕಾಂಬೊಗಳನ್ನು ಬಳಸಲು ಈ ಕೀಲಿಗೆ ಅನುಮತಿಸಿ",
     "compressionGuidanceFullGuideLink": "ಸಂಪೂರ್ಣ ಸಂಕೋಚನ ಮಾರ್ಗದರ್ಶಿ",
     "compressionGuidanceShow": "ವಿವರಗಳು",
     "compressionGuidanceHide": "ವಿವರಗಳನ್ನು ಮರೆಮಾಡಿ",
@@ -8386,7 +8400,12 @@
     "cliproxyapiHealth": "ಸೇವೆಯ ಸ್ಥಿತಿ",
     "cliproxyapiPort": "ಪೋರ್ಟ್",
     "qdrantHost": "ಹೋಸ್ಟ್",
-    "qdrantCollection": "ಸಂಗ್ರಹ"
+    "qdrantCollection": "ಸಂಗ್ರಹ",
+    "catalogScopeTitle": "Models API ಪಟ್ಟಿ",
+    "catalogScopeDesc": "ಈ ಕೀಲಿಗಾಗಿ GET /v1/models ಏನನ್ನು ಪ್ರದರ್ಶಿಸುತ್ತದೆ. ಪಟ್ಟಿಯನ್ನು ಸೀಮಿತಗೊಳಿಸುವುದರಿಂದ ಕೀಲಿಯು ಯಾವುದನ್ನು ಕರೆ ಮಾಡಬಹುದು ಎಂಬುದು ಎಂದಿಗೂ ಬದಲಾಗುವುದಿಲ್ಲ.",
+    "catalogScopeAll": "ಎರಡೂ",
+    "catalogScopeCombos": "ಕಾಂಬೊಗಳು ಮಾತ್ರ",
+    "catalogScopeModels": "ಮಾದರಿಗಳು ಮಾತ್ರ"
   },
   "contextRtk": {
     "title": "RTK ಎಂಜಿನ್",
@@ -8596,7 +8615,11 @@
       },
       "compressToolResults": {
         "label": "ಉದ್ದವಾದ ಪರಿಕರ ಫಲಿತಾಂಶಗಳನ್ನು ಪೂರ್ವಭಾವಿಯಾಗಿ ಮೊಟಕುಗೊಳಿಸಿ",
-        "description": "ಹಗುರ ಸಂಕುಚನದ ಸಮಯದಲ್ಲಿ 2,000 ಅಕ್ಷರಗಳನ್ನು ಮೀರಿದ ಪರಿಕರ ಫಲಿತಾಂಶಗಳನ್ನು ಮೊಟಕುಗೊಳಿಸುತ್ತದೆ. ಸಂದರ್ಭವು ಮಾದರಿಯ ಮಿತಿಯನ್ನು ಮೀರಿದಾಗ ತುರ್ತು ಓವರ್ಫ್ಲೋ ರಕ್ಷಣೆಯು ಇನ್ನೂ ವಿಷಯವನ್ನು ಕಡಿತಗೊಳಿಸಬಹುದು."
+        "description": "Truncates long tool results during Lite compression. The Maximum tool-result length field (or OMNIROUTE_LITE_MAX_TOOL_LENGTH when that field is unset) sets the cap. Emergency overflow protection may still trim content when the context exceeds the model budget."
+      },
+      "maxToolLength": {
+        "label": "Maximum tool-result length",
+        "description": "Character cap for proactive tool-result truncation. Default 2000. Override with OMNIROUTE_LITE_MAX_TOOL_LENGTH when this field is unset."
       }
     },
     "engineFields": {
@@ -9518,6 +9541,13 @@
     "confirmRedeemResetCreditButton": "ಕ್ರೆಡಿಟ್ ಅನ್ನು ರಿಡೀಮ್ ಮಾಡಿ",
     "resetCreditRedeemed": "ಮರುಹೊಂದಿಕೆಯನ್ನು ರಿಡೀಮ್ ಮಾಡಲಾಗಿದೆ",
     "resetCreditRedeemFailed": "ಮರುಹೊಂದಿಕೆ ಕ್ರೆಡಿಟ್ ಅನ್ನು ರಿಡೀಮ್ ಮಾಡಲು ವಿಫಲವಾಗಿದೆ",
+    "glmResetCreditsModalTitle": "GLM Coding Plan ಮರುಹೊಂದಿಸುವ ಕಾರ್ಡ್ಗಳು",
+    "glmResetCreditsModalExplainer": "ಮರುಹೊಂದಿಸುವ ಕಾರ್ಡ್ಗಳನ್ನು ಅವಧಿ ಮುಗಿಯುವಿಕೆಯ ಆಧಾರದ ಮೇಲೆ ಕ್ರಮಗೊಳಿಸಲಾಗಿದೆ. ನೀವು ಮರುಹೊಂದಿಸಲು ಬಯಸುವ 5-ಗಂಟೆಗಳ ಅಥವಾ ವಾರದ ವಿಂಡೋವನ್ನು ಆಯ್ಕೆಮಾಡಿ.",
+    "glmResetCreditFiveHourTitle": "5-ಗಂಟೆಗಳ ವಿಂಡೋ ಮರುಹೊಂದಿಸಿ",
+    "glmResetCreditWeekTitle": "ವಾರದ ವಿಂಡೋ ಮರುಹೊಂದಿಸಿ",
+    "glmConfirmRedeemResetCredit": "ರಿಡೀಮ್ ಮಾಡಿದ ತಕ್ಷಣ ಆಯ್ಕೆಮಾಡಿದ ಬಳಕೆಯ ವಿಂಡೋ ಮರುಹೊಂದಿಸಲ್ಪಡುತ್ತದೆ ಮತ್ತು ಈ ಕಾರ್ಡ್ ಶಾಶ್ವತವಾಗಿ ಬಳಕೆಯಾಗುತ್ತದೆ.",
+    "glmConfirmRedeemFiveHourResetCredit": "ರಿಡೀಮ್ ಮಾಡಿದ ತಕ್ಷಣ 5-ಗಂಟೆಗಳ ಬಳಕೆಯ ವಿಂಡೋ ಮರುಹೊಂದಿಸಲ್ಪಡುತ್ತದೆ ಮತ್ತು ಈ ಕಾರ್ಡ್ ಶಾಶ್ವತವಾಗಿ ಬಳಕೆಯಾಗುತ್ತದೆ.",
+    "glmConfirmRedeemWeekResetCredit": "ರಿಡೀಮ್ ಮಾಡಿದ ತಕ್ಷಣ ವಾರದ ಬಳಕೆಯ ವಿಂಡೋ ಮರುಹೊಂದಿಸಲ್ಪಡುತ್ತದೆ ಮತ್ತು ಈ ಕಾರ್ಡ್ ಶಾಶ್ವತವಾಗಿ ಬಳಕೆಯಾಗುತ್ತದೆ.",
     "suiteBuilderSaveFailed": "ಸೂಟ್ ಅನ್ನು ಉಳಿಸಲು ವಿಫಲವಾಗಿದೆ",
     "clone": "ಕ್ಲೋನ್ ಮಾಡಿ",
     "exportSuite": "ರಫ್ತು ಮಾಡಿ",

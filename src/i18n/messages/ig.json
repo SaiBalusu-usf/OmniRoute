@@ -3288,6 +3288,10 @@
     "models": "Ụdị",
     "autoBalance": "Hazie nguzozi na-akpaghị aka",
     "advancedSettings": "Ntọala Dị Elu",
+    "targetTimeout": "Oge ngwụcha ebumnuche (sekọnd)",
+    "comboTimeout": "Oge ngwụcha ngwakọta (sekọnd)",
+    "inheritRequestTimeout": "keta",
+    "inheritComboSafetyTimeout": "keta (nkeji 10)",
     "retryDelay": "Oge nchere tupu ịnwale ọzọ (ms)",
     "concurrencyPerModel": "Ọrụ n'otu oge / Ụdị",
     "queueTimeout": "Oke oge n'ahịrị (ms)",
@@ -3434,6 +3438,8 @@
       "failoverBeforeRetry": "Mgbe enyere ya ikike, njehie upstream ọ bụla na-akpalite ịgafe ozugbo na combo target na-esote, na-amafere retries na fallback URLs niile.",
       "maxSetRetries": "Ọnụọgụ ugboro a ga-anwaleghachi target set zuru ezu mgbe target niile dara. 0 = enweghị set-level retry.",
       "setRetryDelayMs": "Oge nkwụsị n'etiti mbọ set-level retry, iji nye nsogbu na-adịru nwa oge ohere idozi onwe ha.",
+      "targetTimeoutMs": "Oge ngwụcha nhọrọ maka ebumnuche ọ bụla. Ọ bụrụ na ọ tọgbọ chakoo, ọ ga-eketa oge ngwụcha nke arịrịọ dị ugbu a; a ga-amachi ụkpụrụ ndị ka ukwuu n'oge ngwụcha ahụ.",
+      "comboTimeoutMs": "Oge nhọrọ zuru ezu nke ngwakọta niile nwere ike iji gafee ebumnuche failover niile. Ọ bụrụ na ọ tọgbọ chakoo, ọ ga-edowe nkwụsị mgbochi ịkwụgide nke nkeji 10; ụkpụrụ dị mma ga-anọchi ya. Mee ka nke a dị ogologo karịa oge ngwụcha ebumnuche ka failover ka nwee oge.",
       "disableSessionStickiness": "Gbanwee gaa na connection dị iche n'arịrịọ ọ bụla kama ijikọ mkparịta ụka dum na otu connection site na hash nke ozi mbụ. Nke a na-akagbu global default. Hapụ ya na Inherit iji chekwaa prompt-cache hits maka nkata nwere ọtụtụ ntụgharị."
     },
     "templatesTitle": "Templates ngwa ngwa",
@@ -7202,6 +7208,12 @@
     "maxRetriesLabel": "Ọnụọgụ Nnwale Ọzọ Kachasị Elu",
     "retryDelayLabel": "Oge Nchere Tupu Nnwale Ọzọ (ms)",
     "timeoutLabel": "Oge Njedebe (ms)",
+    "targetTimeout": "Oge ngwụcha ebumnuche (sekọnd)",
+    "comboTimeout": "Oge ngwụcha ngwakọta (sekọnd)",
+    "inheritRequestTimeout": "Keta oge ngwụcha arịrịọ",
+    "inheritComboSafetyTimeout": "Keta nkwụsị mgbochi ịkwụgide nke nkeji 10",
+    "targetTimeoutHint": "Ebumnuche ngwakọta na-eketa oge ngwụcha nke arịrịọ dị ugbu a na ndabara. Tọọ ụkpụrụ dị ala ebe a naanị mgbe ịchọrọ fallback ngwa ngwa.",
+    "comboTimeoutHint": "Oge zuru ezu nke ngwakọta niile nwere ike iji gafee ebumnuche failover. Ọ bụrụ na ọ tọgbọ chakoo, ọ ga-edowe nkwụsị mgbochi ịkwụgide nke nkeji 10. Mee ka nke a dị ogologo karịa oge ngwụcha ebumnuche ka failover ka nwee oge.",
     "healthCheck": "Nlele Ahụike",
     "healthCheckDesc": "Buru ụzọ lelee ma onye na-eweta ọrụ dị",
     "trackMetrics": "Sochie Metrik",
@@ -7479,6 +7491,8 @@
     "clearSyncedPricing": "Kpochapụ Ọnụahịa Emekọrịtara",
     "compressionTitle": "Mkpakọ Ntuziaka",
     "compressionDesc": "Belata ojiji token site na ịmkpakọ ntuziaka tupu iziga ha na ndị na-enye ọrụ",
+    "autoCombosTitle": "Ngwakọta Akpaaka",
+    "autoCombosDesc": "Kwe ka igodo a jiri ngwakọta auto/* arụnyere n'ime sistemụ, nke na-ahọrọ ụdịdị na-akpaghị aka site n'aka onye na-eweta ọrụ ọ bụla ahaziri",
     "compressionGuidanceFullGuideLink": "Ntuziaka mkpakọ zuru ezu",
     "compressionGuidanceShow": "Nkọwa",
     "compressionGuidanceHide": "Zoo nkọwa",
@@ -8386,7 +8400,12 @@
     "cliproxyapiHealth": "Ọnọdụ ahụike",
     "cliproxyapiPort": "Ọdụ ụgbọ mmiri",
     "qdrantHost": "Onye nnabata",
-    "qdrantCollection": "Nchịkọta"
+    "qdrantCollection": "Nchịkọta",
+    "catalogScopeTitle": "Ndepụta Models API",
+    "catalogScopeDesc": "Ihe GET /v1/models na-egosi maka igodo a. Ibelata ndepụta ahụ anaghị agbanwe ụdịdị igodo ahụ nwere ike ịkpọ.",
+    "catalogScopeAll": "Ha abụọ",
+    "catalogScopeCombos": "Ngwakọta naanị",
+    "catalogScopeModels": "Ụdịdị naanị"
   },
   "contextRtk": {
     "title": "Injin RTK",
@@ -8596,7 +8615,11 @@
       },
       "compressToolResults": {
         "label": "Buru ụzọ belata nsonaazụ ngwaọrụ ndị toro ogologo",
-        "description": "Na-ebipụ nsonaazụ ngwaọrụ karịrị mkpụrụedemede 2,000 n'oge mkpakọ Lite. Nchedo mberede megide njupụta ka nwere ike ibelata ọdịnaya mgbe konteks gafere oke token nke model."
+        "description": "Truncates long tool results during Lite compression. The Maximum tool-result length field (or OMNIROUTE_LITE_MAX_TOOL_LENGTH when that field is unset) sets the cap. Emergency overflow protection may still trim content when the context exceeds the model budget."
+      },
+      "maxToolLength": {
+        "label": "Maximum tool-result length",
+        "description": "Character cap for proactive tool-result truncation. Default 2000. Override with OMNIROUTE_LITE_MAX_TOOL_LENGTH when this field is unset."
       }
     },
     "engineFields": {
@@ -9518,6 +9541,13 @@
     "confirmRedeemResetCreditButton": "Gbapụta kredit",
     "resetCreditRedeemed": "Agbapụtala kredit nrụgharị",
     "resetCreditRedeemFailed": "Enweghị ike ịgbapụta kredit nrụgharị",
+    "glmResetCreditsModalTitle": "Kaadị nrụgharị GLM Coding Plan",
+    "glmResetCreditsModalExplainer": "A haziri kaadị nrụgharị dịka oge ngafe ha si dị. Họrọ windo awa 5 ma ọ bụ nke izu ụka ịchọrọ ịrụgharị.",
+    "glmResetCreditFiveHourTitle": "Nrụgharị windo awa 5",
+    "glmResetCreditWeekTitle": "Nrụgharị windo izu ụka",
+    "glmConfirmRedeemResetCredit": "Ịgbapụta ya ozugbo ga-arụgharị windo ojiji ahọpụtara ma mee ka kaadị a gwụ kpamkpam.",
+    "glmConfirmRedeemFiveHourResetCredit": "Ịgbapụta ya ozugbo ga-arụgharị windo ojiji awa 5 ma mee ka kaadị a gwụ kpamkpam.",
+    "glmConfirmRedeemWeekResetCredit": "Ịgbapụta ya ozugbo ga-arụgharị windo ojiji izu ụka ma mee ka kaadị a gwụ kpamkpam.",
     "suiteBuilderSaveFailed": "Enweghị ike ichekwa nchịkọta nnwale",
     "clone": "Mee oyiri",
     "exportSuite": "Bupụ",

@@ -3288,6 +3288,10 @@
     "models": "Modeliai",
     "autoBalance": "Automatinis balansavimas",
     "advancedSettings": "Išplėstiniai nustatymai",
+    "targetTimeout": "Tikslinio taško skirtasis laikas (sekundėmis)",
+    "comboTimeout": "Derinio skirtasis laikas (sekundėmis)",
+    "inheritRequestTimeout": "paveldėti",
+    "inheritComboSafetyTimeout": "paveldėti (10 min.)",
     "retryDelay": "Pakartojimo delsa (ms)",
     "concurrencyPerModel": "Lygiagretumas / modelis",
     "queueTimeout": "Eilės skirtasis laikas (ms)",
@@ -3434,6 +3438,8 @@
       "failoverBeforeRetry": "Kai įjungta, bet kokia aukštesnės grandies klaida iškart perjungia į kitą kombinacijos tikslinį objektą, praleidžiant visus pakartotinius bandymus ir atsarginius URL adresus.",
       "maxSetRetries": "Kiek kartų pakartotinai bandyti visą tikslinių objektų rinkinį, kai nepavyksta nė vienas tikslinis objektas. 0 = nekartoti rinkinio lygmeniu.",
       "setRetryDelayMs": "Delsa tarp rinkinio lygmens pakartotinių bandymų, suteikianti laiko laikiniems sutrikimams išsispręsti.",
+      "targetTimeoutMs": "Pasirenkamas kiekvieno tikslinio taško skirtasis laikas. Jei laukas tuščias, paveldimas dabartinės užklausos skirtasis laikas; didesnės reikšmės apribojamos iki šio laiko.",
+      "comboTimeoutMs": "Pasirenkamas bendras viso derinio vykdymo laiko limitas, taikomas visiems perjungimo tiksliniams taškams. Jei laukas tuščias, paliekamas 10 minučių apsaugos nuo užstrigimo limitas; teigiama reikšmė jį pakeičia. Nustatykite ilgesnį laiką nei tikslinio taško skirtasis laikas, kad liktų laiko perjungimui.",
       "disableSessionStickiness": "Kiekvienai užklausai parinkite kitą ryšį, užuot visą pokalbį susieję su vienu ryšiu pagal pirmojo pranešimo maišos vertę. Šis nustatymas pakeičia bendrą numatytąją reikšmę. Palikite „Paveldėti“, kad kelių etapų pokalbiuose būtų išsaugoti prompt-cache podėlio atitikmenys."
     },
     "templatesTitle": "Spartieji šablonai",
@@ -7202,6 +7208,12 @@
     "maxRetriesLabel": "Didžiausias pakartotinių bandymų skaičius",
     "retryDelayLabel": "Delsa tarp pakartotinių bandymų (ms)",
     "timeoutLabel": "Skirtasis laikas (ms)",
+    "targetTimeout": "Tikslinio taško skirtasis laikas (sekundėmis)",
+    "comboTimeout": "Derinio skirtasis laikas (sekundėmis)",
+    "inheritRequestTimeout": "Paveldėti užklausos skirtąjį laiką",
+    "inheritComboSafetyTimeout": "Paveldėti 10 minučių apsaugos nuo užstrigimo limitą",
+    "targetTimeoutHint": "Pagal numatytuosius nustatymus derinio tiksliniai taškai paveldi dabartinės užklausos skirtąjį laiką. Čia nustatykite mažesnę reikšmę tik tada, kai norite greitesnio perjungimo.",
+    "comboTimeoutHint": "Bendras viso derinio vykdymo laiko limitas, taikomas perjungimo tiksliniams taškams. Jei laukas tuščias, paliekamas 10 minučių apsaugos nuo užstrigimo limitas. Nustatykite ilgesnį laiką nei tikslinio taško skirtasis laikas, kad liktų laiko perjungimui.",
     "healthCheck": "Būklės patikra",
     "healthCheckDesc": "Iš anksto tikrinti teikėjo pasiekiamumą",
     "trackMetrics": "Stebėti metrikas",
@@ -7479,6 +7491,8 @@
     "clearSyncedPricing": "Išvalyti sinchronizuotą kainodarą",
     "compressionTitle": "Raginimų glaudinimas",
     "compressionDesc": "Sumažinkite tokenų naudojimą suglaudindami raginimus prieš siųsdami juos paslaugų teikėjams",
+    "autoCombosTitle": "Automatiniai deriniai",
+    "autoCombosDesc": "Leisti šiam raktui naudoti integruotus auto/* derinius, kurie automatiškai parenka modelį iš visų sukonfigūruotų paslaugų teikėjų",
     "compressionGuidanceFullGuideLink": "Išsamus glaudinimo vadovas",
     "compressionGuidanceShow": "Išsami informacija",
     "compressionGuidanceHide": "Slėpti išsamią informaciją",
@@ -8386,7 +8400,12 @@
     "cliproxyapiHealth": "Būsena",
     "cliproxyapiPort": "Prievadas",
     "qdrantHost": "Pagrindinis kompiuteris",
-    "qdrantCollection": "Rinkinys"
+    "qdrantCollection": "Rinkinys",
+    "catalogScopeTitle": "Models API sąrašas",
+    "catalogScopeDesc": "Ką GET /v1/models nurodo šiam raktui. Sąrašo susiaurinimas niekada nekeičia, ką raktas gali iškviesti.",
+    "catalogScopeAll": "Abu",
+    "catalogScopeCombos": "Tik deriniai",
+    "catalogScopeModels": "Tik modeliai"
   },
   "contextRtk": {
     "title": "RTK variklis",
@@ -8596,7 +8615,11 @@
       },
       "compressToolResults": {
         "label": "Iš anksto trumpinti ilgus įrankių rezultatus",
-        "description": "Naudojant „Lite“ glaudinimą, sutrumpinami ilgesni nei 2 000 simbolių įrankių rezultatai. Avarinė apsauga nuo perpildymo vis tiek gali apkarpyti turinį, kai kontekstas viršija modelio limitą."
+        "description": "Truncates long tool results during Lite compression. The Maximum tool-result length field (or OMNIROUTE_LITE_MAX_TOOL_LENGTH when that field is unset) sets the cap. Emergency overflow protection may still trim content when the context exceeds the model budget."
+      },
+      "maxToolLength": {
+        "label": "Maximum tool-result length",
+        "description": "Character cap for proactive tool-result truncation. Default 2000. Override with OMNIROUTE_LITE_MAX_TOOL_LENGTH when this field is unset."
       }
     },
     "engineFields": {
@@ -9518,6 +9541,13 @@
     "confirmRedeemResetCreditButton": "Panaudoti kreditą",
     "resetCreditRedeemed": "Atkūrimo kreditas panaudotas",
     "resetCreditRedeemFailed": "Nepavyko panaudoti atkūrimo kredito",
+    "glmResetCreditsModalTitle": "GLM Coding Plan nustatymo iš naujo kortelės",
+    "glmResetCreditsModalExplainer": "Nustatymo iš naujo kortelės surikiuotos pagal galiojimo pabaigą. Pasirinkite 5 valandų arba savaitės laikotarpį, kurį norite nustatyti iš naujo.",
+    "glmResetCreditFiveHourTitle": "5 valandų laikotarpio nustatymas iš naujo",
+    "glmResetCreditWeekTitle": "Savaitės laikotarpio nustatymas iš naujo",
+    "glmConfirmRedeemResetCredit": "Panaudojus kortelę, pasirinktas naudojimo laikotarpis nedelsiant nustatomas iš naujo, o ši kortelė negrįžtamai sunaudojama.",
+    "glmConfirmRedeemFiveHourResetCredit": "Panaudojus kortelę, 5 valandų naudojimo laikotarpis nedelsiant nustatomas iš naujo, o ši kortelė negrįžtamai sunaudojama.",
+    "glmConfirmRedeemWeekResetCredit": "Panaudojus kortelę, savaitės naudojimo laikotarpis nedelsiant nustatomas iš naujo, o ši kortelė negrįžtamai sunaudojama.",
     "suiteBuilderSaveFailed": "Nepavyko išsaugoti rinkinio",
     "clone": "Klonuoti",
     "exportSuite": "Eksportuoti",

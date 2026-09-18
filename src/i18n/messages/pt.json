@@ -3288,6 +3288,10 @@
     "models": "Modelos",
     "autoBalance": "Equilíbrio automático",
     "advancedSettings": "Configurações avançadas",
+    "targetTimeout": "Tempo limite do destino (segundos)",
+    "comboTimeout": "Tempo limite da combinação (segundos)",
+    "inheritRequestTimeout": "herdar",
+    "inheritComboSafetyTimeout": "herdar (10 min)",
     "retryDelay": "Atraso de nova tentativa (ms)",
     "concurrencyPerModel": "Simultaneidade/Modelo",
     "queueTimeout": "Tempo limite da fila (ms)",
@@ -3434,6 +3438,8 @@
       "failoverBeforeRetry": "Quando ativado, qualquer erro upstream aciona o failover imediato para o próximo destino combinado, ignorando todas as novas tentativas e URLs substitutos.",
       "maxSetRetries": "Número de vezes para tentar novamente o destino completo definido quando todos os alvos falharem. 0 = nenhuma nova tentativa de nível definido.",
       "setRetryDelayMs": "Atraso entre novas tentativas de nível definido, dando tempo para que problemas transitórios sejam resolvidos.",
+      "targetTimeoutMs": "Tempo limite opcional por destino. Se estiver vazio, herda o tempo limite atual do pedido; os valores superiores ficam limitados a esse tempo.",
+      "comboTimeoutMs": "Limite de tempo total opcional para toda a combinação, abrangendo todos os destinos de recuperação. Se estiver vazio, mantém a interrupção de segurança aos 10 minutos; um valor positivo substitui-a. Defina-o como superior ao tempo limite do destino, para que a recuperação continue a ter tempo suficiente.",
       "disableSessionStickiness": "Rode para uma ligação diferente a cada pedido em vez de fixar uma conversa inteira a uma ligação através do hash da primeira mensagem. Substitui a predefinição global. Deixe em Herdar para preservar os acessos à cache de prompts em conversas com várias interações."
     },
     "templatesTitle": "Modelos rápidos",
@@ -7202,6 +7208,12 @@
     "maxRetriesLabel": "Máximo de tentativas",
     "retryDelayLabel": "Atraso de nova tentativa (ms)",
     "timeoutLabel": "Tempo limite (ms)",
+    "targetTimeout": "Tempo limite do destino (segundos)",
+    "comboTimeout": "Tempo limite da combinação (segundos)",
+    "inheritRequestTimeout": "Herdar o tempo limite do pedido",
+    "inheritComboSafetyTimeout": "Herdar a interrupção de segurança aos 10 minutos",
+    "targetTimeoutHint": "Por predefinição, os destinos da combinação herdam o tempo limite atual do pedido. Defina aqui um valor inferior apenas se pretender uma recuperação mais rápida.",
+    "comboTimeoutHint": "Limite de tempo total para toda a combinação, abrangendo os destinos de recuperação. Se estiver vazio, mantém a interrupção de segurança aos 10 minutos. Defina-o como superior ao tempo limite do destino, para que a recuperação continue a ter tempo suficiente.",
     "healthCheck": "Verificação de saúde",
     "healthCheckDesc": "Verifique previamente a disponibilidade do provedor",
     "trackMetrics": "Rastrear métricas",
@@ -7479,6 +7491,8 @@
     "clearSyncedPricing": "Limpar Preços Sincronizados",
     "compressionTitle": "Compressão de Prompt",
     "compressionDesc": "Reduz o uso de tokens comprimindo prompts antes de os enviar aos fornecedores",
+    "autoCombosTitle": "Combinações automáticas",
+    "autoCombosDesc": "Permitir que esta chave utilize as combinações auto/* incorporadas, que escolhem automaticamente um modelo de cada fornecedor configurado",
     "compressionGuidanceFullGuideLink": "Guia completo de compressão",
     "compressionGuidanceShow": "Detalhes",
     "compressionGuidanceHide": "Ocultar detalhes",
@@ -8386,7 +8400,12 @@
     "cliproxyapiHealth": "Saúde",
     "cliproxyapiPort": "Porto",
     "qdrantHost": "Anfitrião",
-    "qdrantCollection": "Coleção"
+    "qdrantCollection": "Coleção",
+    "catalogScopeTitle": "Listagem da API de modelos",
+    "catalogScopeDesc": "O que GET /v1/models anuncia para esta chave. Restringir a lista nunca altera o que a chave pode chamar.",
+    "catalogScopeAll": "Ambos",
+    "catalogScopeCombos": "Apenas combinações",
+    "catalogScopeModels": "Apenas modelos"
   },
   "contextRtk": {
     "title": "Motor RTK",
@@ -8596,7 +8615,11 @@
       },
       "compressToolResults": {
         "label": "Truncar proativamente resultados longos de ferramentas",
-        "description": "Trunca os resultados da ferramenta com mais de 2.000 caracteres durante a compressão Lite. A proteção de transbordo de emergência pode ainda cortar conteúdo quando o contexto excede o orçamento do modelo."
+        "description": "Trunca resultados longos de ferramenta durante a compressão Lite. O limite é definido pelo campo Comprimento máximo do resultado da ferramenta (ou OMNIROUTE_LITE_MAX_TOOL_LENGTH se estiver vazio). A proteção de transbordo de emergência ainda pode recortar conteúdo quando o contexto excede o orçamento do modelo."
+      },
+      "maxToolLength": {
+        "label": "Comprimento máximo do resultado da ferramenta",
+        "description": "Limite de caracteres para o recorte proativo. Padrão 2000. Substitua com OMNIROUTE_LITE_MAX_TOOL_LENGTH se o campo estiver vazio."
       }
     },
     "engineFields": {
@@ -9518,6 +9541,13 @@
     "confirmRedeemResetCreditButton": "Resgatar crédito",
     "resetCreditRedeemed": "Reposição resgatada",
     "resetCreditRedeemFailed": "Falha ao resgatar o crédito de reposição",
+    "glmResetCreditsModalTitle": "Cartões de reposição do GLM Coding Plan",
+    "glmResetCreditsModalExplainer": "Os cartões de reposição são ordenados por data de expiração. Escolha o período de 5 horas ou semanal que pretende repor.",
+    "glmResetCreditFiveHourTitle": "Reposição do período de 5 horas",
+    "glmResetCreditWeekTitle": "Reposição do período semanal",
+    "glmConfirmRedeemResetCredit": "O resgate repõe imediatamente o período de utilização selecionado e consome permanentemente este cartão.",
+    "glmConfirmRedeemFiveHourResetCredit": "O resgate repõe imediatamente o período de utilização de 5 horas e consome permanentemente este cartão.",
+    "glmConfirmRedeemWeekResetCredit": "O resgate repõe imediatamente o período de utilização semanal e consome permanentemente este cartão.",
     "suiteBuilderSaveFailed": "Falha ao guardar a suíte",
     "clone": "Clonar",
     "exportSuite": "Exportar",

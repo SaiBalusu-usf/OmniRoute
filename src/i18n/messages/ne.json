@@ -3288,6 +3288,10 @@
     "models": "मोडेलहरू",
     "autoBalance": "स्वतः सन्तुलन",
     "advancedSettings": "उन्नत सेटिङहरू",
+    "targetTimeout": "लक्ष्य टाइमआउट (सेकेन्ड)",
+    "comboTimeout": "कम्बो टाइमआउट (सेकेन्ड)",
+    "inheritRequestTimeout": "इनहेरिट गर्नुहोस्",
+    "inheritComboSafetyTimeout": "इनहेरिट गर्नुहोस् (१० मिनेट)",
     "retryDelay": "पुनः प्रयासको ढिलाइ (ms)",
     "concurrencyPerModel": "प्रति मोडेल समवर्तीता",
     "queueTimeout": "लामको टाइमआउट (ms)",
@@ -3434,6 +3438,8 @@
       "failoverBeforeRetry": "सक्षम पार्दा, कुनै पनि अपस्ट्रिम त्रुटिले सबै पुनः प्रयास र फलब्याक URL हरू छोडेर तुरुन्तै अर्को कम्बो लक्ष्यमा फेलओभर गराउँछ।",
       "maxSetRetries": "हरेक लक्ष्य असफल हुँदा पूर्ण लक्ष्य सेट पुनः प्रयास गरिने पटकको सङ्ख्या। 0 = सेट-स्तरीय पुनः प्रयास हुँदैन।",
       "setRetryDelayMs": "सेट-स्तरीय पुनःप्रयासहरूबीचको ढिलाइ, जसले अस्थायी समस्याहरू समाधान हुन समय दिन्छ।",
+      "targetTimeoutMs": "प्रत्येक लक्ष्यका लागि वैकल्पिक टाइमआउट। खाली छोड्दा हालको अनुरोध टाइमआउट इनहेरिट हुन्छ; ठूला मानहरू उक्त टाइमआउटसम्म सीमित गरिन्छन्।",
+      "comboTimeoutMs": "सबै फेलओभर लक्ष्यहरूमा लागू हुने सम्पूर्ण कम्बोको वैकल्पिक वास्तविक-समय बजेट। खाली छोड्दा १०-मिनेटको ह्याङ-स्टप कायम रहन्छ; धनात्मक मानले यसलाई प्रतिस्थापन गर्छ। फेलओभरका लागि अझै समय रहोस् भनेर यसलाई लक्ष्य टाइमआउटभन्दा लामो राख्नुहोस्।",
       "disableSessionStickiness": "पहिलो सन्देशको ह्यासका आधारमा सम्पूर्ण कुराकानीलाई एउटै कनेक्सनमा बाँध्नुको सट्टा प्रत्येक अनुरोधमा फरक कनेक्सन प्रयोग गर्नुहोस्। यसले ग्लोबल पूर्वनिर्धारित सेटिङलाई ओभरराइड गर्छ। बहु-चरणीय च्याटहरूमा प्रम्प्ट-क्यास हिटहरू कायम राख्न Inherit मै छोड्नुहोस्।"
     },
     "templatesTitle": "द्रुत टेम्प्लेटहरू",
@@ -7202,6 +7208,12 @@
     "maxRetriesLabel": "अधिकतम पुनःप्रयासहरू",
     "retryDelayLabel": "पुनःप्रयास विलम्ब (ms)",
     "timeoutLabel": "समयसीमा (ms)",
+    "targetTimeout": "लक्ष्य टाइमआउट (सेकेन्ड)",
+    "comboTimeout": "कम्बो टाइमआउट (सेकेन्ड)",
+    "inheritRequestTimeout": "अनुरोध टाइमआउट इनहेरिट गर्नुहोस्",
+    "inheritComboSafetyTimeout": "१०-मिनेटको ह्याङ-स्टप इनहेरिट गर्नुहोस्",
+    "targetTimeoutHint": "पूर्वनिर्धारित रूपमा कम्बो लक्ष्यहरूले हालको अनुरोध टाइमआउट इनहेरिट गर्छन्। छिटो फलब्याक चाहिएको अवस्थामा मात्र यहाँ कम मान सेट गर्नुहोस्।",
+    "comboTimeoutHint": "फेलओभर लक्ष्यहरूमा लागू हुने सम्पूर्ण कम्बोको वास्तविक-समय बजेट। खाली छोड्दा १०-मिनेटको ह्याङ-स्टप कायम रहन्छ। फेलओभरका लागि अझै समय रहोस् भनेर यसलाई लक्ष्य टाइमआउटभन्दा लामो राख्नुहोस्।",
     "healthCheck": "स्वास्थ्य जाँच",
     "healthCheckDesc": "प्रदायकको उपलब्धता पूर्व-जाँच गर्नुहोस्",
     "trackMetrics": "मेट्रिक्स ट्र्याक गर्नुहोस्",
@@ -7479,6 +7491,8 @@
     "clearSyncedPricing": "सिङ्क गरिएको मूल्य निर्धारण हटाउनुहोस्",
     "compressionTitle": "प्रम्प्ट सङ्कुचन",
     "compressionDesc": "प्रदायकहरूलाई पठाउनुअघि प्रम्प्टहरू सङ्कुचित गरेर टोकन प्रयोग घटाउनुहोस्",
+    "autoCombosTitle": "स्वचालित कम्बोहरू",
+    "autoCombosDesc": "यस कुञ्जीलाई अन्तर्निर्मित auto/* कम्बोहरू प्रयोग गर्न अनुमति दिनुहोस्, जसले कन्फिगर गरिएका प्रत्येक प्रदायकबाट स्वचालित रूपमा एउटा मोडेल चयन गर्छन्",
     "compressionGuidanceFullGuideLink": "सम्पूर्ण सङ्कुचन मार्गदर्शिका",
     "compressionGuidanceShow": "विवरण",
     "compressionGuidanceHide": "विवरण लुकाउनुहोस्",
@@ -8386,7 +8400,12 @@
     "cliproxyapiHealth": "स्वास्थ्य",
     "cliproxyapiPort": "पोर्ट",
     "qdrantHost": "होस्ट",
-    "qdrantCollection": "सङ्कलन"
+    "qdrantCollection": "सङ्कलन",
+    "catalogScopeTitle": "Models API सूचीकरण",
+    "catalogScopeDesc": "यस कुञ्जीका लागि GET /v1/models ले के देखाउँछ। सूची सीमित गर्दा पनि कुञ्जीले कल गर्न सक्ने कुरामा कहिल्यै परिवर्तन हुँदैन।",
+    "catalogScopeAll": "दुवै",
+    "catalogScopeCombos": "कम्बोहरू मात्र",
+    "catalogScopeModels": "मोडेलहरू मात्र"
   },
   "contextRtk": {
     "title": "RTK इन्जिन",
@@ -8596,7 +8615,11 @@
       },
       "compressToolResults": {
         "label": "लामा उपकरण नतिजाहरू सक्रिय रूपमा काट्नुहोस्",
-        "description": "हल्का सङ्कुचनका क्रममा 2,000 वर्णभन्दा लामा उपकरण नतिजाहरू काट्छ। कन्टेक्स्टले मोडेलको बजेट नाघ्दा आपत्कालीन ओभरफ्लो सुरक्षाले अझै पनि सामग्री काट्न सक्छ।"
+        "description": "Truncates long tool results during Lite compression. The Maximum tool-result length field (or OMNIROUTE_LITE_MAX_TOOL_LENGTH when that field is unset) sets the cap. Emergency overflow protection may still trim content when the context exceeds the model budget."
+      },
+      "maxToolLength": {
+        "label": "Maximum tool-result length",
+        "description": "Character cap for proactive tool-result truncation. Default 2000. Override with OMNIROUTE_LITE_MAX_TOOL_LENGTH when this field is unset."
       }
     },
     "engineFields": {
@@ -9518,6 +9541,13 @@
     "confirmRedeemResetCreditButton": "क्रेडिट रिडिम गर्नुहोस्",
     "resetCreditRedeemed": "रिसेट रिडिम गरियो",
     "resetCreditRedeemFailed": "रिसेट क्रेडिट रिडिम गर्न असफल भयो",
+    "glmResetCreditsModalTitle": "GLM Coding Plan रिसेट कार्डहरू",
+    "glmResetCreditsModalExplainer": "रिसेट कार्डहरू म्याद सकिने समयअनुसार क्रमबद्ध गरिएका छन्। तपाईंले रिसेट गर्न चाहेको ५-घण्टे वा साप्ताहिक अवधि चयन गर्नुहोस्।",
+    "glmResetCreditFiveHourTitle": "५-घण्टे अवधि रिसेट",
+    "glmResetCreditWeekTitle": "साप्ताहिक अवधि रिसेट",
+    "glmConfirmRedeemResetCredit": "रिडिम गरेपछि चयन गरिएको प्रयोग अवधि तुरुन्तै रिसेट हुन्छ र यो कार्ड स्थायी रूपमा खपत हुन्छ।",
+    "glmConfirmRedeemFiveHourResetCredit": "रिडिम गरेपछि ५-घण्टे प्रयोग अवधि तुरुन्तै रिसेट हुन्छ र यो कार्ड स्थायी रूपमा खपत हुन्छ।",
+    "glmConfirmRedeemWeekResetCredit": "रिडिम गरेपछि साप्ताहिक प्रयोग अवधि तुरुन्तै रिसेट हुन्छ र यो कार्ड स्थायी रूपमा खपत हुन्छ।",
     "suiteBuilderSaveFailed": "सुइट सुरक्षित गर्न असफल भयो",
     "clone": "क्लोन गर्नुहोस्",
     "exportSuite": "निर्यात गर्नुहोस्",
