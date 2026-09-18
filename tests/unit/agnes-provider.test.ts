@@ -111,9 +111,8 @@ test("agnes registry advertises the live OpenAI-style /models endpoint", () => {
 });
 
 test("agnes is classified for live OpenAI-style /models discovery", async () => {
-  const { isNamedOpenAIStyleProvider } = await import(
-    "../../src/app/api/providers/[id]/models/discovery/providerSets.ts"
-  );
+  const { isNamedOpenAIStyleProvider } =
+    await import("../../src/app/api/providers/[id]/models/discovery/providerSets.ts");
   assert.equal(isNamedOpenAIStyleProvider("agnes"), true);
 });
 
@@ -125,9 +124,8 @@ test("agnes honors per-connection CN base URL override", () => {
 });
 
 test("agnes base-URL field is always-on so CN keys can point at api.agnes-ai.cn", async () => {
-  const helpers = await import(
-    "../../src/app/(dashboard)/dashboard/providers/[id]/providerPageHelpers.ts"
-  );
+  const helpers =
+    await import("../../src/app/(dashboard)/dashboard/providers/[id]/providerPageHelpers.ts");
   assert.equal(helpers.isBaseUrlConfigurableProvider("agnes"), true);
   assert.equal(helpers.getProviderBaseUrlDefault("agnes"), "https://apihub.agnes-ai.com/v1");
   assert.equal(helpers.getProviderBaseUrlPlaceholder("agnes"), AGNES_CN_BASE_URL);
@@ -278,8 +276,10 @@ test("agnes Video V2.0 submits with Bearer auth and polls by video_id and model_
     headers: Record<string, string>;
     body?: Record<string, unknown>;
   }> = [];
+  const timeoutDelays: Array<number | undefined> = [];
 
   globalThis.setTimeout = ((callback: (...args: unknown[]) => void, _ms?: number, ...args) => {
+    timeoutDelays.push(_ms);
     callback(...args);
     return 0;
   }) as typeof setTimeout;
@@ -321,6 +321,8 @@ test("agnes Video V2.0 submits with Bearer auth and polls by video_id and model_
         height: 768,
         num_frames: 121,
         frame_rate: 24,
+        poll_interval_ms: 60000,
+        max_polls: 3,
         extra_body: {
           image: ["https://example.com/keyframe-one.png", "https://example.com/keyframe-two.png"],
           mode: "keyframes",
@@ -333,6 +335,8 @@ test("agnes Video V2.0 submits with Bearer auth and polls by video_id and model_
     assert.equal(result.success, true);
     assert.equal(result.data.data[0].url, "https://platform-outputs.agnes-ai.space/video-123.mp4");
     assert.equal(calls.length, 2);
+    assert.ok(timeoutDelays.includes(60000));
+    assert.equal(timeoutDelays.includes(2000), false);
     assert.deepEqual(calls[0], {
       url: "https://apihub.agnes-ai.com/v1/videos",
       method: "POST",
