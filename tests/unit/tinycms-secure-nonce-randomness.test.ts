@@ -13,21 +13,10 @@
  * fallback) and asserts the emitted nonce is still a cryptographically strong
  * UUID.
  */
-import test, { before, after } from "node:test";
+import test from "node:test";
 import assert from "node:assert/strict";
 
 import { TinyCmsExecutor } from "../../open-sse/executors/index.ts";
-import { setupDomMocks, type DomMockRestore } from "../../open-sse/executors/tinycmsSigner.ts";
-
-let restoreDomMocks: DomMockRestore;
-
-before(() => {
-  restoreDomMocks = setupDomMocks();
-});
-
-after(() => {
-  restoreDomMocks();
-});
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 

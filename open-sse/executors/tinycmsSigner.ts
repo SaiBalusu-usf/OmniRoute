@@ -1,78 +1,57 @@
 // Runtime DOM shims for the wasm-bindgen glue code (compiled from Rust wasm-pack,
-// targeting the browser). These are NOT test mocks — the WASM module calls into
-// gl.bindTexImage2D-style canvas APIs via the wasm-bindgen generated JS, which
-// expects window, document, HTMLCanvasElement, and CanvasRenderingContext2D at
-// module load time. When running in Node.js (the OmniRoute server), these globals
-// don't exist, so we provide minimal stubs that satisfy the wasm-bindgen
-// constructor shape checks. The stubs are never called for actual rendering --
-// the WASM signer only uses the canvas to compute a hashed fingerprint value.
+// targeting the browser). The wasm draws its canvas fingerprint through the
+// glue's import functions, so those functions need window/document/canvas
+// objects — and the full set of JS entry points the wasm can reach is closed:
+// exactly the imports in __wbg_get_imports() below.
 //
-// Deliberately NOT a module-load side effect: installing these globals just by
-// importing this file would leak `global.window`/`global.document` stubs into
-// every other test file that transitively imports it (e.g. through the provider
-// registry), even when that test never touches TinyCMS. `initTinyCmsWasm()`
-// below calls `setupDomMocks()` once, right before instantiating the WASM
-// module, on the production path. Tests call it explicitly in a before/
-// beforeEach hook and restore the previous globals via the returned callback in
-// after/afterEach.
-export type DomMockRestore = () => void;
+// Earlier revisions installed these shims as REAL Node globals
+// (`global.window = globalThis`, `global.document`, canvas constructors, ...)
+// and left them installed for the process lifetime. That poisoned the Next.js
+// server: with `window` defined, every `typeof window === 'undefined'` check
+// flipped to browser-mode and `getLocationOrigin()` crashed on the missing
+// `window.location`, returning 500 for the entire dashboard until the next
+// restart. It also broke `machineId.isBrowser()` and every other runtime
+// environment detection.
+//
+// The glue imports are rewired to the module-local objects below instead, so
+// the wasm's entire JS surface stays inside this module and globalThis is
+// never touched — in production or in tests.
+class WasmWindowCtor {}
+class WasmHTMLCanvasElementCtor {}
+class WasmCanvasRenderingContext2DCtor {}
 
-export function setupDomMocks(): DomMockRestore {
-  if (typeof global === 'undefined') return () => {};
-  // Single typed handle to `global` so the rest of this function reads/writes
-  // window/document/HTMLCanvasElement/CanvasRenderingContext2D — none of which
-  // exist on Node's `global` type — through one cast instead of one per site.
-  const g = global as Record<string, any>;
-  const hadWindow = 'window' in g;
-  const hadWindowCtor = 'Window' in g;
-  const hadCanvasElement = 'HTMLCanvasElement' in g;
-  const hadCanvasContext = 'CanvasRenderingContext2D' in g;
-  const hadDocument = 'document' in g;
+const wasmCanvasToDataURL = (): string => "data:image/png;base64,MOCK_DATA";
 
-  if (!g.window) g.window = g;
-  if (!g.Window) g.Window = function () {};
-  if (!g.HTMLCanvasElement) g.HTMLCanvasElement = function () {};
-  if (!g.CanvasRenderingContext2D) g.CanvasRenderingContext2D = function () {};
-  if (!g.document) {
-    g.document = {
-      createElement(tag: string) {
-        if (tag === 'canvas') {
-          const canvas = {
-            width: 100,
-            height: 100,
-            getContext(type: string) {
-              if (type === '2d') {
-                const ctx = {
-                  fillStyle: '',
-                  font: '',
-                  fillRect() {},
-                  fillText() {},
-                  toDataURL() { return 'data:image/png;base64,MOCK_DATA'; }
-                };
-                Object.setPrototypeOf(ctx, g.CanvasRenderingContext2D.prototype);
-                return ctx;
-              }
-              return null;
-            },
-            toDataURL() { return 'data:image/png;base64,MOCK_DATA'; }
-          };
-          Object.setPrototypeOf(canvas, g.HTMLCanvasElement.prototype);
-          return canvas;
-        }
-        return null;
-      }
+const wasmDocument = {
+  createElement(tag: string) {
+    if (tag !== "canvas") return null;
+    const canvas = {
+      width: 100,
+      height: 100,
+      getContext(type: string) {
+        if (type !== "2d") return null;
+        const ctx = {
+          fillStyle: "",
+          font: "",
+          fillRect() {},
+          fillText() {},
+          toDataURL: wasmCanvasToDataURL,
+        };
+        Object.setPrototypeOf(ctx, WasmCanvasRenderingContext2DCtor.prototype);
+        return ctx;
+      },
+      toDataURL: wasmCanvasToDataURL,
     };
-  }
-  Object.setPrototypeOf(g.window, g.Window.prototype);
+    Object.setPrototypeOf(canvas, WasmHTMLCanvasElementCtor.prototype);
+    return canvas;
+  },
+};
 
-  return () => {
-    if (!hadWindow) delete g.window;
-    if (!hadWindowCtor) delete g.Window;
-    if (!hadCanvasElement) delete g.HTMLCanvasElement;
-    if (!hadCanvasContext) delete g.CanvasRenderingContext2D;
-    if (!hadDocument) delete g.document;
-  };
-}
+const wasmWindow = { document: wasmDocument };
+// The glue's instanceof checks and static accessors resolve the wasm's
+// "global object" to this shim; the shim prototype makes those checks pass
+// without touching the real Window/document globals.
+Object.setPrototypeOf(wasmWindow, WasmWindowCtor.prototype);
 
 // WASM binary compiled from the TinyCMS signer wasm-bindgen source
 // (wasm_signer_bg.wasm). Extracted from the upstream client's
@@ -155,7 +134,7 @@ function __wbg_get_imports() {
         __wbg_instanceof_CanvasRenderingContext2d_08b9d193c22fa886: function(arg0) {
             let result;
             try {
-                result = arg0 instanceof CanvasRenderingContext2D;
+                result = arg0 instanceof WasmCanvasRenderingContext2DCtor;
             } catch (_) {
                 result = false;
             }
@@ -165,7 +144,7 @@ function __wbg_get_imports() {
         __wbg_instanceof_HtmlCanvasElement_26125339f936be50: function(arg0) {
             let result;
             try {
-                result = arg0 instanceof HTMLCanvasElement;
+                result = arg0 instanceof WasmHTMLCanvasElementCtor;
             } catch (_) {
                 result = false;
             }
@@ -175,7 +154,7 @@ function __wbg_get_imports() {
         __wbg_instanceof_Window_23e677d2c6843922: function(arg0) {
             let result;
             try {
-                result = arg0 instanceof Window;
+                result = arg0 instanceof WasmWindowCtor;
             } catch (_) {
                 result = false;
             }
@@ -206,19 +185,19 @@ function __wbg_get_imports() {
             arg0.width = arg1 >>> 0;
         },
         __wbg_static_accessor_GLOBAL_8adb955bd33fac2f: function() {
-            const ret = typeof global === 'undefined' ? null : global;
+            const ret = wasmWindow; // module-local shim — never the real Node global
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
         },
         __wbg_static_accessor_GLOBAL_THIS_ad356e0db91c7913: function() {
-            const ret = typeof globalThis === 'undefined' ? null : globalThis;
+            const ret = wasmWindow;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
         },
         __wbg_static_accessor_SELF_f207c857566db248: function() {
-            const ret = typeof self === 'undefined' ? null : self;
+            const ret = wasmWindow;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
         },
         __wbg_static_accessor_WINDOW_bb9f1ba69d61b386: function() {
-            const ret = typeof window === 'undefined' ? null : window;
+            const ret = wasmWindow;
             return isLikeNone(ret) ? 0 : addToExternrefTable0(ret);
         },
         __wbg_toDataURL_bf99d85b39ce57cc: function() { return handleError(function (arg0, arg1) {
@@ -463,17 +442,20 @@ async function __wbg_init(module_or_path) {
 // --- wasm-bindgen wrapper ends here ---
 
 // Exported Initialization Helper
-let wasmInitialized = false;
-export async function initTinyCmsWasm() {
-  if (wasmInitialized) return;
-  // Install the DOM shims the wasm-bindgen glue expects before instantiating
-  // the module (see setupDomMocks() above). Left installed for the process
-  // lifetime — generateSecurePayload() keeps calling into the same canvas
-  // shims on every invocation, not just at init.
-  setupDomMocks();
-  const wasmBuffer = Buffer.from(WASM_BASE64, 'base64');
-  await __wbg_init(wasmBuffer);
-  wasmInitialized = true;
+//
+// Memoized so concurrent executor calls share a single initialization, and
+// reset on failure so a later call can retry (matches the pre-promise
+// `wasmInitialized` semantics).
+let wasmInitPromise: Promise<unknown> | null = null;
+export async function initTinyCmsWasm(): Promise<void> {
+  if (!wasmInitPromise) {
+    const wasmBuffer = Buffer.from(WASM_BASE64, "base64");
+    wasmInitPromise = __wbg_init({ module_or_path: wasmBuffer }).catch((err) => {
+      wasmInitPromise = null;
+      throw err;
+    });
+  }
+  await wasmInitPromise;
 }
 
 // Add type bindings
