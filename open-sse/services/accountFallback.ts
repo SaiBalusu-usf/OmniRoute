@@ -50,7 +50,10 @@ import {
 } from "../../src/shared/constants/providers";
 import { resolveUseUpstream429BreakerHints } from "../../src/shared/utils/providerHints";
 import { getCodexModelScope } from "../config/codexQuotaScopes.ts";
-import { getQuotaScopedModelForProvider, isAntigravityQuotaProvider } from "./antigravityQuotaFamily.ts";
+import {
+  getQuotaScopedModelForProvider,
+  isAntigravityQuotaProvider,
+} from "./antigravityQuotaFamily.ts";
 import { persistAntigravityFamilyCooldownIfQuota } from "./antigravityFamilyCooldown.ts";
 import {
   classifyGeminiQuotaMetricFromText,
@@ -66,12 +69,13 @@ import {
   MAX_SHORT_RETRY_HINT_MS,
 } from "./retryAfterJson.ts";
 import { isMoonshotAccountBalanceExhausted } from "./usage/moonshotOpenPlatform.ts";
-import { isTpdRateLimit, resolveTpdCooldownMs } from "./dailyQuotaReset.ts";
+import { isTpdRateLimit, resolveTpdCooldownMs, nextConfiguredResetMs } from "./dailyQuotaReset.ts";
 
 // Pre-compiled regex constants for hot-path retry parsing (avoid per-call compilation)
 const RETRY_AFTER_RE = /retry\s+after\s+(\d+)\s*s/i;
 const PLEASE_RETRY_RE = /please retry in\s+([\d.]+\s*s)/i;
-const ISO_RETRY_RE = /\b(?:try again at|wait until|reset(?:s)? at|available at|retry after)\s+(\d{4}-\d{2}-\d{2}[Tt ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)/i;
+const ISO_RETRY_RE =
+  /\b(?:try again at|wait until|reset(?:s)? at|available at|retry after)\s+(\d{4}-\d{2}-\d{2}[Tt ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)/i;
 const RESETS_AFTER_RE = /resets? after (\d+h)?(\d+m)?(\d+s)?/i;
 const WILL_RESET_AFTER_RE = /will reset after (\d+h)?(\d+m)?(\d+s)?/i;
 const RESETS_IN_RE = /resets? in (\d+h)?(\d+m)?(\d+s)?/i;
@@ -85,7 +89,6 @@ export function retryHintBypassesMaxCooldownMs(
 ): boolean {
   return provenance === "header" || provenance === "google_rpc_retry_info";
 }
-
 import {
   isSubscriptionQuotaText,
   buildSubscriptionQuotaFallback,
@@ -96,10 +99,13 @@ import {
 import { parseDayGranularityResetMs, shouldPreserveQuotaSignals } from "./quotaResetParsing.ts";
 import { evictLockoutOverflow } from "./accountFallback/lockoutEviction.ts";
 export { MODEL_LOCKOUT_EVICTION_CAP } from "./accountFallback/lockoutEviction.ts";
+export { hasPerModelFailureScope } from "./accountFallback/perModelFailureScope.ts";
 import { capScaledCooldownMs } from "./accountFallback/cooldownCap.ts";
 import { resolveApiKeyForbiddenFallback } from "./accountFallback/nonRetryableUpstream.ts";
 import * as exactModelLock from "./accountFallback/exactModelLock.ts";
 import { isCreditsExhaustedWithSharedWallet } from "./accountFallback/sharedWalletCredits.ts";
+import { isMistralAmbiguous401 } from "./accountFallback/mistralAmbiguousAuth.ts";
+import { isMistralAmbiguous401SoftLockoutEnabled } from "@/shared/utils/featureFlags";
 export type ProviderProfile = {
   baseCooldownMs: number;
   useUpstreamRetryHints: boolean;
@@ -376,7 +382,8 @@ export const MODEL_ACCESS_DENIED_PATTERNS = [
   /\bunsupported\s+model\b/i,
   /\baccess.*denied.*model\b/i,
   /\bmodel.*access.*denied\b/i,
-  /\bplease select a different model\b/i, /\bunknown\s+provider\s+for\s+model\b/i,
+  /\bplease select a different model\b/i,
+  /\bunknown\s+provider\s+for\s+model\b/i,
   // "...access to the requested model" / "model ... access" — bounded lookahead
   // (no nested quantifiers) so it stays ReDoS-safe while requiring BOTH an
   // access/permission word and "model" so a pure auth error never matches.
@@ -416,7 +423,8 @@ const PROVIDER_MODEL_UNSUPPORTED_PATTERNS = [
   /\bmodel\b[\s\S]{0,80}?\b(?:does\s+not\s+support|doesn't\s+support|unsupported)\b/i,
   /\b(?:does\s+not\s+support|doesn't\s+support|unsupported)\b[\s\S]{0,80}?\bmodel\b/i,
   /\bunsupported\s+model\b/i,
-  /\bplease select a different model\b/i, /\bunknown\s+provider\s+for\s+model\b/i,
+  /\bplease select a different model\b/i,
+  /\bunknown\s+provider\s+for\s+model\b/i,
 ];
 
 /**
@@ -656,7 +664,13 @@ export async function recordCoreOwnedAntigravityQuotaState({
     }
   );
   if (lockout.cooldownMs > 0 && isProviderExhaustedReason(fallback)) {
-    persistAntigravityFamilyCooldownIfQuota({ provider, connectionId, model, cooldownMs: lockout.cooldownMs, reason: "quota_exhausted" });
+    persistAntigravityFamilyCooldownIfQuota({
+      provider,
+      connectionId,
+      model,
+      cooldownMs: lockout.cooldownMs,
+      reason: "quota_exhausted",
+    });
   }
   return { cooldownMs: lockout.cooldownMs, failureCount: lockout.failureCount };
 }
@@ -837,6 +851,7 @@ export function recordModelLockoutFailure(
   options: {
     exactCooldownMs?: number | null;
     maxCooldownMs?: number;
+    /** Explicit override; otherwise resolveLockoutScope(status) — 5xx lock the exact tuple. */
     scope?: "exact" | "quota_family";
     /**
      * #6863 vs #7940: set true only when `exactCooldownMs` came from an actual
@@ -850,8 +865,9 @@ export function recordModelLockoutFailure(
   } = {}
 ) {
   ensureCleanupTimer();
+  const scope = exactModelLock.resolveLockoutScope(status, options.scope);
   const key =
-    options.scope === "exact"
+    scope === "exact"
       ? buildExactKey(getCanonicalLockProvider(provider), connectionId, model)
       : getModelLockKey(provider, connectionId, model, reason, status);
   const now = Date.now();
@@ -903,7 +919,7 @@ export function recordModelLockoutFailure(
     lastCooldownMs: cooldownMs,
   });
 
-  const lockFn = options.scope === "exact" ? lockExactModel : lockModel;
+  const lockFn = scope === "exact" ? lockExactModel : lockModel;
   lockFn(provider, connectionId, model, reason, cooldownMs, {
     failureCount,
     lastFailureAt: now,
@@ -1019,21 +1035,13 @@ export function decayModelFailureCount(
   connectionId: string,
   model: string
 ): DecayResult {
-  const key = getModelLockKey(provider, connectionId, model);
-  const failure = modelFailureState.get(key);
-  if (!failure) return { cleared: false, newFailureCount: 0 };
-
-  const newFailureCount = Math.floor(failure.failureCount / 2);
-  if (newFailureCount === 0) {
-    modelFailureState.delete(key);
-    return { cleared: true, newFailureCount: 0 };
-  } else {
-    modelFailureState.set(key, {
-      ...failure,
-      failureCount: newFailureCount,
-    });
-    return { cleared: false, newFailureCount };
-  }
+  if (!model) return { cleared: false, newFailureCount: 0 };
+  // Every key shape: a 5xx lock lives under the exact key, a quota lock under the
+  // family key — a healthy response must walk back whichever one is escalating.
+  return exactModelLock.decayFailureCounts(
+    modelFailureState,
+    getModelLockKeys(provider, connectionId, model)
+  );
 }
 
 /**
@@ -1105,8 +1113,7 @@ export function getAllModelLockouts(): ModelLockoutInfo[] {
     cleanupModelLockKey(key, now);
   }
   for (const [key, entry] of modelLockouts) {
-    const [provider, connectionId, ...modelParts] = key.split(":");
-    const model = modelParts.join(":");
+    const { provider, connectionId, model } = exactModelLock.parseModelLockKey(key);
     active.push({
       provider,
       connectionId,
@@ -1661,7 +1668,7 @@ export function checkFallbackError(
     timezone?: unknown;
     hour?: unknown;
     nowMs?: number;
-  } | null,
+  } | null
 ): {
   shouldFallback: boolean;
   cooldownMs: number;
@@ -1673,6 +1680,8 @@ export function checkFallbackError(
   permanent?: boolean;
   creditsExhausted?: boolean;
   dailyQuotaExhausted?: boolean;
+  /** #13609: bare Mistral 401 softened to a cooldown (MISTRAL_AMBIGUOUS_401_SOFT_LOCKOUT). */
+  ambiguousAuth?: boolean;
   /** G-02: true when the error originates from an embedded service supervisor (not the upstream AI
    * provider itself). Callers should apply connection cooldown only — do NOT record a provider
    * circuit-breaker failure when this flag is set. */
@@ -1987,7 +1996,7 @@ export function checkFallbackError(
           // no clock, no header — short 429, do not guess midnight
           console.warn(
             "[accountFallback] TPD 429 without node daily-reset clock or Reset header; using short cooldown",
-            { provider },
+            { provider }
           );
         } else {
           return {
@@ -1998,7 +2007,13 @@ export function checkFallbackError(
           };
         }
       } else {
-        const msUntilTomorrow = getMsUntilTomorrow();
+        // Operator node clock first; host-midnight estimate when unconfigured.
+        const tzMs = nextConfiguredResetMs(
+          dailyReset?.timezone,
+          dailyReset?.hour,
+          dailyReset?.nowMs ?? Date.now()
+        );
+        const msUntilTomorrow = tzMs ?? getMsUntilTomorrow();
         // Cap at 24 hours to handle timezone edge cases
         const cooldownMs = Math.min(msUntilTomorrow, 24 * 60 * 60 * 1000);
         return {
@@ -2161,6 +2176,16 @@ export function checkFallbackError(
           resolveRuleMatchBody(provider, structuredError ?? null, errorStr)
         )
       : null;
+    // #13609 (opt-in): a bare Mistral 401 is not proof of a dead key — back off
+    // instead; resolveTerminalConnectionStatus bounds how often (ambiguousAuth).
+    if (
+      status === HTTP_STATUS.UNAUTHORIZED &&
+      !providerMatch &&
+      isMistralAmbiguous401(provider, errorStr) &&
+      isMistralAmbiguous401SoftLockoutEnabled()
+    ) {
+      return { ...buildRetryableFallback(RateLimitReason.UNKNOWN), ambiguousAuth: true };
+    }
     const cooldownMs = providerMatch?.cooldownMs ?? configuredRule.cooldownMs ?? 0;
     const ruleScope =
       providerMatch && honorsRuleLockScope(provider) ? providerMatch.scope : undefined;
@@ -2434,7 +2459,13 @@ export function applyErrorState<T extends AccountState | null | undefined>(
   // (`markConnectionQuotaExhausted`) so a DB failure can never crash the
   // chat path. See issue #1 (per-account 429 cascade not persisting).
   const connId = (account as AccountState | null | undefined)?.id;
-  if (typeof connId === "string" && connId.length > 0 && effectiveCooldownMs > 0 && nextState.rateLimitedUntil && !isAntigravityQuotaProvider(prov)) {
+  if (
+    typeof connId === "string" &&
+    connId.length > 0 &&
+    effectiveCooldownMs > 0 &&
+    nextState.rateLimitedUntil &&
+    !isAntigravityQuotaProvider(prov)
+  ) {
     try {
       const untilMs = cooldownUntilMs(nextState.rateLimitedUntil);
       if (Number.isFinite(untilMs) && untilMs > Date.now()) {
