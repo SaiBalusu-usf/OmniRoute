@@ -50,6 +50,25 @@ OmniRoute has three distinct but related resilience mechanisms. Each has a diffe
 
 ---
 
+### Opt-in global Provider Cooldown (window gate)
+
+A fourth, **opt-in** layer (`PROVIDER_COOLDOWN_ENABLED`, default **off**) keeps a
+cross-request memory of failing providers in
+`open-sse/services/providerCooldownTracker.ts`, consulted by combo target
+resolution so consecutive combo requests stop re-walking a provider that just
+failed. Provider-level entries honor the `PROVIDER_PROFILES` window gate:
+
+| Profile | trips after (`providerFailureThreshold`) | inside (`providerFailureWindowMs`) | cools for (`providerCooldownMs`) |
+| ------- | ---------------------------------------: | ---------------------------------: | -------------------------------: |
+| OAuth   |                                     `10` |                            `15min` |                           `5min` |
+| API key |                                     `15` |                            `30min` |                          `10min` |
+
+Below the threshold the provider is **not** considered cooling; a success clears
+the window. Connection-level entries (`provider:connectionId`) keep the
+exponential `minRetryCooldownMs → maxRetryCooldownMs` backoff instead. Overrides:
+`OMNIROUTE_PROVIDER_BREAKER_{OAUTH,API_KEY}_{FAILURE_THRESHOLD,FAILURE_WINDOW_MS,COOLDOWN_MS}`.
+Regression guard: `tests/unit/provider-cooldown-window-gate.test.ts`.
+
 ## 2. Connection Cooldown
 
 **Scope:** single provider connection/account/key.
@@ -81,8 +100,8 @@ OmniRoute has three distinct but related resilience mechanisms. Each has a diffe
 
 **Terminal states (NOT cooldowns):**
 
-- `banned` — set by banned-keyword / account-ban detection (see [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired`
+- `banned` — set by banned-keyword / account-ban detection (see [BAN_DETECTION](../security/BAN_DETECTION.md)), and by three consecutive upstream per-request refusals (`request_rejected`, e.g. Anthropic OAuth 403 "Request not allowed" — `open-sse/services/requestRejectedStreak.ts`); a single refusal only cools the connection down
+- `expired` (transitions to terminal after bounded retries — `EXPIRED_RETRY_MAX = 3` with exponential backoff — so transient OAuth errors can self-heal before the account is permanently deactivated)
 - `credits_exhausted`
 
 These persist until credentials change or an operator resets them. Do not overwrite terminal states with transient cooldown state.
@@ -147,6 +166,21 @@ Related mechanisms remain separate:
 
 **Scope:** provider + connection + model triple.
 
+**Key scope by status:** the failing status decides which key a lockout writes
+to (`resolveLockoutScope()` in `open-sse/services/accountFallback/exactModelLock.ts`):
+
+- `429` / `403` / `402` — a quota or entitlement signal — lock the **quota family**:
+  for codex the whole `codex` / `spark` scope (every `gpt-5*` model of the
+  connection), for other providers `getQuotaScopedModelForProvider()`.
+- `404` locks the bare model (`getModelLockKey()` narrows `not_found`).
+- Any other status — `5xx` transport/server failures and OmniRoute's own
+  synthesized `502` from quality validation — locks the **exact**
+  provider/connection/model tuple only. A bad stream on one model is not evidence
+  about the account's quota; before this rule one empty response on
+  `codex/gpt-5.6-luna` removed every `gpt-5*` model of that connection from
+  routing for 2–30 min (escalating) while its quota was untouched.
+- A caller's explicit `scope` option always wins (Antigravity passes `"exact"`).
+
 **Purpose:** avoid disabling a whole connection when only one model is unavailable or quota-limited.
 
 **Examples:**
@@ -205,7 +239,8 @@ escalation window. This success-decay is in addition to plain timer expiry —
 either path can re-enable a model.
 
 **State:** lockouts are held **in-memory** (per-process `Map`s of
-`ModelLockoutEntry` keyed by `provider:connectionId:model`), not persisted to
+`ModelLockoutEntry` keyed by `provider:connectionId:model`, exact-scope locks by
+`provider:connectionId:exact:model`), not persisted to
 the DB — they are lost on restart. The _settings_ are persisted; the active
 lockout _state_ is ephemeral.
 
@@ -599,6 +634,7 @@ rate limit is the same signal as an exhausted quota. Honest limits:
 
 ## Debugging
 
+- Weighted combo answers `503 all_targets_cooling_down` (`Retry-After` set, `diagnostics.excluded` lists every target with `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → the pool is configured and connected, every target is just excluded by a resilience timer; the `[COMBO] Weighted selection: every target excluded before dispatch — …` warning names the reasons and remaining seconds. A `404 no_executable_targets` from the same combo means no resilience timer was involved (nothing to run, or every account failed the availability probe). Built in `open-sse/services/combo/pinRecovery.ts` from the exclusions collected in `targetResolution.ts`.
 - All keys for a provider skipped → check both circuit breaker state AND each connection's `rateLimitedUntil`/`testStatus`.
 - Provider permanently excluded after reset window → code reading raw `state` instead of `getStatus()`/`canExecute()`.
 - One key fails, others should work → prefer connection cooldown over circuit breaker.
@@ -609,7 +645,7 @@ rate limit is the same signal as an exhausted quota. Honest limits:
 
 ## TLS Fingerprinting & Stealth
 
-Provider-specific stealth (JA3/JA4, CCH, obfuscation) is separately documented — see [STEALTH_GUIDE.md](../security/STEALTH_GUIDE.md).
+Provider-specific stealth (JA3/JA4, CCH, obfuscation) is separately documented — see `docs/security/STEALTH_GUIDE.md` (git; not compiled into `/docs`).
 
 ---
 
@@ -633,4 +669,4 @@ default `test:integration`, chaos and heap self-skip (without `RUN_CHAOS_INT`/`-
 
 - [Architecture Guide](./ARCHITECTURE.md) — System architecture and internals
 - [User Guide](../guides/USER_GUIDE.md) — Providers, combos, CLI integration
-- [Auto-Combo Engine](../routing/AUTO-COMBO.md) — 13-factor scoring, mode packs
+- [Auto-Combo Engine](../routing/AUTO-COMBO.md) — 16-factor scoring, mode packs
