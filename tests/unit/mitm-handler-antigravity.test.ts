@@ -371,3 +371,86 @@ test("antigravity handler — dynamic catalog pulls configured combos from datab
     await deleteCombo(testComboName);
   }
 });
+
+test("mergeAntigravityCatalog — preserves native model metadata and avoids collision when combo shares bare model id", () => {
+  const upstreamCatalog = {
+    models: {
+      "gemini-2.5-pro": {
+        displayName: "Native Gemini 2.5 Pro",
+        descriptionText: "Google Official",
+        isNative: true,
+      },
+    },
+    agentModelSorts: [
+      {
+        groups: [
+          {
+            modelIds: ["gemini-2.5-pro"],
+          },
+        ],
+      },
+    ],
+  };
+
+  const dynamicModels = [
+    {
+      id: "gemini-2.5-pro",
+      displayName: "Overwriting Combo",
+      description: "Should not overwrite native",
+    },
+    {
+      id: "coding-titans",
+      displayName: "Coding Titans",
+      description: "Non-colliding combo",
+    },
+  ];
+
+  const merged = mergeAntigravityCatalog(upstreamCatalog, dynamicModels);
+  const models = merged.models as Record<string, Record<string, unknown>>;
+
+  // Native model must retain its original displayName and metadata
+  assert.equal(models["gemini-2.5-pro"].displayName, "Native Gemini 2.5 Pro");
+  assert.equal(models["gemini-2.5-pro"].descriptionText, "Google Official");
+  assert.equal(models["gemini-2.5-pro"].isNative, true);
+
+  // Non-colliding combo must be injected
+  assert.ok(models["coding-titans"]);
+  assert.equal(models["coding-titans"].displayName, "Coding Titans");
+});
+
+test("antigravity handler — filters out hidden and inactive combos from dynamic catalog", async () => {
+  const { createCombo, deleteCombo } = await import("../../src/lib/db/combos.ts");
+  const activeComboName = `active-combo-${Date.now()}`;
+  const inactiveComboName = `inactive-combo-${Date.now()}`;
+
+  await createCombo({
+    id: activeComboName,
+    name: activeComboName,
+    description: "Active combo",
+    models: JSON.stringify(["google/gemini-2.5-flash"]),
+    strategy: "priority",
+    isActive: true,
+  });
+
+  await createCombo({
+    id: inactiveComboName,
+    name: inactiveComboName,
+    description: "Inactive combo",
+    models: JSON.stringify(["google/gemini-2.5-flash"]),
+    strategy: "priority",
+    isActive: false,
+  });
+
+  try {
+    const handler = new AntigravityHandler();
+    const models = await handler.getDynamicCatalogModels();
+    const activeFound = models.find((m) => m.id === activeComboName);
+    const inactiveFound = models.find((m) => m.id === inactiveComboName);
+
+    assert.ok(activeFound, "Active combo must be included in catalog");
+    assert.equal(inactiveFound, undefined, "Inactive combo must be excluded from catalog");
+  } finally {
+    await deleteCombo(activeComboName);
+    await deleteCombo(inactiveComboName);
+  }
+});

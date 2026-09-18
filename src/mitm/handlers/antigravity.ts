@@ -173,6 +173,10 @@ export function mergeAntigravityCatalog(
     const templateModel = (modelsArr[0] as Record<string, unknown>) || {};
     for (const m of dynamicModels) {
       if (!m.id) continue;
+      // Collision guard: do not overwrite an existing upstream native model
+      if (modelsArr.some((existing) => existing.id === m.id || existing.name === m.id)) {
+        continue;
+      }
       injectedIds.push(m.id);
       modelsArr.push({
         ...templateModel,
@@ -199,6 +203,10 @@ export function mergeAntigravityCatalog(
 
     for (const m of dynamicModels) {
       if (!m.id) continue;
+      // Collision guard: do not overwrite an existing upstream native model entry
+      if (modelsObj[m.id]) {
+        continue;
+      }
       injectedIds.push(m.id);
       modelsObj[m.id] = {
         ...templateModel,
@@ -271,6 +279,7 @@ export class AntigravityHandler extends MitmHandlerBase {
         const combos = await combosMod.getCombos();
         if (Array.isArray(combos)) {
           return combos
+            .filter((c: Record<string, unknown>) => c.isActive !== false && !c.isHidden)
             .map((c: Record<string, unknown>) => {
               const name = typeof c.name === "string" ? c.name.trim() : "";
               const desc = typeof c.description === "string" ? c.description.trim() : undefined;
