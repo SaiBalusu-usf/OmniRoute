@@ -43,11 +43,22 @@ test.describe("buildLocalRerankRequestBody", () => {
     assert.equal(body.return_text, false);
   });
 
-  test("defaults top_n to the document count and return_documents to true", () => {
+  test("defaults top_n to the document count and return_documents to false (Cohere default)", () => {
+    // Clients that did not ask for documents must keep getting the bare
+    // {index, relevance_score} rows the /v1/rerank contract always returned
+    // (local-rerank-logging.test.ts); documents are echoed back only on request.
     const body = buildLocalRerankRequestBody({ model: "m", query: "q", documents: DOCS });
     assert.equal(body.top_n, 3);
-    assert.equal(body.return_documents, true);
-    assert.equal(body.return_text, true);
+    assert.equal(body.return_documents, false);
+    assert.equal(body.return_text, false);
+    const explicit = buildLocalRerankRequestBody({
+      model: "m",
+      query: "q",
+      documents: DOCS,
+      return_documents: true,
+    });
+    assert.equal(explicit.return_documents, true);
+    assert.equal(explicit.return_text, true);
   });
 
   test("documentText flattens strings, {text} objects, and other values", () => {
@@ -239,18 +250,15 @@ test.describe("POST /v1/rerank against a TEI-shaped local node", () => {
     const data = (await res.json()) as {
       results: Array<{ index: number; relevance_score: number; document?: { text: string } }>;
     };
-    assert.deepEqual(data, {
-      results: [
-        { index: 0, relevance_score: 0.9875887, document: { text: "a cat is a small animal" } },
-      ],
-    });
+    // No return_documents in the request → Cohere default (false): bare rows only.
+    assert.deepEqual(data, { results: [{ index: 0, relevance_score: 0.9875887 }] });
     assert.deepEqual(
       calls.map((c) => c.url),
       ["http://127.0.0.1:8081/v1/rerank", "http://127.0.0.1:8081/rerank"]
     );
     assert.deepEqual(calls[1].body.texts, ["a cat is a small animal", "the stock market fell"]);
     assert.deepEqual(calls[1].body.documents, ["a cat is a small animal", "the stock market fell"]);
-    assert.equal(calls[1].body.return_text, true);
+    assert.equal(calls[1].body.return_text, false);
     assert.equal(calls[1].body.model, "bge-reranker-v2-m3");
   });
 

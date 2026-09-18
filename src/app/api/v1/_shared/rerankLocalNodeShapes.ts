@@ -70,7 +70,8 @@ export function documentText(doc: unknown): string {
 export function buildLocalRerankRequestBody(input: LocalRerankRequestInput) {
   const texts = input.documents.map(documentText);
   const topN = input.top_n || input.documents.length;
-  const returnDocuments = input.return_documents !== false;
+  // Cohere default: documents are only echoed back when the caller asks for them.
+  const returnDocuments = input.return_documents === true;
   return {
     model: input.model,
     query: input.query,
@@ -155,7 +156,7 @@ export function normalizeLocalRerankResponse(
   options: { top_n?: number | null; return_documents?: boolean | null } = {}
 ): CohereRerankResponse {
   const { list, envelope } = pickResultsArray(data);
-  const returnDocuments = options.return_documents !== false;
+  const returnDocuments = options.return_documents === true;
   const results: CohereRerankResult[] = [];
 
   for (const raw of list) {
