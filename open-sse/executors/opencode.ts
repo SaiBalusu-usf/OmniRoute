@@ -42,6 +42,188 @@ interface OpencodeAccountState extends RotatableAccount {
 const EFFORT_LEVELS = ["none", "low", "high", "max"] as const;
 
 /**
+ * Free-tier / Zen fingerprint tools quartet required by upstream OpenCode gateway (PR #4145).
+ */
+export const OPENCODE_FINGERPRINT_TOOLS = ["bash", "glob", "grep", "read"] as const;
+
+function toolNameOf(tool: unknown): string {
+  if (!tool || typeof tool !== "object" || Array.isArray(tool)) return "";
+  const t = tool as Record<string, unknown>;
+  const fn =
+    t.function && typeof t.function === "object" && !Array.isArray(t.function)
+      ? (t.function as Record<string, unknown>)
+      : null;
+  const raw = typeof t.name === "string" ? t.name : typeof fn?.name === "string" ? fn.name : "";
+  return raw.trim();
+}
+
+/**
+ * Inject OpenCode built-in fingerprint tools (bash, glob, grep, read) if missing.
+ */
+export function ensureOpencodeFingerprintTools(
+  body: Record<string, unknown>,
+  targetFormat: string = "openai"
+): void {
+  if (!body || typeof body !== "object") return;
+  const present = new Set<string>();
+  if (Array.isArray(body.tools)) {
+    for (const tool of body.tools) {
+      const name = toolNameOf(tool);
+      if (name) present.add(name);
+    }
+  } else {
+    body.tools = [];
+  }
+  const isResponses = targetFormat === "openai-responses";
+  for (const name of OPENCODE_FINGERPRINT_TOOLS) {
+    if (present.has(name)) continue;
+    if (isResponses) {
+      (body.tools as unknown[]).push({
+        type: "function",
+        name,
+        description: `OpenCode built-in ${name} tool`,
+        parameters: { type: "object", properties: {} },
+      });
+    } else {
+      (body.tools as unknown[]).push({
+        type: "function",
+        function: {
+          name,
+          description: `OpenCode built-in ${name} tool`,
+          parameters: { type: "object", properties: {} },
+        },
+      });
+    }
+    present.add(name);
+  }
+}
+
+const MAX_TOOL_NAME_LEN = 128;
+
+function clampResponsesCallId(callId: unknown): string {
+  const s = String(callId || "").trim();
+  return s || `call_${randomUUID().replace(/-/g, "").slice(0, 16)}`;
+}
+
+function coerceResponsesArguments(args: unknown): string {
+  if (typeof args === "string") return args;
+  if (args && typeof args === "object") {
+    try {
+      return JSON.stringify(args);
+    } catch {
+      return "{}";
+    }
+  }
+  return "{}";
+}
+
+function coerceResponsesOutput(output: unknown): string {
+  if (typeof output === "string") return output;
+  if (output && typeof output === "object") {
+    try {
+      return JSON.stringify(output);
+    } catch {
+      return "";
+    }
+  }
+  return String(output ?? "");
+}
+
+/**
+ * Sanitize body for OpenAI Responses API endpoint (/responses) (PR #4145).
+ */
+export function sanitizeResponsesBody(body: Record<string, unknown>): void {
+  if (!body || typeof body !== "object") return;
+
+  if (body.max_output_tokens === undefined) {
+    if (body.max_completion_tokens !== undefined) {
+      body.max_output_tokens = body.max_completion_tokens;
+    } else if (body.max_tokens !== undefined) {
+      body.max_output_tokens = body.max_tokens;
+    }
+  }
+  delete body.max_tokens;
+  delete body.max_completion_tokens;
+
+  if (body.reasoning_effort !== undefined && body.reasoning === undefined) {
+    body.reasoning = { effort: body.reasoning_effort, summary: "auto" };
+  }
+  if (body.reasoning && typeof body.reasoning === "object" && !Array.isArray(body.reasoning)) {
+    const r = body.reasoning as Record<string, unknown>;
+    if (!r.summary) r.summary = "auto";
+  }
+  delete body.reasoning_effort;
+
+  if (Array.isArray(body.tools)) {
+    const validNames = new Set<string>();
+    body.tools = body.tools.filter((t: unknown) => {
+      if (!t || typeof t !== "object" || Array.isArray(t)) return false;
+      const toolObj = t as Record<string, unknown>;
+      const fn =
+        toolObj.function && typeof toolObj.function === "object" && !Array.isArray(toolObj.function)
+          ? (toolObj.function as Record<string, unknown>)
+          : null;
+      const rawName =
+        typeof toolObj.name === "string"
+          ? toolObj.name
+          : typeof fn?.name === "string"
+            ? fn.name
+            : "";
+      const name = rawName.trim();
+      if (!name) return false;
+      const description =
+        typeof toolObj.description === "string"
+          ? toolObj.description
+          : typeof fn?.description === "string"
+            ? fn.description
+            : "";
+      let parameters =
+        toolObj.parameters &&
+        typeof toolObj.parameters === "object" &&
+        !Array.isArray(toolObj.parameters)
+          ? (toolObj.parameters as Record<string, unknown>)
+          : fn?.parameters && typeof fn.parameters === "object" && !Array.isArray(fn.parameters)
+            ? (fn.parameters as Record<string, unknown>)
+            : { type: "object", properties: {} };
+      if (parameters.type === "object" && !parameters.properties) {
+        parameters = { ...parameters, properties: {} };
+      }
+      for (const k of Object.keys(toolObj)) delete toolObj[k];
+      toolObj.type = "function";
+      toolObj.name = name.slice(0, MAX_TOOL_NAME_LEN);
+      if (description) toolObj.description = description;
+      toolObj.parameters = parameters;
+      validNames.add(toolObj.name as string);
+      return true;
+    });
+  }
+
+  if (Array.isArray(body.input)) {
+    body.input = body.input.filter((item: unknown) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return true;
+      const rec = item as Record<string, unknown>;
+      if (rec.type === "reasoning") return false;
+      delete rec.encrypted_content;
+      delete rec.reasoning_encrypted_content;
+      if (rec.type === "function_call") {
+        if (!rec.name || typeof rec.name !== "string" || (rec.name as string).trim() === "")
+          return false;
+        rec.name = (rec.name as string).trim().slice(0, MAX_TOOL_NAME_LEN);
+        rec.call_id = clampResponsesCallId(rec.call_id);
+        rec.arguments = coerceResponsesArguments(rec.arguments);
+        return true;
+      }
+      if (rec.type === "function_call_output") {
+        rec.call_id = clampResponsesCallId(rec.call_id);
+        rec.output = coerceResponsesOutput(rec.output);
+        return true;
+      }
+      return true;
+    });
+  }
+}
+
+/**
  * Models that work WITHOUT any API key on the free/noauth opencode tier.
  *
  * The upstream free tier rotates frequently — when a `-free` suffix model is
@@ -887,6 +1069,22 @@ export class OpencodeExecutor extends BaseExecutor {
     }
     if (modifiedBody && typeof modifiedBody === "object" && !Array.isArray(modifiedBody)) {
       const mb = modifiedBody as Record<string, unknown>;
+
+      // PR #4145: Upstream OpenCode 403s stream:false requests on opencode / opencode-zen
+      if (this.provider === "opencode" || this.provider === "opencode-zen") {
+        mb.stream = true;
+      }
+
+      // PR #4145: Inject built-in fingerprint tools (bash, glob, grep, read) to prevent 403s
+      if (this.provider === "opencode" || this.provider === "opencode-zen") {
+        ensureOpencodeFingerprintTools(mb, this._requestFormat ?? "openai");
+      }
+
+      // PR #4145: Responses API payload sanitization
+      if (this._requestFormat === "openai-responses") {
+        sanitizeResponsesBody(mb);
+      }
+
       if (Array.isArray(mb.tools) && mb.tools.length > 128) {
         mb.tools = mb.tools.slice(0, 128);
       }

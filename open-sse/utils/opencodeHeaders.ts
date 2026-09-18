@@ -1,6 +1,44 @@
-import { randomUUID } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { setUserAgentHeader } from "../executors/base.ts";
 import { generateSessionId } from "../services/sessionManager.ts";
+
+export const OPENCODE_SESSION_RE = /^ses_[0-9a-f]{12}[0-9A-Za-z]{14}$/;
+const BASE62_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+/**
+ * Check if the given User-Agent looks like a valid OpenCode client version (>= opencode/1.17).
+ */
+export function hasValidOpencodeVersion(ua: string | undefined): boolean {
+  if (!ua || typeof ua !== "string") return false;
+  const trimmed = ua.trim();
+  if (/^opencode-cli\//i.test(trimmed)) return true;
+  const m = trimmed.match(/opencode\/(\d+)\.(\d+)(?:\.(\d+))?/i);
+  if (!m) return false;
+  const major = parseInt(m[1], 10);
+  const minor = parseInt(m[2], 10);
+  return major > 1 || (major === 1 && minor >= 17);
+}
+
+/**
+ * Translate or generate a valid OpenCode session ID (`ses_<12hex><14base62>`).
+ */
+export function translateOpencodeSessionId(
+  sessionId: string | null | undefined,
+  clientTool: string = "generic"
+): string {
+  if (typeof sessionId === "string" && OPENCODE_SESSION_RE.test(sessionId.trim())) {
+    return sessionId.trim();
+  }
+  const digest = createHash("sha256")
+    .update(`opencode\0${clientTool || "generic"}\0${sessionId || ""}`)
+    .digest();
+  const timeHex = digest.subarray(0, 6).toString("hex");
+  let randomPart = "";
+  for (let i = 6; i < 20; i++) {
+    randomPart += BASE62_CHARS[digest[i] % 62];
+  }
+  return `ses_${timeHex}${randomPart}`;
+}
 
 /**
  * Header keys that are forwarded from the client to the upstream provider.
@@ -133,14 +171,13 @@ function applyCliDefaults(
   }
 ): void {
   const existingUa = headers["User-Agent"] || headers["user-agent"];
-  const clientUaIsCliLike =
-    typeof existingUa === "string" && /^opencode-cli\//i.test(existingUa.trim());
+  const clientUaIsCliLike = hasValidOpencodeVersion(existingUa);
   if (!clientUaIsCliLike) {
-    setUserAgentHeader(headers, cliDefaults.userAgent);
+    const ua = cliDefaults.userAgent === "opencode" ? "opencode/1.18.31" : cliDefaults.userAgent;
+    setUserAgentHeader(headers, ua);
   }
   headers["x-opencode-client"] ||= cliDefaults.client;
   headers["x-opencode-project"] ||= cliDefaults.project;
   headers["x-opencode-request"] ||= randomUUID();
-  headers["x-opencode-session"] ||=
-    generateSessionId(sessionBody ?? null) || randomUUID();
+  headers["x-opencode-session"] ||= generateSessionId(sessionBody ?? null) || randomUUID();
 }
