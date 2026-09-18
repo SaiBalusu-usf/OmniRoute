@@ -43,7 +43,8 @@ export const ANTIGRAVITY_SHARED_MODELS = Object.freeze([
     supportsVision: true,
     toolCalling: true,
   },
-  // Gemini 3.8 Flash tiers.
+  // Gemini 3.8 Flash tiers. Served directly at these ids by the live upstream — no
+  // shared "-tiered" endpoint exists for 3.8 (unlike 3.7).
   {
     id: "gemini-3.8-flash-high",
     name: "Gemini 3.8 Flash (High)",
@@ -65,15 +66,6 @@ export const ANTIGRAVITY_SHARED_MODELS = Object.freeze([
   {
     id: "gemini-3.8-flash-low",
     name: "Gemini 3.8 Flash (Low)",
-    contextLength: 1048576,
-    maxOutputTokens: 65536,
-    supportsReasoning: true,
-    supportsVision: true,
-    toolCalling: true,
-  },
-  {
-    id: "gemini-3.8-flash-tiered",
-    name: "Gemini 3.8 Flash (Tiered)",
     contextLength: 1048576,
     maxOutputTokens: 65536,
     supportsReasoning: true,
