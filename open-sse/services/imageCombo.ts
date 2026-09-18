@@ -34,6 +34,145 @@ type ImageGenerationResult =
   | { success: true; data?: unknown; status?: number; error?: string }
   | { success: false; data?: unknown; status?: number; error?: string };
 
+/** Minimum shape a combo target must expose to be iterated. */
+export interface ImageComboTarget {
+  modelStr: string;
+}
+
+/** Normalized per-target dispatch result (success or classified failure). */
+export interface ImageComboDispatchResult {
+  success: boolean;
+  data?: unknown;
+  status?: number;
+  error?: unknown;
+}
+
+/**
+ * Outcome of iterating a combo's targets.
+ * - `success`: a target produced an image; `data` is the handler payload.
+ * - `terminal`: a target failed with a terminal status (400/401/403); the caller
+ *   should surface it as a hard error and stop.
+ * - `exhausted`: every target was skipped or failed non-terminally.
+ */
+export type RunImageComboTargetsResult =
+  | { outcome: "success"; provider: string; model: string; data: unknown; fallbackCount: number }
+  | { outcome: "terminal"; provider: string; status: number; error: string; fallbackCount: number }
+  | {
+      outcome: "exhausted";
+      fallbackCount: number;
+      lastError: { status: number; error: string } | null;
+    };
+
+export interface RunImageComboTargetsOptions<T extends ImageComboTarget> {
+  /** Map a target to its `{ provider, model }`. An empty provider skips the target. */
+  resolveProvider: (target: T) => { provider: string | null; model: string | null };
+  /** Resolve credentials for a target. Throwing is treated as a transient skip. */
+  resolveCredentials: (provider: string, target: T) => Promise<unknown>;
+  /** Rate-limit predicate; defaults to isAllRateLimitedCredentials. */
+  isRateLimited?: (credentials: unknown) => boolean;
+  /** Perform the actual per-target work (generation or edit) with resolved credentials. */
+  dispatch: (ctx: {
+    target: T;
+    provider: string;
+    model: string;
+    credentials: unknown;
+  }) => Promise<ImageComboDispatchResult>;
+  /** Invoked once on the winning target's credentials (e.g. clear recovered state). */
+  onSuccess?: (credentials: unknown) => Promise<void>;
+  /** Default error text when a dispatch failure carries no string error. */
+  failureLabel?: string;
+}
+
+/**
+ * Iterate combo targets in priority order, applying the shared skip / terminal
+ * classification that both /v1/images/generations and /v1/images/edits rely on:
+ *
+ *  - missing credentials, DB errors, and rate-limited accounts are skipped
+ *    (fall through to the next target) rather than terminating the request;
+ *  - a 400/401/403 from an actual dispatch attempt is terminal (stop iterating);
+ *  - any other dispatch failure (429/5xx) is non-terminal (try the next target);
+ *  - the first success wins.
+ *
+ * The only generation-vs-edit differences are injected via `resolveProvider`,
+ * `resolveCredentials`, and `dispatch`, so both routes share one loop (#12547).
+ *
+ * Kept as a sequential loop (rather than the parallel fan-out `executeImageCombo`
+ * below uses) because it is also the shared loop for /v1/images/edits — retained
+ * verbatim for that consumer (see src/app/api/v1/images/edits/route.ts).
+ */
+export async function runImageComboTargets<T extends ImageComboTarget>(
+  targets: T[],
+  opts: RunImageComboTargetsOptions<T>
+): Promise<RunImageComboTargetsResult> {
+  const isRateLimited = opts.isRateLimited ?? isAllRateLimitedCredentials;
+  const failureLabel = opts.failureLabel ?? "Image generation failed";
+  let lastError: { status: number; error: string } | null = null;
+  let fallbackCount = 0;
+
+  for (const target of targets) {
+    const { provider, model } = opts.resolveProvider(target);
+    if (!provider) {
+      lastError = { status: 400, error: `Invalid image model: ${target.modelStr}` };
+      fallbackCount += 1;
+      continue;
+    }
+
+    // Resolve provider credentials
+    let credentials: unknown = null;
+    try {
+      credentials = await opts.resolveCredentials(provider, target);
+    } catch {
+      // DB unavailable — skip this target
+      lastError = { status: 502, error: `Failed to resolve credentials for ${provider}` };
+      fallbackCount += 1;
+      continue;
+    }
+
+    if (!credentials) {
+      lastError = { status: 400, error: `No credentials for image provider: ${provider}` };
+      fallbackCount += 1;
+      continue;
+    }
+
+    if (isRateLimited(credentials)) {
+      lastError = {
+        status: 429,
+        error: `[${provider}] All accounts rate limited`,
+      };
+      fallbackCount += 1;
+      continue;
+    }
+
+    const result = await opts.dispatch({ target, provider, model: model ?? "", credentials });
+
+    if (result.success) {
+      if (opts.onSuccess) await opts.onSuccess(credentials);
+      return {
+        outcome: "success",
+        provider,
+        model: model ?? "",
+        data: result.data,
+        fallbackCount,
+      };
+    }
+
+    // Classify the failure
+    const status = result.status || 500;
+    const error = typeof result.error === "string" ? result.error : failureLabel;
+
+    // Terminal failures (400 bad model, 403 banned, etc.) — stop iterating
+    // Non-terminal failures (429, 5xx) — try next target
+    if (status === 400 || status === 403 || status === 401) {
+      return { outcome: "terminal", provider, status, error, fallbackCount };
+    }
+
+    lastError = { status, error: `[${provider}] ${error}` };
+    fallbackCount += 1;
+  }
+
+  return { outcome: "exhausted", fallbackCount, lastError };
+}
+
 /**
  * Execute a full combo strategy for an image generation request.
  *
