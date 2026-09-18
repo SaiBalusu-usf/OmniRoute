@@ -151,7 +151,6 @@ if (typeof _cacheCleanup === "object" && "unref" in _cacheCleanup) {
   (_cacheCleanup as { unref?: () => void }).unref?.();
 }
 
-
 /**
  * Compute percentUsed (0-1) for a single quota entry. Prefers the explicit
  * remainingPercentage / used / total fields surfaced by per-provider
