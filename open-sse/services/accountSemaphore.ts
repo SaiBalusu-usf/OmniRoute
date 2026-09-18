@@ -223,6 +223,31 @@ export function acquire(
 }
 
 /**
+ * Admission policy for a request that cannot take its slots right now.
+ * `failFast` (#12911, Codex WS leases): never wait. `maxQueueSize > 0`: bounded
+ * queue. `maxQueueSize <= 0`: unbounded — the #6593 "0 = disabled" contract that
+ * chatCore relies on under default resilience settings.
+ */
+function findQueueRejection(keys: string[], maxQueueSize: number, failFast: boolean): Error | null {
+  if (failFast) {
+    return createSemaphoreError(
+      "SEMAPHORE_QUEUE_FULL",
+      `Semaphore busy (fail-fast) for ${keys[0]}`
+    );
+  }
+  if (maxQueueSize <= 0) return null;
+  for (const key of keys) {
+    if (gates.get(key)!.queue.length >= maxQueueSize) {
+      return createSemaphoreError(
+        "SEMAPHORE_QUEUE_FULL",
+        `Semaphore queue full (${maxQueueSize}) for ${key}`
+      );
+    }
+  }
+  return null;
+}
+
+/**
  * Acquire all enabled requirements as one FIFO reservation.
  *
  * Waiting never increments any gate, preventing a saturated child gate from
@@ -261,27 +286,8 @@ export function acquireMany(
     return Promise.resolve(createCompositeReleaseFn(keys));
   }
 
-  // `failFast` (#12911, Codex WS leases): never wait. `maxQueueSize > 0`: bounded
-  // queue. `maxQueueSize <= 0`: unbounded — the #6593 "0 = disabled" contract that
-  // chatCore relies on under default resilience settings.
-  if (failFast) {
-    return Promise.reject(
-      createSemaphoreError("SEMAPHORE_QUEUE_FULL", `Semaphore busy (fail-fast) for ${keys[0]}`)
-    );
-  }
-  if (maxQueueSize > 0) {
-    for (const key of keys) {
-      const gate = gates.get(key)!;
-      if (gate.queue.length >= maxQueueSize) {
-        return Promise.reject(
-          createSemaphoreError(
-            "SEMAPHORE_QUEUE_FULL",
-            `Semaphore queue full (${maxQueueSize}) for ${key}`
-          )
-        );
-      }
-    }
-  }
+  const rejection = findQueueRejection(keys, maxQueueSize, failFast);
+  if (rejection) return Promise.reject(rejection);
 
   return new Promise((resolve, reject) => {
     const request: AcquireRequest = {
