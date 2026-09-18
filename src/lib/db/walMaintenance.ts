@@ -13,8 +13,8 @@ import { registerDbStateResetter } from "./stateReset";
  * There is deliberately no periodic TRUNCATE: truncating the WAL of a live
  * process rewrites the shared wal-index (storage.sqlite-shm) while other
  * handles and in-flight statements hold it mapped, which can crash the event
- * loop with SIGBUS (issue #13973). The WAL file is reclaimed by the shutdown
- * checkpoint in closeDbInstance() instead.
+ * loop with SIGBUS (issue #13973). A WAL above the size guard uses RESTART
+ * instead, which starts a new WAL file without rewriting the mapped index.
  */
 export type WalCheckpointMode = "PASSIVE" | "FULL" | "RESTART" | "TRUNCATE";
 
@@ -299,13 +299,18 @@ function startWalPassiveScheduler(
       const guardMaxBytes = getWalGuardMaxBytes(env);
       if (walBeforeBytes != null && walBeforeBytes > guardMaxBytes) {
         // Never TRUNCATE a live WAL: rewriting the shared wal-index under handles that
-        // hold it mapped can SIGBUS the process (issue #13973). PASSIVE checkpoints keep
-        // wrapping the file so it stays bounded, and the shutdown checkpoint reclaims the
-        // disk. A WAL this size means writes are outrunning checkpoints, so surface it.
+        // hold it mapped can SIGBUS the process (issue #13973). RESTART checkpoints
+        // the WAL and starts a new one without changing the mapped file geometry.
+        const restart = runCheckpointNow(db, "RESTART", {
+          sqliteFile,
+          isCloud,
+          isBuildPhase: isNextBuildPhase(),
+        });
         console.warn(
           `[DB] WAL above guard (${formatWalMb(walBeforeBytes)}MB > ${Math.floor(guardMaxBytes / (1024 * 1024))}MB); ` +
-            "writes are outrunning PASSIVE checkpoints. Not running wal_checkpoint(TRUNCATE) " +
-            "on a live process (issue #13973); the shutdown checkpoint reclaims the file."
+            `ran wal_checkpoint(RESTART) ok=${restart.ok} busy=${restart.busy}` +
+            ` checkpointedFrames=${restart.checkpointedFrames}` +
+            (restart.error ? ` error=${restart.error}` : "")
         );
       }
       if (stats.busy) {

@@ -1,8 +1,9 @@
 /**
  * WAL passive-checkpoint scheduler + size guard, and busy telemetry.
  * After #12853 the scheduler lives in walMaintenance.ts; this reads the wiring.
- * Since #13973 no live TRUNCATE exists: a WAL above the size guard warns instead of
- * truncating, and the shutdown checkpoint (closeDbInstance) reclaims the file.
+ * Since #13973 no live TRUNCATE exists. A WAL above the size guard runs
+ * wal_checkpoint(RESTART), which restarts the WAL without rewriting the
+ * mapped wal-index, so it cannot SIGBUS.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -109,13 +110,18 @@ test("the PASSIVE tick measures the WAL size so the log and the guard reflect re
   assert.match(body, /formatWalMb\(walBeforeBytes\)/);
 });
 
-test("the size guard warns instead of truncating", () => {
+test("the size guard restarts the WAL instead of truncating or only warning", () => {
   const body = fnBody(readSource(WAL_PATH), "startWalPassiveScheduler");
   assert.match(body, /walBeforeBytes > guardMaxBytes/);
   assert.match(
     body,
-    /console\.warn\(\s*`\[DB\] WAL above guard/,
-    "guard breach must log a warning, not silently truncate"
+    /runCheckpointNow\(db, "RESTART"/,
+    "guard breach must RESTART the WAL (issue #13973); TRUNCATE rewrites the mapped wal-index"
+  );
+  assert.equal(
+    body.includes('runCheckpointNow(db, "TRUNCATE"'),
+    false,
+    "the size guard must not TRUNCATE a live process"
   );
   assert.ok(
     body.indexOf("walBeforeBytes > guardMaxBytes") < body.indexOf("if (stats.busy)"),
