@@ -85,9 +85,8 @@ test("an unknown model id falls back to the conservative ceiling", () => {
 
 test("retired Antigravity Flash ids cannot inherit provider-neutral output caps", () => {
   for (const modelId of [
-    "gemini-3.6-flash-low",
-    "gemini-3.6-flash-medium",
-    "gemini-3.6-flash-high",
+    // #14017 removed gemini-3.6-flash-low/medium/high from the retired set — they
+    // now declare their own 65536 cap and are covered by the published-model test above.
     "gemini-3.5-flash-extra-low",
     "gemini-3.5-flash-low",
     "gemini-3.5-flash-medium",

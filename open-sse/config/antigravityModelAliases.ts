@@ -1,14 +1,108 @@
-import {
-  ANTIGRAVITY_SHARED_MODELS,
-  buildSurfaceCatalog,
-} from "./antigravitySharedModels.ts";
+import { ANTIGRAVITY_SHARED_MODELS, buildSurfaceCatalog } from "./antigravitySharedModels.ts";
+
+// #14017 — Gemini 3.8 Flash and 3.6 Flash tiers, IDE-only for now (the agy CLI catalog
+// hasn't been confirmed to serve them yet). All resolve through ANTIGRAVITY_MODEL_ALIASES
+// below to the upstream gemini-3.7-flash-tiered engine, the same as the 3.7 tiers.
+const ANTIGRAVITY_IDE_ONLY_MODELS = Object.freeze([
+  {
+    id: "gemini-3.8-flash",
+    name: "Gemini 3.8 Flash",
+    contextLength: 1048576,
+    maxOutputTokens: 65536,
+    supportsReasoning: true,
+    supportsVision: true,
+    toolCalling: true,
+  },
+  {
+    id: "gemini-3.8-flash-high",
+    name: "Gemini 3.8 Flash (High)",
+    contextLength: 1048576,
+    maxOutputTokens: 65536,
+    supportsReasoning: true,
+    supportsVision: true,
+    toolCalling: true,
+  },
+  {
+    id: "gemini-3.8-flash-medium",
+    name: "Gemini 3.8 Flash (Medium)",
+    contextLength: 1048576,
+    maxOutputTokens: 65536,
+    supportsReasoning: true,
+    supportsVision: true,
+    toolCalling: true,
+  },
+  {
+    id: "gemini-3.8-flash-low",
+    name: "Gemini 3.8 Flash (Low)",
+    contextLength: 1048576,
+    maxOutputTokens: 65536,
+    supportsReasoning: true,
+    supportsVision: true,
+    toolCalling: true,
+  },
+  {
+    id: "gemini-3.8-flash-tiered",
+    name: "Gemini 3.8 Flash (Tiered)",
+    contextLength: 1048576,
+    maxOutputTokens: 65536,
+    supportsReasoning: true,
+    supportsVision: true,
+    toolCalling: true,
+  },
+  {
+    id: "gemini-3.6-flash",
+    name: "Gemini 3.6 Flash",
+    contextLength: 1048576,
+    maxOutputTokens: 65536,
+    supportsReasoning: true,
+    supportsVision: true,
+    toolCalling: true,
+  },
+  {
+    id: "gemini-3.6-flash-high",
+    name: "Gemini 3.6 Flash (High)",
+    contextLength: 1048576,
+    maxOutputTokens: 65536,
+    supportsReasoning: true,
+    supportsVision: true,
+    toolCalling: true,
+  },
+  {
+    id: "gemini-3.6-flash-medium",
+    name: "Gemini 3.6 Flash (Medium)",
+    contextLength: 1048576,
+    maxOutputTokens: 65536,
+    supportsReasoning: true,
+    supportsVision: true,
+    toolCalling: true,
+  },
+  {
+    id: "gemini-3.6-flash-low",
+    name: "Gemini 3.6 Flash (Low)",
+    contextLength: 1048576,
+    maxOutputTokens: 65536,
+    supportsReasoning: true,
+    supportsVision: true,
+    toolCalling: true,
+  },
+]);
 
 export const ANTIGRAVITY_PUBLIC_MODELS = buildSurfaceCatalog(ANTIGRAVITY_SHARED_MODELS, {
-  add: [], // IDE-only models (currently none)
+  add: ANTIGRAVITY_IDE_ONLY_MODELS,
   remove: [], // Models hidden from IDE (currently none)
 });
 
 export const ANTIGRAVITY_MODEL_ALIASES = Object.freeze({
+  // Gemini 3.8 Flash tiers map to upstream tiered engine
+  "gemini-3.8-flash": "gemini-3.7-flash-tiered",
+  "gemini-3.8-flash-high": "gemini-3.7-flash-tiered",
+  "gemini-3.8-flash-medium": "gemini-3.7-flash-tiered",
+  "gemini-3.8-flash-low": "gemini-3.7-flash-tiered",
+  // Gemini 3.6 Flash tiers
+  "gemini-3.6-flash": "gemini-3.7-flash-tiered",
+  "gemini-3.6-flash-high": "gemini-3.7-flash-tiered",
+  "gemini-3.6-flash-medium": "gemini-3.7-flash-tiered",
+  "gemini-3.6-flash-low": "gemini-3.7-flash-tiered",
   // Gemini 3.7 Flash tiers map to the upstream tiered endpoint model; the thinking
   // budget is steered via generationConfig.thinkingConfig.thinkingBudget.
   "gemini-3.7-flash": "gemini-3.7-flash-tiered",
@@ -91,9 +185,6 @@ const ANTIGRAVITY_QUOTA_VISIBLE_NON_CHAT_MODEL_IDS = new Set([
 const ANTIGRAVITY_RETIRED_MODEL_IDS = new Set([
   "gemini-3-pro-preview",
   "gemini-3.1-pro",
-  "gemini-3.6-flash-high",
-  "gemini-3.6-flash-medium",
-  "gemini-3.6-flash-low",
   "gemini-3-flash-agent",
   "gemini-3.5-flash",
   "gemini-3.5-flash-extra-low",
