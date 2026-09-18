@@ -351,8 +351,8 @@ export const WEB_SESSION_CREDENTIAL_REQUIREMENTS = {
   },
   twinmind: {
     kind: "token",
-    credentialName: "Firebase refresh token or Bearer JWT",
-    placeholder: "Paste refresh token (recommended) or eyJ… Bearer JWT from app.twinmind.com",
+    credentialName: "Firebase stsTokenManager JSON (accessToken + refreshToken)",
+    placeholder: "Paste stsTokenManager JSON, or accessToken JWT + refreshToken",
     acceptsFullCookieHeader: false,
     storageKeys: ["token", "refreshToken", "refresh_token", "apiKey", "accessToken"],
   },

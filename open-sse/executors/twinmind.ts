@@ -513,7 +513,9 @@ export class TwinmindExecutor extends BaseExecutor {
     if (!ensured.token) {
       return makeErrorResult(
         401,
-        "Missing Twinmind token — paste a Firebase refresh token (recommended) or a current Bearer JWT.",
+        ensured.refreshToken
+          ? "Twinmind Firebase refresh failed. Paste stsTokenManager JSON (accessToken + refreshToken) or a current Bearer JWT."
+          : "Missing Twinmind token — paste stsTokenManager JSON (accessToken + refreshToken) or a current Bearer JWT.",
         body,
         TWINMIND_CHAT_URL
       );

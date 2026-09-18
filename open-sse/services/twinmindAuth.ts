@@ -90,8 +90,8 @@ export async function refreshTwinmindIdToken(
     body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(refreshToken)}`,
   });
   const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-  const idToken = toStringOrEmpty(json.id_token);
-  if (!response.ok || !idToken) return null;
+  const idToken = toStringOrEmpty(json.id_token) || toStringOrEmpty(json.access_token);
+  if (!response.ok || !idToken || !looksLikeJwt(idToken)) return null;
   const rotated = toStringOrEmpty(json.refresh_token) || refreshToken;
   return { idToken, refreshToken: rotated };
 }
@@ -139,6 +139,8 @@ export async function ensureTwinmindAccessToken(options: {
       }
       return { token: refreshed.idToken, refreshToken: refreshed.refreshToken };
     }
+    // Do not send an expired JWT (or the refresh token itself) as Bearer.
+    return { token: "", refreshToken };
   }
-  return { token: current, refreshToken };
+  return { token: looksLikeJwt(current) ? current : "", refreshToken };
 }

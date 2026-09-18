@@ -504,7 +504,7 @@ export const WEB_COOKIE_PROVIDERS = {
     riskNoticeVariant: "webCookie",
     toolCalling: "emulated",
     authHint:
-      "Paste a Firebase refresh token from app.twinmind.com (IndexedDB → firebaseLocalStorage → stsTokenManager.refreshToken). A current Bearer JWT also works but expires in about an hour.",
+      "Paste the stsTokenManager JSON from app.twinmind.com IndexedDB (accessToken + refreshToken). Chat uses accessToken; refreshToken mints a new JWT when it expires.",
   },
   maxai: {
     id: "maxai",

@@ -391,6 +391,40 @@ describe("TwinmindExecutor", () => {
     }
   });
 
+  it("does not send an expired JWT when Firebase refresh fails", async () => {
+    const originalFetch = globalThis.fetch;
+    let chatAttempts = 0;
+    const expired =
+      "eyJhbGciOiJub25lIn0." +
+      Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) - 3600 })).toString("base64") +
+      ".x";
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("securetoken.googleapis.com")) {
+        return new Response(JSON.stringify({ error: "invalid" }), { status: 400 });
+      }
+      chatAttempts += 1;
+      return new Response("expired", { status: 401 });
+    }) as typeof fetch;
+    try {
+      const executor = new mod.TwinmindExecutor();
+      const result = await executor.execute({
+        model: "auto",
+        body: { messages: [{ role: "user", content: "hi" }] },
+        stream: false,
+        credentials: { apiKey: expired, refreshToken: `AMf-${"x".repeat(80)}` },
+        signal: null,
+      });
+      const json = await result.response.json();
+      const message = String(json.error?.message || json.message || "");
+      assert.equal(result.response.status, 401);
+      assert.match(message, /Firebase refresh failed/);
+      assert.equal(chatAttempts, 0);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it("treats a pasted non-JWT apiKey as the Firebase refresh token", () => {
     assert.equal(auth.looksLikeJwt("AIzaNotAJwt"), false);
     assert.equal(
