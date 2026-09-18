@@ -15,6 +15,7 @@ import https from "node:https";
 import tls from "node:tls";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const PORT = parseInt(process.env.BRIDGE_PORT || "20129", 10);
 const ROUTER_URL = process.env.ROUTER_URL || "http://127.0.0.1:20128/v1/antigravity";
@@ -38,20 +39,25 @@ const httpsAgent = new https.Agent({
   timeout: 120000,
 });
 
-const CERT_DIR =
-  process.env.CERT_DIR || path.join(process.env.HOME || process.cwd(), ".omniroute", "mitm");
-const SERVER_KEY = path.join(CERT_DIR, "server.key");
-const SERVER_CRT = path.join(CERT_DIR, "server.crt");
+let cachedSslOptions = null;
+function getSslOptions() {
+  if (cachedSslOptions) return cachedSslOptions;
+  const certDir =
+    process.env.CERT_DIR || path.join(process.env.HOME || process.cwd(), ".omniroute", "mitm");
+  const serverKey = path.join(certDir, "server.key");
+  const serverCrt = path.join(certDir, "server.crt");
 
-if (!fs.existsSync(SERVER_KEY) || !fs.existsSync(SERVER_CRT)) {
-  console.error("❌ Certificate files not found in", CERT_DIR);
-  process.exit(1);
+  if (!fs.existsSync(serverKey) || !fs.existsSync(serverCrt)) {
+    console.error("❌ Certificate files not found in", certDir);
+    process.exit(1);
+  }
+
+  cachedSslOptions = {
+    key: fs.readFileSync(serverKey),
+    cert: fs.readFileSync(serverCrt),
+  };
+  return cachedSslOptions;
 }
-
-const sslOptions = {
-  key: fs.readFileSync(SERVER_KEY),
-  cert: fs.readFileSync(SERVER_CRT),
-};
 
 const TARGET_HOSTS = new Set([
   "cloudcode-pa.googleapis.com",
@@ -519,10 +525,11 @@ proxyServer.on("connect", (req, clientSocket, head) => {
     // Target host: Terminate TLS locally and route via internalApp
     clientSocket.write("HTTP/1.1 200 Connection Established\r\n\r\n");
 
+    const ssl = getSslOptions();
     const tlsSocket = new tls.TLSSocket(clientSocket, {
       isServer: true,
-      key: sslOptions.key,
-      cert: sslOptions.cert,
+      key: ssl.key,
+      cert: ssl.cert,
     });
     tlsSocket.setNoDelay(true);
 
@@ -554,8 +561,22 @@ proxyServer.on("connect", (req, clientSocket, head) => {
   }
 });
 
-proxyServer.listen(PORT, "127.0.0.1", () => {
-  console.log(`🚀 OmniRoute Antigravity Bridge listening on 127.0.0.1:${PORT}`);
-  console.log(`   Routing non-Gemini 3.8 model traffic -> ${ROUTER_URL}`);
-  console.log(`   Preserving Gemini 3.8 native traffic -> Google`);
-});
+export {
+  resolveTargetModel,
+  MODEL_ROUTING_MAP,
+  shouldInterceptToOmniRoute,
+  extractModel,
+  OMNIROUTE_BUILTIN_GROUPS,
+  proxyServer,
+  internalApp,
+};
+
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isMain) {
+  proxyServer.listen(PORT, "127.0.0.1", () => {
+    console.log(`🚀 OmniRoute Antigravity Bridge listening on 127.0.0.1:${PORT}`);
+    console.log(`   Routing non-Gemini 3.8 model traffic -> ${ROUTER_URL}`);
+    console.log(`   Preserving Gemini 3.8 native traffic -> Google`);
+  });
+}
