@@ -67,12 +67,14 @@ export function clearStaleLKGP(
    */
   failed?: FailedTarget
 ): Promise<void> {
-  return clearPins(comboName, executionKey, comboId, clearLKGP, failed).catch((err: unknown) => {
-    log?.warn?.(tag, "Failed to clear Last Known Good Provider. This is non-fatal.", {
-      combo: comboName,
-      comboId: comboId ?? null,
-      executionKey: executionKey ?? null,
-      err,
-    });
-  });
+  return clearPins(comboName, executionKey, comboId, clearLKGP, failed ?? null).catch(
+    (err: unknown) => {
+      log?.warn?.(tag, "Failed to clear Last Known Good Provider. This is non-fatal.", {
+        combo: comboName,
+        comboId: comboId ?? null,
+        executionKey: executionKey ?? null,
+        err,
+      });
+    }
+  );
 }
