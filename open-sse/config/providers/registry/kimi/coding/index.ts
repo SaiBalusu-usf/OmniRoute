@@ -34,7 +34,7 @@ export const KIMI_CODING_SHARED = {
   executor: "default",
   baseUrl: KIMI_CODING_ANTHROPIC_URL,
   authHeader: "x-api-key",
-  defaultContextLength: 262144,
+  defaultContextLength: 1048576,
   headers: {
     "Anthropic-Version": ANTHROPIC_VERSION_HEADER,
   },
