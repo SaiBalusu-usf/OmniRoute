@@ -110,6 +110,18 @@ function isOmniRouteInternalHeader(headerName: string): boolean {
   return headerName.toLowerCase().startsWith("x-omniroute-");
 }
 
+export function isCodexQuotaHeader(normalized: string): boolean {
+  return (
+    normalized.startsWith("x-codex-") &&
+    (normalized.includes("used-percent") ||
+      normalized.includes("reset") ||
+      normalized.includes("window") ||
+      normalized.includes("credits") ||
+      normalized.includes("over-secondary") ||
+      normalized.includes("plan-type"))
+  );
+}
+
 function getForwardingPriority(headerName: string): number {
   const normalized = headerName.toLowerCase();
   if (
@@ -125,15 +137,7 @@ function getForwardingPriority(headerName: string): number {
   if (normalized.includes("ratelimit") || normalized.includes("rate-limit")) return 2;
   // Codex quota / reset / credits do not contain "ratelimit" in the name,
   // so they used to fall through to priority 3 and lose to date/csp/cf-ray.
-  if (
-    normalized.startsWith("x-codex-") &&
-    (normalized.includes("used-percent") ||
-      normalized.includes("reset") ||
-      normalized.includes("window") ||
-      normalized.includes("credits") ||
-      normalized.includes("over-secondary") ||
-      normalized.includes("plan-type"))
-  ) {
+  if (isCodexQuotaHeader(normalized)) {
     return 2;
   }
   if (
@@ -198,7 +202,8 @@ export function stripNextMiddlewareControlHeaders(headers: Headers): void {
 export function buildStreamingResponseHeaders(
   providerHeaders: Headers,
   meta: Parameters<typeof buildOmniRouteResponseMetaHeaders>[0],
-  log: ResponseHeaderLogger = defaultLogger
+  log: ResponseHeaderLogger = defaultLogger,
+  options: { isForeignAccount?: boolean } = {}
 ): Record<string, string> {
   const connectionScopedHeaders = new Set(
     (providerHeaders.get("connection") || "")
@@ -222,6 +227,7 @@ export function buildStreamingResponseHeaders(
       connectionScopedHeaders.has(normalized) ||
       isNextMiddlewareControlHeader(normalized) ||
       isOmniRouteInternalHeader(normalized) ||
+      (options?.isForeignAccount && isCodexQuotaHeader(normalized)) ||
       // Forwarded separately below, outside the byte budget.
       normalized === CODEX_TURN_STATE_RESPONSE_HEADER
     ) {
