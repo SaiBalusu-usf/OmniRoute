@@ -349,6 +349,13 @@ export const WEB_SESSION_CREDENTIAL_REQUIREMENTS = {
     acceptsFullCookieHeader: true,
     storageKeys: ["cookie", "__Secure-better-auth.session_token"],
   },
+  twinmind: {
+    kind: "token",
+    credentialName: "Firebase refresh token or Bearer JWT",
+    placeholder: "Paste refresh token (recommended) or eyJ… Bearer JWT from app.twinmind.com",
+    acceptsFullCookieHeader: false,
+    storageKeys: ["token", "refreshToken", "refresh_token", "apiKey", "accessToken"],
+  },
   maxai: {
     kind: "token",
     credentialName: "MaxAI access token (Bearer) + device id",

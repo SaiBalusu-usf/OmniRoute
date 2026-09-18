@@ -1,0 +1,1 @@
+- **feat(providers):** add Twinmind (`twinmind` / `tm`) unofficial web chat provider — Firebase refresh, grouped model discovery, SSE `text_delta` → OpenAI chunks, emulated tool calling

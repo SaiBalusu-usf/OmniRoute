@@ -1,0 +1,314 @@
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const mod = await import("../../open-sse/executors/twinmind.ts");
+const auth = await import("../../open-sse/services/twinmindAuth.ts");
+const models = await import("../../open-sse/services/twinmindModels.ts");
+const { resolvePublicCred } = await import("../../open-sse/utils/publicCreds.ts");
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(here, "../..");
+
+function sseEvent(type: string, content: string): string {
+  return `data: ${JSON.stringify({ type, content })}\n\n`;
+}
+
+describe("TwinmindExecutor", () => {
+  it("flattens OpenAI history into Twinmind tagged query text", () => {
+    const flattened = mod.flattenTwinmindMessages([
+      { role: "system", content: "Be brief." },
+      { role: "user", content: "hi" },
+      { role: "assistant", content: "hello" },
+      { role: "user", content: [{ type: "text", text: "again" }] },
+    ]);
+    assert.match(flattened, /<system>\nBe brief.\n<\/system>/);
+    assert.match(flattened, /<user>\nagain\n<\/user>/);
+  });
+
+  it("strips twinmind/ prefixes and maps auto to the default wire model", () => {
+    assert.equal(mod.mapTwinmindModel("twinmind/claude-opus-5-thinking"), "claude-opus-5-thinking");
+    assert.equal(mod.mapTwinmindModel("tm/claude-opus-5-thinking"), "claude-opus-5-thinking");
+    assert.equal(mod.mapTwinmindModel("auto"), mod.TWINMIND_DEFAULT_MODEL);
+    assert.equal(mod.mapTwinmindModel("twinmind/auto"), mod.TWINMIND_DEFAULT_MODEL);
+  });
+
+  it("parses <tool_call> blocks into OpenAI tool_calls", () => {
+    const parsed = mod.parseTwinmindToolCalls(
+      'ok\n<tool_call>\n{"name":"bash","arguments":{"command":"ls"}}\n</tool_call>'
+    );
+    assert.equal(parsed.calls.length, 1);
+    assert.equal(parsed.calls[0].function.name, "bash");
+    assert.equal(JSON.parse(parsed.calls[0].function.arguments).command, "ls");
+    assert.equal(parsed.content, "ok");
+  });
+
+  it("detects Twinmind tool-refusal openings", () => {
+    assert.equal(mod.looksLikeTwinmindRefusal("I don't have access to the filesystem or bash tools."), true);
+    assert.equal(mod.looksLikeTwinmindRefusal("Here is the listing of the folder."), false);
+  });
+
+  it("builds a Twinmind chat body with type app and model.model_name", () => {
+    const body = mod.buildTwinmindChatBody("hello world", "claude-opus-5-thinking");
+    assert.equal(body.type, "app");
+    assert.equal(body.version, 1);
+    assert.equal(body.mode, "private");
+    assert.equal(body.query, "hello world");
+    assert.deepEqual(body.model, { model_name: "claude-opus-5-thinking" });
+    assert.equal(body.context, null);
+    const client = body.client as { platform?: string };
+    assert.equal(client.platform, "web");
+  });
+
+  it("uses last user + system prefix when tools are absent", () => {
+    const query = mod.buildTwinmindQuery({
+      messages: [
+        { role: "system", content: "sys" },
+        { role: "user", content: "first" },
+        { role: "assistant", content: "ok" },
+        { role: "user", content: "second" },
+      ],
+    });
+    assert.equal(query, "sys\n\nsecond");
+  });
+
+  it("appends emulated tool instructions when tools are present", () => {
+    const query = mod.buildTwinmindQuery({
+      messages: [{ role: "user", content: "list files" }],
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "bash",
+            description: "Run a shell command",
+            parameters: { type: "object", properties: { command: { type: "string" } }, required: ["command"] },
+          },
+        },
+      ],
+    });
+    assert.match(query, /<user>\nlist files\n<\/user>/);
+    assert.match(query, /<tool_call>/);
+    assert.match(query, /### bash/);
+  });
+
+  it("extracts text_start/text_delta SSE content and ignores other events", () => {
+    const deltas = [
+      ...mod.extractTwinmindSseDeltas('data: {"type":"text_start","content":"Hel"}'),
+      ...mod.extractTwinmindSseDeltas('data: {"type":"text_delta","content":"lo"}'),
+      ...mod.extractTwinmindSseDeltas("data: [DONE]"),
+      ...mod.extractTwinmindSseDeltas('data: {"type":"usage","tokens":3}'),
+    ];
+    assert.deepEqual(deltas, ["Hel", "lo"]);
+  });
+
+  it("flattens Twinmind grouped providers catalog and always includes auto", () => {
+    const ids = models.flattenTwinmindModelsCatalog({
+      providers: [
+        {
+          id: "google",
+          display_name: "Google",
+          models: [
+            { name: "gemini-3.8-flash-thinking", display_name: "Gemini 3.8 Flash Thinking" },
+          ],
+        },
+      ],
+      default_model: { name: "gpt-5.6-sol-thinking", display_name: "GPT-5.6 Sol Thinking" },
+    });
+    assert.equal(ids[0].id, "auto");
+    assert.ok(ids.some((m) => m.id === "gemini-3.8-flash-thinking" && m.name === "Gemini 3.8 Flash Thinking"));
+    assert.ok(ids.some((m) => m.id === "gpt-5.6-sol-thinking"));
+  });
+
+  it("returns 401 when no token is configured", async () => {
+    const executor = new mod.TwinmindExecutor();
+    const result = await executor.execute({
+      model: "auto",
+      body: { messages: [{ role: "user", content: "hi" }] },
+      stream: false,
+      credentials: { apiKey: "" },
+      signal: null,
+    });
+    assert.equal(result.response.status, 401);
+  });
+
+  it("POSTs Twinmind body and maps SSE to a non-streaming OpenAI completion", async () => {
+    const originalFetch = globalThis.fetch;
+    const calls: Array<{ url: string; body: unknown }> = [];
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      calls.push({ url, body: init?.body ? JSON.parse(String(init.body)) : null });
+      const sse = sseEvent("text_start", "Hel") + sseEvent("text_delta", "lo");
+      return new Response(sse, { status: 200 });
+    }) as typeof fetch;
+
+    try {
+      const executor = new mod.TwinmindExecutor();
+      const result = await executor.execute({
+        model: "twinmind/claude-opus-5-thinking",
+        body: { messages: [{ role: "user", content: "hi" }] },
+        stream: false,
+        credentials: {
+          apiKey:
+            "eyJhbGciOiJub25lIn0." +
+            Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64") +
+            ".x",
+        },
+        signal: null,
+      });
+      const json = await result.response.json();
+      assert.equal(result.response.status, 200);
+      assert.equal(json.choices[0].message.content, "Hello");
+      assert.equal(calls[0].url, "https://api2.twinmind.com/api/v3/chat");
+      const posted = calls[0].body as { type?: string; model?: { model_name?: string }; messages?: unknown };
+      assert.equal(posted.type, "app");
+      assert.equal(posted.model?.model_name, "claude-opus-5-thinking");
+      assert.equal(posted.messages, undefined);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("streams OpenAI chunks from Twinmind text_delta events", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async () =>
+      new Response(sseEvent("text_delta", "Hi") + sseEvent("text_delta", " there"), {
+        status: 200,
+      })) as typeof fetch;
+
+    try {
+      const executor = new mod.TwinmindExecutor();
+      const result = await executor.execute({
+        model: "auto",
+        body: { messages: [{ role: "user", content: "hi" }] },
+        stream: true,
+        credentials: {
+          apiKey:
+            "eyJhbGciOiJub25lIn0." +
+            Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64") +
+            ".x",
+        },
+        signal: null,
+      });
+      const text = await result.response.text();
+      assert.match(text, /"content":"Hi"/);
+      assert.match(text, /"content":" there"/);
+      assert.match(text, /data: \[DONE\]/);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("refreshes on 401 and retries without duplicating the stream", async () => {
+    const originalFetch = globalThis.fetch;
+    let chatAttempts = 0;
+    const persisted: unknown[] = [];
+    globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("securetoken.googleapis.com")) {
+        return new Response(
+          JSON.stringify({
+            id_token:
+              "eyJhbGciOiJub25lIn0." +
+              Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64") +
+              ".x",
+            refresh_token: "rotated-refresh",
+          }),
+          { status: 200 }
+        );
+      }
+      chatAttempts += 1;
+      if (chatAttempts === 1) return new Response("expired", { status: 401 });
+      const auth = String((init?.headers as Record<string, string> | undefined)?.authorization || "");
+      assert.match(auth, /^Bearer eyJ/);
+      return new Response(sseEvent("text_delta", "ok"), { status: 200 });
+    }) as typeof fetch;
+
+    try {
+      const executor = new mod.TwinmindExecutor();
+      const result = await executor.execute({
+        model: "auto",
+        body: { messages: [{ role: "user", content: "hi" }] },
+        stream: false,
+        credentials: { apiKey: "stale-refresh-token-not-a-jwt" },
+        signal: null,
+        onCredentialsRefreshed: (patch) => {
+          persisted.push(patch);
+        },
+      });
+      const json = await result.response.json();
+      assert.equal(result.response.status, 200);
+      assert.equal(json.choices[0].message.content, "ok");
+      assert.equal(chatAttempts, 2);
+      assert.ok(persisted.length >= 1);
+      const last = persisted[persisted.length - 1] as { refreshToken?: string };
+      assert.equal(last.refreshToken, "rotated-refresh");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("does not embed a raw AIza Firebase key in Twinmind or public-creds source", () => {
+    const files = [
+      "open-sse/executors/twinmind.ts",
+      "open-sse/services/twinmindAuth.ts",
+      "open-sse/services/twinmindModels.ts",
+      "open-sse/config/providers/registry/twinmind/index.ts",
+    ];
+    for (const rel of files) {
+      const src = fs.readFileSync(path.join(repoRoot, rel), "utf8");
+      assert.doesNotMatch(src, /AIza[A-Za-z0-9_-]{10,}/, `${rel} contains a raw AIza literal`);
+    }
+    const decoded = resolvePublicCred("twinmind_fb");
+    assert.match(decoded, /^AIza/);
+    assert.equal(decoded.startsWith("AIzaSy"), true);
+  });
+
+  it("emits OpenAI tool_calls when the model returns a Twinmind tool_call block", async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const posted = JSON.parse(String(init?.body || "{}")) as { query?: string; model?: { model_name?: string } };
+      assert.match(posted.query || "", /<tool_call>/);
+      assert.equal(posted.model?.model_name, "claude-opus-5-thinking");
+      return new Response(
+        sseEvent("text_delta", '<tool_call>\n{"name":"bash","arguments":{"command":"pwd"}}\n</tool_call>'),
+        { status: 200 }
+      );
+    }) as typeof fetch;
+
+    try {
+      const executor = new mod.TwinmindExecutor();
+      const result = await executor.execute({
+        model: "twinmind/claude-opus-5-thinking",
+        body: {
+          messages: [{ role: "user", content: "pwd" }],
+          tools: [{ type: "function", function: { name: "bash", parameters: { type: "object" } } }],
+        },
+        stream: false,
+        credentials: {
+          apiKey:
+            "eyJhbGciOiJub25lIn0." +
+            Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64") +
+            ".x",
+        },
+        signal: null,
+      });
+      const json = await result.response.json();
+      assert.equal(result.response.status, 200);
+      assert.equal(json.choices[0].finish_reason, "tool_calls");
+      assert.equal(json.choices[0].message.tool_calls[0].function.name, "bash");
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("treats a pasted non-JWT apiKey as the Firebase refresh token", () => {
+    assert.equal(auth.looksLikeJwt("AIzaNotAJwt"), false);
+    assert.equal(
+      auth.resolveTwinmindRefreshToken({ apiKey: "durable-refresh-token" }),
+      "durable-refresh-token"
+    );
+    assert.equal(auth.resolveTwinmindAccessToken({ apiKey: "durable-refresh-token" }), "");
+  });
+});

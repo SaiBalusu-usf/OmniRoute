@@ -1,0 +1,708 @@
+/**
+ * TwinmindExecutor — Twinmind app chat (Unofficial/Experimental).
+ *
+ * Twinmind is not OpenAI-compatible. Chat is POST https://api2.twinmind.com/api/v3/chat
+ * with `{ type: "app", query, model: { model_name } }` over SSE (`text_start` /
+ * `text_delta`). Auth is a Firebase ID token (Bearer JWT, ~1h) plus optional
+ * refresh token via Google's public Firebase Web API key.
+ *
+ * OpenAI clients own the transcript: requests always send `mode: "private"`
+ * (no session_id, no Twinmind server-side history). Tools are prompt-emulated.
+ */
+import { randomBytes } from "node:crypto";
+import { BaseExecutor, type ExecuteInput } from "./base.ts";
+import { makeExecutorErrorResult as makeErrorResult, sanitizeErrorMessage } from "../utils/error.ts";
+import { TWINMIND_CHAT_URL } from "../services/twinmindModels.ts";
+import {
+  asRecord,
+  ensureTwinmindAccessToken,
+  toStringOrEmpty,
+  type TwinmindCredentialPatch,
+} from "../services/twinmindAuth.ts";
+
+export {
+  decodeJwtExpMs,
+  ensureTwinmindAccessToken,
+  isTwinmindAccessTokenFresh,
+  looksLikeJwt,
+  refreshTwinmindIdToken,
+  resolveTwinmindAccessToken,
+  resolveTwinmindFirebaseApiKey,
+  resolveTwinmindRefreshToken,
+  stripBearerPrefix,
+} from "../services/twinmindAuth.ts";
+export {
+  TWINMIND_CHAT_URL,
+  TWINMIND_FALLBACK_MODELS,
+  TWINMIND_MODELS_URLS,
+  flattenTwinmindModelsCatalog,
+} from "../services/twinmindModels.ts";
+
+type JsonRecord = Record<string, unknown>;
+
+const TOOL_MARK = "<tool_call>";
+const TOOL_INSTRUCTIONS = `
+
+# Tool Calling
+
+You have tools available. To call a tool, output EXACTLY this format (no markdown fences around it):
+
+<tool_call>
+{"name": "tool_name", "arguments": {"param": "value"}}
+</tool_call>
+
+Rules:
+- You may output multiple <tool_call> blocks in one response
+- arguments must be valid JSON matching the tool's parameter schema
+- If you want to call tools, output ONLY tool_call blocks (with optional brief reasoning before them), nothing else after
+- If you do NOT need any tool, respond with regular text only — no tool_call blocks
+- NEVER say you don't have access to tools — you DO, use them
+- NEVER ask the user to run commands manually — call the tool yourself
+
+`;
+
+export const TWINMIND_DEFAULT_MODEL = "gpt-5.6-sol-thinking";
+export const TWINMIND_TOOL_RETRY_NUDGE =
+  "\n\n<user>\nPlease use the tools listed above to do this.\n</user>";
+
+export function stripTwinmindModelPrefix(model: string): string {
+  const raw = (model || "").trim();
+  if (raw.startsWith("twinmind/")) return raw.slice("twinmind/".length) || "auto";
+  if (raw.startsWith("tm/")) return raw.slice("tm/".length) || "auto";
+  return raw || "auto";
+}
+
+export function mapTwinmindModel(model: string): string {
+  const stripped = stripTwinmindModelPrefix(model);
+  if (!stripped || stripped === "auto" || stripped === "default") return TWINMIND_DEFAULT_MODEL;
+  return stripped;
+}
+
+export function looksLikeTwinmindRefusal(text: string): boolean {
+  const sample = (text || "").slice(0, 260);
+  const phrase =
+    /don'?t have|do not have|no access|not equipped|cannot |can'?t (?:access|execute|run|read|list)|only have access/i;
+  const subject = /tool|file|filesystem|shell|bash|terminal|calendar|e-?mail|gmail|chat history|artifact/i;
+  return phrase.test(sample) && subject.test(sample);
+}
+
+export function makeTwinmindToolAwareStreamer(emitContent: (text: string) => void, sniffChars = 260) {
+  let full = "";
+  let emitted = 0;
+  let toolMode = false;
+  let decided = sniffChars <= 0;
+  let blocked = false;
+
+  const decide = (force: boolean) => {
+    if (decided || (!force && full.length < sniffChars)) return;
+    decided = true;
+    blocked = looksLikeTwinmindRefusal(full.slice(0, sniffChars || full.length));
+  };
+
+  const flushUpTo = (upTo: number) => {
+    decide(false);
+    if (!decided || blocked) return;
+    if (upTo > emitted) {
+      emitContent(full.slice(emitted, upTo));
+      emitted = upTo;
+    }
+  };
+
+  return {
+    onDelta(delta: string) {
+      full += delta;
+      if (toolMode) return;
+      const idx = full.indexOf(TOOL_MARK);
+      if (idx >= 0) {
+        flushUpTo(idx);
+        if (emitted < idx) emitted = idx;
+        toolMode = true;
+        return;
+      }
+      flushUpTo(full.length - (TOOL_MARK.length - 1));
+    },
+    finish() {
+      decide(true);
+    },
+    reset() {
+      full = "";
+      emitted = 0;
+      toolMode = false;
+      decided = sniffChars <= 0;
+      blocked = false;
+    },
+    get full() {
+      return full;
+    },
+    get emitted() {
+      return emitted;
+    },
+    get blocked() {
+      return blocked;
+    },
+  };
+}
+
+export function extractMessageText(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((part) => part && typeof part === "object" && !Array.isArray(part))
+    .map((part) => {
+      const rec = part as Record<string, unknown>;
+      if ((rec.type === "text" || rec.type === "input_text") && typeof rec.text === "string") {
+        return rec.text;
+      }
+      return "";
+    })
+    .join("\n");
+}
+
+export function flattenTwinmindMessages(messages: unknown): string {
+  if (!Array.isArray(messages)) return "";
+  const parts: string[] = [];
+  for (const message of messages) {
+    if (!message || typeof message !== "object" || Array.isArray(message)) continue;
+    const rec = message as Record<string, unknown>;
+    const role = typeof rec.role === "string" ? rec.role : "";
+    if (role === "system" || role === "developer") {
+      parts.push(`<system>\n${extractMessageText(rec.content)}\n</system>`);
+    } else if (role === "user") {
+      parts.push(`<user>\n${extractMessageText(rec.content)}\n</user>`);
+    } else if (role === "assistant") {
+      let text = extractMessageText(rec.content);
+      if (Array.isArray(rec.tool_calls)) {
+        for (const toolCall of rec.tool_calls) {
+          if (!toolCall || typeof toolCall !== "object" || Array.isArray(toolCall)) continue;
+          const fn = asRecord((toolCall as Record<string, unknown>).function);
+          const name = toStringOrEmpty(fn.name);
+          let args: unknown = fn.arguments ?? {};
+          if (typeof args === "string") {
+            try {
+              args = JSON.parse(args);
+            } catch {
+              args = {};
+            }
+          }
+          text += `\n${TOOL_MARK}\n${JSON.stringify({ name, arguments: args })}\n</tool_call>`;
+        }
+      }
+      parts.push(`<assistant>\n${text}\n</assistant>`);
+    } else if (role === "tool" || role === "function") {
+      const name = toStringOrEmpty(rec.name) || toStringOrEmpty(rec.tool_call_id) || "tool";
+      parts.push(`<tool_result name="${name}">\n${extractMessageText(rec.content)}\n</tool_result>`);
+    }
+  }
+  return parts.join("\n\n").trim();
+}
+
+export function lastUserText(messages: unknown): string {
+  if (!Array.isArray(messages)) return "";
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    if (!message || typeof message !== "object" || Array.isArray(message)) continue;
+    const rec = message as Record<string, unknown>;
+    if (rec.role === "user") return extractMessageText(rec.content);
+  }
+  return "";
+}
+
+export function systemPrefix(messages: unknown): string {
+  if (!Array.isArray(messages)) return "";
+  return messages
+    .filter((message) => message && typeof message === "object" && !Array.isArray(message))
+    .map((message) => message as Record<string, unknown>)
+    .filter((rec) => rec.role === "system" || rec.role === "developer")
+    .map((rec) => extractMessageText(rec.content))
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+export function formatTwinmindToolDefs(tools: unknown): string {
+  if (!Array.isArray(tools) || tools.length === 0) return "";
+  let out = `${TOOL_INSTRUCTIONS}## Available tools:\n\n`;
+  for (const tool of tools) {
+    if (!tool || typeof tool !== "object" || Array.isArray(tool)) continue;
+    const rec = tool as Record<string, unknown>;
+    const fn = asRecord(rec.function).name ? asRecord(rec.function) : rec;
+    const name = toStringOrEmpty(fn.name);
+    if (!name) continue;
+    out += `### ${name}\n`;
+    if (typeof fn.description === "string" && fn.description) out += `${fn.description}\n`;
+    const parameters = asRecord(fn.parameters);
+    const properties = asRecord(parameters.properties);
+    const required = new Set(
+      Array.isArray(parameters.required)
+        ? parameters.required.filter((item): item is string => typeof item === "string")
+        : []
+    );
+    const entries = Object.entries(properties);
+    if (entries.length > 0) {
+      out += "Parameters:\n";
+      for (const [key, spec] of entries) {
+        const info = asRecord(spec);
+        const req = required.has(key) ? ", required" : "";
+        const desc = typeof info.description === "string" ? ` — ${info.description}` : "";
+        out += `  - ${key} (${toStringOrEmpty(info.type) || "any"}${req})${desc}\n`;
+      }
+    }
+    out += "\n";
+  }
+  return out;
+}
+
+export function buildTwinmindQuery(body: JsonRecord): string {
+  const messages = body.messages;
+  const tools = Array.isArray(body.tools) && body.tools.length > 0 ? body.tools : null;
+  if (tools) return `${flattenTwinmindMessages(messages)}\n${formatTwinmindToolDefs(tools)}`.trim();
+  const sys = systemPrefix(messages);
+  const query = lastUserText(messages);
+  return (sys ? `${sys}\n\n${query}` : query).trim();
+}
+
+export type TwinmindToolCall = {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+};
+
+export function parseTwinmindToolCalls(text: string): { calls: TwinmindToolCall[]; content: string } {
+  const regex = /<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g;
+  const calls: TwinmindToolCall[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = regex.exec(text)) !== null) {
+    try {
+      let raw = match[1].trim();
+      if (raw.startsWith("```")) raw = raw.replace(/^```\w*\n?/, "").replace(/\n?```$/, "").trim();
+      const obj = JSON.parse(raw) as { name?: unknown; arguments?: unknown };
+      const name = toStringOrEmpty(obj.name);
+      if (!name) continue;
+      calls.push({
+        id: `call_${randomBytes(6).toString("hex")}`,
+        type: "function",
+        function: {
+          name,
+          arguments:
+            typeof obj.arguments === "string" ? obj.arguments : JSON.stringify(obj.arguments ?? {}),
+        },
+      });
+    } catch {
+      // Malformed tool_call blocks are ignored; remaining prose is kept.
+    }
+  }
+  const content = text.replace(/<tool_call>\s*[\s\S]*?\s*<\/tool_call>/g, "").trim();
+  return { calls, content };
+}
+
+export function clientTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
+export function buildTwinmindChatBody(query: string, modelName: string, now = new Date()): JsonRecord {
+  return {
+    type: "app",
+    version: 1,
+    response_version: 1,
+    query,
+    model: { model_name: modelName },
+    context: null,
+    client: {
+      platform: "web",
+      timezone: clientTimezone(),
+      client_time: now.toISOString(),
+      locale: "en",
+    },
+    capabilities: { allow_web_search: false, allow_notes_access: false },
+    mode: "private",
+  };
+}
+
+export function extractTwinmindSseDeltas(event: string): string[] {
+  const deltas: string[] = [];
+  for (const line of event.split("\n")) {
+    const match = line.match(/^\s*data:\s*(.*)\s*$/);
+    if (!match || match[1] === "[DONE]") continue;
+    try {
+      const parsed = JSON.parse(match[1]) as { type?: unknown; content?: unknown };
+      if (
+        (parsed.type === "text_start" || parsed.type === "text_delta") &&
+        typeof parsed.content === "string" &&
+        parsed.content
+      ) {
+        deltas.push(parsed.content);
+      }
+    } catch {
+      // Ignore malformed SSE data lines.
+    }
+  }
+  return deltas;
+}
+
+function openAiChunk(id: string, created: number, modelId: string, delta: JsonRecord, finish: string | null = null) {
+  return {
+    id,
+    object: "chat.completion.chunk",
+    created,
+    model: modelId,
+    choices: [{ index: 0, delta, finish_reason: finish }],
+  };
+}
+
+function openAiCompletion(
+  id: string,
+  created: number,
+  modelId: string,
+  content: string | null,
+  toolCalls?: TwinmindToolCall[]
+) {
+  const message: JsonRecord = { role: "assistant", content };
+  if (toolCalls && toolCalls.length > 0) message.tool_calls = toolCalls;
+  return {
+    id,
+    object: "chat.completion",
+    created,
+    model: modelId,
+    choices: [
+      {
+        index: 0,
+        message,
+        finish_reason: toolCalls && toolCalls.length > 0 ? "tool_calls" : "stop",
+      },
+    ],
+    usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+  };
+}
+
+class TwinmindUnauthorizedError extends Error {
+  readonly code = 401;
+  constructor() {
+    super("unauthorized");
+  }
+}
+
+export class TwinmindExecutor extends BaseExecutor {
+  constructor() {
+    super("twinmind", { id: "twinmind", baseUrl: "https://api2.twinmind.com/api/v3" });
+  }
+
+  private async readSse(
+    upstream: Response,
+    onDelta: (delta: string) => void
+  ): Promise<{ ok: boolean; text: string; errorMessage?: string }> {
+    const reader = upstream.body?.getReader();
+    if (!reader) return { ok: true, text: "" };
+
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let full = "";
+
+    const feed = (chunk: string) => {
+      buffer += chunk;
+      let idx: number;
+      while ((idx = buffer.indexOf("\n\n")) >= 0) {
+        const event = buffer.slice(0, idx);
+        buffer = buffer.slice(idx + 2);
+        for (const delta of extractTwinmindSseDeltas(event)) {
+          full += delta;
+          onDelta(delta);
+        }
+      }
+    };
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        feed(decoder.decode(value, { stream: true }));
+      }
+      feed(decoder.decode());
+      if (buffer) {
+        for (const delta of extractTwinmindSseDeltas(buffer)) {
+          full += delta;
+          onDelta(delta);
+        }
+      }
+      return { ok: true, text: full };
+    } catch (error) {
+      return {
+        ok: false,
+        text: full,
+        errorMessage: error instanceof Error ? error.message : "Twinmind stream read failed",
+      };
+    }
+  }
+
+  private async postChat(
+    token: string,
+    body: JsonRecord,
+    signal: AbortSignal | null | undefined,
+    fetchImpl: typeof fetch
+  ): Promise<Response> {
+    const upstream = await fetchImpl(TWINMIND_CHAT_URL, {
+      method: "POST",
+      headers: {
+        accept: "*/*",
+        "content-type": "application/json",
+        authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+      signal: signal ?? undefined,
+    });
+    if (upstream.status === 401) throw new TwinmindUnauthorizedError();
+    return upstream;
+  }
+
+  async execute(input: ExecuteInput) {
+    const { body, credentials, signal, stream: wantStream } = input;
+    const bodyObj = asRecord(body);
+    const fetchImpl = globalThis.fetch.bind(globalThis);
+    const requestedModel = input.model || toStringOrEmpty(bodyObj.model) || "auto";
+    const modelId = mapTwinmindModel(requestedModel);
+    const baseQuery = buildTwinmindQuery(bodyObj);
+    const hasTools = Array.isArray(bodyObj.tools) && bodyObj.tools.length > 0;
+    const maxToolTries = hasTools ? 4 : 1;
+
+    if (!baseQuery) {
+      return makeErrorResult(400, "Twinmind requires a non-empty user message", body, TWINMIND_CHAT_URL);
+    }
+
+    let ensured = await ensureTwinmindAccessToken({
+      apiKey: credentials?.apiKey,
+      accessToken: credentials?.accessToken,
+      refreshToken: credentials?.refreshToken,
+      providerSpecificData: credentials?.providerSpecificData,
+      fetchImpl,
+      onCredentialsRefreshed: input.onCredentialsRefreshed as
+        | ((patch: TwinmindCredentialPatch) => Promise<void> | void)
+        | undefined,
+    });
+
+    if (!ensured.token) {
+      return makeErrorResult(
+        401,
+        "Missing Twinmind token — paste a Firebase refresh token (recommended) or a current Bearer JWT.",
+        body,
+        TWINMIND_CHAT_URL
+      );
+    }
+
+    const persist = input.onCredentialsRefreshed as
+      | ((patch: TwinmindCredentialPatch) => Promise<void> | void)
+      | undefined;
+
+    const runOnce = async (query: string, onDelta?: (delta: string) => void) => {
+      const chatBody = buildTwinmindChatBody(query, modelId);
+      let upstream: Response;
+      try {
+        try {
+          upstream = await this.postChat(ensured.token, chatBody, signal, fetchImpl);
+        } catch (error) {
+          if (error instanceof TwinmindUnauthorizedError && ensured.refreshToken) {
+            ensured = await ensureTwinmindAccessToken({
+              apiKey: "",
+              accessToken: "",
+              refreshToken: ensured.refreshToken,
+              providerSpecificData: credentials?.providerSpecificData,
+              fetchImpl,
+              onCredentialsRefreshed: persist,
+            });
+            if (!ensured.token) throw error;
+            upstream = await this.postChat(ensured.token, chatBody, signal, fetchImpl);
+          } else {
+            throw error;
+          }
+        }
+      } catch (error) {
+        if (error instanceof TwinmindUnauthorizedError) {
+          return {
+            errorResult: makeErrorResult(
+              401,
+              "Twinmind token expired. Paste a fresh Firebase refresh token or Bearer JWT.",
+              body,
+              TWINMIND_CHAT_URL
+            ),
+            chatBody,
+          };
+        }
+        return {
+          errorResult: {
+            ...makeErrorResult(
+              502,
+              `Twinmind fetch failed: ${error instanceof Error ? error.message : "unknown"}`,
+              body,
+              TWINMIND_CHAT_URL
+            ),
+            headers: { authorization: "Bearer <redacted>" },
+            transformedBody: chatBody,
+          },
+          chatBody,
+        };
+      }
+
+      if (!upstream.ok) {
+        const errText = await upstream.text().catch(() => "");
+        return {
+          errorResult: {
+            ...makeErrorResult(
+              upstream.status,
+              `Twinmind error: ${sanitizeErrorMessage(errText)}`,
+              body,
+              TWINMIND_CHAT_URL
+            ),
+            headers: { authorization: "Bearer <redacted>" },
+            transformedBody: chatBody,
+          },
+          chatBody,
+        };
+      }
+
+      const read = await this.readSse(upstream, onDelta ?? (() => undefined));
+      if (!read.ok) {
+        return {
+          errorResult: {
+            ...makeErrorResult(
+              502,
+              `Twinmind protocol error: ${sanitizeErrorMessage(read.errorMessage || "unknown")}`,
+              body,
+              TWINMIND_CHAT_URL
+            ),
+            headers: { authorization: "Bearer <redacted>" },
+            transformedBody: chatBody,
+          },
+          chatBody,
+        };
+      }
+      return { text: read.text, chatBody };
+    };
+
+    const id = `chatcmpl-twinmind-${Date.now()}`;
+    const created = Math.floor(Date.now() / 1000);
+    const clientModel = toStringOrEmpty(bodyObj.model) || requestedModel;
+    const sseHeaders = {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    };
+
+    if (wantStream && !hasTools) {
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        start: async (controller) => {
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify(openAiChunk(id, created, clientModel, { role: "assistant" }))}\n\n`)
+          );
+          const result = await runOnce(baseQuery, (delta) => {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify(openAiChunk(id, created, clientModel, { content: delta }))}\n\n`)
+            );
+          });
+          if ("errorResult" in result && result.errorResult) {
+            if (!signal?.aborted) controller.error(new Error("Twinmind stream error"));
+            else {
+              try {
+                controller.close();
+              } catch {
+                /* already closed */
+              }
+            }
+            return;
+          }
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify(openAiChunk(id, created, clientModel, {}, "stop"))}\n\n`)
+          );
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        },
+      });
+      return {
+        response: new Response(stream, { headers: sseHeaders }),
+        url: TWINMIND_CHAT_URL,
+        headers: { authorization: "Bearer <redacted>" },
+        transformedBody: buildTwinmindChatBody(baseQuery, modelId),
+      };
+    }
+
+    let lastText = "";
+    let lastBody = buildTwinmindChatBody(baseQuery, modelId);
+    let parsed = { calls: [] as TwinmindToolCall[], content: "" };
+    let streamer: ReturnType<typeof makeTwinmindToolAwareStreamer> | undefined;
+    const liveChunks: string[] = [];
+
+    for (let attempt = 1; attempt <= maxToolTries; attempt++) {
+      const query = attempt === 1 ? baseQuery : `${baseQuery}${TWINMIND_TOOL_RETRY_NUDGE}`;
+      if (wantStream && hasTools) {
+        liveChunks.length = 0;
+        liveChunks.push(
+          `data: ${JSON.stringify(openAiChunk(id, created, clientModel, { role: "assistant" }))}\n\n`
+        );
+        streamer = makeTwinmindToolAwareStreamer((text) => {
+          liveChunks.push(
+            `data: ${JSON.stringify(openAiChunk(id, created, clientModel, { content: text }))}\n\n`
+          );
+        });
+      }
+      const result = await runOnce(query, streamer ? (delta) => streamer!.onDelta(delta) : undefined);
+      if ("errorResult" in result && result.errorResult) return result.errorResult;
+      lastText = result.text || "";
+      lastBody = result.chatBody;
+      streamer?.finish();
+      parsed = hasTools ? parseTwinmindToolCalls(lastText) : { calls: [] as TwinmindToolCall[], content: lastText };
+      if (!hasTools) break;
+      if (parsed.calls.length > 0) break;
+      if (streamer ? !streamer.blocked : !looksLikeTwinmindRefusal(lastText)) break;
+    }
+
+    if (wantStream) {
+      if (hasTools) {
+        if (parsed.calls.length > 0) {
+          liveChunks.length = 1;
+          liveChunks.push(
+            `data: ${JSON.stringify(
+              openAiChunk(id, created, clientModel, {
+                tool_calls: parsed.calls.map((call, index) => ({ ...call, index })),
+              })
+            )}\n\n`
+          );
+          liveChunks.push(`data: ${JSON.stringify(openAiChunk(id, created, clientModel, {}, "tool_calls"))}\n\n`);
+        } else {
+          const rest = lastText.slice(streamer?.blocked ? 0 : streamer?.emitted ?? 0);
+          if (rest && (!streamer || streamer.blocked || streamer.emitted < lastText.length)) {
+            liveChunks.push(
+              `data: ${JSON.stringify(openAiChunk(id, created, clientModel, { content: rest }))}\n\n`
+            );
+          }
+          liveChunks.push(`data: ${JSON.stringify(openAiChunk(id, created, clientModel, {}, "stop"))}\n\n`);
+        }
+        liveChunks.push("data: [DONE]\n\n");
+        return {
+          response: new Response(liveChunks.join(""), { headers: sseHeaders }),
+          url: TWINMIND_CHAT_URL,
+          headers: { authorization: "Bearer <redacted>" },
+          transformedBody: lastBody,
+        };
+      }
+    }
+
+    return {
+      response: new Response(
+        JSON.stringify(
+          openAiCompletion(
+            id,
+            created,
+            clientModel,
+            parsed.calls.length > 0 ? parsed.content || null : lastText,
+            parsed.calls.length > 0 ? parsed.calls : undefined
+          )
+        ),
+        { headers: { "Content-Type": "application/json" } }
+      ),
+      url: TWINMIND_CHAT_URL,
+      headers: { authorization: "Bearer <redacted>" },
+      transformedBody: lastBody,
+    };
+  }
+}

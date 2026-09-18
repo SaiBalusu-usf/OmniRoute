@@ -135,6 +135,7 @@ import {
   fetchCodexGithubCatalogModels,
 } from "./discovery/codex";
 import { maybeHandleConolModelDiscovery } from "./conolDiscovery";
+import { maybeHandleTwinmindModelDiscovery } from "./twinmindDiscovery";
 import { maybeHandleVertexModelDiscovery } from "./vertexDiscovery";
 import { buildNoAuthModelsResponse, filterModelsForRoute } from "./modelRouteProjection";
 
@@ -668,6 +669,22 @@ export async function GET(
       buildApiDiscoveryResponse,
     });
     if (conolResponse) return conolResponse;
+
+    const twinmindResponse = await maybeHandleTwinmindModelDiscovery({
+      provider,
+      connectionId,
+      apiKey,
+      accessToken,
+      refreshToken: (connection as { refreshToken?: unknown }).refreshToken,
+      providerSpecificData: connection.providerSpecificData,
+      proxy,
+      maybeReturnCachedDiscovery,
+      maybeReturnAutoFetchDisabled,
+      buildDiscoveryFallbackResponse,
+      buildResponse,
+      buildApiDiscoveryResponse,
+    });
+    if (twinmindResponse) return twinmindResponse;
 
     if (provider === "bedrock") {
       const cachedResponse = maybeReturnCachedDiscovery();
