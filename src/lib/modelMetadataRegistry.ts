@@ -306,23 +306,32 @@ const lowercaseIndexCache = new WeakMap<object, Map<string, unknown>>();
 /** Colliding keys named in the aggregated collision warning before it truncates. */
 const COLLISION_SAMPLE_SIZE = 5;
 
-function findInsensitive<T>(obj: Record<string, T> | null | undefined, key: string): T | undefined {
+/** Test hook (#13601): exercised directly by the collision-naming unit test. */
+export function findInsensitive<T>(
+  obj: Record<string, T> | null | undefined,
+  key: string
+): T | undefined {
   if (!obj || !key) return undefined;
   if (key in obj) return obj[key];
   let index = lowercaseIndexCache.get(obj);
   if (!index) {
     index = new Map();
     const collisions: string[] = [];
+    const firstKeyByLower = new Map<string, string>();
     for (const [k, v] of Object.entries(obj)) {
       const lowerKey = k.toLowerCase();
       // Collisions are a real data-quality signal from an upstream sync (e.g.
       // models.dev returning both "OpenAI" and "openai" as distinct provider
-      // keys), so they are surfaced rather than swallowed — first-match-wins,
-      // matching the pre-#8697 scan's behavior.
-      if (index.has(lowerKey)) {
-        collisions.push(lowerKey);
+      // keys), so they are surfaced rather than swallowed — first-seen-wins,
+      // matching the pre-#8697 scan's behavior. Each collision is recorded with
+      // BOTH spellings (#13601) so the operator can tell which entries clash;
+      // they are reported together once the index finishes building.
+      const firstKey = firstKeyByLower.get(lowerKey);
+      if (firstKey !== undefined) {
+        collisions.push(`"${lowerKey}" ("${firstKey}" vs "${k}")`);
         continue;
       }
+      firstKeyByLower.set(lowerKey, k);
       index.set(lowerKey, v);
     }
     // Aggregate into ONE line per index build. Warning per colliding key made
