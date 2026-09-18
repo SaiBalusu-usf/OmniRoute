@@ -102,7 +102,7 @@ export async function ensureDbReadyForBoot(
   }
 }
 
-function isBackgroundServicesDisabled(): boolean {
+export function isBackgroundServicesDisabled(): boolean {
   const raw = process.env.OMNIROUTE_DISABLE_BACKGROUND_SERVICES;
   if (!raw) return false;
   return new Set(["1", "true", "yes", "on"]).has(raw.trim().toLowerCase());
@@ -525,12 +525,12 @@ export async function registerNodejs(): Promise<void> {
     console.warn("[STARTUP] Could not start cleanup scheduler (non-fatal):", msg);
   }
 
-  // Warm the model catalog's durable, apiKey-independent sub-caches at
-  // startup — see warmModelCatalogCache() for why the top-level Response
-  // cache alone doesn't deliver this. Fire-and-forget, non-fatal.
-  void warmModelCatalogCache();
-
   if (!isBackgroundServicesDisabled()) {
+    // Warm the model catalog's durable, apiKey-independent sub-caches at
+    // startup — see warmModelCatalogCache() for why the top-level Response
+    // cache alone doesn't deliver this. Fire-and-forget, non-fatal.
+    void warmModelCatalogCache();
+
     // All services are independent — run in parallel for faster cold start.
     await Promise.allSettled([
       import("@/lib/services/bootstrap")
@@ -559,12 +559,14 @@ export async function registerNodejs(): Promise<void> {
 
       // Conductor bridge (PRD Conductor RF1): mirrors OmniConductor hub tasks into the
       // A2A TaskManager via the hub SSE. Opt-in — self-gated on CONDUCTOR_HUB_URL.
-      import("@/lib/conductor/boot").then((m) => {
-        if (m.initConductorBridge()) console.log("[STARTUP] Conductor bridge started");
-      }).catch((err: unknown) => {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.warn("[STARTUP] Conductor bridge failed to start (non-fatal):", msg);
-      }),
+      import("@/lib/conductor/boot")
+        .then((m) => {
+          if (m.initConductorBridge()) console.log("[STARTUP] Conductor bridge started");
+        })
+        .catch((err: unknown) => {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("[STARTUP] Conductor bridge failed to start (non-fatal):", msg);
+        }),
 
       // Proactive connection-cooldown recovery (#8): re-validate connections whose
       // transient `rate_limited_until` window has elapsed OUTSIDE the request hot path,
