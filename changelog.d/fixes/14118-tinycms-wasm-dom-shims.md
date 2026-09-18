@@ -1,0 +1,1 @@
+- **tinycms**: keep the signer's wasm-bindgen DOM shims module-local — installing them as real Node globals flipped every `typeof window` check in the Next.js server and 500'd the whole dashboard until restart, starting from the first TinyCMS request (#14118 — thanks @aref-alapour)
