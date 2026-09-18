@@ -1,7 +1,6 @@
 /** db/models/aliases.ts — model alias CRUD (modelAliases namespace, providerAliases namespace). */
 
 import { getDbInstance } from "../core";
-import { backupDbFile } from "../backup";
 import { getKeyValue } from "./shared";
 import { finishModelCatalogWriteWithBackup } from "./modelCatalogWriteSignals";
 
