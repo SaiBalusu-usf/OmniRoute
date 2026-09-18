@@ -1109,7 +1109,7 @@ Content-Type: application/json
 }
 ```
 
-> **スキーマに関する注意事項**（`setBudgetSchema`）: `apiKeyId` は必須です。`dailyLimitUsd`、`weeklyLimitUsd`、`monthlyLimitUsd` のうち少なくとも 1 つはゼロより大きい値でなければなりません。オプションフィールド: `warningThreshold`（0～1）、`resetInterval`（`daily` | `weekly` | `monthly`）、`resetTime`（`HH:MM`）。従来の `{keyId, limit, period}` 形式を使用すると、`400 Bad Request` が返されます。
+> **スキーマに関する注意事項** (`setBudgetSchema`): `apiKeyId` は必須です。`dailyLimitUsd`、`weeklyLimitUsd`、`monthlyLimitUsd` のうち、少なくとも1つはゼロより大きい値である必要があります。オプションのフィールド: `warningThreshold`（0～1）、`resetInterval`（`daily` | `weekly` | `monthly`）、`resetTime`（`HH:MM`）。従来の `{keyId, limit, period}` 形式を使用すると、`400 Bad Request` が返されます。
 
 ## トークン制限
 
@@ -1567,19 +1567,19 @@ GET /.well-known/agent.json
 
 ## CLI ツール管理
 
-OmniRoute と統合する CLI ツール（antigravity、chipotle、commandCode、
+OmniRoute と統合する CLI ツール（antigravity、commandCode、
 devin-cli など）を管理します。完全な一覧については、[プロバイダーリファレンス](./PROVIDER_REFERENCE.md)を参照してください。
 
-| メソッド | パス                                    | 説明                                                                                                                                                               |
-| -------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| GET      | `/api/cli-tools/all-statuses`           | すべての CLI ツールのステータス（インストール状況、バージョン、最終確認日時）                                                                                      |
-| GET      | `/api/cli-tools/status`                 | 1 つの CLI ツールの詳細なステータス（`?tool=` クエリ）                                                                                                             |
-| POST     | `/api/cli-tools/apply`                  | ツール用に生成された設定を書き込み（`dryRun` でプレビュー。コンテナ化されている場合は `422` + `containerEphemeralTarget`。`migration` は従来の Codex YAML を示す） |
-| GET      | `/api/cli-tools/backups`                | CLI ツール設定のバックアップ一覧を取得                                                                                                                             |
-| POST     | `/api/cli-tools/backups`                | すべての CLI ツール設定のバックアップを作成                                                                                                                        |
-| POST     | `/api/cli-tools/backups`                | 復元: 同じエンドポイントの本文に `{tool, backupId}` を指定すると、そのバックアップを復元                                                                           |
-| GET      | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM プロキシ（「antigravity-mitm」CLI ツール）のステータス                                                                                            |
-| POST     | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm のエイリアスを設定                                                                                                                                |
+| メソッド | パス                                    | 説明                                                                                                                                                                                 |
+| -------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET      | `/api/cli-tools/all-statuses`           | すべての CLI ツールのステータス（インストール状況、バージョン、最終確認日時）                                                                                                        |
+| GET      | `/api/cli-tools/status`                 | 1 つの CLI ツールの詳細なステータス（`?tool=` クエリ）                                                                                                                               |
+| POST     | `/api/cli-tools/apply`                  | ツール用に生成された設定を書き込みます（`dryRun` ではプレビューを表示。コンテナ化されている場合は `422` + `containerEphemeralTarget`。`migration` は従来の Codex YAML に関する注記） |
+| GET      | `/api/cli-tools/backups`                | CLI ツール設定のバックアップを一覧表示します                                                                                                                                         |
+| POST     | `/api/cli-tools/backups`                | すべての CLI ツール設定のバックアップを作成します                                                                                                                                    |
+| POST     | `/api/cli-tools/backups`                | 復元：同じエンドポイントの本文に `{tool, backupId}` を指定すると、そのバックアップを復元します                                                                                       |
+| GET      | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM プロキシのステータス（「antigravity-mitm」CLI ツール）                                                                                                              |
+| POST     | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm のエイリアスを設定します                                                                                                                                            |
 
 **認証:** 管理セッションが必要です。
 

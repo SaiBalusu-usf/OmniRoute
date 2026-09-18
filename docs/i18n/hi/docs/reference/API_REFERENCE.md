@@ -1613,21 +1613,21 @@ GET /.well-known/agent.json
 
 ## CLI टूल प्रबंधन
 
-OmniRoute के साथ एकीकृत होने वाले CLI टूल (antigravity, chipotle, commandCode,
-devin-cli, आदि) प्रबंधित करें। पूरी सूची के लिए [प्रदाता संदर्भ](./PROVIDER_REFERENCE.md) देखें।
+OmniRoute के साथ एकीकृत होने वाले CLI टूल (antigravity, commandCode,
+devin-cli आदि) प्रबंधित करें। पूरी सूची के लिए [प्रदाता संदर्भ](./PROVIDER_REFERENCE.md) देखें।
 
-| विधि | पथ                                      | विवरण                                                                                                                                                                               |
-| ---- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET  | `/api/cli-tools/all-statuses`           | सभी CLI टूल की स्थिति (इंस्टॉल किया गया, संस्करण, अंतिम बार देखा गया)                                                                                                               |
-| GET  | `/api/cli-tools/status`                 | किसी एक CLI टूल की विस्तृत स्थिति (`?tool=` क्वेरी)                                                                                                                                 |
-| POST | `/api/cli-tools/apply`                  | किसी टूल का जनरेट किया गया कॉन्फ़िगरेशन लिखें (`dryRun` पूर्वावलोकन करता है; कंटेनरीकृत होने पर `422` + `containerEphemeralTarget`; `migration` पुराने Codex YAML को इंगित करता है) |
-| GET  | `/api/cli-tools/backups`                | CLI टूल कॉन्फ़िगरेशन बैकअप की सूची प्राप्त करें                                                                                                                                     |
-| POST | `/api/cli-tools/backups`                | सभी CLI टूल कॉन्फ़िगरेशन का बैकअप बनाएँ                                                                                                                                             |
-| POST | `/api/cli-tools/backups`                | पुनर्स्थापित करें: बॉडी में `{tool, backupId}` के साथ यही एंडपॉइंट उस बैकअप को पुनर्स्थापित करता है                                                                                 |
-| GET  | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM प्रॉक्सी की स्थिति (`antigravity-mitm` CLI टूल)                                                                                                                    |
-| POST | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm उपनाम कॉन्फ़िगर करें                                                                                                                                               |
+| विधि | पथ                                      | विवरण                                                                                                                                                                                 |
+| ---- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET  | `/api/cli-tools/all-statuses`           | सभी CLI टूल की स्थिति (इंस्टॉल किए गए, संस्करण, अंतिम बार देखे गए)                                                                                                                    |
+| GET  | `/api/cli-tools/status`                 | एक CLI टूल की स्थिति का विवरण (`?tool=` क्वेरी)                                                                                                                                       |
+| POST | `/api/cli-tools/apply`                  | किसी टूल का जनरेट किया गया कॉन्फ़िगरेशन लिखें (`dryRun` पूर्वावलोकन करता है; कंटेनराइज़्ड होने पर `422` + `containerEphemeralTarget`; `migration` पुराने Codex YAML को इंगित करता है) |
+| GET  | `/api/cli-tools/backups`                | CLI टूल कॉन्फ़िगरेशन बैकअप की सूची प्राप्त करें                                                                                                                                       |
+| POST | `/api/cli-tools/backups`                | सभी CLI टूल कॉन्फ़िगरेशन का बैकअप बनाएँ                                                                                                                                               |
+| POST | `/api/cli-tools/backups`                | पुनर्स्थापित करें: बॉडी में `{tool, backupId}` के साथ यही एंडपॉइंट उस बैकअप को पुनर्स्थापित करता है                                                                                   |
+| GET  | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM प्रॉक्सी की स्थिति ("antigravity-mitm" CLI टूल)                                                                                                                      |
+| POST | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm उपनाम कॉन्फ़िगर करें                                                                                                                                                 |
 
-**प्रमाणीकरण:** प्रबंधन सत्र की आवश्यकता है।
+**प्रमाणीकरण:** प्रबंधन सत्र आवश्यक है।
 
 ---
 

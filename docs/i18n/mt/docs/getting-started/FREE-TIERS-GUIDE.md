@@ -4,7 +4,7 @@
 
 ---
 
-> **TL;DR**: OmniRoute jirreġistra 352 ID ta’ fornituri, bi **152 entrata fil-katalgu tal-fornituri mmarkati `hasFree`**. Il-katalgu awditjat aktar strett tal-mudelli bla ħlas ikopri **34 ċavetta ta’ pools rikorrenti / 443 entrata** (436 attivi + 7 li twaqqfu). Qabbad diversi fornituri xierqa għal kapaċità usa’ ta’ riżerva; xorta japplikaw kull kwota, regola ta’ approvazzjoni, politika tal-privatezza u kundizzjoni ta’ ħlas żejjed.
+> **Fil-qosor**: OmniRoute jirreġistra 357 ID ta’ fornituri, b’**152 entrata fil-katalgu tal-fornituri mmarkati `hasFree`**. Il-katalgu awditjat u aktar strett tal-mudelli bla ħlas ikopri **35 ċavetta rikorrenti ta’ pools / 482 entrata** (475 attivi + 7 li twaqqfu). Qabbad diversi fornituri xierqa biex ikollok kapaċità usa’ ta’ riżerva; xorta jibqgħu japplikaw kull kwota, regola ta’ approvazzjoni, politika tal-privatezza u kundizzjoni ta’ użu żejjed bi ħlas.
 
 ---
 
@@ -158,21 +158,21 @@ l-kwota jew il-politika tal-aċċess ta’ fornitur.
 
 ---
 
-## Il-Kalkoli tal-Livell Bla Ħlas
+## Kalkoli tal-Livell Bla Ħlas
 
-Il-katalgu attiv, bid-duplikati eliminati bejn il-pools, bħalissa jirrapporta:
+Il-katalgu attiv, bid-duplikati tal-pools eliminati, bħalissa jirrapporta:
 
-| Metrika                                                                      |                                        Valur awditjat attwali | Interpretazzjoni                                                                                                                                                       |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Għotja rikorrenti kkwantifikata                                              |                                       **~1.47B tokens/xahar** | Il-pools kondiviżi jingħaddu darba biss; il-fornituri mingħajr limitu huma esklużi mis-somma                                                                           |
-| L-ewwel xahar bl-għotjiet tar-reġistrazzjoni                                 |                                             **~2.07B tokens** | It-total rikorrenti flimkien mal-krediti ta’ darba u dawk rikorrenti                                                                                                   |
-| Inventarju awditjat tal-mudelli bla ħlas                                     | **34 ċavetta rikorrenti tal-pools / 443 entrata fil-katalgu** | 436 attiva + 7 mhux kompluti; distinti mill-katalgu ta’ 352 fornitur                                                                                                   |
-| Fornituri rikorrenti/mingħajr ċavetta u bla ħlas għal dejjem irrappreżentati |                                                        **52** | Fornituri uniċi fost tipi ta’ katalgu rikorrenti ta’ kuljum/kull xahar/bi kreditu/mingħajr limitu u mingħajr ċavetta; ringieli soġġetti għall-eliġibbiltà huma esklużi |
-| Entrati fil-katalgu tal-fornituri mmarkati `hasFree`                         |                                                 **152 / 352** | Metadata usa’ tal-fornituri; mhux kollha għandhom kwota rikorrenti li tista’ tiġi kkwantifikata                                                                        |
+| Metrika                                                                      |                                       Valur awditjat attwali | Interpretazzjoni                                                                                                                                                             |
+| ---------------------------------------------------------------------------- | -----------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Għotja rikorrenti kkwantifikata                                              |                                      **~1.62B tokens/xahar** | Il-pools kondiviżi jingħaddu darba biss; il-fornituri mingħajr limitu huma esklużi mis-somma                                                                                 |
+| L-ewwel xahar bl-għotjiet tar-reġistrazzjoni                                 |                                            **~2.22B tokens** | It-total rikorrenti flimkien mal-krediti ta’ darba u dawk rikorrenti                                                                                                         |
+| Inventarju awditjat tal-mudelli bla ħlas                                     | **35 ċavetta ta’ pool rikorrenti / 482 entrata fil-katalgu** | 475 attivi + 7 li twaqqfu; distint mill-katalgu ta’ 357 fornitur                                                                                                             |
+| Fornituri rikorrenti/mingħajr ċavetta, bla ħlas għal dejjem, irrappreżentati |                                                       **53** | Fornituri uniċi fit-tipi tal-katalgu rikorrenti ta’ kuljum/kull xahar/ta’ kreditu/mingħajr limitu u mingħajr ċavetta; ir-ringieli ristretti skont l-eliġibbiltà huma esklużi |
+| Entrati fil-katalgu tal-fornituri mmarkati `hasFree`                         |                                                **152 / 357** | Metadata usa’ dwar il-fornituri; mhux kollha għandhom kwota rikorrenti li tista’ tiġi kkwantifikata                                                                          |
 
-Dawn il-valuri jiġu kkalkulati minn `open-sse/config/freeModelCatalog.ts`; ara r-
-[Referenza għal-Livelli Bla Ħlas](../reference/FREE_TIERS.md) għad-deduplikazzjoni tal-pools, il-markaturi tat-ToS,
-l-entrati mhux kompluti, u l-metodoloġija tal-krediti tar-reġistrazzjoni.
+Dawn il-valuri huma kkalkolati minn `open-sse/config/freeModelCatalog.ts`; ara r-
+[Referenza tal-Livelli Bla Ħlas](../reference/FREE_TIERS.md) għad-dedupplikazzjoni tal-pools, il-markaturi tat-ToS,
+l-entrati li twaqqfu, u l-metodoloġija tal-krediti tar-reġistrazzjoni.
 
 ---
 

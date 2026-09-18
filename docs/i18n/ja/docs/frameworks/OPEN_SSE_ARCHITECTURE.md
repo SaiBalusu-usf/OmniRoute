@@ -165,20 +165,20 @@ needsTranslation(source, target): boolean
 
 ---
 
-## 主要ファイルの詳細解説
+## 主要ファイルの詳細
 
-### chatCore.ts (5977 行)
+### chatCore.ts（5977行）
 
-**メインのリクエストハンドラー**です。サイズは大きいものの、明確な構造になっています。
+**メインのリクエストハンドラー**です。非常に大きなファイルですが、構造は明確です。
 
 ```ts
-// chatCore.ts の疑似構造
+// chatCore.tsの擬似構造
 export async function handleChat(request: NextRequest) {
   // 1. 認証 + CORS
   await authenticateRequest(request);
   applyCorsHeaders(response);
 
-  // 2. リクエストボディの検証
+  // 2. ボディの検証
   const body = await parseRequestBody(request);
 
   // 3. フォーマットの検出 + 変換
@@ -205,11 +205,11 @@ export async function handleChat(request: NextRequest) {
 }
 ```
 
-1つの巨大な関数ではありますが、5段階のパイプラインに対応する**コメント付きセクション**として整理されています。
+1つの巨大な関数であるにもかかわらず、5段階のパイプラインに対応する**コメント付きのセクション**に整理されています。
 
-### combo.ts (4456 LOC)
+### combo.ts（4456 LOC）
 
-コンボを順序付けられたターゲット群に解決する**ルーティングエンジン**です。
+コンボを順序付きターゲットへ解決する**ルーティングエンジン**です。
 
 ```ts
 // services/combo.ts
@@ -226,36 +226,36 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
 }
 ```
 
-**19種類のルーティング戦略**をサポートしています（`src/shared/constants/routingStrategies.ts` を参照）。
+**19種類のルーティング戦略**をサポートしています（`src/shared/constants/routingStrategies.ts`を参照）。
 
-| 戦略                | 動作                                                        |
-| ------------------- | ----------------------------------------------------------- |
-| `priority`          | 最初のターゲットを優先する順序付きリスト                    |
-| `weighted`          | ターゲットごとの重みに基づく確率的選択                      |
-| `round-robin`       | ターゲットを順番に巡回                                      |
-| `context-relay`     | ターゲット間でコンテキストを引き継ぐ                        |
-| `fill-first`        | 次のターゲットへ移る前にクォータを使い切る                  |
-| `p2c`               | 2択からの選択                                               |
-| `random`            | 一様ランダム                                                |
-| `least-used`        | 直近の使用回数が最も少ないものを選択                        |
-| `cost-optimized`    | 正常なターゲットのうち最も安価なものを優先                  |
-| `reset-aware`       | プロバイダーのリセット期間を考慮                            |
-| `reset-window`      | リセット期間に基づくルーティング                            |
-| `headroom`          | 残りのクォータ余力が最も大きいものを優先                    |
-| `strict-random`     | 完全に一様な選択（品質による重み付けなし）                  |
-| `auto`              | 16要素のスコアリングを使用（`autoCombo/`）                  |
-| `lkgp`              | 最後に正常だったことが確認されたプロバイダーを優先          |
-| `context-optimized` | 長いコンテキストのリクエストに最適なものを選択              |
-| `fusion`            | 複数の候補へ並列に展開し、判定役を介して統合（`fusion.ts`） |
+| 戦略                | 動作                                                          |
+| ------------------- | ------------------------------------------------------------- |
+| `priority`          | 先頭ターゲットを優先する順序付きリスト                        |
+| `weighted`          | ターゲットごとの重みに基づく確率的選択                        |
+| `round-robin`       | ターゲットを順番に巡回                                        |
+| `context-relay`     | ターゲット間でコンテキストを引き継ぐ                          |
+| `fill-first`        | 次へ移る前にクォータを使い切る                                |
+| `p2c`               | 2択のうち良い方を選択                                         |
+| `random`            | 一様ランダム                                                  |
+| `least-used`        | 最近の使用回数が最も少ないものを選択                          |
+| `cost-optimized`    | 正常なターゲットのうち最も安価なものを優先                    |
+| `reset-aware`       | プロバイダーのリセット期間を考慮                              |
+| `reset-window`      | リセット期間に基づくルーティング                              |
+| `headroom`          | 残りのクォータ余裕が最も大きいものを優先                      |
+| `strict-random`     | 完全な一様ランダム（品質による重み付けなし）                  |
+| `auto`              | 16要素のスコアリングを使用（`autoCombo/`）                    |
+| `lkgp`              | 最後に正常動作した既知のプロバイダーを優先                    |
+| `context-optimized` | 長いコンテキストのリクエストに最適なものを選択                |
+| `fusion`            | 複数のパネルへ並列に展開し、審判役を通じて統合（`fusion.ts`） |
 
-### base.ts (1170 LOC)
+### base.ts（1170 LOC）
 
-全101個のエグゼキューターが継承する**抽象エグゼキューター**です。以下を含みます。
+107個すべてのエグゼキューターが継承する**抽象エグゼキューター**です。以下が含まれます。
 
-- `buildUrl()` — デフォルトのURL構築（カスタム動作はサブクラスでオーバーライド）
+- `buildUrl()` — デフォルトのURL構築（カスタム動作が必要な場合はサブクラスでオーバーライド）
 - `buildHeaders()` — デフォルトのヘッダー（認証、content-type）
-- `transformRequest()` — デフォルトではそのまま通過
-- `execute()` — リトライ、バックオフ、ブレーカーを備えたメインのHTTPループ
+- `transformRequest()` — デフォルトではそのまま渡す
+- `execute()` — 再試行、バックオフ、ブレーカーを備えたメインのHTTPループ
 
 ```ts
 // open-sse/executors/default.ts
@@ -273,18 +273,18 @@ export class DefaultExecutor extends BaseExecutor {
 
 ## サービス（117モジュール）
 
-サービスは、ハンドラーによって組み合わせられる、**目的を絞った単一責任のモジュール**です。主なカテゴリーは次のとおりです。
+サービスは、ハンドラーによって構成される、**特定の目的に特化した単一用途のモジュール**です。主なカテゴリーは次のとおりです。
 
 ### ルーティングとコンボ
 
 - `combo.ts` — コンボルーティングされたリクエストのエントリーポイント
-- `services/autoCombo/` — 16要素のスコアリング、8種類の自動ルーティング戦略
-- `wildcardRouter.ts` — ワイルドカードルート（`gpt-*`）を照合
-- `modelFamilyFallback.ts` — T5ファミリー内フォールバック
+- `services/autoCombo/` — 16要素のスコアリング、8つの自動ルーティング戦略
+- `wildcardRouter.ts` — ワイルドカードルート（`gpt-*`）の照合
+- `modelFamilyFallback.ts` — T5ファミリー内のフォールバック
 
 ### レート制限とクォータ
 
-- `rateLimitManager.ts` — キーとプロバイダーの組み合わせごとのトークンバケット
+- `rateLimitManager.ts` — キーとプロバイダーごとのトークンバケット
 - `usage.ts` — 使用量の記録
 - `quotaCache.ts` — インメモリのクォータスナップショット
 
@@ -292,26 +292,26 @@ export class DefaultExecutor extends BaseExecutor {
 
 - `tokenRefresh.ts` — 401発生時のOAuth更新
 - `accountFallback.ts` — 代替アカウントへの切り替え
-- `sessionManager.ts` — マルチターンセッションの状態
+- `sessionManager.ts` — 複数ターンのセッション状態
 
 ### インテリジェンス
 
 - `intentClassifier.ts` — リクエストの意図を分類
-- `taskAwareRouter.ts` — タスクタイプに基づいてルーティング
+- `taskAwareRouter.ts` — タスクタイプ別にルーティング
 - `thinkingBudget.ts` — 思考トークンを割り当て
 - `contextManager.ts` — ルーティングコンテキストを注入
 
-### 耐障害性
+### レジリエンス
 
 - `resilience.ts` — 再試行、バックオフ、サーキットブレーカーのオーケストレーション
 - `emergencyFallback.ts` — 最終手段のフォールバック
-- `modelDeprecation.ts` — 後継モデルへ自動ルーティング
+- `modelDeprecation.ts` — 後継モデルへの自動ルーティング
 
 ### 状態
 
 - `signatureCache.ts` — リクエストシグネチャによる重複排除
-- `volumeDetector.ts` — 負荷制御
-- `contextHandoff.ts` — セッションのシリアル化
+- `volumeDetector.ts` — 負荷制限
+- `contextHandoff.ts` — セッションのシリアライズ
 
 ### 圧縮
 
@@ -330,29 +330,29 @@ export class DefaultExecutor extends BaseExecutor {
 
 ## エグゼキューター（75以上のファイル）
 
-プロバイダーごとに1ファイルあります。すべてが`BaseExecutor`を継承し、異なる部分をオーバーライドします。
+プロバイダーごとに1ファイルあります。すべてが`BaseExecutor`を拡張し、異なる部分をオーバーライドします。
 
 ### 共通パターン
 
-プロバイダーは`getExecutor(providerId)`を介して解決され、構成済みのエグゼキューターが返されます。OpenAI/Anthropic互換プロバイダーは`DefaultExecutor`（`executors/default.ts`）を使用します。プロバイダー固有の動作（ベースURL、認証ヘッダー、APIバージョン）は`open-sse/config/providers/`で構成され、リクエストボディの変換は`open-sse/translator/`で処理されます。
+プロバイダーは`getExecutor(providerId)`を介して解決され、設定済みのエグゼキューターが返されます。OpenAI/Anthropic互換プロバイダーは`DefaultExecutor`（`executors/default.ts`）を使用します。プロバイダー固有の動作（ベースURL、認証ヘッダー、APIバージョン）は`open-sse/config/providers/`で設定され、リクエストボディの変換は`open-sse/translator/`で処理されます。
 
-**カスタムURL**はプロバイダー構成で設定します。
+**カスタムURL**はプロバイダー設定で指定します。
 
 ```ts
-// open-sse/config/providers/内のプロバイダー構成
+// open-sse/config/providers/内のプロバイダー設定
 export default {
   id: "together",
   baseURL: "https://api.together.xyz/v1/chat/completions",
 }
 ````
 
-**カスタム認証**は、プロバイダーレジストリの認証構成（APIキー、OAuth、ヘッダープロファイル）を通じて処理されます。
+**カスタム認証**は、プロバイダーレジストリの認証設定（APIキー、OAuth、ヘッダープロファイル）を通じて処理されます。
 
-**カスタムリクエストボディ**の変換（例：Anthropicによる`system`と`messages`の分離）は、`open-sse/translator/`でプロバイダーごとに登録されます。
+**カスタムリクエストボディ**の変換（たとえば、Anthropicによる`system`と`messages`の分離）は、`open-sse/translator/`でプロバイダーごとに登録されます。
 
 ````
 
-### エグゼキューターファクトリー
+### エグゼキューターファクトリ
 
 `executors/index.ts`は`getExecutor(providerId)`をエクスポートします。
 
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-解決は`ExecutorRegistry`（`executors/registry.ts`）を介して行われます。すべての専用エグゼキューターは`executors/index.ts`の組み込みテーブルで宣言され、モジュールの読み込み時に`registerExecutor(alias, instance)`を介して登録されます。`getExecutor()`はレジストリを参照し、専用エントリのないプロバイダーについては、メモ化された`DefaultExecutor`へフォールバックします。完全なエイリアス → エグゼキューターのマッピングは、ゴールデンテスト`tests/unit/executor-map-golden.test.ts`によって検証されます。
+解決は`ExecutorRegistry`（`executors/registry.ts`）を介して行われます。特殊化された各エグゼキューターは、`executors/index.ts`の組み込みテーブルで宣言され、モジュールのロード時に`registerExecutor(alias, instance)`を介して登録されます。`getExecutor()`はレジストリを参照し、特殊化されたエントリが存在しないプロバイダーについては、メモ化された`DefaultExecutor`へフォールバックします。alias → executorの完全なマッピングは、ゴールデンテスト`tests/unit/executor-map-golden.test.ts`で規定されています。
 
 ---
 

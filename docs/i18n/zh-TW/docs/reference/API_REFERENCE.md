@@ -284,7 +284,7 @@ Content-Type: application/json
 
 {
   "model": "openai/gpt-image-2",
-  "prompt": "A beautiful sunset over mountains",
+  "prompt": "山巒上方的美麗夕陽",
   "size": "1024x1024"
 }
 ```
@@ -1101,7 +1101,7 @@ Content-Type: application/json
 }
 ```
 
-> **結構描述注意事項**（`setBudgetSchema`）：`apiKeyId` 為必填；`dailyLimitUsd`、`weeklyLimitUsd` 或 `monthlyLimitUsd` 之中至少一項必須大於零。選填欄位：`warningThreshold`（0–1）、`resetInterval`（`daily` | `weekly` | `monthly`）、`resetTime`（`HH:MM`）。舊版 `{keyId, limit, period}` 結構會傳回 `400 Bad Request`。
+> **結構描述注意事項** (`setBudgetSchema`)：`apiKeyId` 為必填；`dailyLimitUsd`、`weeklyLimitUsd` 或 `monthlyLimitUsd` 中至少一項必須大於零。選填欄位：`warningThreshold`（0–1）、`resetInterval`（`daily` | `weekly` | `monthly`）、`resetTime`（`HH:MM`）。舊版的 `{keyId, limit, period}` 格式會傳回 `400 Bad Request`。
 
 ## Token 限制
 
@@ -1558,19 +1558,19 @@ GET /.well-known/agent.json
 
 ## CLI 工具管理
 
-管理與 OmniRoute 整合的 CLI 工具（antigravity、chipotle、commandCode、
+管理與 OmniRoute 整合的 CLI 工具（antigravity、commandCode、
 devin-cli 等）。如需完整清單，請參閱[提供者參考](./PROVIDER_REFERENCE.md)。
 
-| 方法 | 路徑                                    | 說明                                                                                                                                |
-| ---- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| GET  | `/api/cli-tools/all-statuses`           | 所有 CLI 工具的狀態（是否已安裝、版本、最後出現時間）                                                                               |
-| GET  | `/api/cli-tools/status`                 | 單一 CLI 工具的詳細狀態（`?tool=` 查詢）                                                                                            |
-| POST | `/api/cli-tools/apply`                  | 寫入工具產生的設定（`dryRun` 可供預覽；在容器化環境中會傳回 `422` + `containerEphemeralTarget`；`migration` 會註明舊版 Codex YAML） |
-| GET  | `/api/cli-tools/backups`                | 列出 CLI 工具設定的備份                                                                                                             |
-| POST | `/api/cli-tools/backups`                | 建立所有 CLI 工具設定的備份                                                                                                         |
-| POST | `/api/cli-tools/backups`                | 還原：使用相同端點，並在請求主體中提供 `{tool, backupId}`，即可還原該備份                                                           |
-| GET  | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM Proxy 狀態（「antigravity-mitm」CLI 工具）                                                                         |
-| POST | `/api/cli-tools/antigravity-mitm/alias` | 設定 antigravity-mitm 別名                                                                                                          |
+| 方法 | 路徑                                    | 說明                                                                                                                        |
+| ---- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| GET  | `/api/cli-tools/all-statuses`           | 所有 CLI 工具的狀態（已安裝、版本、最後出現時間）                                                                           |
+| GET  | `/api/cli-tools/status`                 | 單一 CLI 工具的詳細狀態（使用 `?tool=` 查詢）                                                                               |
+| POST | `/api/cli-tools/apply`                  | 寫入工具產生的設定（`dryRun` 可供預覽；容器化時傳回 `422` + `containerEphemeralTarget`；`migration` 會註明舊版 Codex YAML） |
+| GET  | `/api/cli-tools/backups`                | 列出 CLI 工具設定備份                                                                                                       |
+| POST | `/api/cli-tools/backups`                | 建立所有 CLI 工具設定的備份                                                                                                 |
+| POST | `/api/cli-tools/backups`                | 還原：在請求主體中包含 `{tool, backupId}`，透過同一端點還原該備份                                                           |
+| GET  | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM 代理伺服器狀態（「antigravity-mitm」CLI 工具）                                                             |
+| POST | `/api/cli-tools/antigravity-mitm/alias` | 設定 antigravity-mitm 別名                                                                                                  |
 
 **驗證：** 需要管理工作階段。
 

@@ -1600,23 +1600,23 @@ Endpoint khusus admin untuk manajemen operasional.
 
 ---
 
-## Manajemen Alat CLI
+## Pengelolaan Alat CLI
 
-Kelola alat CLI yang terintegrasi dengan OmniRoute (antigravity, chipotle, commandCode,
+Kelola alat CLI yang terintegrasi dengan OmniRoute (antigravity, commandCode,
 devin-cli, dll.). Lihat [Referensi Penyedia](./PROVIDER_REFERENCE.md) untuk daftar lengkap.
 
-| Metode | Jalur                                   | Deskripsi                                                                                                                                                                           |
-| ------ | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | Status semua alat CLI (terinstal, versi, terakhir terlihat)                                                                                                                         |
-| GET    | `/api/cli-tools/status`                 | Detail status untuk satu alat CLI (kueri `?tool=`)                                                                                                                                  |
-| POST   | `/api/cli-tools/apply`                  | Menulis konfigurasi yang dihasilkan alat (`dryRun` menampilkan pratinjau; `422` + `containerEphemeralTarget` saat dijalankan dalam kontainer; `migration` mencatat YAML Codex lama) |
-| GET    | `/api/cli-tools/backups`                | Mencantumkan cadangan konfigurasi alat CLI                                                                                                                                          |
-| POST   | `/api/cli-tools/backups`                | Membuat cadangan semua konfigurasi alat CLI                                                                                                                                         |
-| POST   | `/api/cli-tools/backups`                | Memulihkan: endpoint yang sama dengan `{tool, backupId}` dalam isi akan memulihkan cadangan tersebut                                                                                |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Status proksi MITM Antigravity (alat CLI "antigravity-mitm")                                                                                                                        |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | Mengonfigurasi alias antigravity-mitm                                                                                                                                               |
+| Metode | Jalur                                   | Deskripsi                                                                                                                                                                       |
+| ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/cli-tools/all-statuses`           | Status semua alat CLI (terinstal, versi, terakhir terlihat)                                                                                                                     |
+| GET    | `/api/cli-tools/status`                 | Detail status untuk satu alat CLI (kueri `?tool=`)                                                                                                                              |
+| POST   | `/api/cli-tools/apply`                  | Menulis konfigurasi alat yang dihasilkan (`dryRun` menampilkan pratinjau; `422` + `containerEphemeralTarget` saat berada dalam kontainer; `migration` mencatat YAML Codex lama) |
+| GET    | `/api/cli-tools/backups`                | Mencantumkan cadangan konfigurasi alat CLI                                                                                                                                      |
+| POST   | `/api/cli-tools/backups`                | Membuat cadangan semua konfigurasi alat CLI                                                                                                                                     |
+| POST   | `/api/cli-tools/backups`                | Memulihkan: endpoint yang sama dengan `{tool, backupId}` dalam isi permintaan akan memulihkan cadangan tersebut                                                                 |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Status proksi MITM Antigravity (alat CLI "antigravity-mitm")                                                                                                                    |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | Mengonfigurasi alias antigravity-mitm                                                                                                                                           |
 
-**Autentikasi:** Memerlukan sesi manajemen.
+**Autentikasi:** Memerlukan sesi pengelolaan.
 
 ---
 

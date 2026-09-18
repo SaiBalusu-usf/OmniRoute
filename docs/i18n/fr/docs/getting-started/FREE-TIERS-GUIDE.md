@@ -4,7 +4,7 @@
 
 ---
 
-> **TL;DR** : OmniRoute enregistre 352 identifiants de fournisseurs, dont **152 entrées du catalogue des fournisseurs marquées `hasFree`**. Le catalogue audité plus strict des modèles gratuits couvre **34 clés de pools récurrents / 443 entrées** (436 actives + 7 abandonnées). Connectez plusieurs fournisseurs adaptés afin de bénéficier d’une capacité de repli plus importante ; chaque quota, règle d’approbation, politique de confidentialité et condition de dépassement payant reste applicable.
+> **TL;DR** : OmniRoute enregistre 357 identifiants de fournisseurs, avec **152 entrées du catalogue de fournisseurs marquées `hasFree`**. Le catalogue audité plus strict des modèles gratuits couvre **35 clés de pools récurrents / 482 entrées** (475 actives + 7 abandonnées). Connectez plusieurs fournisseurs adaptés pour bénéficier d’une plus grande capacité de repli ; chaque quota, règle d’approbation, politique de confidentialité et condition de dépassement payant reste applicable.
 
 ---
 
@@ -158,20 +158,20 @@ le quota ou la politique d’accès d’un fournisseur.
 
 ---
 
-## Calcul de l’offre gratuite
+## Calcul du niveau gratuit
 
-Le catalogue en production, avec déduplication des pools, indique actuellement :
+Le catalogue en production, dédupliqué par pool, indique actuellement :
 
-| Métrique                                                             |                                    Valeur actuelle auditée | Interprétation                                                                                                                                                              |
-| -------------------------------------------------------------------- | ---------------------------------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Allocation récurrente quantifiée                                     |                                **~1,47 Md de tokens/mois** | Les pools partagés ne sont comptés qu’une fois ; les fournisseurs sans plafond sont exclus du total                                                                         |
-| Premier mois avec les allocations d’inscription                      |                                     **~2,07 Md de tokens** | Total récurrent auquel s’ajoutent les crédits ponctuels et récurrents                                                                                                       |
-| Inventaire audité des modèles gratuits                               | **34 clés de pool récurrentes / 443 entrées de catalogue** | 436 actives + 7 abandonnées ; à distinguer du catalogue de 352 fournisseurs                                                                                                 |
-| Fournisseurs récurrents/sans clé, gratuits indéfiniment, représentés |                                                     **52** | Fournisseurs uniques parmi les types de catalogue récurrents quotidiens/mensuels, à crédits/sans plafond et sans clé ; lignes soumises à des critères d’éligibilité exclues |
-| Entrées du catalogue de fournisseurs marquées `hasFree`              |                                              **152 / 352** | Métadonnées générales sur les fournisseurs ; tous ne proposent pas un quota récurrent quantifiable                                                                          |
+| Métrique                                                         |                                    Valeur actuelle auditée | Interprétation                                                                                                                                                              |
+| ---------------------------------------------------------------- | ---------------------------------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Allocation récurrente quantifiée                                 |                                   **~1,62 Md tokens/mois** | Les pools partagés ne sont comptés qu’une fois ; les fournisseurs sans plafond sont exclus de la somme                                                                      |
+| Premier mois avec les allocations d’inscription                  |                                     **~2,22 Md de tokens** | Total récurrent auquel s’ajoutent les crédits ponctuels et récurrents                                                                                                       |
+| Inventaire audité des modèles gratuits                           | **35 clés de pool récurrentes / 482 entrées de catalogue** | 475 actives + 7 abandonnées ; distinct du catalogue de 357 fournisseurs                                                                                                     |
+| Fournisseurs gratuits permanents récurrents/sans clé représentés |                                                     **53** | Fournisseurs uniques pour les types de catalogue récurrents quotidiens/mensuels, à crédits, sans plafond et sans clé ; lignes soumises à des critères d’éligibilité exclues |
+| Entrées du catalogue de fournisseurs marquées `hasFree`          |                                              **152 / 357** | Métadonnées générales des fournisseurs ; tous ne disposent pas d’un quota récurrent quantifiable                                                                            |
 
 Ces valeurs sont calculées à partir de `open-sse/config/freeModelCatalog.ts` ; consultez la
-[Référence des offres gratuites](../reference/FREE_TIERS.md) pour en savoir plus sur la déduplication des pools, les indicateurs de conditions d’utilisation,
+[Référence des niveaux gratuits](../reference/FREE_TIERS.md) pour la déduplication des pools, les indicateurs de conditions d’utilisation,
 les entrées abandonnées et la méthodologie relative aux crédits d’inscription.
 
 ---

@@ -4,7 +4,7 @@
 
 ---
 
-> **Trumpai**: „OmniRoute“ registruoja 352 paslaugų teikėjų ID, o **152 paslaugų teikėjų katalogo įrašai pažymėti `hasFree`**. Griežčiau audituojamas nemokamų modelių katalogas apima **34 pasikartojančių išteklių telkinių raktus / 443 įrašus** (436 aktyvius + 7 nebeteikiamus). Prijunkite kelis tinkamus paslaugų teikėjus, kad turėtumėte daugiau atsarginių parinkčių; visos kvotos, patvirtinimo taisyklės, privatumo politikos ir mokamo limito viršijimo sąlygos vis tiek taikomos.
+> **Trumpai**: „OmniRoute“ registruoja 357 teikėjų ID, o **152 teikėjų katalogo įrašai pažymėti `hasFree`**. Griežčiau audituojamas nemokamų modelių katalogas apima **35 pasikartojančius telkinio raktus / 482 įrašus** (475 aktyvius ir 7 nebeteikiamus). Prijunkite kelis tinkamus teikėjus, kad padidintumėte atsarginį pajėgumą; vis tiek taikomos visos kvotos, patvirtinimo taisyklės, privatumo politikos ir mokamo limito viršijimo sąlygos.
 
 ---
 
@@ -159,18 +159,18 @@ paslaugų teikėjo kvotos ar prieigos politiką.
 
 ## Nemokamo plano skaičiavimai
 
-Dabartiniame tiesiogiai atnaujinamame kataloge, pašalinus bendrų telkinių dublikatus, nurodoma:
+Aktyvus, pagal bendrus limitų telkinius deduplikuotas katalogas šiuo metu pateikia:
 
-| Rodiklis                                                       |                               Dabartinė audituota vertė | Paaiškinimas                                                                                                                              |
-| -------------------------------------------------------------- | ------------------------------------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| Periodiškai suteikiamas kiekybiškai įvertintas kiekis          |                             **~1,47 mlrd. žetonų/mėn.** | Bendri telkiniai skaičiuojami vieną kartą; teikėjai be limitų į sumą neįtraukiami                                                         |
-| Pirmasis mėnuo su registracijos kreditais                      |                                  **~2,07 mlrd. žetonų** | Periodinė bendra suma kartu su vienkartiniais ir periodiniais kreditais                                                                   |
-| Audituotas nemokamų modelių sąrašas                            | **34 periodinių telkinių raktai / 443 katalogo įrašai** | 436 aktyvūs + 7 nebeteikiami; tai skiriasi nuo 352 teikėjų katalogo                                                                       |
-| Įtraukti periodiškai / be rakto visam laikui nemokami teikėjai |                                                  **52** | Unikalūs teikėjai iš periodinių dienos, mėnesio, kreditų, be limitų ir be rakto katalogo tipų; tinkamumo reikalaujantys įrašai neįtraukti |
-| Teikėjų katalogo įrašai, pažymėti `hasFree`                    |                                           **152 / 352** | Platesni teikėjų metaduomenys; ne visi turi kiekybiškai įvertinamą periodinę kvotą                                                        |
+| Metrika                                                                                       |                                    Dabartinė audituota vertė | Paaiškinimas                                                                                                                                                                               |
+| --------------------------------------------------------------------------------------------- | -----------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Pasikartojantis kiekybiškai įvertintas limitas                                                |                                       **~1.62B žetonų/mėn.** | Bendri telkiniai skaičiuojami vieną kartą; į sumą neįtraukiami neribotų paslaugų teikėjai                                                                                                  |
+| Pirmasis mėnuo su registracijos kreditais                                                     |                                            **~2.22B žetonų** | Pasikartojanti suma ir vienkartiniai bei pasikartojantys kreditai                                                                                                                          |
+| Audituotas nemokamų modelių sąrašas                                                           | **35 pasikartojančių telkinių raktai / 482 katalogo įrašai** | 475 aktyvūs + 7 nebeteikiami; tai nėra tas pats, kas 357 paslaugų teikėjų katalogas                                                                                                        |
+| Atstovaujami pasikartojantys / rakto nereikalaujantys visam laikui nemokami paslaugų teikėjai |                                                       **53** | Unikalūs paslaugų teikėjai pasikartojančių dienos / mėnesio / kreditų / neribotų ir rakto nereikalaujančių katalogo tipų kategorijose; tinkamumo kriterijais apribotos eilutės neįtrauktos |
+| Paslaugų teikėjų katalogo įrašai, pažymėti `hasFree`                                          |                                                **152 / 357** | Platesni paslaugų teikėjų metaduomenys; ne visi turi kiekybiškai įvertinamą pasikartojančią kvotą                                                                                          |
 
-Šios vertės apskaičiuojamos pagal `open-sse/config/freeModelCatalog.ts`; informacijos apie
-telkinių dublikatų šalinimą, ToS žymas, nebeteikiamus įrašus ir registracijos kreditų metodiką rasite
+Šios vertės apskaičiuotos pagal `open-sse/config/freeModelCatalog.ts`; daugiau informacijos apie
+bendrų limitų telkinių deduplikavimą, paslaugų teikimo sąlygų žymas, nebeteikiamus įrašus ir registracijos kreditų metodiką rasite
 [Nemokamų planų žinyne](../reference/FREE_TIERS.md).
 
 ---

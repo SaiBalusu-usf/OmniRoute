@@ -6,7 +6,7 @@
 
 ## Yleiskatsaus
 
-OmniRoute CLI -komennot todentautuvat paikalliseen hallinta-APIin käyttämällä
+OmniRoute CLI -komennot todentautuvat paikalliselle hallinta-API:lle käyttämällä
 `HMAC-SHA256(machine-id, salt)`-tunnistetta, joka lähetetään
 `x-omniroute-cli-token`-pyyntöotsakkeessa.
 
@@ -16,80 +16,95 @@ salasanaa jokaisella suorituskerralla.
 
 ## Toimintaperiaate
 
-1. `getMachineTokenSync()` lukee laitteiston konetunnisteen `node-machine-id`-paketin
-   avulla (virheen ilmetessä käytetään tyhjää merkkijonoa, mikä poistaa CLI-todennuksen
+1. `getMachineTokenSync()` lukee laitteiston konetunnuksen `node-machine-id`-paketin
+   kautta (virheen ilmetessä käytetään tyhjää merkkijonoa, mikä poistaa CLI-todennuksen
    käytöstä).
-2. Se laskee arvon `HMAC-SHA256(machine_id, salt)` ja palauttaa koko 64 merkin
-   heksadesimaalisen tiivisteen — deterministisen, peruuttamattoman ja tähän
-   koneeseen sidotun tunnisteen.
-3. CLI lähettää tunnisteen otsakkeessa `x-omniroute-cli-token` vain, kun ratkaistu
+2. Se laskee arvon `HMAC-SHA256(machine_id, salt)` ja palauttaa täydellisen,
+   64 merkkiä pitkän heksadesimaalisen tiivisteen — deterministisen,
+   peruuttamattoman ja tähän koneeseen sidotun tunnisteen.
+3. CLI lähettää tunnisteen `x-omniroute-cli-token`-otsakkeessa vain, kun selvitetty
    kohde on eksplisiittinen loopback-URL (`localhost`, `127.0.0.0/8` tai
-   loopback-IPv6). Tunnisteen sisältävissä pyynnöissä käytetään asetusta
-   `redirect: error`, joten paikallinen uudelleenohjaus ei voi välittää tunnistetta
-   toiseen originiin. Etäkontekstit käyttävät sen sijaan rajattuja käyttöoikeustunnisteita.
-   Jos tunnisteen johtaminen ei ole mahdollista, CLI jättää otsakkeen pois, ja
-   `omniroute doctor` ilmoittaa virheestä sen sijaan, että tyhjää tunnistetta
-   pidettäisiin kelvollisena.
+   loopback-IPv6). Tunnisteen sisältävissä pyynnöissä käytetään `redirect: error`-asetusta,
+   joten paikallinen uudelleenohjaus ei voi välittää sitä toiseen originiin.
+   Etäkontekstit käyttävät sen sijaan rajattuja käyttöoikeustunnisteita. Jos tunnisteen
+   johtaminen ei ole mahdollista, CLI jättää otsakkeen pois ja `omniroute doctor`
+   raportoi virheestä sen sijaan, että tyhjää tunnistetta pidettäisiin kelvollisena.
 4. Palvelin (`src/server/authz/policies/management.ts`) laskee odotetun tunnisteen
-   uudelleen samalla suolalla ja vertaa sitä `timingSafeEqual`-toiminnolla
-   estääkseen ajoitukseen perustuvan selvittämisen.
+   uudelleen samalla suolalla ja vertaa sitä `timingSafeEqual`-funktiolla estääkseen
+   ajoitukseen perustuvan tunnisteen selvittämisen.
 
-## Suojausominaisuudet
+## Tietoturvaominaisuudet
 
-| Ominaisuus                          | Kuvaus                                                                                                                                                                                                                                                         |
-| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Vain loopback-yhteydet**          | Hyväksytään vain, kun palvelimen luotettu vertaisosapuolen paikallisuusmerkintä (joka johdetaan todellisesta TCP-vertaisosoitteesta) ilmaisee loopback-yhteyden. Asiakkaan hallitsemaan `Host`-otsakkeeseen ei koskaan luoteta paikallisuuden määrittämisessä. |
-| **Vakioaikainen vertailu**          | `crypto.timingSafeEqual` estää ajoitushyökkäykset.                                                                                                                                                                                                             |
-| **Peruuttamaton**                   | Konetunnistetta ei voi palauttaa HMAC-tulosteesta.                                                                                                                                                                                                             |
-| **Ei `always`-suojauksen ohitusta** | `isAlwaysProtectedPath()` arvioidaan ennen CLI-tunnisteen tarkistusta. `/api/shutdown` ja `/api/settings/database` edellyttävät aina JWT:tä.                                                                                                                   |
-| **Ei vietävissä**                   | Tunnistetta ei koskaan kirjoiteta levylle tai lokiin.                                                                                                                                                                                                          |
+| Ominaisuus                          | Kuvaus                                                                                                                                                                                                                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Vain loopback-yhteydet**          | Hyväksytään vain, kun palvelimen luotettu vertaisyhteyden paikallisuusmerkintä (joka johdetaan todellisesta TCP-vertaisosoitteesta) osoittaa loopback-yhteyttä. Asiakkaan hallitsemaan `Host`-otsakkeeseen ei koskaan luoteta paikallisuuden määrittämisessä. |
+| **Vakioaikainen vertailu**          | `crypto.timingSafeEqual` estää ajoitushyökkäykset.                                                                                                                                                                                                            |
+| **Peruuttamaton**                   | Koneen tunnusta ei voi palauttaa HMAC-tulosteesta.                                                                                                                                                                                                            |
+| **Ei `always`-suojauksen ohitusta** | `isAlwaysProtectedPath()` arvioidaan ennen CLI-tunnisteen tarkistusta. `/api/shutdown` ja `/api/settings/database` vaativat aina JWT:n.                                                                                                                       |
+| **Ei vietävissä**                   | Tunnistetta ei koskaan kirjoiteta levylle eikä lokiteta.                                                                                                                                                                                                      |
 
-## Suolan vaihtaminen
+## Oletussuola (satunnainen asennuskohtainen arvo)
 
-Aseta `OMNIROUTE_CLI_SALT`, jos haluat vaihtaa johdetun tunnisteen ilman
-koodimuutoksia. Vaihdon jälkeen kaikki tämän koneen CLI-prosessit käyttävät
-uutta tunnistetta automaattisesti. Tästä on hyötyä, jos prosessiluettelon
-vuoto on saattanut paljastaa aiemman johdetun arvon.
+Kun `OMNIROUTE_CLI_SALT`-muuttujaa ei ole asetettu, suolana käytetään satunnaista,
+64 merkkiä pitkää heksadesimaalista merkkijonoa, joka luodaan kerran ja tallennetaan
+polkuun `<DATA_DIR>/cli-token-salt.json` (tila `0600`) — ei versionhallintaan
+tallennettua literaalia `omniroute-cli-auth-v1`. Sekä `getActiveSalt()` tiedostossa
+`src/lib/machineToken.ts` että sen vastine tiedostossa
+`bin/cli/utils/cliToken.mjs` lukevat saman tiedoston, joten palvelin ja tämän
+asennuksen jokainen CLI-suorituskerta päätyvät samaan arvoon. Versionhallintaan
+tallennettua literaalia käytetään vain viimeisenä varavaihtoehtona, kun pysyvää tai
+ympäristömuuttujasta saatavaa suolaa ei vielä voida muodostaa (esimerkiksi tuoreessa,
+vain CLI:n sisältävässä asennuksessa ennen kuin palvelinta on koskaan suoritettu).
+Tämä korjaa vanhan kiinteän oletusliteraalin heikkouden: `/etc/machine-id` on
+yleensä kaikkien käyttäjien luettavissa, joten kuka tahansa paikallinen käyttäjä
+olisi muuten voinut johtaa saman tunnisteen kaikille asennuksille, joissa
+`OMNIROUTE_CLI_SALT`-muuttujaa ei ollut asetettu.
+
+## Suolan kierrätys
+
+Aseta `OMNIROUTE_CLI_SALT`, jotta johdettu tunniste voidaan kierrättää ilman koodimuutoksia — se
+on aina ensisijainen asennuskohtaisesti tallennettuun suolaan nähden. Kierrätyksen jälkeen kaikki tämän
+koneen CLI-prosessit käyttävät uutta tunnistetta automaattisesti. Tämä on hyödyllistä, jos
+prosessiluettelon vuoto on saattanut paljastaa aiemman johdetun arvon.
 
 ```bash
-# Pysyvä vaihto (lisää komentotulkin profiiliin)
+# Pysyvä kierrätys (lisää komentotulkin profiiliin)
 export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 
 # Varmista, että uusi tunniste on käytössä
 omniroute status
 ```
 
-Oletussuola: `omniroute-cli-auth-v1`
-
 ## Vanha muoto (SHA-256, 32 merkkiä) — hyväksytään edelleen
 
-Ennen edellä kuvattua HMAC-muotoa CLI johti tunnisteensa muodossa
+Ennen yllä kuvattua HMAC-muotoa CLI johti tunnisteensa kaavalla
 `SHA-256(machineId + salt).hex[0..32]` (32 merkin etuliite) tiedostossa
 `bin/cli/utils/cliToken.mjs` (`getLegacyCliTokenSync` tiedostossa `src/lib/machineToken.ts`).
 
 Taaksepäin yhteensopivuuden vuoksi palvelin hyväksyy **molemmat** muodot: tarkistin muodostaa
-arvon `expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` ja vertaa
-saapuvaa otsaketta kuhunkin `timingSafeEqual`-toiminnolla
+`expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` ja vertaa
+saapuvaa otsaketta kuhunkin käyttäen `timingSafeEqual`-funktiota
 (`src/server/authz/policies/management.ts` ja `src/lib/middleware/cliTokenAuth.ts`).
-Tunniste on siis kelvollinen, jos se vastaa **joko** 64 merkin HMAC-tiivistettä tai
-32 merkin vanhan SHA-256-muodon etuliitettä.
+Tunniste on siis kelvollinen, jos se vastaa **joko** 64 merkin HMAC-tiivistettä tai 32 merkin
+vanhan SHA-256-muodon etuliitettä.
 
-**Käytöstä poistaminen:** aseta `OMNIROUTE_DISABLE_CLI_TOKEN=true` (ympäristössä tai
-`.env`-tiedostossa), jos haluat poistaa CLI-tunnistemekanismin kokonaan käytöstä.
-Tällöin kaikki käyttö edellyttää eksplisiittistä API-avainta. Tätä suositellaan
-monen käyttäjän isäntäkoneissa, sillä `machine-id` on laitekohtainen (ei
-käyttäjäkohtainen), ja toinen saman isäntäkoneen käyttäjä voisi laskea saman tunnisteen.
+**Poistaminen käytöstä:** aseta `OMNIROUTE_DISABLE_CLI_TOKEN=true` (ympäristössä tai `.env`-tiedostossa), jotta CLI:n
+tunnistemekanismi poistetaan kokonaan käytöstä; tällöin kaikki käyttö edellyttää nimenomaista API-avainta. Usean käyttäjän
+isäntäkoneissa tätä suositellaan, koska `machine-id` on laitekohtainen (ei käyttäjäkohtainen) ja toinen
+saman isäntäkoneen käyttäjä voisi laskea saman tunnisteen.
 
 ## Tiedostot
 
-| Tiedosto                                  | Tarkoitus                                     |
-| ----------------------------------------- | --------------------------------------------- |
-| `src/lib/machineToken.ts`                 | Tunnisteen johtaminen (`getMachineTokenSync`) |
-| `src/server/authz/headers.ts`             | `CLI_TOKEN_HEADER`-vakio                      |
-| `src/server/authz/policies/management.ts` | Palvelinpuolen tarkistus                      |
-| `src/server/authz/routeGuard.ts`          | Loopback-isäntätarkistus (`isLoopbackHost`)   |
+| Tiedosto                                  | Tarkoitus                                          |
+| ----------------------------------------- | -------------------------------------------------- |
+| `src/lib/machineToken.ts`                 | Tunnisteen johtaminen (`getMachineTokenSync`)      |
+| `bin/cli/utils/cliToken.mjs`              | Saman johtamisen CLI-puolen vastine                |
+| `<DATA_DIR>/cli-token-salt.json`          | Tallennettu satunnainen asennuskohtainen suola     |
+| `src/server/authz/headers.ts`             | `CLI_TOKEN_HEADER`-vakio                           |
+| `src/server/authz/policies/management.ts` | Palvelinpuolen tarkistus                           |
+| `src/server/authz/routeGuard.ts`          | Loopback-isäntäkoneen tarkistus (`isLoopbackHost`) |
 
 ## Katso myös
 
 - `docs/security/ROUTE_GUARD_TIERS.md` — reittien suojaustasot
-- `docs/architecture/AUTHZ_GUIDE.md` — koko valtuutusputki
+- `docs/architecture/AUTHZ_GUIDE.md` — koko valtuutusketju

@@ -4,7 +4,7 @@
 
 ---
 
-> **Lühidalt**: OmniRoute registreerib 352 pakkuja-ID-d, millest **152 pakkujakataloogi kirjet on märgitud tähisega `hasFree`**. Rangem auditeeritud tasuta mudelite kataloog hõlmab **34 korduva kasutuse kogumi võtit / 443 kirjet** (436 aktiivset + 7 kasutuselt kõrvaldatut). Laiema varuvõimekuse tagamiseks ühendage mitu sobivat pakkujat; kõik kvoodid, heakskiidureeglid, privaatsuspoliitikad ja tasulise ülekasutuse tingimused kehtivad endiselt.
+> **Lühidalt**: OmniRoute registreerib 357 teenusepakkuja ID-d, millest **152 teenusepakkujate kataloogi kirjet on märgitud väärtusega `hasFree`**. Rangem auditeeritud tasuta mudelite kataloog hõlmab **35 korduva ressursikogumi võtit / 482 kirjet** (475 aktiivset + 7 kasutuselt kõrvaldatud). Laiema varuvõimsuse tagamiseks ühendage mitu sobivat teenusepakkujat; endiselt kehtivad kõik kvoodid, kinnitamisreeglid, privaatsuspõhimõtted ja tasulise ülekasutuse tingimused.
 
 ---
 
@@ -159,17 +159,17 @@ kvoodist või juurdepääsupoliitikast möödahiilimiseks.
 
 ## Tasuta taseme arvutused
 
-Reaalajas töötav, ühiskogumite duplikaate eemaldav kataloog näitab praegu järgmist:
+Reaalajas, ühiskvootide duplikaate eemaldav kataloog esitab praegu järgmised andmed:
 
-| Mõõdik                                                       |                     Praegune auditeeritud väärtus | Tõlgendus                                                                                                                                        |
-| ------------------------------------------------------------ | ------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Korduv arvuliselt määratletud kasutusmaht                    |                           **~1.47B tokenit kuus** | Ühiskogumeid arvestatakse üks kord; piiramata teenusepakkujad on summast välja jäetud                                                            |
-| Esimene kuu koos registreerumisboonustega                    |                                **~2.07B tokenit** | Korduv kogumaht koos ühekordsete ja korduvate krediitidega                                                                                       |
-| Auditeeritud tasuta mudelite valik                           | **34 korduva kogumi võtit / 443 kataloogikirjet** | 436 aktiivset + 7 kasutuselt kõrvaldatut; erineb 352 teenusepakkujaga kataloogist                                                                |
-| Esindatud korduvad / võtmeta igavesti tasuta teenusepakkujad |                                            **52** | Unikaalsed teenusepakkujad korduvate päeva-, kuu-, krediidi-, piiramata ja võtmeta kataloogitüüpide lõikes; sobivusnõuetega read on välja jäetud |
-| Teenusepakkujate kataloogikirjed märkega `hasFree`           |                                     **152 / 352** | Laiemad teenusepakkujate metaandmed; kõigil pole arvuliselt määratletavat korduvat kvooti                                                        |
+| Mõõdik                                                       |                         Praegune auditeeritud väärtus | Tõlgendus                                                                                                                                        |
+| ------------------------------------------------------------ | ----------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Korduv mõõdetav kvoot                                        |                               **~1.62B tokenit kuus** | Ühiskvoote arvestatakse üks kord; piiramata teenusepakkujad jäetakse summast välja                                                               |
+| Esimene kuu koos registreerumiskvootidega                    |                                    **~2.22B tokenit** | Korduv kogumaht koos ühekordsete ja korduvate krediitidega                                                                                       |
+| Auditeeritud tasuta mudelite varu                            | **35 korduva ühiskvoodi võtit / 482 kataloogikirjet** | 475 aktiivset + 7 kasutuselt kõrvaldatud; erineb 357 teenusepakkuja kataloogist                                                                  |
+| Esindatud korduvad / võtmeta igavesti tasuta teenusepakkujad |                                                **53** | Unikaalsed teenusepakkujad korduvate päeva-, kuu-, krediidi-, piiramata ja võtmeta kataloogitüüpide lõikes; sobivusnõuetega read on välja jäetud |
+| Teenusepakkujate kataloogikirjed märkega `hasFree`           |                                         **152 / 357** | Laiemad teenusepakkujate metaandmed; kõigil pole mõõdetavat korduvat kvooti                                                                      |
 
-Need väärtused arvutatakse faili `open-sse/config/freeModelCatalog.ts` põhjal; ühiskogumite duplikaatide eemaldamise, kasutustingimuste märgiste,
+Need väärtused arvutatakse failist `open-sse/config/freeModelCatalog.ts`; ühiskvootide duplikaatide eemaldamise, kasutustingimuste märgiste,
 kasutuselt kõrvaldatud kirjete ja registreerumiskrediidi metoodika kohta vaadake
 [tasuta tasemete teatmikku](../reference/FREE_TIERS.md).
 

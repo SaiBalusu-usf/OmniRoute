@@ -1569,20 +1569,21 @@ Tikai administratoriem pieejamie galapunkti operatīvai pārvaldībai.
 
 ## CLI rīku pārvaldība
 
-Pārvaldīt CLI rīkus, kas integrējas ar OmniRoute (antigravity, chipotle, commandCode, devin-cli u.c.). Pilnu sarakstu skatiet [Pakalpojumu sniedzēju atsauces](./PROVIDER_REFERENCE.md).
+Pārvaldiet CLI rīkus, kas integrējas ar OmniRoute (antigravity, commandCode,
+devin-cli u.c.). Pilnu sarakstu skatiet [pakalpojumu sniedzēju atsaucē](./PROVIDER_REFERENCE.md).
 
-| Metode | Ceļš                                    | Apraksts                                                                                                                                              |
-| ------ | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | Visu CLI rīku statuss (instalēts, versija, pēdējoreiz redzēts)                                                                                        |
-| GET    | `/api/cli-tools/status`                 | Viena CLI rīka statusa detaļas (`?tool=` vaicājums)                                                                                                   |
-| POST   | `/api/cli-tools/apply`                  | Ierakstīt rīka ģenerēto konfigurāciju (`dryRun` priekšskatījums; `422` + `containerEphemeralTarget`, ja iepakots; `migration` norāda veco Codex YAML) |
-| GET    | `/api/cli-tools/backups`                | Uzskaitīt CLI rīku konfigurāciju dublējumkopijas                                                                                                      |
-| POST   | `/api/cli-tools/backups`                | Izveidot dublējumkopiju no visām CLI rīku konfigurācijām                                                                                              |
-| POST   | `/api/cli-tools/backups`                | Atjaunot: tas pats galapunkts ar `{tool, backupId}` ķermenī atjauno šo dublējumkopiju                                                                 |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM starpniekservera statuss (CLI rīks "antigravity-mitm")                                                                               |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | Konfigurēt antigravity-mitm aliases                                                                                                                   |
+| Metode | Ceļš                                    | Apraksts                                                                                                                                                                                      |
+| ------ | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/cli-tools/all-statuses`           | Visu CLI rīku statuss (instalēts, versija, pēdējoreiz konstatēts)                                                                                                                             |
+| GET    | `/api/cli-tools/status`                 | Detalizēts viena CLI rīka statuss (`?tool=` vaicājums)                                                                                                                                        |
+| POST   | `/api/cli-tools/apply`                  | Ieraksta rīka ģenerēto konfigurāciju (`dryRun` nodrošina priekšskatījumu; `422` + `containerEphemeralTarget`, ja darbojas konteinerā; `migration` norāda uz mantotu Codex YAML konfigurāciju) |
+| GET    | `/api/cli-tools/backups`                | Uzskaita CLI rīku konfigurāciju dublējumkopijas                                                                                                                                               |
+| POST   | `/api/cli-tools/backups`                | Izveido visu CLI rīku konfigurāciju dublējumkopiju                                                                                                                                            |
+| POST   | `/api/cli-tools/backups`                | Atjaunošana: tas pats galapunkts ar `{tool, backupId}` pieprasījuma pamattekstā atjauno attiecīgo dublējumkopiju                                                                              |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM starpniekservera statuss (CLI rīks "antigravity-mitm")                                                                                                                       |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | Konfigurē antigravity-mitm aizstājvārdus                                                                                                                                                      |
 
-**Autentifikācija:** Nepieciešama vadības sesija.
+**Autentifikācija:** nepieciešama pārvaldības sesija.
 
 ---
 

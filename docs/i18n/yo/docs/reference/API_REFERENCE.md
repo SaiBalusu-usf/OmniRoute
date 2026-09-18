@@ -1616,18 +1616,18 @@ oríṣiríṣi provider. Àwọn wọ̀nyí ni ó ń mú àwọn ojúewé `/das
 
 ## Ìṣàkóso Àwọn Irinṣẹ́ CLI
 
-Ṣàkóso àwọn irinṣẹ́ CLI tí ń ṣiṣẹ́ pọ̀ mọ́ OmniRoute (antigravity, chipotle, commandCode,
-devin-cli, àti bẹ́ẹ̀ bẹ́ẹ̀ lọ). Wo [Ìtọ́kasí Provider](./PROVIDER_REFERENCE.md) fún àtòjọ kíkún.
+Ṣàkóso àwọn irinṣẹ́ CLI tí ó ń ṣiṣẹ́ pọ̀ mọ́ OmniRoute (antigravity, commandCode,
+devin-cli, àti bẹ́ẹ̀ bẹ́ẹ̀ lọ). Wo [Ìtọ́kasí Olùpèsè](./PROVIDER_REFERENCE.md) fún àkójọ kíkún.
 
-| Ọ̀nà  | Path                                    | Àpèjúwe                                                                                                                                                           |
+| Ọ̀nà  | Ipa-ọ̀nà                                 | Àpèjúwe                                                                                                                                                           |
 | ---- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET  | `/api/cli-tools/all-statuses`           | Ipò gbogbo àwọn irinṣẹ́ CLI (tí a ti fi sílẹ̀, version, ìgbà tí a rí i kẹ́yìn)                                                                                       |
+| GET  | `/api/cli-tools/all-statuses`           | Ipò gbogbo àwọn irinṣẹ́ CLI (fífìsílẹ̀, ẹ̀yà, ìgbà tí a rí i kẹ́yìn)                                                                                                  |
 | GET  | `/api/cli-tools/status`                 | Àlàyé ipò fún irinṣẹ́ CLI kan (`?tool=` query)                                                                                                                     |
-| POST | `/api/cli-tools/apply`                  | Kọ config tí irinṣẹ́ kan ṣe (`dryRun` ń ṣàfihàn àwòtẹ́lẹ̀; `422` + `containerEphemeralTarget` nígbà tí ó wà nínú container; `migration` ń ṣàkọsílẹ̀ Codex YAML àtijọ́) |
-| GET  | `/api/cli-tools/backups`                | Ṣàkójọ àwọn backup config irinṣẹ́ CLI                                                                                                                              |
-| POST | `/api/cli-tools/backups`                | Ṣẹ̀dá backup gbogbo àwọn config irinṣẹ́ CLI                                                                                                                         |
-| POST | `/api/cli-tools/backups`                | Mú padà: endpoint kan náà pẹ̀lú `{tool, backupId}` nínú body yóò mú backup náà padà                                                                                |
-| GET  | `/api/cli-tools/antigravity-mitm`       | Ipò proxy MITM Antigravity (irinṣẹ́ CLI "antigravity-mitm")                                                                                                        |
+| POST | `/api/cli-tools/apply`                  | Kọ àtúnṣe tí irinṣẹ́ kan ṣẹ̀dá (`dryRun` ń ṣàfihàn àyẹ̀wò; `422` + `containerEphemeralTarget` nígbà tí ó wà nínú container; `migration` ń ṣàkọsílẹ̀ Codex YAML àtijọ́) |
+| GET  | `/api/cli-tools/backups`                | Ṣàkójọ àwọn àfẹ̀yìntì àtúnṣe irinṣẹ́ CLI                                                                                                                            |
+| POST | `/api/cli-tools/backups`                | Ṣẹ̀dá àfẹ̀yìntì gbogbo àwọn àtúnṣe irinṣẹ́ CLI                                                                                                                       |
+| POST | `/api/cli-tools/backups`                | Mú padà: endpoint kan náà pẹ̀lú `{tool, backupId}` nínú body yóò mú àfẹ̀yìntì náà padà                                                                              |
+| GET  | `/api/cli-tools/antigravity-mitm`       | Ipò proxy Antigravity MITM (irinṣẹ́ CLI "antigravity-mitm")                                                                                                        |
 | POST | `/api/cli-tools/antigravity-mitm/alias` | Ṣètò àwọn alias antigravity-mitm                                                                                                                                  |
 
 **Ìfàṣẹsí:** Ó nílò session ìṣàkóso.

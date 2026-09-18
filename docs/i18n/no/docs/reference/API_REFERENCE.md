@@ -1596,21 +1596,21 @@ Endepunkter kun for administratorer, beregnet på driftsadministrasjon.
 
 ## Administrasjon av CLI-verktøy
 
-Administrer CLI-verktøy som integreres med OmniRoute (antigravity, chipotle, commandCode,
+Administrer CLI-verktøy som integreres med OmniRoute (antigravity, commandCode,
 devin-cli osv.). Se [Leverandørreferanse](./PROVIDER_REFERENCE.md) for hele listen.
 
-| Metode | Bane                                    | Beskrivelse                                                                                                                                                                                |
-| ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| GET    | `/api/cli-tools/all-statuses`           | Status for alle CLI-verktøy (installert, versjon, sist sett)                                                                                                                               |
-| GET    | `/api/cli-tools/status`                 | Detaljert status for ett CLI-verktøy (`?tool=`-spørring)                                                                                                                                   |
-| POST   | `/api/cli-tools/apply`                  | Skriv verktøyets genererte konfigurasjon (`dryRun` viser en forhåndsvisning; `422` + `containerEphemeralTarget` ved containerkjøring; `migration` angir en eldre Codex YAML-konfigurasjon) |
-| GET    | `/api/cli-tools/backups`                | List opp sikkerhetskopier av CLI-verktøykonfigurasjoner                                                                                                                                    |
-| POST   | `/api/cli-tools/backups`                | Opprett en sikkerhetskopi av alle CLI-verktøykonfigurasjoner                                                                                                                               |
-| POST   | `/api/cli-tools/backups`                | Gjenopprett: Det samme endepunktet gjenoppretter sikkerhetskopien når `{tool, backupId}` angis i innholdet                                                                                 |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Status for Antigravity MITM-proxyen (CLI-verktøyet «antigravity-mitm»)                                                                                                                     |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | Konfigurer antigravity-mitm-aliaser                                                                                                                                                        |
+| Metode | Bane                                    | Beskrivelse                                                                                                                                                              |
+| ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET    | `/api/cli-tools/all-statuses`           | Status for alle CLI-verktøy (installert, versjon, sist sett)                                                                                                             |
+| GET    | `/api/cli-tools/status`                 | Detaljert status for ett CLI-verktøy (`?tool=`-spørring)                                                                                                                 |
+| POST   | `/api/cli-tools/apply`                  | Skriv den genererte konfigurasjonen for et verktøy (`dryRun` forhåndsviser; `422` + `containerEphemeralTarget` ved containerkjøring; `migration` angir eldre Codex-YAML) |
+| GET    | `/api/cli-tools/backups`                | Vis sikkerhetskopier av CLI-verktøykonfigurasjoner                                                                                                                       |
+| POST   | `/api/cli-tools/backups`                | Opprett en sikkerhetskopi av alle CLI-verktøykonfigurasjoner                                                                                                             |
+| POST   | `/api/cli-tools/backups`                | Gjenopprett: Samme endepunkt med `{tool, backupId}` i forespørselskroppen gjenoppretter denne sikkerhetskopien                                                           |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Status for Antigravity MITM-proxyen (CLI-verktøyet «antigravity-mitm»)                                                                                                   |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | Konfigurer aliaser for antigravity-mitm                                                                                                                                  |
 
-**Autentisering:** Krever en administrasjonsøkt.
+**Autentisering:** Krever administrasjonsøkt.
 
 ---
 

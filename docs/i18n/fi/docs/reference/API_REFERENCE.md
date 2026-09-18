@@ -1578,19 +1578,19 @@ Vain ylläpitäjille tarkoitetut operatiivisen hallinnan päätepisteet.
 
 ## CLI-työkalujen hallinta
 
-Hallitse OmniRouteen integroituvia CLI-työkaluja (antigravity, chipotle, commandCode,
-devin-cli jne.). Täydellinen luettelo on kohdassa [Palveluntarjoajien viite](./PROVIDER_REFERENCE.md).
+Hallitse OmniRouteen integroituvia CLI-työkaluja (antigravity, commandCode,
+devin-cli jne.). Katso täydellinen luettelo kohdasta [Palveluntarjoajien viite](./PROVIDER_REFERENCE.md).
 
-| Menetelmä | Polku                                   | Kuvaus                                                                                                                                                                           |
-| --------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET       | `/api/cli-tools/all-statuses`           | Kaikkien CLI-työkalujen tila (asennettu, versio, viimeksi havaittu)                                                                                                              |
-| GET       | `/api/cli-tools/status`                 | Yhden CLI-työkalun yksityiskohtainen tila (`?tool=`-kysely)                                                                                                                      |
-| POST      | `/api/cli-tools/apply`                  | Kirjoita työkalun luotu määritys (`dryRun` näyttää esikatselun; säilössä suoritettaessa `422` + `containerEphemeralTarget`; `migration` ilmoittaa vanhasta Codex YAML -muodosta) |
-| GET       | `/api/cli-tools/backups`                | Luettele CLI-työkalujen määritysten varmuuskopiot                                                                                                                                |
-| POST      | `/api/cli-tools/backups`                | Luo varmuuskopio kaikkien CLI-työkalujen määrityksistä                                                                                                                           |
-| POST      | `/api/cli-tools/backups`                | Palauta: sama päätepiste palauttaa kyseisen varmuuskopion, kun pyyntörungossa on `{tool, backupId}`                                                                              |
-| GET       | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM -välityspalvelimen tila (CLI-työkalu "antigravity-mitm")                                                                                                        |
-| POST      | `/api/cli-tools/antigravity-mitm/alias` | Määritä antigravity-mitm-aliakset                                                                                                                                                |
+| Metodi | Polku                                   | Kuvaus                                                                                                                                                                            |
+| ------ | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/cli-tools/all-statuses`           | Kaikkien CLI-työkalujen tila (asennettu, versio, viimeksi havaittu)                                                                                                               |
+| GET    | `/api/cli-tools/status`                 | Yhden CLI-työkalun yksityiskohtainen tila (`?tool=`-kysely)                                                                                                                       |
+| POST   | `/api/cli-tools/apply`                  | Kirjoita työkalun luotu määritys (`dryRun` näyttää esikatselun; `422` + `containerEphemeralTarget` käytettäessä säilöä; `migration` ilmoittaa vanhasta Codex YAML -määrityksestä) |
+| GET    | `/api/cli-tools/backups`                | Luettele CLI-työkalujen määritysten varmuuskopiot                                                                                                                                 |
+| POST   | `/api/cli-tools/backups`                | Luo varmuuskopio kaikkien CLI-työkalujen määrityksistä                                                                                                                            |
+| POST   | `/api/cli-tools/backups`                | Palautus: sama päätepiste palauttaa kyseisen varmuuskopion, kun pyynnön rungossa on `{tool, backupId}`                                                                            |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM -välityspalvelimen tila (CLI-työkalu "antigravity-mitm")                                                                                                         |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | Määritä antigravity-mitm-aliakset                                                                                                                                                 |
 
 **Todennus:** Edellyttää hallintaistuntoa.
 

@@ -1120,7 +1120,7 @@ Content-Type: application/json
 }
 ```
 
-> **스키마 참고 사항** (`setBudgetSchema`): `apiKeyId`는 필수이며, `dailyLimitUsd`, `weeklyLimitUsd`, `monthlyLimitUsd` 중 하나 이상이 0보다 커야 합니다. 선택적 필드: `warningThreshold`(0–1), `resetInterval`(`daily` | `weekly` | `monthly`), `resetTime`(`HH:MM`). 기존 `{keyId, limit, period}` 형식은 `400 Bad Request`를 반환합니다.
+> **스키마 참고 사항** (`setBudgetSchema`): `apiKeyId`는 필수이며, `dailyLimitUsd`, `weeklyLimitUsd`, `monthlyLimitUsd` 중 하나 이상이 0보다 커야 합니다. 선택적 필드: `warningThreshold`(0~1), `resetInterval`(`daily` | `weekly` | `monthly`), `resetTime`(`HH:MM`). 레거시 `{keyId, limit, period}` 형식을 사용하면 `400 Bad Request`가 반환됩니다.
 
 ## 토큰 한도
 
@@ -1578,19 +1578,19 @@ GET /.well-known/agent.json
 
 ## CLI 도구 관리
 
-OmniRoute와 통합되는 CLI 도구(antigravity, chipotle, commandCode,
+OmniRoute와 통합되는 CLI 도구(antigravity, commandCode,
 devin-cli 등)를 관리합니다. 전체 목록은 [제공자 참조](./PROVIDER_REFERENCE.md)를 확인하세요.
 
-| 메서드 | 경로                                    | 설명                                                                                                                                                     |
-| ------ | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | 모든 CLI 도구의 상태(설치 여부, 버전, 마지막 확인 시점)                                                                                                  |
-| GET    | `/api/cli-tools/status`                 | 단일 CLI 도구의 상세 상태(`?tool=` 쿼리)                                                                                                                 |
-| POST   | `/api/cli-tools/apply`                  | 도구에 대해 생성된 구성을 기록(`dryRun`으로 미리 보기, 컨테이너 환경에서는 `422` + `containerEphemeralTarget`, `migration`은 레거시 Codex YAML을 나타냄) |
-| GET    | `/api/cli-tools/backups`                | CLI 도구 구성 백업 목록 조회                                                                                                                             |
-| POST   | `/api/cli-tools/backups`                | 모든 CLI 도구 구성의 백업 생성                                                                                                                           |
-| POST   | `/api/cli-tools/backups`                | 복원: 동일한 엔드포인트의 본문에 `{tool, backupId}`를 포함하면 해당 백업을 복원                                                                          |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM 프록시 상태("antigravity-mitm" CLI 도구)                                                                                                |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm 별칭 구성                                                                                                                               |
+| 메서드 | 경로                                    | 설명                                                                                                                                                       |
+| ------ | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/cli-tools/all-statuses`           | 모든 CLI 도구의 상태(설치 여부, 버전, 마지막 확인 시각)                                                                                                    |
+| GET    | `/api/cli-tools/status`                 | 단일 CLI 도구의 상세 상태(`?tool=` 쿼리)                                                                                                                   |
+| POST   | `/api/cli-tools/apply`                  | 도구에 대해 생성된 구성을 기록(`dryRun`으로 미리보기, 컨테이너 환경에서는 `422` + `containerEphemeralTarget` 반환, `migration`은 레거시 Codex YAML을 명시) |
+| GET    | `/api/cli-tools/backups`                | CLI 도구 구성 백업 목록 조회                                                                                                                               |
+| POST   | `/api/cli-tools/backups`                | 모든 CLI 도구 구성의 백업 생성                                                                                                                             |
+| POST   | `/api/cli-tools/backups`                | 복원: 동일한 엔드포인트의 본문에 `{tool, backupId}`를 포함하면 해당 백업을 복원                                                                            |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM 프록시 상태("antigravity-mitm" CLI 도구)                                                                                                  |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm 별칭 구성                                                                                                                                 |
 
 **인증:** 관리 세션이 필요합니다.
 

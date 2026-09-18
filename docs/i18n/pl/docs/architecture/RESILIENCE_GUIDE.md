@@ -75,31 +75,31 @@ Test zabezpieczający przed regresją: `tests/unit/provider-cooldown-window-gate
 
 **Implementacja:**
 
-- Oznaczenie jako niedostępne: `src/sse/services/auth.ts::markAccountUnavailable()`
+- Oznaczanie jako niedostępne: `src/sse/services/auth.ts::markAccountUnavailable()`
 - Wybór: `getProviderCredentials*` w tym samym pliku
 - Obliczanie okresu karencji: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Ustawienia: `src/lib/resilience/settings.ts`
 
 **Pola dla każdego połączenia:**
 
-- `rateLimitedUntil` — znacznik czasu wygaśnięcia okresu karencji
+- `rateLimitedUntil` — znacznik czasu, do którego trwa okres karencji
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
 - `backoffLevel` — licznik wykładniczego wycofywania
 
 **Domyślne okresy karencji:**
 
-- Bazowy OAuth: 5 s
-- Bazowy dla klucza API: 3 s
-- 429 dla klucza API: preferuje nagłówki nadrzędnej usługi `Retry-After`/resetowania lub możliwy do przeanalizowania tekst resetowania
+- Podstawa dla OAuth: 5s
+- Podstawa dla klucza API: 3s
+- Kod 429 dla klucza API: preferuje pochodzące z usługi nadrzędnej nagłówki `Retry-After`/resetowania lub możliwy do przeanalizowania tekst dotyczący resetowania
 - Wycofywanie: `baseCooldownMs * 2 ** failureIndex`
 
-**Zabezpieczenie przed lawiną żądań:** zapobiega nadmiernemu wydłużaniu okresu karencji lub podwójnemu zwiększaniu `backoffLevel` przez współbieżne błędy.
+**Zabezpieczenie przed efektem lawinowym:** zapobiega nadmiernemu wydłużaniu okresu karencji lub podwójnemu zwiększaniu `backoffLevel` przez współbieżne błędy.
 
 **Stany końcowe (NIE okresy karencji):**
 
-- `banned` — ustawiany po wykryciu słowa kluczowego wskazującego na blokadę lub blokady konta (zobacz [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (przechodzi w stan końcowy po ograniczonej liczbie ponownych prób — `EXPIRED_RETRY_MAX = 3` z wykładniczym wycofywaniem — dzięki czemu przejściowe błędy OAuth mogą ustąpić samoczynnie, zanim konto zostanie trwale dezaktywowane)
+- `banned` — ustawiany po wykryciu słowa kluczowego wskazującego na blokadę lub zablokowania konta (zobacz [BAN_DETECTION](../security/BAN_DETECTION.md)), a także po trzech kolejnych odmowach usługi nadrzędnej dotyczących poszczególnych żądań (`request_rejected`, np. Anthropic OAuth 403 „Request not allowed” — `open-sse/services/requestRejectedStreak.ts`); pojedyncza odmowa jedynie nakłada na połączenie okres karencji
+- `expired` (przechodzi do stanu końcowego po ograniczonej liczbie ponownych prób — `EXPIRED_RETRY_MAX = 3` z wykładniczym wycofywaniem — dzięki czemu przejściowe błędy OAuth mogą ustąpić samoistnie, zanim konto zostanie trwale dezaktywowane)
 - `credits_exhausted`
 
 Stany te utrzymują się do czasu zmiany poświadczeń lub zresetowania ich przez operatora. Nie zastępuj stanów końcowych przejściowym stanem okresu karencji.
@@ -110,51 +110,66 @@ Stany te utrzymują się do czasu zmiany poświadczeń lub zresetowania ich prze
 
 **Zakres:** jedna sesja klienta (nagłówek `X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`) przypięta do jednego połączenia dla **dowolnego** dostawcy.
 
-**Cel:** utrzymanie agenta wieloturowego (Claude Code, aider, agentów niestandardowych) na tym samym koncie pomiędzy żądaniami, co ogranicza utratę kontekstu między kontami oraz powtarzające się błędy 429 przy zimnym starcie u dostawców ze stanem sesji przypisanym do konta.
+**Cel:** utrzymanie agenta wieloturowego (Claude Code, aider, agenci niestandardowi) na tym samym koncie między żądaniami, co ogranicza utratę kontekstu przy zmianie konta i powtarzające się błędy 429 podczas zimnego startu u dostawców utrzymujących stan sesji osobno dla każdego konta.
 
 **Implementacja:**
 
 - Ustalanie TTL: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Wybór/tworzenie przypięcia: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
 - Wyodrębnianie nagłówka (ogólne, dla dowolnego dostawcy): `src/sse/services/auth.ts::extractSessionAffinityKey()`
-- Trwała tabela przypięć: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Ustawienie: `sessionAffinityTtlMs` (globalny TTL w ms, `0` wyłącza) — `src/lib/db/settings.ts`. Nazwa została zmieniona z ograniczonej do Codex wartości `codexSessionAffinityTtlMs` przez migrację `124_generic_session_affinity_ttl.sql`, która przenosi wcześniej skonfigurowany TTL Codex jako nową wartość domyślną.
+- Utrwalona tabela przypięć: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
+- Ustawienie: `sessionAffinityTtlMs` (globalny TTL w ms, `0` wyłącza) — `src/lib/db/settings.ts`. Nazwa została zmieniona z właściwego tylko dla Codex ustawienia `codexSessionAffinityTtlMs` przez migrację `124_generic_session_affinity_ttl.sql`, która przenosi każdy wcześniej skonfigurowany TTL Codex jako nową wartość domyślną.
 
-Przed #7274 funkcja `resolveSessionAffinityTtlMs()` natychmiast zwracała `0` dla każdego dostawcy poza `codex`, dlatego ustawienie TTL (oraz nagłówki sesji) nie miały nigdzie indziej zastosowania, mimo że mechanizm przypinania i wyodrębnianie nagłówków były już niezależne od dostawcy. Poprawka usunęła ten wcześniejszy zwrot; TTL ma teraz jednolite zastosowanie do każdego dostawcy po globalnym ustawieniu wartości większej niż `0`.
+Przed #7274 funkcja `resolveSessionAffinityTtlMs()` natychmiast zwracała `0` dla każdego dostawcy poza `codex`, dlatego ustawienie TTL (oraz nagłówki sesji) nie miały wpływu na pozostałych dostawców, mimo że mechanizm przypinania i wyodrębnianie nagłówków były już niezależne od dostawcy. Poprawka usunęła ten wcześniejszy zwrot; po globalnym ustawieniu wartości powyżej `0` TTL jest teraz stosowany jednolicie do każdego dostawcy.
 
-Trzy nagłówki koligacji sesji nigdy nie są przekazywane do usługi nadrzędnej — moduły wykonawcze tworzą własne nagłówki nadrzędne od podstaw zamiast przekazywać nagłówki klienta, dzięki czemu pozostają one wyłącznie wewnętrznymi identyfikatorami korelacji.
+Trzy nagłówki koligacji sesji nigdy nie są przekazywane do usługi nadrzędnej — moduły wykonawcze budują własne nagłówki nadrzędne od podstaw, zamiast przekazywać nagłówki klienta, dlatego identyfikator ten pozostaje wyłącznie wewnętrznym identyfikatorem korelacji.
 
-### Wyłączne dzierżawy połączeń dla zarządzanych sesji
+### Wyłączne dzierżawy połączeń dla sesji zarządzanych
 
-**Zakres:** jeden aktywny zarządzany klient HTTP/sesja jest właścicielem jednego kwalifikującego się połączenia OmniRoute.
+**Zakres:** jeden aktywny zarządzany klient/sesja HTTP jest właścicielem jednego kwalifikującego się połączenia OmniRoute.
 
-**Cel:** zapewnienie trwałego, wyłącznego prawa własności do połączenia klientom, którzy potrzebują ścisłej granicy routingu między żądaniami. Różni się to od koligacji sesji, która jest miękką preferencją ciągłości: wyłączna dzierżawa zachowuje stan cyklu życia w SQLite, wymusza globalną unikalność aktywnego właściciela i aktywnego połączenia oraz odrzuca nieaktualną generację przed przekazaniem żądania do dostawcy.
+**Cel:** zapewnienie trwałego, wyłącznego prawa własności do połączenia klientom, którzy wymagają ścisłej granicy routingu między żądaniami. Różni się to od koligacji sesji, która jest miękką preferencją ciągłości: wyłączna dzierżawa utrwala stan cyklu życia w SQLite, wymusza globalną unikatowość aktywnego właściciela i aktywnego połączenia oraz odrzuca nieaktualną generację przed przekazaniem żądania do dostawcy.
 
-Funkcja jest opcjonalna dla każdego klucza API. Zarządzany klucz musi mieć zakres `lease:exclusive` oraz jawną, niepustą listę `allowedConnections`. Każdy klient HTTP może korzystać z punktu końcowego cyklu życia; nazwa klienta, agent użytkownika, dostawca, metoda OAuth ani model nie są wymagane. Dzierżawa obejmuje połączenie, a nie model, dlatego zmiana modelu zachowuje powiązanie, o ile połączenie nadal spełnia zwykłe kryteria kwalifikacji. Standardowe reguły dotyczące modelu, limitów, kondycji, okresu karencji i listy dozwolonych połączeń pozostają nadrzędne i mogą przenieść tę samą generację do innego wolnego, kwalifikującego się połączenia.
+Funkcja jest opcjonalnie włączana dla poszczególnych kluczy API. Zarządzany klucz musi mieć zakres `lease:exclusive` oraz jawną, niepustą listę `allowedConnections`. Każdy klient HTTP może używać punktu końcowego cyklu życia; nazwa klienta, agent użytkownika, dostawca, metoda OAuth ani model nie są wymagane. Dzierżawa jest powiązana z połączeniem, a nie z modelem, dlatego zmiana modelu zachowuje powiązanie, dopóki połączenie nadal spełnia standardowe kryteria kwalifikacji. Standardowe reguły dotyczące modelu, limitów, kondycji, okresu karencji i listy dozwolonych elementów pozostają nadrzędne i mogą przenieść tę samą generację do innego wolnego, kwalifikującego się połączenia.
 
-Cykl życia używa `POST /api/v1/session-leases` z akcjami JSON `acquire`, `renew` i `release`. Zarządzane żądania inferencji przekazują nieprzezroczystą wartość `X-OmniRoute-Lease-Owner` oraz dokładną wartość `X-OmniRoute-Lease-Generation`. Identyfikator właściciela składa się z prefiksu `vlo_` i 43 znaków base64url; przechowywany jest wyłącznie jego skrót SHA-256. Każda końcowa kontrola przed przekazaniem wiąże również identyfikator uwierzytelnionego klucza API i identyfikator aktywnego połączenia. Nagłówki sterujące dzierżawą są usuwane z dzienników, zachowanych migawek żądań oraz nagłówków modułów wykonawczych usługi nadrzędnej.
+Cykl życia jest obsługiwany przez `POST /api/v1/session-leases` z akcjami JSON `acquire`, `renew` i `release`. Zarządzane żądania inferencji przekazują nieprzezroczystą wartość `X-OmniRoute-Lease-Owner` oraz dokładną wartość `X-OmniRoute-Lease-Generation`. Identyfikator właściciela składa się z prefiksu `vlo_`, po którym następują 43 znaki base64url; przechowywany jest wyłącznie jego skrót SHA-256. Każda końcowa kontrola przed przekazaniem żądania wiąże również identyfikator uwierzytelnionego klucza API oraz identyfikator aktywnego połączenia. Nagłówki sterujące dzierżawą są usuwane z dzienników, zachowanych migawek żądań oraz nagłówków modułów wykonawczych przekazywanych do usługi nadrzędnej.
 
-Jeśli zwykły routing ma kwalifikujących się zarządzanych kandydatów, ale każdy wolny kandydat jest zajęty przez obcą aktywną dzierżawę, OmniRoute zwraca HTTP `429`, kod niedostępności pojemności dzierżaw, stan oczekiwania na dostępność oraz ograniczony nagłówek `Retry-After` wyznaczony na podstawie najwcześniejszego właściwego terminu wygaśnięcia. Zwykły brak kwalifikujących się połączeń nie stanowi konfliktu dzierżaw i zachowuje istniejącą semantykę błędów routingu.
+Jeśli standardowy routing ma kwalifikujących się zarządzanych kandydatów, ale każdy wolny kandydat jest zajęty przez obcą aktywną dzierżawę, OmniRoute zwraca kod HTTP `429`, kod niedostępności pojemności dzierżaw, stan oczekiwania na dostępność oraz ograniczony nagłówek `Retry-After` wyznaczony na podstawie najwcześniejszego odpowiedniego czasu wygaśnięcia. Standardowy brak kwalifikujących się połączeń nie stanowi konfliktu dzierżaw i zachowuje dotychczasową semantykę błędów routingu.
 
 Powiązane mechanizmy pozostają odrębne:
 
-- Zajętość sesji OAuth jest lokalnym dla procesu mechanizmem miękkiej dystrybucji kont OAuth.
-- Semafory kont przyznają zezwolenia na współbieżne żądania i zwalniają je po zakończeniu żądania.
-- Wyłączne dzierżawy połączeń dla zarządzanych sesji zapewniają trwałe prawo własności w ramach cyklu życia z kontrolą generacji.
+- Zajętość sesji OAuth jest lokalnym dla procesu mechanizmem miękkiego rozdzielania kont OAuth.
+- Semafory kont przyznają pozwolenia dotyczące współbieżności żądań i kończą się wraz z zakończeniem żądania.
+- Wyłączne dzierżawy połączeń dla sesji zarządzanych zapewniają trwałe prawo własności w ramach cyklu życia z kontrolą generacji.
 
 ---
 
 ## 3. Blokada modelu
 
-**Zakres:** trójka dostawca + połączenie + model.
+**Zakres:** kombinacja dostawcy + połączenia + modelu.
 
-**Cel:** uniknięcie wyłączania całego połączenia, gdy niedostępny lub objęty limitem jest tylko jeden model.
+**Zakres klucza według statusu:** status błędu określa, do którego klucza zostanie zapisana blokada
+(`resolveLockoutScope()` w `open-sse/services/accountFallback/exactModelLock.ts`):
+
+- `429` / `403` / `402` — sygnał limitu lub uprawnień — blokuje **rodzinę limitów**:
+  dla codex cały zakres `codex` / `spark` (każdy model `gpt-5*` danego
+  połączenia), a dla innych dostawców zakres zwracany przez `getQuotaScopedModelForProvider()`.
+- `404` blokuje sam model (`getModelLockKey()` zawęża `not_found`).
+- Każdy inny status — błędy transportu/serwera `5xx` oraz własny, syntetyzowany
+  przez OmniRoute status `502` z walidacji jakości — blokuje wyłącznie **dokładną**
+  kombinację dostawcy/połączenia/modelu. Nieprawidłowy strumień dla jednego modelu nie świadczy
+  o limicie konta; przed wprowadzeniem tej reguły jedna pusta odpowiedź z
+  `codex/gpt-5.6-luna` usuwała wszystkie modele `gpt-5*` tego połączenia
+  z routingu na 2–30 min (z eskalacją), mimo że jego limit pozostawał niewykorzystany.
+- Jawna opcja `scope` wywołującego zawsze ma pierwszeństwo (Antigravity przekazuje `"exact"`).
+
+**Cel:** uniknięcie wyłączania całego połączenia, gdy tylko jeden model jest niedostępny lub objęty limitem.
 
 **Przykłady:**
 
-- Dostawcy z limitami przypisanymi do poszczególnych modeli, zwracający kod 429
-- Lokalni dostawcy zwracający kod 404 dla jednego brakującego modelu
-- Błędy uprawnień dotyczące trybu/modelu, specyficzne dla dostawcy (np. tryby Grok)
+- Dostawcy z limitami dla poszczególnych modeli zwracający 429
+- Lokalni dostawcy zwracający 404 dla jednego brakującego modelu
+- Błędy uprawnień specyficzne dla trybu/modelu danego dostawcy (np. tryby Grok)
 
 **Implementacja:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
@@ -169,46 +184,48 @@ Wyświetla aktywne blokady wraz z następującymi informacjami: dostawca, połą
 - `GET /api/resilience/model-cooldowns` — wyświetlenie aktywnych blokad
 - `DELETE /api/resilience/model-cooldowns` — ręczne ponowne włączenie. Treść: `{provider, connection, model}`. Uwierzytelnianie: zarządzanie.
 
-### Interfejs ustawień blokady + odzyskiwanie przez zmniejszanie licznika po sukcesie (v3.8.23)
+### Interfejs ustawień blokady + odzyskiwanie z redukcją po sukcesach (v3.8.23)
 
-Blokada modelu przestała być zawsze aktywnym, zakodowanym na stałe mechanizmem i stała się w pełni konfigurowalną,
-opcjonalną funkcją z własną kartą ustawień oraz samonaprawiającą się ścieżką odzyskiwania.
+Blokada modelu zmieniła się z zawsze aktywnego, zakodowanego na stałe mechanizmu
+w pełni konfigurowalną, opcjonalną funkcję z własną kartą ustawień i samonaprawiającą
+ścieżką odzyskiwania.
 
 **Karta ustawień:** Ustawienia → Blokada modelu
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-Jest ona **odrębna** od opisanej powyżej karty `ModelCooldownsCard` przeznaczonej tylko do odczytu (która jedynie
+Jest ona **odrębna** od powyższej karty `ModelCooldownsCard` przeznaczonej tylko do odczytu (która jedynie
 _wyświetla_ aktywne blokady) — nowa karta _konfiguruje parametry_. Wartości domyślne
 znajdują się w `DEFAULT_MODEL_LOCKOUT_SETTINGS`
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
 | Ustawienie              | Wartość domyślna                 | Znaczenie                                                                 |
 | ----------------------- | -------------------------------- | ------------------------------------------------------------------------- |
-| `enabled`               | `false`                          | Przełącznik główny — blokada modelu jest **domyślnie wyłączona**.         |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Statusy usługi nadrzędnej uznawane za błąd dotyczący modelu.              |
+| `enabled`               | `false`                          | Główny przełącznik — blokada modelu jest **domyślnie wyłączona**.         |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Statusy systemu nadrzędnego uznawane za błąd dotyczący modelu.            |
 | `baseCooldownMs`        | `120_000` (120 s)                | Początkowy czas blokady po pierwszym błędzie.                             |
-| `maxCooldownMs`         | `1_800_000` (30 min)             | Górny limit wydłużonego okresu karencji.                                  |
+| `maxCooldownMs`         | `1_800_000` (30 min)             | Górny limit eskalowanego okresu karencji.                                 |
 | `maxBackoffSteps`       | `10`                             | Maksymalna liczba kroków eskalacji wykładniczego wycofywania.             |
 | `useExponentialBackoff` | `true`                           | Określa, czy powtarzające się błędy wykładniczo wydłużają okres karencji. |
 
-Ustawienia są utrwalane za pośrednictwem standardowego magazynu ustawień i sprawdzane zgodnie ze
-schematem ustawień odporności; karta ogranicza wartości `baseCooldownMs`/`maxCooldownMs`
-(przy czym `maxCooldownMs ≥ baseCooldownMs`) oraz `maxBackoffSteps`.
+Ustawienia są utrwalane za pośrednictwem standardowego magazynu ustawień i walidowane
+przy użyciu schematu ustawień odporności; karta ogranicza wartości `baseCooldownMs`/`maxCooldownMs`
+(przy `maxCooldownMs ≥ baseCooldownMs`) oraz `maxBackoffSteps`.
 
-**Odzyskiwanie przez zmniejszanie licznika po sukcesie:** odzyskiwanie **nie** polega wyłącznie na upływie czasu. Prawidłowa
+**Odzyskiwanie z redukcją po sukcesach:** odzyskiwanie **nie** opiera się wyłącznie na wygaśnięciu czasomierza. Prawidłowa
 odpowiedź stopniowo zmniejsza licznik błędów modelu, dzięki czemu model, który odzyskał sprawność
-w trakcie okna czasowego, przestaje eskalować błędy (i zostaje odblokowany), zanim upłynie jego licznik czasu. Po pomyślnym
-wywołaniu docelowej kombinacji `open-sse/services/combo.ts` wywołuje `decayModelFailureCount()`
-(`open-sse/services/accountFallback.ts`), która **zmniejsza o połowę** zapisaną wartość
+w trakcie okna, przestaje podlegać eskalacji (i zostaje odblokowany), zanim upłynie jego czasomierz. Po pomyślnym
+obsłużeniu celu kombinowanego `open-sse/services/combo.ts` wywołuje `decayModelFailureCount()`
+(`open-sse/services/accountFallback.ts`), która **dzieli przez dwa** zapisaną wartość
 `failureCount` (`Math.floor(failureCount / 2)`); gdy osiągnie ona `0`, wpis blokady
-jest całkowicie usuwany. Odpowiadająca jej funkcja `recordModelLockoutFailure()`
-zwiększa licznik (i wydłuża okres karencji) w przypadku błędów występujących w
-oknie eskalacji. To zmniejszanie licznika po sukcesie działa obok zwykłego upływu czasu —
+zostaje całkowicie usunięty. Odpowiadająca jej funkcja `recordModelLockoutFailure()`
+zwiększa licznik (i eskaluje okres karencji) w przypadku błędów występujących w
+oknie eskalacji. Redukcja po sukcesach działa dodatkowo obok zwykłego wygaśnięcia czasomierza —
 każda z tych ścieżek może ponownie włączyć model.
 
-**Stan:** blokady są przechowywane **w pamięci** (`Map` dla każdego procesu, zawierające wpisy
-`ModelLockoutEntry` indeksowane kluczem `provider:connectionId:model`), a nie utrwalane w
-bazie danych — są tracone po ponownym uruchomieniu. _Ustawienia_ są utrwalane, natomiast aktywny
-_stan_ blokad jest tymczasowy.
+**Stan:** blokady są przechowywane **w pamięci** (`Map` obiektu
+`ModelLockoutEntry` osobny dla każdego procesu, z kluczami w postaci `provider:connectionId:model`, a blokady o dokładnym zakresie z kluczami
+`provider:connectionId:exact:model`) i nie są utrwalane w
+bazie danych — zostają utracone po ponownym uruchomieniu. _Ustawienia_ są utrwalane, natomiast aktywny
+_stan_ blokad jest efemeryczny.
 
 ---
 
@@ -625,11 +642,12 @@ tym samym sygnałem co wyczerpany limit. Rzeczywiste ograniczenia:
 
 ## Debugowanie
 
-- Pominięto wszystkie klucze dostawcy → sprawdź zarówno stan wyłącznika automatycznego, JAK I wartości `rateLimitedUntil`/`testStatus` każdego połączenia.
-- Dostawca trwale wykluczony po upływie okna resetowania → kod odczytuje bezpośrednio `state` zamiast używać `getStatus()`/`canExecute()`.
-- Jeden klucz nie działa, pozostałe powinny działać → preferuj okres schładzania połączenia zamiast wyłącznika automatycznego.
-- Nie działa tylko jeden model → preferuj blokadę modelu zamiast okresu schładzania połączenia.
-- Stan powinien samoczynnie się przywrócić, ale tak się nie dzieje → sprawdź znacznik czasu w przyszłości oraz ścieżkę odczytu, która odświeża wygasły stan. Statusy trwałe wymagają ręcznych zmian.
+- Kombinacja ważona odpowiada `503 all_targets_cooling_down` (ustawiono `Retry-After`, a `diagnostics.excluded` zawiera każdy cel ze statusem `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → pula jest skonfigurowana i połączona, ale każdy cel został wykluczony przez licznik czasu mechanizmu odporności; ostrzeżenie `[COMBO] Weighted selection: every target excluded before dispatch — …` podaje przyczyny i pozostały czas w sekundach. Odpowiedź `404 no_executable_targets` z tej samej kombinacji oznacza, że nie zadziałał żaden licznik czasu mechanizmu odporności (nie ma czego uruchomić albo każde konto nie przeszło testu dostępności). Mechanizm jest zaimplementowany w `open-sse/services/combo/pinRecovery.ts` na podstawie wykluczeń zebranych w `targetResolution.ts`.
+- Wszystkie klucze dostawcy są pomijane → sprawdź zarówno stan wyłącznika automatycznego, jak i `rateLimitedUntil`/`testStatus` każdego połączenia.
+- Dostawca jest trwale wykluczony po upływie okna resetowania → kod odczytuje bezpośrednio `state` zamiast używać `getStatus()`/`canExecute()`.
+- Jeden klucz nie działa, ale pozostałe powinny działać → preferuj okres karencji połączenia zamiast wyłącznika automatycznego.
+- Nie działa tylko jeden model → preferuj blokadę modelu zamiast okresu karencji połączenia.
+- Stan powinien samoczynnie wrócić do normy, ale tak się nie dzieje → sprawdź znacznik czasu w przyszłości oraz ścieżkę odczytu, która odświeża wygasły stan. Trwałe statusy wymagają ręcznych zmian.
 
 ---
 

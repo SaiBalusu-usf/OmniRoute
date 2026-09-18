@@ -4,7 +4,7 @@
 
 ---
 
-> **V skratke**: OmniRoute registruje 352 ID poskytovateľov, pričom **152 položiek v katalógu poskytovateľov je označených ako `hasFree`**. Prísnejší auditovaný katalóg bezplatných modelov pokrýva **34 kľúčov opakujúcich sa fondov / 443 položiek** (436 aktívnych + 7 ukončených). Pripojte niekoľko vhodných poskytovateľov, aby ste získali širšiu kapacitu záložných možností; naďalej platia všetky kvóty, pravidlá schvaľovania, zásady ochrany súkromia a podmienky plateného prekročenia limitov.
+> **V skratke**: OmniRoute registruje 357 ID poskytovateľov, pričom **152 položiek katalógu poskytovateľov je označených ako `hasFree`**. Prísnejší auditovaný katalóg bezplatných modelov zahŕňa **35 opakujúcich sa kľúčov fondov / 482 položiek** (475 aktívnych + 7 ukončených). Pripojte niekoľkých vhodných poskytovateľov, aby ste získali širšiu kapacitu pre núdzové prepnutie; naďalej platia všetky kvóty, pravidlá schvaľovania, zásady ochrany súkromia a podmienky plateného prekročenia limitov.
 
 ---
 
@@ -160,18 +160,18 @@ kvótu alebo zásady prístupu poskytovateľa.
 
 ## Výpočet bezplatnej úrovne
 
-Aktuálny živý katalóg s deduplikáciou fondov uvádza:
+Aktuálny katalóg s deduplikáciou fondov v reálnom čase uvádza:
 
-| Metrika                                                                      |                                 Aktuálna auditovaná hodnota | Interpretácia                                                                                                                                                            |
-| ---------------------------------------------------------------------------- | ----------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Opakujúci sa vyčíslený prídel                                                |                                   **~1.47B tokenov/mesiac** | Zdieľané fondy sa započítavajú raz; poskytovatelia bez limitu sú zo súčtu vylúčení                                                                                       |
-| Prvý mesiac s registračnými prídelmi                                         |                                          **~2.07B tokenov** | Opakujúci sa súčet plus jednorazové a opakujúce sa kredity                                                                                                               |
-| Auditovaný inventár bezplatných modelov                                      | **34 opakujúcich sa kľúčov fondov / 443 položiek katalógu** | 436 aktívnych + 7 ukončených; odlišuje sa od katalógu 352 poskytovateľov                                                                                                 |
-| Zastúpení poskytovatelia s opakujúcou sa/trvalo bezplatnou ponukou bez kľúča |                                                      **52** | Jedineční poskytovatelia naprieč opakujúcimi sa dennými/mesačnými/kreditnými/neobmedzenými typmi a typmi katalógu bez kľúča; riadky podmienené oprávnenosťou sú vylúčené |
-| Položky katalógu poskytovateľov označené `hasFree`                           |                                               **152 / 352** | Širšie metadáta poskytovateľov; nie všetky majú vyčísliteľnú opakujúcu sa kvótu                                                                                          |
+| Metrika                                                                               |                                 Aktuálna auditovaná hodnota | Interpretácia                                                                                                                                                            |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Opakujúci sa kvantifikovaný prídel                                                    |                               **~1,62 mld. tokenov/mesiac** | Zdieľané fondy sa započítavajú raz; poskytovatelia bez limitu sú zo súčtu vylúčení                                                                                       |
+| Prvý mesiac s kreditmi za registráciu                                                 |                                      **~2,22 mld. tokenov** | Opakujúci sa celkový objem plus jednorazové a opakujúce sa kredity                                                                                                       |
+| Auditovaný inventár bezplatných modelov                                               | **35 kľúčov opakujúcich sa fondov / 482 položiek katalógu** | 475 aktívnych + 7 zrušených; odlišuje sa od katalógu 357 poskytovateľov                                                                                                  |
+| Zastúpení poskytovatelia s trvalou bezplatnou úrovňou s opakovaným prídelom/bez kľúča |                                                      **53** | Jedineční poskytovatelia naprieč typmi katalógu s opakovanými dennými/mesačnými/kreditnými prídelmi, bez limitu a bez kľúča; riadky podmienené oprávnenosťou sú vylúčené |
+| Položky katalógu poskytovateľov označené `hasFree`                                    |                                               **152 / 357** | Širšie metadáta poskytovateľov; nie všetky majú kvantifikovateľnú opakujúcu sa kvótu                                                                                     |
 
-Tieto hodnoty sa počítajú zo súboru `open-sse/config/freeModelCatalog.ts`; informácie o deduplikácii fondov, príznakoch podmienok používania,
-ukončených položkách a metodike registračných kreditov nájdete v
+Tieto hodnoty sa vypočítavajú zo súboru `open-sse/config/freeModelCatalog.ts`; informácie o deduplikácii fondov, príznakoch podmienok používania,
+zrušených položkách a metodike kreditov za registráciu nájdete v
 [Referenčnej príručke bezplatných úrovní](../reference/FREE_TIERS.md).
 
 ---

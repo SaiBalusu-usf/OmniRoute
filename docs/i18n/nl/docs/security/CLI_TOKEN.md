@@ -6,12 +6,12 @@
 
 ## Overzicht
 
-OmniRoute CLI-opdrachten authenticeren zich bij de lokale beheer-API met een
-`HMAC-SHA256(machine-id, salt)`-token dat via de `x-omniroute-cli-token`-
-requestheader wordt verzonden.
+OmniRoute CLI-opdrachten verifiëren zich bij de lokale beheer-API met een
+`HMAC-SHA256(machine-id, salt)`-token dat via de requestheader
+`x-omniroute-cli-token` wordt verzonden.
 
 Hierdoor kunnen CLI-subopdrachten (`omniroute status`, `omniroute providers`, enz.)
-beheerendpoints aanroepen zonder dat de gebruiker bij elke uitvoering een JWT of
+beheereindpunten aanroepen zonder dat de gebruiker bij elke uitvoering een JWT of
 wachtwoord hoeft op te geven.
 
 ## Hoe het werkt
@@ -20,72 +20,80 @@ wachtwoord hoeft op te geven.
    (bij een fout wordt teruggevallen op een lege tekenreeks, waardoor CLI-authenticatie wordt uitgeschakeld).
 2. De functie berekent `HMAC-SHA256(machine_id, salt)` en retourneert de volledige
    hexadecimale digest van 64 tekens — een deterministisch, niet-omkeerbaar token dat aan deze machine is gekoppeld.
-3. De CLI verzendt het token alleen als `x-omniroute-cli-token` wanneer de herleide
+3. De CLI verzendt het token alleen als `x-omniroute-cli-token` wanneer de bepaalde
    bestemming een expliciete loopback-URL is (`localhost`, `127.0.0.0/8` of
-   loopback-IPv6). Requests die het token bevatten, gebruiken `redirect: error`, zodat een lokale
-   redirect het niet naar een andere origin kan doorsturen. Externe contexten gebruiken in plaats daarvan
-   tokens met een beperkt toegangsbereik. Als afleiding niet beschikbaar is, laat de CLI de header weg
-   en meldt `omniroute doctor` de fout in plaats van een leeg token
-   als geldig te beschouwen.
+   loopback-IPv6). Requests met het token gebruiken `redirect: error`, zodat een lokale
+   omleiding het niet naar een andere origin kan doorsturen. Externe contexten gebruiken in plaats daarvan
+   toegangstokens met een beperkt bereik. Als het token niet kan worden afgeleid, laat de CLI de header weg
+   en rapporteert `omniroute doctor` de fout, in plaats van een leeg token
+   als geldig te behandelen.
 4. De server (`src/server/authz/policies/management.ts`) berekent het
-   verwachte token opnieuw met dezelfde salt en vergelijkt het via `timingSafeEqual` om
-   extractie op basis van timing te voorkomen.
+   verwachte token opnieuw met dezelfde salt en vergelijkt dit via `timingSafeEqual` om
+   extractie via timingaanvallen te voorkomen.
 
 ## Beveiligingseigenschappen
 
-| Eigenschap                                  | Details                                                                                                                                                                                                                                |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Alleen loopback**                         | Wordt alleen geaccepteerd wanneer de vertrouwde peer-localiteitsmarkering van de server (afgeleid van het werkelijke TCP-peeradres) loopback aangeeft. De door de client beheerde `Host`-header wordt nooit vertrouwd voor localiteit. |
-| **Vergelijking in constante tijd**          | `crypto.timingSafeEqual` voorkomt timingaanvallen.                                                                                                                                                                                     |
-| **Niet-omkeerbaar**                         | De machine-ID kan niet uit de HMAC-uitvoer worden achterhaald.                                                                                                                                                                         |
-| **Geen omzeiling van `always`-beveiliging** | `isAlwaysProtectedPath()` wordt vóór de controle van het CLI-token geëvalueerd. `/api/shutdown` en `/api/settings/database` vereisen altijd een JWT.                                                                                   |
-| **Niet-exporteerbaar**                      | Het token wordt nooit naar schijf geschreven of gelogd.                                                                                                                                                                                |
+| Eigenschap                                  | Details                                                                                                                                                                                                                                             |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Alleen loopback**                         | Wordt alleen geaccepteerd wanneer de door de server vertrouwde peer-localiteitsmarkering (afgeleid van het werkelijke TCP-peeradres) loopback aangeeft. De door de client beheerde `Host`-header wordt nooit vertrouwd om de localiteit te bepalen. |
+| **Vergelijking in constante tijd**          | `crypto.timingSafeEqual` voorkomt timingaanvallen.                                                                                                                                                                                                  |
+| **Niet-omkeerbaar**                         | De machine-ID kan niet uit de HMAC-uitvoer worden achterhaald.                                                                                                                                                                                      |
+| **Geen omzeiling van `always`-beveiliging** | `isAlwaysProtectedPath()` wordt vóór de controle van het CLI-token geëvalueerd. `/api/shutdown` en `/api/settings/database` vereisen altijd een JWT.                                                                                                |
+| **Niet-exporteerbaar**                      | Het token wordt nooit naar schijf geschreven of gelogd.                                                                                                                                                                                             |
 
-## Salt-rotatie
+## Standaardsalt (willekeurig per installatie)
 
-Stel `OMNIROUTE_CLI_SALT` in om het afgeleide token te roteren zonder codewijzigingen.
-Na de rotatie gebruiken alle CLI-processen op deze machine automatisch het nieuwe token.
-Dit is nuttig na een lek van de proceslijst waardoor de vorige afgeleide waarde mogelijk
-is blootgesteld.
+Wanneer `OMNIROUTE_CLI_SALT` niet is ingesteld, is de salt een willekeurige hexadecimale tekenreeks
+van 64 tekens die eenmaal wordt gegenereerd en wordt opgeslagen in `<DATA_DIR>/cli-token-salt.json` (modus `0600`) —
+niet de ingecheckte letterlijke waarde `omniroute-cli-auth-v1`. Zowel `getActiveSalt()` in
+`src/lib/machineToken.ts` als de tegenhanger ervan in `bin/cli/utils/cliToken.mjs` lezen hetzelfde
+bestand, zodat de server en elke CLI-aanroep binnen deze installatie op dezelfde
+waarde uitkomen; de ingecheckte letterlijke waarde wordt alleen als laatste redmiddel gebruikt wanneer er nog geen
+opgeslagen salt of salt uit een omgevingsvariabele beschikbaar is (bijvoorbeeld bij een nieuwe installatie met alleen de CLI
+voordat de server ooit is uitgevoerd). Dit verhelpt een zwakte van de oude vaste letterlijke
+standaardwaarde: `/etc/machine-id` is doorgaans voor iedereen leesbaar, waardoor elke lokale gebruiker
+anders hetzelfde token zou kunnen afleiden voor elke installatie waarin
+`OMNIROUTE_CLI_SALT` nooit is ingesteld.
+
+## Saltrotatie
+
+Stel `OMNIROUTE_CLI_SALT` in om het afgeleide token te roteren zonder codewijzigingen — deze waarde heeft altijd voorrang op de opgeslagen salt per installatie. Na de rotatie gebruiken alle CLI-processen op deze machine automatisch het nieuwe token. Dit is nuttig na een lek via de proceslijst waardoor de vorige afgeleide waarde mogelijk is blootgesteld.
 
 ```bash
-# Permanente rotatie (toevoegen aan shellprofiel)
+# Permanente rotatie (toevoegen aan het shellprofiel)
 export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 
 # Controleren of het nieuwe token wordt gebruikt
 omniroute status
 ```
 
-Standaardsalt: `omniroute-cli-auth-v1`
-
 ## Verouderde indeling (SHA-256, 32 tekens) — wordt nog steeds geaccepteerd
 
 Vóór de bovenstaande HMAC-indeling leidde de CLI het token af als
-`SHA-256(machineId + salt).hex[0..32]` (een prefix van 32 tekens) in
+`SHA-256(machineId + salt).hex[0..32]` (een voorvoegsel van 32 tekens) in
 `bin/cli/utils/cliToken.mjs` (`getLegacyCliTokenSync` in `src/lib/machineToken.ts`).
 
-Voor achterwaartse compatibiliteit accepteert de server **beide** indelingen: de verifier bouwt
+Voor achterwaartse compatibiliteit accepteert de server **beide** indelingen: de verificatie bouwt
 `expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` op en vergelijkt de
 binnenkomende header met elk token via `timingSafeEqual`
 (`src/server/authz/policies/management.ts` en `src/lib/middleware/cliTokenAuth.ts`).
-Een token is dus geldig als het overeenkomt met **ofwel** de HMAC-digest van 64 tekens, **ofwel** de
-verouderde SHA-256-prefix van 32 tekens.
+Een token is dus geldig als het overeenkomt met **ofwel** de HMAC-digest van 64 tekens, **ofwel** het
+verouderde SHA-256-voorvoegsel van 32 tekens.
 
-**Uitschakelen:** stel `OMNIROUTE_DISABLE_CLI_TOKEN=true` in (via de omgeving of `.env`) om het CLI-
-tokenmechanisme volledig uit te schakelen; voor alle toegang is dan een expliciete API-sleutel vereist. Op hosts met meerdere gebruikers
-wordt dit aanbevolen, omdat `machine-id` per apparaat geldt (niet per gebruiker) en een andere
-gebruiker op dezelfde host hetzelfde token zou kunnen berekenen.
+**Uitschakelen:** stel `OMNIROUTE_DISABLE_CLI_TOKEN=true` in (via de omgeving of `.env`) om het CLI-tokenmechanisme volledig uit te schakelen; voor alle toegang is dan een expliciete API-sleutel vereist. Op hosts met meerdere gebruikers wordt dit aanbevolen, omdat `machine-id` per apparaat geldt (niet per gebruiker) en een andere gebruiker op dezelfde host hetzelfde token zou kunnen berekenen.
 
 ## Bestanden
 
 | Bestand                                   | Doel                                          |
 | ----------------------------------------- | --------------------------------------------- |
 | `src/lib/machineToken.ts`                 | Tokenafleiding (`getMachineTokenSync`)        |
+| `bin/cli/utils/cliToken.mjs`              | CLI-tegenhanger van dezelfde afleiding        |
+| `<DATA_DIR>/cli-token-salt.json`          | Opgeslagen willekeurige salt per installatie  |
 | `src/server/authz/headers.ts`             | Constante `CLI_TOKEN_HEADER`                  |
 | `src/server/authz/policies/management.ts` | Verificatie aan serverzijde                   |
 | `src/server/authz/routeGuard.ts`          | Controle van loopback-host (`isLoopbackHost`) |
 
 ## Zie ook
 
-- `docs/security/ROUTE_GUARD_TIERS.md` — niveaus voor routebeveiliging
+- `docs/security/ROUTE_GUARD_TIERS.md` — niveaus van routebeveiliging
 - `docs/architecture/AUTHZ_GUIDE.md` — volledige autorisatiepijplijn

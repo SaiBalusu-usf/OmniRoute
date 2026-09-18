@@ -165,11 +165,11 @@ Aanroeplogbestanden (indien ingeschakeld) worden weggeschreven naar `${DATA_DIR}
 
 ---
 
-## Diepgaande bespreking van belangrijke bestanden
+## Diepgaande analyse van belangrijke bestanden
 
 ### chatCore.ts (5977 regels)
 
-De **belangrijkste aanvraaghandler**. Ondanks de omvang heeft deze een duidelijke structuur:
+De **hoofdhandler voor verzoeken**. Ondanks de omvang heeft deze een duidelijke structuur:
 
 ```ts
 // Pseudostructuur van chatCore.ts
@@ -205,7 +205,7 @@ export async function handleChat(request: NextRequest) {
 }
 ```
 
-Hoewel het één gigantische functie is, is deze ingedeeld in **secties met commentaar** die overeenkomen met de vijf fasen van de pijplijn.
+Hoewel het één gigantische functie is, is deze ingedeeld in **secties met commentaar** die overeenkomen met de pijplijn van 5 fasen.
 
 ### combo.ts (4456 regels code)
 
@@ -219,48 +219,48 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
     try {
       return await handleSingleModel(target, body);
     } catch (err) {
-      log.warn("target failed, trying next", { target, err });
+      log.warn("doel mislukt, volgende wordt geprobeerd", { target, err });
     }
   }
-  throw new ComboExhaustedError("All targets failed");
+  throw new ComboExhaustedError("Alle doelen zijn mislukt");
 }
 ```
 
 Ondersteunt **19 routeringsstrategieën** (zie `src/shared/constants/routingStrategies.ts`):
 
-| Strategie           | Gedrag                                                                                                   |
-| ------------------- | -------------------------------------------------------------------------------------------------------- |
-| `priority`          | Geordende lijst waarbij het eerste doel voorrang heeft                                                   |
-| `weighted`          | Probabilistisch op basis van het gewicht per doel                                                        |
-| `round-robin`       | Doorloop doelen in de opgegeven volgorde                                                                 |
-| `context-relay`     | Draag context over tussen doelen                                                                         |
-| `fill-first`        | Vul het quotum voordat naar het volgende doel wordt gegaan                                               |
-| `p2c`               | Power of two choices                                                                                     |
-| `random`            | Uniform willekeurig                                                                                      |
-| `least-used`        | Kies het doel met het minste recente gebruik                                                             |
-| `cost-optimized`    | Goedkoopste gezonde doel eerst                                                                           |
-| `reset-aware`       | Houdt rekening met resetvensters van providers                                                           |
-| `reset-window`      | Routering op basis van resetvensters                                                                     |
-| `headroom`          | Doel met de meeste resterende quotumruimte eerst                                                         |
-| `strict-random`     | Werkelijk uniform (zonder kwaliteitsweging)                                                              |
-| `auto`              | Gebruik scoring op basis van 16 factoren (`autoCombo/`)                                                  |
-| `lkgp`              | Laatst bekende goed werkende provider eerst                                                              |
-| `context-optimized` | Meest geschikt voor aanvragen met een lange context                                                      |
-| `fusion`            | Stuur parallel naar een panel en laat vervolgens een beoordelaar het antwoord samenstellen (`fusion.ts`) |
+| Strategie           | Gedrag                                                                                               |
+| ------------------- | ---------------------------------------------------------------------------------------------------- |
+| `priority`          | Geordende lijst met het eerste doel voorop                                                           |
+| `weighted`          | Probabilistisch op basis van het gewicht per doel                                                    |
+| `round-robin`       | Doorloop de doelen op volgorde                                                                       |
+| `context-relay`     | Geef context door tussen doelen                                                                      |
+| `fill-first`        | Vul het quotum voordat naar het volgende doel wordt gegaan                                           |
+| `p2c`               | Power of two choices                                                                                 |
+| `random`            | Uniform willekeurig                                                                                  |
+| `least-used`        | Kies het doel met het laagste recente gebruik                                                        |
+| `cost-optimized`    | Goedkoopste gezonde doel eerst                                                                       |
+| `reset-aware`       | Houdt rekening met resetvensters van providers                                                       |
+| `reset-window`      | Routering op basis van resetvensters                                                                 |
+| `headroom`          | Doel met de meeste resterende quotumruimte eerst                                                     |
+| `strict-random`     | Werkelijk uniform (geen kwaliteitsweging)                                                            |
+| `auto`              | Gebruik scoring met 16 factoren (`autoCombo/`)                                                       |
+| `lkgp`              | Laatst bekende goed werkende provider eerst                                                          |
+| `context-optimized` | Meest geschikt voor verzoeken met een lange context                                                  |
+| `fusion`            | Stuur parallel naar een panel en laat daarna een beoordelaar het resultaat samenvoegen (`fusion.ts`) |
 
 ### base.ts (1170 regels code)
 
-De **abstracte executor** die door alle 101 executors wordt uitgebreid. Deze bevat:
+De **abstracte executor** die door alle 107 executors wordt uitgebreid. Deze bevat:
 
-- `buildUrl()` — standaard URL-opbouw (subklassen overschrijven deze voor aangepast gedrag)
+- `buildUrl()` — standaardconstructie van URL's (subklassen overschrijven dit voor aangepaste constructie)
 - `buildHeaders()` — standaardheaders (authenticatie, content-type)
 - `transformRequest()` — standaard ongewijzigde doorgifte
-- `execute()` — de belangrijkste HTTP-lus met nieuwe pogingen, back-off en stroomonderbreker
+- `execute()` — de belangrijkste HTTP-lus met nieuwe pogingen, back-off en circuitbreaker
 
 ```ts
 // open-sse/executors/default.ts
 export class DefaultExecutor extends BaseExecutor {
-  // Verwerkt alle met OpenAI/Anthropic compatibele providers
+  // Verwerkt alle OpenAI-/Anthropic-compatibele providers
   // Providers registreren configuraties (URL, authenticatie, headers), maar delen de executorlogica
 }
 ```
@@ -277,16 +277,16 @@ Services zijn **gerichte modules met één specifiek doel** die door handlers wo
 
 ### Routering & Combo
 
-- `combo.ts` — toegangspunt voor via combo gerouteerde aanvragen
-- `services/autoCombo/` — scoring met 16 factoren, 8 automatische routeringsstrategieën
-- `wildcardRouter.ts` — zoekt overeenkomende wildcardroutes (`gpt-*`)
+- `combo.ts` — toegangspunt voor via combo gerouteerde requests
+- `services/autoCombo/` — scoring op basis van 16 factoren, 8 automatische routeringsstrategieën
+- `wildcardRouter.ts` — koppelt wildcardroutes (`gpt-*`)
 - `modelFamilyFallback.ts` — T5-fallback binnen dezelfde familie
 
-### Snelheidsbeperking & Quotum
+### Snelheidsbeperking & Quota
 
 - `rateLimitManager.ts` — tokenbucket per sleutel+provider
 - `usage.ts` — registratie van gebruik
-- `quotaCache.ts` — quotumsnapshots in het geheugen
+- `quotaCache.ts` — in-memory quotasnapshots
 
 ### Account & Token
 
@@ -296,20 +296,20 @@ Services zijn **gerichte modules met één specifiek doel** die door handlers wo
 
 ### Intelligentie
 
-- `intentClassifier.ts` — classificeert de intentie van aanvragen
+- `intentClassifier.ts` — classificeert de intentie van requests
 - `taskAwareRouter.ts` — routeert op taaktype
-- `thinkingBudget.ts` — wijst redeneertokens toe
+- `thinkingBudget.ts` — wijst denktokens toe
 - `contextManager.ts` — injecteert routeringscontext
 
 ### Veerkracht
 
 - `resilience.ts` — orkestratie van nieuwe pogingen, back-off en circuitbreakers
-- `emergencyFallback.ts` — laatste redmiddel als fallback
+- `emergencyFallback.ts` — fallback als laatste redmiddel
 - `modelDeprecation.ts` — routeert automatisch naar opvolgende modellen
 
 ### Status
 
-- `signatureCache.ts` — deduplicatie op basis van aanvraagsignatuur
+- `signatureCache.ts` — deduplicatie op basis van requestsignatuur
 - `volumeDetector.ts` — afschakeling bij hoge belasting
 - `contextHandoff.ts` — serialisatie van sessies
 
@@ -320,23 +320,23 @@ Services zijn **gerichte modules met één specifiek doel** die door handlers wo
 
 ### Vaardigheden
 
-- (behandeld in [SKILLS.md](./SKILLS.md))
+- (beschreven in [SKILLS.md](./SKILLS.md))
 
 ### Geheugen
 
-- (behandeld in [MEMORY.md](./MEMORY.md))
+- (beschreven in [MEMORY.md](./MEMORY.md))
 
 ---
 
 ## Executors (75+ bestanden)
 
-Eén bestand per provider. Ze breiden allemaal `BaseExecutor` uit en overschrijven wat afwijkt.
+Eén bestand per provider. Ze breiden allemaal `BaseExecutor` uit en overschrijven alleen wat afwijkt.
 
-### Gangbare patronen
+### Algemene patronen
 
-Providers worden opgezocht via `getExecutor(providerId)`, dat de geconfigureerde executor retourneert. OpenAI/Anthropic-compatibele providers gebruiken `DefaultExecutor` (`executors/default.ts`). Providerspecifiek gedrag (basis-URL, authenticatieheaders, API-versie) wordt geconfigureerd in `open-sse/config/providers/`, terwijl transformaties van de aanvraagbody worden afgehandeld in `open-sse/translator/`.
+Providers worden opgezocht via `getExecutor(providerId)`, dat de geconfigureerde executor retourneert. OpenAI/Anthropic-compatibele providers gebruiken `DefaultExecutor` (`executors/default.ts`). Providerspecifiek gedrag (basis-URL, authenticatieheaders, API-versie) wordt geconfigureerd in `open-sse/config/providers/`, terwijl transformaties van requestbodies worden afgehandeld in `open-sse/translator/`.
 
-Een **aangepaste URL** wordt ingesteld via de providerconfiguratie:
+**Aangepaste URL** wordt ingesteld via de providerconfiguratie:
 
 ```ts
 // Providerconfiguratie in open-sse/config/providers/
@@ -348,7 +348,7 @@ export default {
 
 **Aangepaste authenticatie** wordt afgehandeld via de authenticatieconfiguratie van het providerregister (API-sleutel, OAuth, headerprofielen).
 
-Transformaties van een **aangepaste aanvraagbody** (bijvoorbeeld wanneer Anthropic `system` van `messages` scheidt) worden per provider geregistreerd in `open-sse/translator/`.
+Transformaties van **aangepaste requestbodies** (bijvoorbeeld wanneer Anthropic `system` van `messages` scheidt) worden per provider geregistreerd in `open-sse/translator/`.
 
 ````
 
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-Het opzoeken verloopt via `ExecutorRegistry` (`executors/registry.ts`): elke gespecialiseerde executor wordt gedeclareerd in de ingebouwde tabel van `executors/index.ts` en tijdens het laden van de module geregistreerd via `registerExecutor(alias, instance)`; `getExecutor()` raadpleegt het register en valt terug op een gememoiseerde `DefaultExecutor` voor elke provider zonder gespecialiseerde vermelding. De volledige toewijzing van alias → executor wordt vastgelegd door de goldentest `tests/unit/executor-map-golden.test.ts`.
+De resolutie verloopt via `ExecutorRegistry` (`executors/registry.ts`): elke gespecialiseerde executor wordt gedeclareerd in de ingebouwde tabel van `executors/index.ts` en bij het laden van de module geregistreerd via `registerExecutor(alias, instance)`; `getExecutor()` raadpleegt het register en valt terug op een gememoiseerde `DefaultExecutor` voor elke provider zonder gespecialiseerde invoer. De volledige koppeling van alias → executor wordt vastgelegd door de golden test `tests/unit/executor-map-golden.test.ts`.
 
 ---
 

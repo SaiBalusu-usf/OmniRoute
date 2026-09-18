@@ -67,148 +67,164 @@ eksponentiaalista `minRetryCooldownMs → maxRetryCooldownMs`-viivettä. Ohituks
 `OMNIROUTE_PROVIDER_BREAKER_{OAUTH,API_KEY}_{FAILURE_THRESHOLD,FAILURE_WINDOW_MS,COOLDOWN_MS}`.
 Regressiosuojaus: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
-## 2. Yhteyden jäähdytysaika
+## 2. Yhteyden jäähyaika
 
-**Laajuus:** yksittäinen palveluntarjoajan yhteys/tili/avain.
+**Soveltamisala:** yksittäinen palveluntarjoajan yhteys/tili/avain.
 
-**Tarkoitus:** ohittaa yksi viallinen avain samalla, kun saman palveluntarjoajan muut yhteydet jatkavat pyyntöjen käsittelyä.
+**Tarkoitus:** ohittaa yksi viallinen avain muiden saman palveluntarjoajan yhteyksien jatkaessa pyyntöjen käsittelyä.
 
 **Toteutus:**
 
-- Merkitse käytöstä poistetuksi: `src/sse/services/auth.ts::markAccountUnavailable()`
+- Merkitse ei-käytettäväksi: `src/sse/services/auth.ts::markAccountUnavailable()`
 - Valinta: `getProviderCredentials*` samassa tiedostossa
-- Jäähdytysajan laskenta: `open-sse/services/accountFallback.ts::checkFallbackError()`
+- Jäähyajan laskenta: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Asetukset: `src/lib/resilience/settings.ts`
 
 **Yhteyskohtaiset kentät:**
 
-- `rateLimitedUntil` — aikaleima, johon asti jäähdytysaika on voimassa
+- `rateLimitedUntil` — aikaleima, johon asti jäähyaika kestää
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
 - `backoffLevel` — eksponentiaalisen viiveen laskuri
 
-**Oletusarvoiset jäähdytysajat:**
+**Oletusarvoiset jäähyajat:**
 
 - OAuth-perusaika: 5 s
 - API-avaimen perusaika: 3 s
-- API-avaimen 429: ensisijaisesti käytetään ylävirran `Retry-After`-otsaketta, nollausotsakkeita tai jäsennettävissä olevaa nollausajan tekstiä
+- API-avaimen 429: käyttää ensisijaisesti ylävirran `Retry-After`-otsaketta, nollausotsakkeita tai jäsennettävissä olevaa nollausaikatekstiä
 - Viive: `baseCooldownMs * 2 ** failureIndex`
 
-**Samanaikaisten uusintayritysten vyöryn esto:** estää samanaikaisia virheitä pidentämästä jäähdytysaikaa liikaa tai kasvattamasta `backoffLevel`-arvoa kahdesti.
+**Samanaikaisten pyyntöryöppyjen esto:** estää samanaikaisia virheitä pidentämästä jäähyaikaa liikaa tai kasvattamasta `backoffLevel`-arvoa kahdesti.
 
-**Päättävät tilat (EIVÄT jäähdytysaikoja):**
+**Päättävät tilat (EIVÄT jäähyaikoja):**
 
-- `banned` — asetetaan kielletyn avainsanan tai tilin käyttökiellon tunnistuksen perusteella (katso [BAN_DETECTION](../security/BAN_DETECTION.md))
+- `banned` — asetetaan kielletyn avainsanan tai tilin eston tunnistuksen perusteella (katso [BAN_DETECTION](../security/BAN_DETECTION.md)) sekä kolmen peräkkäisen ylävirran pyyntökohtaisen hylkäyksen jälkeen (`request_rejected`, esimerkiksi Anthropic OAuth 403 "Pyyntöä ei sallita" — `open-sse/services/requestRejectedStreak.ts`); yksittäinen hylkäys asettaa yhteydelle vain jäähyajan
 - `expired` (siirtyy päättävään tilaan rajatun uudelleenyritysmäärän jälkeen — `EXPIRED_RETRY_MAX = 3` eksponentiaalisella viiveellä — jotta tilapäiset OAuth-virheet voivat korjaantua itsestään ennen tilin pysyvää deaktivointia)
 - `credits_exhausted`
 
-Nämä säilyvät, kunnes tunnistetiedot muuttuvat tai operaattori nollaa ne. Älä korvaa päättäviä tiloja tilapäisellä jäähdytystilalla.
+Nämä säilyvät, kunnes tunnistetiedot muuttuvat tai operaattori nollaa ne. Älä korvaa päättäviä tiloja tilapäisellä jäähyajan tilalla.
 
-**Laiska palautuminen:** kun `rateLimitedUntil` on menneisyydessä, yhteys voidaan jälleen valita. Onnistuneen käytön yhteydessä `clearAccountError()` tyhjentää kaikki virhekentät.
+**Laiska palautuminen:** kun `rateLimitedUntil` on menneisyydessä, yhteys voidaan jälleen valita. Onnistuneen käytön jälkeen `clearAccountError()` tyhjentää kaikki virhekentät.
 
 ### Istuntoaffiniteetti (#7274)
 
-**Laajuus:** yksi asiakasistunto (`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`-otsake), joka on kiinnitetty yhteen yhteyteen **millä tahansa** palveluntarjoajalla.
+**Soveltamisala:** yksi asiakasistunto (`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`-otsake), joka on kiinnitetty yhteen yhteyteen **millä tahansa** palveluntarjoajalla.
 
-**Tarkoitus:** pitää monivaiheinen agentti (Claude Code, aider, mukautetut agentit) samalla tilillä pyyntöjen välillä, mikä vähentää tilien välisestä vaihdosta johtuvaa kontekstin menetystä ja toistuvia kylmäkäynnistyksen 429-virheitä palveluntarjoajilla, joilla on tilikohtainen istuntotila.
+**Tarkoitus:** pitää monivaiheinen agentti (Claude Code, aider, mukautetut agentit) samalla tilillä pyyntöjen välillä, mikä vähentää kontekstin katoamista tilien välillä ja toistuvia kylmäkäynnistyksen 429-virheitä palveluntarjoajilla, joilla on tilikohtainen istuntotila.
 
 **Toteutus:**
 
-- TTL:n määritys: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
+- TTL:n ratkaisu: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Kiinnityksen valinta/luonti: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
-- Otsakkeen poiminta (yleinen, kaikki palveluntarjoajat): `src/sse/services/auth.ts::extractSessionAffinityKey()`
-- Pysyvä kiinnitystaulu: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Asetus: `sessionAffinityTtlMs` (yleinen TTL millisekunteina, `0` poistaa käytöstä) — `src/lib/db/settings.ts`. Nimetty uudelleen vain Codexia koskeneesta `codexSessionAffinityTtlMs`-asetuksesta migraatiossa `124_generic_session_affinity_ttl.sql`, joka siirtää mahdollisen aiemmin määritetyn Codex-TTL:n uudeksi oletusarvoksi.
+- Otsakkeen poiminta (yleinen, mikä tahansa palveluntarjoaja): `src/sse/services/auth.ts::extractSessionAffinityKey()`
+- Pysyvästi tallennettu kiinnitystaulu: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
+- Asetus: `sessionAffinityTtlMs` (yleinen TTL millisekunteina, `0` poistaa käytöstä) — `src/lib/db/settings.ts`. Nimetty uudelleen vain Codexia koskeneesta `codexSessionAffinityTtlMs`-asetuksesta migraatiossa `124_generic_session_affinity_ttl.sql`, joka siirtää aiemmin määritetyn Codexin TTL-arvon uudeksi oletusarvoksi.
 
-Ennen muutosta #7274 `resolveSessionAffinityTtlMs()` palautti välittömästi arvon `0` kaikille muille palveluntarjoajille paitsi `codex`ille, joten TTL-asetuksella (ja istunto-otsakkeilla) ei ollut vaikutusta muualla, vaikka kiinnitysmekanismi ja otsakkeiden poiminta olivat jo palveluntarjoajariippumattomia. Korjaus poisti tämän aikaisen paluun; TTL koskee nyt yhtenäisesti kaikkia palveluntarjoajia, kun sen yleiseksi arvoksi on asetettu enemmän kuin `0`.
+Ennen muutosta #7274 `resolveSessionAffinityTtlMs()` palautti välittömästi arvon `0` kaikille muille palveluntarjoajille paitsi `codex`, joten TTL-asetuksella (ja istunto-otsakkeilla) ei ollut vaikutusta muualla, vaikka kiinnitysmekanismi ja otsakkeiden poiminta olivat jo palveluntarjoajasta riippumattomia. Korjaus poisti tämän aikaisen palautuksen; TTL koskee nyt yhdenmukaisesti kaikkia palveluntarjoajia, kun sen yleiseksi arvoksi on asetettu yli `0`.
 
-Kolmea istuntoaffiniteetin otsaketta ei koskaan välitetä ylävirtaan — suorittimet muodostavat omat ylävirran otsakkeensa alusta alkaen sen sijaan, että ne välittäisivät asiakkaan otsakkeet sellaisinaan, joten kyseessä säilyy ainoastaan sisäinen korrelaatiotunniste.
+Kolmea istuntoaffiniteetin otsaketta ei koskaan välitetä ylävirtaan — suorittimet muodostavat omat ylävirran otsakkeensa alusta alkaen sen sijaan, että ne välittäisivät asiakkaan otsakkeet, joten arvo säilyy vain sisäisenä korrelaatiotunnisteena.
 
-### Hallittujen istuntoyhteyksien yksinoikeudelliset vuokrasopimukset
+### Hallittujen istuntoyhteyksien yksinomaiset vuokrasopimukset
 
-**Laajuus:** yksi aktiivinen hallittu HTTP-asiakas/istunto omistaa yhden valintakelpoisen OmniRoute-yhteyden.
+**Soveltamisala:** yksi aktiivinen hallittu HTTP-asiakasohjelma/-istunto omistaa yhden valintakelpoisen OmniRoute-yhteyden.
 
-**Tarkoitus:** tarjota pysyvä yksinoikeudellinen yhteyden omistajuus asiakkaille, jotka tarvitsevat tiukan reititysrajan pyyntöjen välillä. Tämä eroaa istuntoaffiniteetista, joka on pehmeä jatkuvuusmieltymys: yksinoikeudellinen vuokrasopimus säilyttää elinkaaritilan SQLitessä, varmistaa aktiivisen omistajan ja aktiivisen yhteyden globaalin yksikäsitteisyyden sekä hylkää vanhentuneen sukupolven ennen palveluntarjoajalle välittämistä.
+**Tarkoitus:** tarjota pysyvä yksinomainen yhteyden omistajuus asiakkaille, jotka tarvitsevat pyyntöjen välille ehdottoman reititysrajan. Tämä eroaa istuntoaffiniteetista, joka on pehmeä jatkuvuuspreferenssi: yksinomainen vuokrasopimus säilyttää elinkaaren tilan SQLitessä, valvoo aktiivisen omistajan ja aktiivisen yhteyden yleistä yksikäsitteisyyttä sekä hylkää vanhentuneen sukupolven ennen pyynnön välittämistä palveluntarjoajalle.
 
-Ominaisuus otetaan käyttöön erikseen kullekin API-avaimelle. Hallitulla avaimella on oltava `lease:exclusive`-käyttöalue ja eksplisiittinen, ei-tyhjä `allowedConnections`-luettelo. Mikä tahansa HTTP-asiakas voi käyttää elinkaaripäätepistettä; asiakkaan nimeä, user-agentia, palveluntarjoajaa, OAuth-menetelmää tai mallia ei vaadita. Vuokrasopimus omistaa yhteyden, ei mallia, joten mallin vaihtaminen säilyttää sidoksen niin kauan kuin yhteys pysyy normaalisti valintakelpoisena. Tavalliset mallia, kiintiötä, kuntoa, jäähdytysaikaa ja sallittujen luetteloa koskevat säännöt pysyvät määräävinä ja voivat siirtää saman sukupolven toiseen vapaaseen valintakelpoiseen yhteyteen.
+Ominaisuus otetaan käyttöön erikseen kullekin API-avaimelle. Hallitulla avaimella on oltava käyttöalue `lease:exclusive` ja eksplisiittinen, ei-tyhjä `allowedConnections`-luettelo. Mikä tahansa HTTP-asiakasohjelma voi käyttää elinkaaripäätepistettä; asiakkaan nimeä, user-agentia, palveluntarjoajaa, OAuth-menetelmää tai mallia ei vaadita. Vuokrasopimus omistaa yhteyden, ei mallia, joten mallin vaihtaminen säilyttää sidoksen niin kauan kuin yhteys on tavanomaisten sääntöjen mukaan valintakelpoinen. Tavalliset mallia, kiintiötä, kuntoa, jäähyaikaa ja sallittujen kohteiden luetteloa koskevat säännöt pysyvät määräävinä ja voivat siirtää saman sukupolven toiseen vapaaseen, valintakelpoiseen yhteyteen.
 
-Elinkaarta hallitaan päätepisteellä `POST /api/v1/session-leases`, jonka JSON-toiminnot ovat `acquire`, `renew` ja `release`. Hallitut päättelypyynnöt sisältävät läpinäkymättömän `X-OmniRoute-Lease-Owner`-arvon ja täsmällisen `X-OmniRoute-Lease-Generation`-arvon. Omistajatunniste alkaa merkkijonolla `vlo_`, jota seuraa 43 base64url-merkkiä; vain sen SHA-256-tiiviste tallennetaan. Jokainen lopullinen välitysraja sitoo myös todennetun API-avaimen tunnuksen ja aktiivisen yhteyden tunnuksen. Vuokrasopimuksen ohjausotsakkeet poistetaan lokeista, säilytetyistä pyyntövedoksista ja ylävirran suorittimien otsakkeista.
+Elinkaaripäätepiste on `POST /api/v1/session-leases`, ja sen JSON-toiminnot ovat `acquire`, `renew` ja `release`. Hallitut päättelypyynnöt esittävät läpinäkymättömän `X-OmniRoute-Lease-Owner`-arvon ja täsmällisen `X-OmniRoute-Lease-Generation`-arvon. Omistaja käyttää etuliitettä `vlo_`, jota seuraa 43 base64url-merkkiä; vain sen SHA-256-tiiviste tallennetaan. Jokainen lopullinen välitysraja sitoo myös todennetun API-avaimen tunnuksen ja aktiivisen yhteyden tunnuksen. Vuokrasopimuksen hallintaotsakkeet poistetaan lokeista, säilytetyistä pyyntötilannevedoksista ja ylävirran suorittimien otsakkeista.
 
-Jos tavallisella reitityksellä on valintakelpoisia hallittuja ehdokkaita, mutta jokainen vapaa ehdokas on ulkopuolisen aktiivisen vuokrasopimuksen varaama, OmniRoute palauttaa HTTP-tilan `429`, vuokrakapasiteetin puuttumista ilmaisevan koodin, kapasiteetin odotustilan sekä rajatun `Retry-After`-arvon, joka johdetaan aikaisimmasta olennaisesta vanhenemisajasta. Valintakelpoisten yhteyksien tavallinen puuttuminen ei ole vuokrasopimusristiriita, joten siihen sovelletaan edelleen nykyistä reititysvirhesemantiikkaa.
+Jos tavallisessa reitityksessä on valintakelpoisia hallittuja ehdokkaita, mutta jokainen vapaa ehdokas on ulkopuolisen aktiivisen vuokrasopimuksen varaama, OmniRoute palauttaa HTTP-tilan `429`, koodin lease-capacity-unavailable, kapasiteetin odotustilan sekä rajatun `Retry-After`-arvon, joka johdetaan aikaisimmasta asiaankuuluvasta vanhenemisajasta. Tavallinen tyhjä valintakelpoisten yhteyksien joukko ei ole vuokrasopimusristiriita, joten se säilyttää nykyisen reititysvirhesemantiikkansa.
 
 Liittyvät mekanismit pysyvät erillisinä:
 
-- OAuth-istuntojen varaus on prosessikohtaista, pehmeää kuormanjakoa OAuth-tileille.
-- Tilikohtaiset semaforit myöntävät pyyntöjen rinnakkaisuuslupia, jotka päättyvät pyynnön valmistuessa.
-- Hallittujen istuntoyhteyksien yksinoikeudelliset vuokrasopimukset tarjoavat pysyvän elinkaaren kattavan omistajuuden ja sukupolvirajan.
+- OAuth-istuntojen varaus on prosessikohtaista pehmeää kuormanjakoa OAuth-tileille.
+- Tilisemaforit myöntävät pyyntöjen rinnakkaisuuslupia, jotka päättyvät pyynnön valmistuessa.
+- Hallittujen istuntojen yksinomaiset vuokrasopimukset tarjoavat pysyvän elinkaaren aikaisen omistajuuden sukupolvirajalla.
 
 ---
 
 ## 3. Mallin lukitus
 
-**Laajuus:** palveluntarjojan, yhteyden ja mallin yhdistelmä.
+**Kattavuus:** palveluntarjoajan, yhteyden ja mallin muodostama kolmikko.
 
-**Tarkoitus:** estää koko yhteyden poistaminen käytöstä silloin, kun vain yksi malli ei ole käytettävissä tai sen kiintiö on rajoitettu.
+**Avaimen kattavuus tilan mukaan:** virhetilakoodi määrittää, mihin avaimeen lukitus
+kirjoitetaan (`resolveLockoutScope()` tiedostossa `open-sse/services/accountFallback/exactModelLock.ts`):
+
+- `429` / `403` / `402` — kiintiö- tai käyttöoikeussignaali — lukitsee **kiintiöperheen**:
+  codexin tapauksessa yhteyden koko `codex`- / `spark`-alueen (kaikki yhteyden
+  `gpt-5*`-mallit), muilla palveluntarjoajilla `getQuotaScopedModelForProvider()`.
+- `404` lukitsee yksittäisen mallin (`getModelLockKey()` rajaa `not_found`-tilanteen).
+- Mikä tahansa muu tila — `5xx`-siirto-/palvelinvirheet ja OmniRouten laadun
+  validoinnista itse muodostama `502` — lukitsee vain **tarkan**
+  palveluntarjoaja/yhteys/malli-kolmikon. Yhden mallin virheellinen tietovirta ei
+  ole näyttöä tilin kiintiöstä; ennen tätä sääntöä yksi tyhjä vastaus mallilta
+  `codex/gpt-5.6-luna` poisti yhteyden kaikki `gpt-5*`-mallit
+  reitityksestä 2–30 minuutiksi (pitenevästi), vaikka sen kiintiöön ei ollut koskettu.
+- Kutsujan eksplisiittinen `scope`-valinta on aina etusijalla (Antigravity välittää arvon `"exact"`).
+
+**Tarkoitus:** estää koko yhteyden poistaminen käytöstä, kun vain yksi malli ei ole käytettävissä tai sen kiintiö on rajoitettu.
 
 **Esimerkkejä:**
 
-- Mallikohtaisia kiintiöitä käyttävät palveluntarjoajat, jotka palauttavat tilakoodin 429
-- Paikalliset palveluntarjoajat, jotka palauttavat tilakoodin 404 yhden puuttuvan mallin vuoksi
-- Palveluntarjoajakohtaiset tila- tai mallioikeuksien virheet (esim. Grok-tilat)
+- Mallikohtaisten kiintiöiden palveluntarjoajat, jotka palauttavat tilan 429
+- Paikalliset palveluntarjoajat, jotka palauttavat tilan 404 yhdestä puuttuvasta mallista
+- Palveluntarjoajakohtaiset tila-/mallikohtaiset käyttöoikeusvirheet (esim. Grok-tilat)
 
 **Toteutus:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
-### Mallien jäähdytysaikojen hallintapaneeli (v3.8.0)
+### Mallien jäähyjen hallintapaneeli (v3.8.0)
 
-Käyttöliittymä: Asetukset → Mallien jäähdytysajat (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
+Käyttöliittymä: Asetukset → Mallien jäähyt (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-Luettelee aktiiviset lukitukset ja näyttää seuraavat tiedot: palveluntarjoaja, yhteys, malli, syy ja expiresAt. Ylläpitäjät voivat ottaa mallin manuaalisesti uudelleen käyttöön kortista.
+Luettelee aktiiviset lukitukset ja näyttää seuraavat tiedot: provider, connection, model, reason, expiresAt. Ylläpitäjät voivat ottaa mallin manuaalisesti uudelleen käyttöön kortista.
 
-**REST API:**
+**REST-rajapinta:**
 
-- `GET /api/resilience/model-cooldowns` — luettele aktiiviset lukitukset
+- `GET /api/resilience/model-cooldowns` — luettelee aktiiviset lukitukset
 - `DELETE /api/resilience/model-cooldowns` — manuaalinen uudelleenkäyttöönotto. Runko: `{provider, connection, model}`. Todennus: hallinta.
 
-### Lukitusasetusten käyttöliittymä ja onnistumisiin perustuva palautuminen (v3.8.23)
+### Lukitusasetusten käyttöliittymä + onnistumisiin perustuva palautuminen (v3.8.23)
 
-Mallin lukitus muuttui aina käytössä olleesta, kovakoodatusta toiminnasta täysin määritettäväksi,
-erikseen käyttöön otettavaksi ominaisuudeksi, jolla on oma asetuskorttinsa ja itsekorjautuva palautumispolku.
+Mallin lukitus muuttui aina käytössä olleesta, kovakoodatusta toiminnasta täysin
+määritettäväksi, erikseen käyttöön otettavaksi ominaisuudeksi, jolla on oma asetuskorttinsa ja itsekorjautuva palautumispolku.
 
 **Asetuskortti:** Asetukset → Mallin lukitus
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-Tämä **eroaa** yllä olevasta vain luku -muotoisesta `ModelCooldownsCard`-kortista (joka ainoastaan
-_luettelee_ aktiiviset lukitukset) — uusi kortti _määrittää parametrit_. Oletusarvot
+Tämä **eroaa** yllä olevasta vain luku -muotoisesta `ModelCooldownsCard`-kortista
+(joka ainoastaan _luettelee_ aktiiviset lukitukset) — uusi kortti _määrittää parametrit_. Oletusarvot
 ovat `DEFAULT_MODEL_LOCKOUT_SETTINGS`-vakiossa
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
-| Asetus                  | Oletusarvo                       | Merkitys                                                           |
-| ----------------------- | -------------------------------- | ------------------------------------------------------------------ |
-| `enabled`               | `false`                          | Pääkytkin — mallin lukitus on **oletusarvoisesti pois käytöstä**.  |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Ylävirran tilakoodit, jotka lasketaan mallikohtaisiksi virheiksi.  |
-| `baseCooldownMs`        | `120_000` (120 s)                | Ensimmäisen virheen lukituksen alkuperäinen kesto.                 |
-| `maxCooldownMs`         | `1_800_000` (30 min)             | Porrastetun jäähdytysajan yläraja.                                 |
-| `maxBackoffSteps`       | `10`                             | Eksponentiaalisen viiveen porrastuksen enimmäismäärä.              |
-| `useExponentialBackoff` | `true`                           | Pidentävätkö toistuvat virheet jäähdytysaikaa eksponentiaalisesti. |
+| Asetus                  | Oletusarvo                       | Merkitys                                                          |
+| ----------------------- | -------------------------------- | ----------------------------------------------------------------- |
+| `enabled`               | `false`                          | Pääkytkin — mallin lukitus on **oletusarvoisesti pois käytöstä**. |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Ylävirran tilakoodit, jotka lasketaan mallikohtaisiksi virheiksi. |
+| `baseCooldownMs`        | `120_000` (120 s)                | Ensimmäisen virheen alkuperäinen lukitusaika.                     |
+| `maxCooldownMs`         | `1_800_000` (30 min)             | Pidentyneen jäähyn yläraja.                                       |
+| `maxBackoffSteps`       | `10`                             | Eksponentiaalisen viiveen pidennyksen enimmäisvaiheiden määrä.    |
+| `useExponentialBackoff` | `true`                           | Pidentävätkö toistuvat virheet jäähyä eksponentiaalisesti.        |
 
-Asetukset säilytetään tavallisen asetussäilön kautta ja validoidaan
-vikasietoisuusasetusten skeemalla; kortti rajaa `baseCooldownMs`-/`maxCooldownMs`-arvot
-(ehdolla `maxCooldownMs ≥ baseCooldownMs`) sekä `maxBackoffSteps`-arvon.
+Asetukset säilytetään normaalissa asetussäilössä ja validoidaan
+resilienssiasetusten skeemalla; kortti rajoittaa arvoja `baseCooldownMs`/`maxCooldownMs`
+(ehdolla `maxCooldownMs ≥ baseCooldownMs`) ja `maxBackoffSteps`.
 
-**Onnistumisiin perustuva palautuminen:** palautuminen **ei** perustu pelkästään ajastimen umpeutumiseen. Onnistunut
-vastaus pienentää mallin virhemäärää, joten kesken jakson palautunut malli
-lakkaa porrastamasta jäähdytysaikaa (ja lukitus poistuu) ennen ajastimen umpeutumista. Kun yhdistelmäkohde
-onnistuu, `open-sse/services/combo.ts` kutsuu `decayModelFailureCount()`-funktiota
+**Onnistumisiin perustuva palautuminen:** palautuminen **ei** perustu pelkästään ajastimen umpeutumiseen. Toimiva
+vastaus pienentää mallin virhelaskuria, joten kesken aikajakson palautuneen mallin
+lukitusaika lakkaa pitenemästä (ja lukitus poistuu) ennen ajastimen umpeutumista. Kun yhdistelmäkohde
+onnistuu, `open-sse/services/combo.ts` kutsuu funktiota `decayModelFailureCount()`
 (`open-sse/services/accountFallback.ts`), joka **puolittaa** tallennetun
-`failureCount`-arvon (`Math.floor(failureCount / 2)`); kun arvo saavuttaa arvon `0`, lukitusmerkintä
-poistetaan kokonaan. Vastaava `recordModelLockoutFailure()`-funktio
-kasvattaa määrää (ja pidentää jäähdytysaikaa) virheiden ilmetessä
-porrastusikkunan aikana. Tämä onnistumisiin perustuva palautuminen täydentää tavallista ajastimen umpeutumista —
-kumpi tahansa mekanismi voi ottaa mallin uudelleen käyttöön.
+`failureCount`-arvon (`Math.floor(failureCount / 2)`); kun se saavuttaa arvon `0`, lukitusmerkintä
+poistetaan kokonaan. Vastinpari `recordModelLockoutFailure()`
+kasvattaa laskuria (ja pidentää jäähyä), kun virheitä tapahtuu
+pidennysikkunan aikana. Tämä onnistumisiin perustuva palautuminen täydentää tavallista ajastimen umpeutumista —
+kumpi tahansa polku voi ottaa mallin uudelleen käyttöön.
 
-**Tila:** lukitukset säilytetään **muistissa** (prosessikohtaisissa `Map`-rakenteissa,
-joissa `ModelLockoutEntry`-arvojen avaimena on `provider:connectionId:model`), eikä niitä tallenneta
-tietokantaan — ne menetetään uudelleenkäynnistyksen yhteydessä. _Asetukset_ säilytetään, mutta aktiivisten
-lukitusten _tila_ on väliaikainen.
+**Tila:** lukituksia säilytetään **muistissa** (prosessikohtaiset `Map`-rakenteet,
+joissa `ModelLockoutEntry`-arvot on avaimettu muodossa `provider:connectionId:model` ja tarkan kattavuuden lukitukset muodossa
+`provider:connectionId:exact:model`), eikä niitä tallenneta
+tietokantaan — ne menetetään uudelleenkäynnistyksen yhteydessä. _Asetukset_ säilytetään pysyvästi; aktiivinen
+lukitus_tila_ on tilapäinen.
 
 ---
 
@@ -620,13 +636,14 @@ nopeusrajoitus on sama signaali kuin loppuun käytetty kiintiö. Tiedossa olevat
 
 ---
 
-## Virheenkorjaus
+## Vianmääritys
 
-- Kaikki palveluntarjoajan avaimet ohitetaan → tarkista sekä katkaisijan tila ETTÄ kunkin yhteyden `rateLimitedUntil`/`testStatus`.
-- Palveluntarjoaja suljetaan pysyvästi pois nollausikkunan jälkeen → koodi lukee raakaa `state`-arvoa eikä käytä `getStatus()`/`canExecute()`-metodia.
-- Yksi avain epäonnistuu, mutta muiden pitäisi toimia → suosi yhteyden jäähyaikaa katkaisijan sijaan.
-- Vain yksi malli epäonnistuu → suosi mallin lukitusta yhteyden jäähyajan sijaan.
-- Tilan pitäisi palautua automaattisesti, mutta näin ei tapahdu → tarkista tulevaisuuteen asetettu aikaleima sekä lukupolku, joka päivittää vanhentuneen tilan. Pysyvät tilat edellyttävät manuaalisia muutoksia.
+- Painotettu yhdistelmä vastaa `503 all_targets_cooling_down` (`Retry-After` on asetettu, ja `diagnostics.excluded` luettelee kaikki kohteet syyllä `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → pooli on määritetty ja yhdistetty, mutta jokainen kohde on suljettu pois palautumiseen liittyvän ajastimen vuoksi; varoitus `[COMBO] Weighted selection: every target excluded before dispatch — …` ilmoittaa syyt ja jäljellä olevat sekunnit. Saman yhdistelmän palauttama `404 no_executable_targets` tarkoittaa, ettei palautumisajastimia ollut mukana (mitään suoritettavaa ei ole tai jokainen tili epäonnistui saatavuustarkistuksessa). Toteutus on tiedostossa `open-sse/services/combo/pinRecovery.ts`, ja se perustuu tiedostossa `targetResolution.ts` kerättyihin poissulkemisiin.
+- Kaikki palveluntarjoajan avaimet ohitetaan → tarkista sekä piirikatkaisijan tila ETTÄ kunkin yhteyden `rateLimitedUntil`/`testStatus`.
+- Palveluntarjoaja pysyy pysyvästi poissuljettuna nollausjakson jälkeen → koodi lukee raakaa `state`-arvoa metodin `getStatus()`/`canExecute()` sijaan.
+- Yksi avain epäonnistuu, mutta muiden pitäisi toimia → suosi yhteyskohtaista jäähdytysaikaa piirikatkaisijan sijaan.
+- Vain yksi malli epäonnistuu → suosi mallikohtaista lukitusta yhteyskohtaisen jäähdytysajan sijaan.
+- Tilan pitäisi palautua itsestään, mutta niin ei tapahdu → tarkista tulevaisuuteen asetettu aikaleima sekä lukupolku, joka päivittää vanhentuneen tilan. Pysyvät tilat edellyttävät manuaalisia muutoksia.
 
 ---
 

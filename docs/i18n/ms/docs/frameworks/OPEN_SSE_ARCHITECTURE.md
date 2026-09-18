@@ -205,7 +205,7 @@ export async function handleChat(request: NextRequest) {
 }
 ```
 
-Walaupun merupakan satu fungsi yang sangat besar, ia disusun kepada **bahagian berkomentar** yang dipetakan kepada saluran pemprosesan 5 peringkat.
+Walaupun merupakan satu fungsi yang sangat besar, ia disusun kepada **bahagian berulasan** yang sepadan dengan saluran paip 5 peringkat.
 
 ### combo.ts (4456 LOC)
 
@@ -228,31 +228,31 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
 
 Menyokong **19 strategi penghalaan** (lihat `src/shared/constants/routingStrategies.ts`):
 
-| Strategi            | Tingkah laku                                                                            |
-| ------------------- | --------------------------------------------------------------------------------------- |
-| `priority`          | Senarai tersusun dengan sasaran pertama didahulukan                                     |
-| `weighted`          | Kebarangkalian berdasarkan pemberat setiap sasaran                                      |
-| `round-robin`       | Berkitar melalui sasaran mengikut turutan                                               |
-| `context-relay`     | Memindahkan konteks merentas sasaran                                                    |
-| `fill-first`        | Memenuhi kuota sebelum beralih kepada sasaran seterusnya                                |
-| `p2c`               | Kuasa dua pilihan                                                                       |
-| `random`            | Rawak seragam                                                                           |
-| `least-used`        | Memilih sasaran dengan penggunaan terkini paling sedikit                                |
-| `cost-optimized`    | Sasaran sihat termurah didahulukan                                                      |
-| `reset-aware`       | Menyedari tetingkap tetapan semula penyedia                                             |
-| `reset-window`      | Penghalaan berdasarkan tetingkap tetapan semula                                         |
-| `headroom`          | Baki ruang kuota paling banyak didahulukan                                              |
-| `strict-random`     | Benar-benar seragam (tiada pemberat kualiti)                                            |
-| `auto`              | Menggunakan pemarkahan 16 faktor (`autoCombo/`)                                         |
-| `lkgp`              | Penyedia terakhir yang diketahui berfungsi didahulukan                                  |
-| `context-optimized` | Terbaik untuk permintaan berkonteks panjang                                             |
-| `fusion`            | Menyebar kepada panel secara selari, kemudian mensintesis melalui penilai (`fusion.ts`) |
+| Strategi            | Tingkah laku                                                                               |
+| ------------------- | ------------------------------------------------------------------------------------------ |
+| `priority`          | Senarai tersusun dengan sasaran pertama diutamakan                                         |
+| `weighted`          | Kebarangkalian berdasarkan pemberat setiap sasaran                                         |
+| `round-robin`       | Mengitar sasaran mengikut turutan                                                          |
+| `context-relay`     | Menyerahkan konteks merentas sasaran                                                       |
+| `fill-first`        | Memenuhi kuota sebelum beralih ke sasaran seterusnya                                       |
+| `p2c`               | Kuasa dua pilihan                                                                          |
+| `random`            | Rawak seragam                                                                              |
+| `least-used`        | Memilih sasaran dengan penggunaan terkini paling sedikit                                   |
+| `cost-optimized`    | Sasaran sihat paling murah didahulukan                                                     |
+| `reset-aware`       | Mengambil kira tetingkap tetapan semula penyedia                                           |
+| `reset-window`      | Penghalaan berdasarkan tetingkap tetapan semula                                            |
+| `headroom`          | Baki ruang kuota terbesar didahulukan                                                      |
+| `strict-random`     | Benar-benar seragam (tanpa pemberatan kualiti)                                             |
+| `auto`              | Menggunakan pemarkahan 16 faktor (`autoCombo/`)                                            |
+| `lkgp`              | Penyedia baik terakhir yang diketahui didahulukan                                          |
+| `context-optimized` | Terbaik untuk permintaan berkonteks panjang                                                |
+| `fusion`            | Mengedarkan kepada panel secara selari, kemudian mensintesis melalui penilai (`fusion.ts`) |
 
 ### base.ts (1170 LOC)
 
-**Pelaksana abstrak** yang dilanjutkan oleh kesemua 101 pelaksana. Ia mengandungi:
+**Pelaksana abstrak** yang dilanjutkan oleh kesemua 107 pelaksana. Ia mengandungi:
 
-- `buildUrl()` — pembinaan URL lalai (subkelas mengatasinya untuk penyesuaian)
+- `buildUrl()` — pembinaan URL lalai (subkelas mengatasi untuk penyesuaian)
 - `buildHeaders()` — pengepala lalai (pengesahan, jenis kandungan)
 - `transformRequest()` — laluan terus secara lalai
 - `execute()` — gelung HTTP utama dengan percubaan semula/undur/pemutus
@@ -265,7 +265,7 @@ export class DefaultExecutor extends BaseExecutor {
 }
 ```
 
-Tingkah laku khusus penyedia (pengepala pengesahan, URL asas, pengepala versi) dikonfigurasikan melalui daftar penyedia, bukan kelas pelaksana yang berasingan.
+Tingkah laku khusus penyedia (pengepala pengesahan, URL asas, pengepala versi) dikonfigurasikan melalui daftar penyedia, bukannya kelas pelaksana yang berasingan.
 
 ````
 
@@ -292,31 +292,31 @@ Perkhidmatan ialah **modul berfokus dengan satu tujuan** yang digabungkan oleh p
 
 - `tokenRefresh.ts` — penyegaran OAuth apabila menerima 401
 - `accountFallback.ts` — beralih kepada akaun alternatif
-- `sessionManager.ts` — keadaan sesi berbilang pusingan
+- `sessionManager.ts` — keadaan sesi berbilang giliran
 
 ### Kecerdasan
 
 - `intentClassifier.ts` — mengelaskan niat permintaan
-- `taskAwareRouter.ts` — menghalakan berdasarkan jenis tugas
-- `thinkingBudget.ts` — memperuntukkan token penaakulan
+- `taskAwareRouter.ts` — menghalakan mengikut jenis tugas
+- `thinkingBudget.ts` — memperuntukkan token pemikiran
 - `contextManager.ts` — menyuntik konteks penghalaan
 
-### Daya Tahan
+### Ketahanan
 
-- `resilience.ts` — orkestrasi percubaan semula, undur, dan pemutus
+- `resilience.ts` — pengorkestraan percubaan semula, sela balik dan pemutus litar
 - `emergencyFallback.ts` — sandaran pilihan terakhir
-- `modelDeprecation.ts` — menghala secara automatik kepada model pengganti
+- `modelDeprecation.ts` — menghalakan secara automatik kepada model pengganti
 
 ### Keadaan
 
-- `signatureCache.ts` — menyahduplikasi berdasarkan tandatangan permintaan
-- `volumeDetector.ts` — pengurangan beban
+- `signatureCache.ts` — menyahduplikasi mengikut tandatangan permintaan
+- `volumeDetector.ts` — pelepasan beban
 - `contextHandoff.ts` — pensirian sesi
 
 ### Pemampatan
 
-- `compression/` (subdirektori) — talian paip pemampatan penuh
-- 39 fail yang merangkumi enjin, pek peraturan, dan penyesuai
+- `compression/` (subdirektori) — saluran paip pemampatan penuh
+- 39 fail yang merangkumi enjin, pek peraturan dan penyesuai
 
 ### Kemahiran
 
@@ -330,9 +330,9 @@ Perkhidmatan ialah **modul berfokus dengan satu tujuan** yang digabungkan oleh p
 
 ## Pelaksana (75+ fail)
 
-Satu fail bagi setiap penyedia. Semuanya melanjutkan `BaseExecutor` dan mengatasi perkara yang berbeza.
+Satu fail bagi setiap penyedia. Kesemuanya melanjutkan `BaseExecutor` dan mengatasi bahagian yang berbeza.
 
-### Corak Umum
+### Corak Lazim
 
 Penyedia diselesaikan melalui `getExecutor(providerId)`, yang mengembalikan pelaksana yang dikonfigurasikan. Penyedia yang serasi dengan OpenAI/Anthropic menggunakan `DefaultExecutor` (`executors/default.ts`). Tingkah laku khusus penyedia (URL asas, pengepala pengesahan, versi API) dikonfigurasikan dalam `open-sse/config/providers/`, manakala transformasi isi permintaan dikendalikan dalam `open-sse/translator/`.
 
@@ -346,7 +346,7 @@ export default {
 }
 ````
 
-**Pengesahan tersuai** dikendalikan melalui konfigurasi pengesahan daftar penyedia (kunci API, OAuth, profil pengepala).
+**Pengesahan tersuai** dikendalikan melalui konfigurasi pengesahan pendaftaran penyedia (kunci API, OAuth, profil pengepala).
 
 Transformasi **isi permintaan tersuai** (contohnya, Anthropic memisahkan `system` daripada `messages`) didaftarkan bagi setiap penyedia dalam `open-sse/translator/`.
 
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-Penyelesaian dibuat melalui `ExecutorRegistry` (`executors/registry.ts`): setiap pelaksana khusus diisytiharkan dalam jadual terbina dalam `executors/index.ts` dan didaftarkan melalui `registerExecutor(alias, instance)` semasa modul dimuatkan; `getExecutor()` merujuk daftar tersebut dan beralih kepada `DefaultExecutor` yang dimemoisasi bagi mana-mana penyedia tanpa entri khusus. Pemetaan penuh alias → pelaksana dicirikan oleh ujian emas `tests/unit/executor-map-golden.test.ts`.
+Penyelesaian dilakukan melalui `ExecutorRegistry` (`executors/registry.ts`): setiap pelaksana khusus diisytiharkan dalam jadual terbina dalam `executors/index.ts` dan didaftarkan melalui `registerExecutor(alias, instance)` semasa modul dimuatkan; `getExecutor()` merujuk pendaftaran tersebut dan kembali kepada `DefaultExecutor` yang dimemo untuk mana-mana penyedia tanpa entri khusus. Pemetaan penuh alias → pelaksana dicirikan oleh ujian piawai emas `tests/unit/executor-map-golden.test.ts`.
 
 ---
 

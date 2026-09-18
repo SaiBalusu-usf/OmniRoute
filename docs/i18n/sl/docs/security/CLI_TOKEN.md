@@ -6,82 +6,97 @@
 
 ## Pregled
 
-Ukazi OmniRoute CLI se overjajo pri lokalnem upravljalnem API-ju z žetonom
-`HMAC-SHA256(machine-id, salt)`, poslanim prek glave zahteve
+Ukazi OmniRoute CLI se overjajo pri lokalnem upravljalnem API-ju z uporabo žetona
+`HMAC-SHA256(machine-id, salt)`, poslanega prek glave zahteve
 `x-omniroute-cli-token`.
 
 To podukazom CLI (`omniroute status`, `omniroute providers` itd.) omogoča
-klicanje upravljalnih končnih točk, ne da bi moral uporabnik pri vsakem klicu
-navesti JWT ali geslo.
+klicanje upravljalnih končnih točk, ne da bi moral uporabnik ob vsakem klicu
+vnesti JWT ali geslo.
 
 ## Kako deluje
 
-1. `getMachineTokenSync()` prebere identifikator strojne opreme prek paketa
-   `node-machine-id` (ob napaki uporabi prazen niz, s čimer onemogoči overjanje CLI).
+1. `getMachineTokenSync()` prebere strojni ID naprave prek `node-machine-id`
+   (ob napaki uporabi prazen niz, s čimer onemogoči overjanje CLI).
 2. Izračuna `HMAC-SHA256(machine_id, salt)` in vrne celoten 64-mestni
-   šestnajstiški povzetek — determinističen, nepovraten žeton, vezan na ta računalnik.
-3. CLI pošlje žeton kot `x-omniroute-cli-token` samo, ko je razrešeni cilj izrecni
-   URL povratne zanke (`localhost`, `127.0.0.0/8` ali IPv6 s povratno zanko).
-   Zahteve, ki vsebujejo žeton, uporabljajo `redirect: error`, zato ga lokalna
-   preusmeritev ne more posredovati drugemu izvoru. Oddaljeni konteksti namesto tega
-   uporabljajo žetone za dostop z omejenim obsegom. Če izpeljava ni na voljo, CLI
-   izpusti glavo, `omniroute doctor` pa sporoči napako, namesto da bi prazen žeton
-   obravnaval kot veljaven.
-4. Strežnik (`src/server/authz/policies/management.ts`) znova izračuna
-   pričakovani žeton z isto soljo in ga primerja s funkcijo `timingSafeEqual`,
-   da prepreči razkritje na podlagi časovnih razlik.
+   šestnajstiški izvleček — determinističen, nepovraten žeton, vezan na to napravo.
+3. CLI pošlje žeton kot `x-omniroute-cli-token` samo, kadar je razrešeni cilj
+   izrecni povratnozančni URL (`localhost`, `127.0.0.0/8` ali povratnozančni
+   IPv6). Zahteve, ki vsebujejo žeton, uporabljajo `redirect: error`, zato ga
+   lokalna preusmeritev ne more posredovati drugemu izvoru. Oddaljeni konteksti
+   namesto tega uporabljajo žetone za dostop z omejenim obsegom. Če izpeljava ni
+   na voljo, CLI izpusti glavo, `omniroute doctor` pa sporoči napako, namesto da
+   bi prazen žeton obravnaval kot veljaven.
+4. Strežnik (`src/server/authz/policies/management.ts`) z isto soljo znova
+   izračuna pričakovani žeton in ga primerja z uporabo `timingSafeEqual`, da
+   prepreči pridobivanje na podlagi časovnih razlik.
 
 ## Varnostne lastnosti
 
-| Lastnost                          | Podrobnosti                                                                                                                                                                                                                         |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Samo povratna zanka**           | Sprejeto samo, kadar strežnikov zaupanja vreden žig lokalnosti vrstnika (izpeljan iz dejanskega naslova vrstnika TCP) kaže na povratno zanko. Glavi `Host`, ki jo nadzoruje odjemalec, se pri določanju lokalnosti nikoli ne zaupa. |
-| **Primerjava v konstantnem času** | `crypto.timingSafeEqual` preprečuje časovne napade.                                                                                                                                                                                 |
-| **Nepovratnost**                  | Iz izhoda HMAC ni mogoče obnoviti identifikatorja `machine-id`.                                                                                                                                                                     |
-| **Brez obhoda zaščite `always`**  | `isAlwaysProtectedPath()` se ovrednoti pred preverjanjem žetona CLI. `/api/shutdown` in `/api/settings/database` vedno zahtevata JWT.                                                                                               |
-| **Brez možnosti izvoza**          | Žeton se nikoli ne zapiše na disk ali v dnevnike.                                                                                                                                                                                   |
+| Lastnost                          | Podrobnosti                                                                                                                                                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Samo povratna zanka**           | Sprejeto samo, kadar strežnikov zaupanja vreden zaznamek lokalnosti vrstnika (izpeljan iz dejanskega naslova vrstnika TCP) kaže povratno zanko. Glavi `Host`, ki jo nadzoruje odjemalec, se za določanje lokalnosti nikoli ne zaupa. |
+| **Primerjava v konstantnem času** | `crypto.timingSafeEqual` preprečuje časovne napade.                                                                                                                                                                                  |
+| **Nepovratno**                    | Iz izhoda HMAC ni mogoče pridobiti ID-ja naprave.                                                                                                                                                                                    |
+| **Brez obhoda zaščite `always`**  | `isAlwaysProtectedPath()` se ovrednoti pred preverjanjem žetona CLI. `/api/shutdown` in `/api/settings/database` vedno zahtevata JWT.                                                                                                |
+| **Ni mogoče izvoziti**            | Žeton se nikoli ne zapiše na disk ali v dnevnike.                                                                                                                                                                                    |
 
-## Zamenjava soli
+## Privzeta sol (naključna za vsako namestitev)
 
-Nastavite `OMNIROUTE_CLI_SALT`, da zamenjate izpeljani žeton brez sprememb kode.
-Po zamenjavi bodo vsi procesi CLI na tem računalniku samodejno uporabljali novi
-žeton. To je uporabno po uhajanju seznama procesov, ki je morda razkrilo prejšnjo
-izpeljano vrednost.
+Kadar `OMNIROUTE_CLI_SALT` ni nastavljen, je sol naključni 64-mestni
+šestnajstiški niz, ustvarjen enkrat in trajno shranjen v
+`<DATA_DIR>/cli-token-salt.json` (način `0600`) — in ne v repozitorij vključeni
+literal `omniroute-cli-auth-v1`. Tako `getActiveSalt()` v
+`src/lib/machineToken.ts` kot njegova zrcalna implementacija v
+`bin/cli/utils/cliToken.mjs` bereta isto datoteko, zato strežnik in vsak klic CLI
+v tej namestitvi uporabljata isto vrednost; v repozitorij vključeni literal se
+uporabi le kot skrajna rezerva, kadar še ni mogoče določiti trajno shranjene soli
+ali soli iz okolja (na primer pri sveži namestitvi samo za CLI, preden je bil
+strežnik sploh kdaj zagnan). S tem je odpravljena šibkost stare privzete fiksne
+literalne vrednosti: `/etc/machine-id` je pogosto berljiv vsem uporabnikom, zato
+bi lahko sicer kateri koli lokalni uporabnik izpeljal isti žeton za vsako
+namestitev, v kateri `OMNIROUTE_CLI_SALT` ni bil nikoli nastavljen.
+
+## Rotacija soli
+
+Nastavite `OMNIROUTE_CLI_SALT`, da spremenite izpeljani žeton brez sprememb kode — ta
+ima vedno prednost pred shranjeno soljo posamezne namestitve. Po rotaciji bodo vsi procesi
+CLI v tem računalniku samodejno uporabljali novi žeton. To je uporabno po razkritju seznama
+procesov, ki je morda razkril prejšnjo izpeljano vrednost.
 
 ```bash
-# Trajna zamenjava (dodajte v profil lupine)
+# Trajna rotacija (dodajte v profil lupine)
 export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 
 # Preverite, ali se uporablja novi žeton
 omniroute status
 ```
 
-Privzeta sol: `omniroute-cli-auth-v1`
-
 ## Podedovana oblika (SHA-256, 32 znakov) — še vedno sprejeta
 
-Pred zgoraj opisano obliko HMAC je CLI svoj žeton izpeljal kot
-`SHA-256(machineId + salt).hex[0..32]` (32-mestno predpono) v
+Pred zgornjo obliko HMAC je CLI svoj žeton izpeljal kot
+`SHA-256(machineId + salt).hex[0..32]` (32-znakovna predpona) v
 `bin/cli/utils/cliToken.mjs` (`getLegacyCliTokenSync` v `src/lib/machineToken.ts`).
 
-Zaradi združljivosti za nazaj strežnik sprejema **obe** obliki: preverjevalnik sestavi
+Zaradi združljivosti za nazaj strežnik sprejema **obe** obliki: preverjevalnik ustvari
 `expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` in primerja
-prejeto glavo z vsako vrednostjo prek `timingSafeEqual`
+prejeto glavo z vsako vrednostjo s funkcijo `timingSafeEqual`
 (`src/server/authz/policies/management.ts` in `src/lib/middleware/cliTokenAuth.ts`).
-Žeton je torej veljaven, če se ujema **bodisi** s 64-mestnim povzetkom HMAC **bodisi**
-z 32-mestno podedovano predpono SHA-256.
+Žeton je torej veljaven, če se ujema **bodisi** s 64-znakovnim izvlečkom HMAC bodisi z
+32-znakovno podedovano predpono SHA-256.
 
-**Onemogočanje:** nastavite `OMNIROUTE_DISABLE_CLI_TOKEN=true` (v okolju ali `.env`),
-da v celoti onemogočite mehanizem žetona CLI; ves dostop nato zahteva izrecni ključ
-API. To je priporočljivo v gostiteljskih sistemih z več uporabniki, saj je `machine-id`
-vezan na napravo (in ne na uporabnika), zato bi lahko drug uporabnik v istem
-gostiteljskem sistemu izračunal isti žeton.
+**Onemogočanje:** nastavite `OMNIROUTE_DISABLE_CLI_TOKEN=true` (v okolju ali datoteki `.env`),
+da v celoti onemogočite mehanizem žetonov CLI; ves dostop nato zahteva izrecni ključ API.
+To je priporočljivo na gostiteljih z več uporabniki, saj je `machine-id` vezan na napravo
+(in ne na uporabnika), zato bi lahko drug uporabnik na istem gostitelju izračunal isti žeton.
 
 ## Datoteke
 
 | Datoteka                                  | Namen                                                    |
 | ----------------------------------------- | -------------------------------------------------------- |
 | `src/lib/machineToken.ts`                 | Izpeljava žetona (`getMachineTokenSync`)                 |
+| `bin/cli/utils/cliToken.mjs`              | Zrcalna izvedba iste izpeljave na strani CLI             |
+| `<DATA_DIR>/cli-token-salt.json`          | Shranjena naključna sol posamezne namestitve             |
 | `src/server/authz/headers.ts`             | Konstanta `CLI_TOKEN_HEADER`                             |
 | `src/server/authz/policies/management.ts` | Preverjanje na strani strežnika                          |
 | `src/server/authz/routeGuard.ts`          | Preverjanje gostitelja povratne zanke (`isLoopbackHost`) |

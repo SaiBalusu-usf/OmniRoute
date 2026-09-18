@@ -9,46 +9,48 @@
 > **Senest undersøgt:** 2026-06-17 — webresearch for hver udbyder (officiel dokumentation + nyheder fra de seneste 7 dage, gennemgang med 50 agenter og kontradiktorisk verifikation), hvor alle kvoter for gratis niveauer samt tjenestevilkår blev opdateret. **Delvis ny revision 2026-09-02** (`gemini`, `ollama-cloud`, `groq`, `nara`, `mistral` — se den daterede bemærkning nedenfor).
 > **Autoritativ kilde (katalog):** `open-sse/config/freeModelCatalog.ts` (budgetter pr. MODEL, deduplikeret efter pulje). Tallene for tokenbudgetter nedenfor stammer fra aktuel webresearch og er en **tilnærmelse** — se [Metode og forbehold](#methodology--caveats).
 
-## Kort fortalt — hvor meget gratis inferens samler OmniRoute faktisk?
+## TL;DR — hvor meget gratis inferens samler OmniRoute faktisk?
 
-| Målepunkt                                           | Tokens/måned             | Betydning                                                                                                                                                                                                                                                                                                                         |
-| --------------------------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Dokumenteret tilbagevendende tildeling (stabil)** | **~1,47 mia.**           | **Puljer** på gratis niveauer (katalog pr. model), hvor hver delt pulje kun tælles **én gang**. Den aktive kilde bag `/api/free-tier/summary` og kontrolpanelets side for budgetter på gratis niveauer. **Brug dette tal.**                                                                                                       |
-| **+ første måned med tilmeldingskreditter**         | **~2,07 mia.**           | Stabil tildeling + tilmeldingskreditter, der kun gives én gang (Z.AI 20M, DeepSeek 5M, …), deduplikeret pr. konto. **Kun den første måned** — gentages ikke.                                                                                                                                                                      |
-| **+ permanent gratis uden offentliggjort loft**     | _kan ikke kvantificeres_ | `siliconflow`, `glm-cn` (GLM-4-Flash), `tencent`, `baidu`, `kilo-gateway`, `opencode-zen`, `gemini`, `ollama-cloud` — reel, tilbagevendende adgang, begrænset af hastighed/samtidighed, men **uden et tokenloft, der kan medregnes**. Opføres, men summeres aldrig (at beregne dem som `RPM×24/7` er den oppustning, vi afviser). |
-| **+ løft, der låses op med en indbetaling**         | **+~24M**                | En enkelt OpenRouter-optankning på **$10** hæver dens gratis pulje fra 50 → 1000 anmodninger/dag. Rapporteres separat, så den aldrig puster det stabile tal op.                                                                                                                                                                   |
-| **+ bag en regional identitetskontrol**             | **+~6M**                 | `modelscope` (tilknytning til Alibaba Cloud + identitetsverifikation for det kinesiske fastland). Reel, tilbagevendende kvote, der vises som `gatedRecurringTokens` / `gatedProviders` og på kontrolpanelet. Medregnes aldrig i hovedtallet: +~6M bag regional identitetsverifikation.                                            |
-| Teoretisk maksimum (alle hastighedsgrænser, 24/7)   | ~10 mia.                 | Summen af alle udbyderes hastighedsgrænser ekstrapoleret til uafbrudt brug. **Ikke en garanti** — brug ikke dette som hovedbudskab.                                                                                                                                                                                               |
+| Målepunkt                                           | Tokens / måned           | Betydning                                                                                                                                                                                                                                                                                                          |
+| --------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Dokumenteret tilbagevendende tildeling (stabil)** | **~1.62B**               | Gratisniveauets **puljer** (katalog pr. model), hvor hver delt pulje kun tælles **én gang**. Den aktuelle kilde bag `/api/free-tier/summary` og dashboardets side med gratisniveauets budget. **Brug dette tal.**                                                                                                  |
+| **+ første måned med oprettelseskreditter**         | **~2.22B**               | Stabil tildeling + engangskreditter ved oprettelse (Z.AI 20M, DeepSeek 5M, …), deduplikeret pr. konto. **Kun den første måned** — gentages ikke.                                                                                                                                                                   |
+| **+ permanent gratis, ingen offentliggjort grænse** | _kan ikke kvantificeres_ | `siliconflow`, `glm-cn` (GLM-4-Flash), `tencent`, `baidu`, `kilo-gateway`, `opencode-zen`, `gemini`, `ollama-cloud` — reel tilbagevendende adgang, begrænset af hastighed/samtidighed, **ingen tokengrænse at medregne**. Opført, men aldrig summeret (at tælle dem som `RPM×24/7` er den oppustning, vi afviser). |
+| **+ boost låst op med indbetaling**                 | **+~24M**                | En engangsoptankning på **$10** hos OpenRouter hæver dens gratis pulje fra 50 → 1000 forespørgsler/dag. Rapporteres separat, så det aldrig puster det stabile tal op.                                                                                                                                              |
+| **+ bag et regionalt identitetstjek**               | **+~6M**                 | `modelscope` (tilknytning til Alibaba Cloud + identitetsbekræftelse med rigtigt navn i Fastlandskina). Reel tilbagevendende kvote, eksponeret som `gatedRecurringTokens` / `gatedProviders` og på dashboardet. Summeres aldrig med overskriftstallet: +~6M bag regional identitetsbekræftelse.                     |
+| Teoretisk loft (alle hastighedsgrænser, 24/7)       | ~10B                     | Summen af alle udbyderes hastighedsgrænser ekstrapoleret til uafbrudt brug. **Ikke en garanti** — brug ikke dette som overskrift.                                                                                                                                                                                  |
 
-**Ærligt hovedbudskab:** _OmniRoute samler **~1,47 mia. dokumenterede gratis tokens pr. måned** (op til ~2,07 mia. i din første måned med tilmeldingskreditter) på tværs af 34 puljer på gratis niveauer — plus en lang række permanent gratis udbydere uden loft — og RTK + Caveman-komprimering (15–95 % tokenbesparelse) får dem til at række endnu længere._
+**Ærlig overskrift:** _OmniRoute samler **~1.62B dokumenterede gratis tokens pr. måned** (op til ~2.22B i din første måned med oprettelseskreditter) på tværs af 35 gratisniveaupuljer — plus en lang hale af permanent gratis udbydere uden loft — og RTK + Caveman-komprimering (15–95 % tokenbesparelse) strækker det endnu længere._
 
-> **Derfor er tallet faldet fra de tidligere ~1,94 mia.** Opdateringen 2026-06-17 er en korrektion af hensyn til ærlighed, ikke et tab: `gemini` deduplikeres nu efter pulje (var oppustet ved at tælle hver Flash-variant separat, 462M → 60M), `cloudflare-ai` er korrigeret til de faktiske 10k Neurons/dag (122M → 30M), `doubao` er omklassificeret som en tilmeldingskredit, der kun gives én gang (ikke tilbagevendende), og nedlagte niveauer er fjernet (`chutes`/`phind`/`kluster` er udgået). Dette opvejes delvist af `llm7` (korrekt 5M/dag → 150M) og nye gratis udbydere (Kilo, OpenCode Zen, Z.AI GLM-Flash).
+> **Derfor faldt dette fra de tidligere ~1.94B.** Opdateringen 2026-06-17 er en ærlighedskorrektion, ikke et tab: `gemini` er nu deduplikeret som pulje (var pustet op ved at tælle hver Flash-variant separat, 462M → 60M), `cloudflare-ai` er korrigeret til de reelle 10k Neurons/dag (122M → 30M), `doubao` er omklassificeret som en engangskredit ved oprettelse (ikke tilbagevendende), og lukkede niveauer er fjernet (`chutes`/`phind`/`kluster` er udfaset). Dette opvejes delvist af `llm7` (korrekt 5M/dag → 150M) og nye gratis udbydere (Kilo, OpenCode Zen, Z.AI GLM-Flash).
 >
-> **Yderligere korrigeret til ~1,37 mia. i v3.8.42:** `longcat` blev omklassificeret fra en tilbagevendende tildeling på 150M/måned til en tilmeldingskredit på 10M, der kun gives én gang, efter at den gratis forhåndsvisning ophørte. Samme regel om ærlighed — ingen udbyder blev fjernet ved en fejl.
+> **Yderligere korrigeret til ~1.37B i v3.8.42:** `longcat` blev omklassificeret fra en tilbagevendende tildeling på 150M/md. til en engangskredit på 10M ved oprettelse, efter at den gratis forhåndsvisning sluttede. Samme ærlighedsregel — ingen udbyder blev fjernet ved en fejl.
 >
-> **Opdateret 2026-08-26 efter udfasningen af Felo Web:** Felo Web er udeladt, mens afklaringen af dets GPL-afledte oprindelse/licensering fortsat er sat på pause; kilden rapporterede på daværende tidspunkt 38 puljenøgler. Antallet af puljer er dynamisk og underlagt CI-kontrol (`check:docs-counts` får buildet til at fejle, hvis tallene ovenfor afviger fra `computeFreeModelTotals()`).
+> **Opdateret 2026-08-26 efter udfasningen af Felo Web:** Felo Web er udeladt, mens dets GPL-afledte oprindelse/licensering fortsat er på HOLD; kilden rapporterede på det tidspunkt 38 puljenøgler. Antallet af puljer er dynamisk og CI-kontrolleret (`check:docs-counts` får buildet til at fejle, hvis tallene ovenfor afviger fra `computeFreeModelTotals()`).
 >
-> **Revideret igen 2026-09-02 i forhold til udbydernes egne sider** (kilder: `// evidence:`-kommentarerne ud for hver revideret post i `open-sse/config/freeModelCatalog.data.ts`): `gemini` og `ollama-cloud` offentliggør ikke længere et tokental (Google fjernede tabellen over gratis brug pr. model 2025-12-23; Ollamas Free-abonnement er "starter usage credits") og opføres nu som **uden loft** og summeres aldrig (−80M); `groq` har fem **modelspecifikke** lofter på 200K TPD (6M hver, +15M), og tre udfasede ID'er er fjernet; `nara` er én pulje på 7M/dag (+60M, 210M). `mistral`'s 1B er kun synlig i kontokonsollen — se _Evidensklasser_ under Metode. Kilden rapporterede 35 sådanne nøgler på det tidspunkt (−3: `gemini` og `ollama-cloud` blev flyttet til listen uden loft, og Groqs modelspecifikke lofter er ikke en delt pulje).
+> **Revideret igen 2026-09-02 i forhold til udbydernes egne sider** (kilder: `// evidence:`-kommentarerne ud for hver genvurderet post i `open-sse/config/freeModelCatalog.data.ts`): `gemini` og `ollama-cloud` offentliggør ikke længere et tokental (Google fjernede tabellen over gratis adgang pr. model 2025-12-23; Ollamas Free-abonnement er "starter usage credits") og er nu opført som **uden loft**, aldrig summeret (−80M); `groq` har fem **pr. model**-lofter på 200K TPD (6M hver, +15M), og tre udfasede ID'er er fjernet; `nara` er én pulje på 7M/dag (+60M, 210M). `mistral`'s 1B er kun synlig i kontokonsollen — se _Evidensklasser_ under Metodologi.
 >
-> **Korrigeret til ~1,47 mia. 2026-09-03 (#11773):** `cerebras` blev omklassificeret fra en tilbagevendende tildeling på 30M/måned (tidligere prøveperiode uden kort med 1M tokens/dag) til en tilmeldingskredit på $5, der kun gives én gang og kræver en betalingsmetode. Samme regel om ærlighed som for LongCat. Kilden rapporterer nu 34 tilbagevendende puljenøgler og et stabilt niveau på ~1,47 mia.
+> **Korrigeret 2026-09-03 (#11773):** `cerebras` blev omklassificeret fra en tilbagevendende tildeling på 30M/md. (gammel prøveperiode uden kort på 1M tokens/dag) til en engangskredit på $5 ved oprettelse, som kræver en betalingsmetode. Samme ærlighedsregel som for LongCat.
+>
+> **Plus xKiro (2026-09-03):** den nye `xkiro-free`-pulje (150M/md.) tilføjer en 35. tilbagevendende puljenøgle. Felo Web forbliver udeladt, mens dets GPL-afledte oprindelse/licensering fortsat er på HOLD. Kilden rapporterer nu **35 tilbagevendende puljenøgler** og **~1.62B stabilt** — det aktuelle, CI-kontrollerede tal (`check:docs-counts` får buildet til at fejle, hvis dette afviger fra `computeFreeModelTotals()`).
 
-Største **dokumenterede** bidragydere: `mistral` 1,00 mia., `nara` 210 mio., `llm7` 150 mio., `groq` 30 mio. (fem grænser pr. model), `cloudflare-ai` 30 mio., `api-airforce` 24 mio. (`longcat` er udeladt — dens bevilling på 10 mio. til LongCat-2.0 er en engangskredit ved tilmelding, som kræver KYC, og ikke et tilbagevendende månedligt budget.)
+Største **dokumenterede** bidragydere: `mistral` 1.00B, `nara` 210M, `llm7` 150M, `xkiro` 150M, `groq` 30M (fem lofter pr. model), `cloudflare-ai` 30M, `api-airforce` 24M. (`longcat` er udeladt — dens LongCat-2.0-tildeling på 10M er en KYC-betinget engangskredit ved oprettelse, ikke et tilbagevendende månedligt budget.)
 
-> ⚠️ Det teoretiske loft (~10 mia.) er pustet op af udbydere, der kun har hastighedsbegrænsninger og **ingen offentliggjort tokenbegrænsning** (`tencent`, `siliconflow`, `nvidia`, `baidu`, `glm-cn`, `sparkdesk`), hvis tal ville være `RPM/TPM × 24/7 × 30d` — et teoretisk maksimum, som ingen enkelt konto vil kunne opretholde. De er **udeladt** fra det forsvarlige tal (og vises i stedet i rækken "permanent gratis, ingen grænse"). Det er den samme oppustning, der gør konkurrenternes milliardpåstande utroværdige.
+> ⚠️ Det teoretiske loft (~10 mia.) er oppustet af udbydere, der kun har hastighedsbegrænsninger og **ingen offentliggjort token-grænse** (`tencent`, `siliconflow`, `nvidia`, `baidu`, `glm-cn`, `sparkdesk`), og hvis tal ville være `RPM/TPM × 24/7 × 30d` — et teoretisk maksimum, som ingen enkelt konto vil kunne opretholde. De er **udeladt** fra det forsvarlige tal (og vises i stedet i rækken "permanent gratis, ingen grænse"). Det er den samme oppustning, der gør konkurrenternes påstande om milliardtal utroværdige.
 
 ---
 
-## Opdatering 2026-06-17 — hvad er ændret siden 2026-06-05
+## Opdatering 2026-06-17 — hvad har ændret sig siden 2026-06-05
 
 En webresearch-gennemgang med 50 agenter (officiel dokumentation + nyheder fra de seneste 7 dage, verificeret kontradiktorisk) opdaterede hele kataloget. Højdepunkter:
 
-- **Fjernet / intet gratis niveau (2026):** `chutes` (det gratis niveau ophørte 2026-03), `phind` (virksomheden lukkede 2026-01), `kluster` (udfaset 2026-06-09 → MITO), `gitlawb` + `gitlawb-gmi` (gratis MiMo-adgang tilbagekaldt 2026-05-24, Nemotron-kampagnen sluttede 2026-06 — genverificeret 2026-06-18), `aimlapi` (det gratis niveau er sat på pause — genverificeret 2026-06-18), `yi` (Yi-Light udfaset, betaling efter forbrug — genverificeret 2026-06-18), `featherless-ai` (intet aktuelt gratis niveau). `iflytek` / `sparkdesk` forbliver på listen, men har en bemærkning om forsigtighed vedrørende tjenestevilkårene (Spark Lite er gratis; tjenestevilkårene begrænser brug som proxy/relæ).
+- **Fjernet / intet gratis niveau (2026):** `chutes` (det gratis niveau ophørte 2026-03), `phind` (virksomheden lukkede 2026-01), `kluster` (udfaset 2026-06-09 → MITO), `gitlawb` + `gitlawb-gmi` (gratis MiMo-adgang tilbagekaldt 2026-05-24, Nemotron-kampagnen sluttede 2026-06 — genverificeret 2026-06-18), `aimlapi` (det gratis niveau er sat på pause — genverificeret 2026-06-18), `yi` (Yi-Light udfaset, betaling efter forbrug — genverificeret 2026-06-18), `featherless-ai` (intet aktuelt gratis niveau), `chipotle` (Chipotles "Pepper AI" — den reverse-engineerede Amelia-chatwidget på `amelia.chipotle.com`, som udbyderen kommunikerede med, returnerer nu 404 på alle ruter, inklusive roden; backend er nedlagt/flyttet, bekræftet 2026-09-15 — helt fjernet fra kataloget, #13131/#4037). `iflytek` / `sparkdesk` forbliver på listen, men har en advarsel om tjenestevilkårene (Spark Lite er gratis; tjenestevilkårene begrænser brug som proxy/relay).
 - **Gemini** — `2.0 Flash` / `2.0 Flash-Lite` blev lukket 2026-06-01, og `2.5 Pro` forlod det gratis niveau (2026-04); det gratis niveau omfatter nu **kun Flash-familien** (2.5/3/3.1/3.5 Flash + Gemma). Kataloget **samler** nu Flash-familien i én pulje (tallet var tidligere oppustet ved at tælle hver variant separat: 462M → 60M).
-- **Korrigerede tal:** `cloudflare-ai` 122M → **30M** (reelt 10k neuroner/dag), `doubao` omklassificeret som en engangskredit ved tilmelding (ikke tilbagevendende), `llm7` 4M → **150M** (dokumenterede 5M tokens/dag), `together`-slutpunkter med "-Free" udfaset → tilmeldingskreditten på $25 er også fjernet (kræver et minimumskøb på $5, ingen gratis prøveperiode), `longcat` Preview afsluttet + Flash-modeller udfaset → kun **LongCat-2.0**, omklassificeret som en engangskredit på **10M** tokens ved tilmelding (kræver KYC, ikke tilbagevendende).
-- **Nye gratis udbydere fundet:** ⭐ **Kilo Code** (`kilo-gateway` — roterende "Auto Free"-udvalg: NVIDIA Nemotron 3-familien, StepFun, Poolside, Nex-N2-Pro), ⭐ **OpenCode Zen** (`opencode-zen` — 6 roterende gratis kodningsmodeller), ⭐ **Z.AI / Zhipu** (`glm-cn` — GLM-4-Flash / 4.5-Flash / 4.7-Flash permanent gratis + 20M i tilmeldingsbonus) samt `arcee-ai` Trinity Large Preview.
-- **Nye retvisende niveauer** (se Metode): en kategori for _permanent gratis, men uden loft_ (reel tilbagevendende adgang, intet tokenloft at tælle) og en _forhøjelse, der låses op med et indskud_ (OpenRouter $10 → +24M/md.), begge vist **separat**, så de aldrig puster hovedtallet op.
+- **Korrigerede tal:** `cloudflare-ai` 122M → **30M** (reelt 10k Neurons/dag), `doubao` omklassificeret som en engangskredit ved tilmelding (ikke tilbagevendende), `llm7` 4M → **150M** (dokumenterede 5M tokens/dag), `together`-endpoints med "-Free" udfaset → tilmeldingskreditten på $25 er også fjernet (kræver et minimumskøb på $5, ingen gratis prøveperiode), `longcat` Preview afsluttet + Flash-modeller udfaset → kun **LongCat-2.0**, omklassificeret som en engangskredit på **10M** tokens ved tilmelding (kræver KYC, ikke tilbagevendende).
+- **Nye gratis udbydere fundet:** ⭐ **Kilo Code** (`kilo-gateway` — roterende "Auto Free"-udvalg: NVIDIA Nemotron 3-familien, StepFun, Poolside, Nex-N2-Pro), ⭐ **OpenCode Zen** (`opencode-zen` — 6 roterende gratis kodningsmodeller), ⭐ **Z.AI / Zhipu** (`glm-cn` — GLM-4-Flash / 4.5-Flash / 4.7-Flash permanent gratis + 20M i tilmeldingsbonus) og `arcee-ai` Trinity Large Preview.
+- **Nye retvisende niveauer** (se Metodologi): en kategori for _permanent gratis, men uden fast loft_ (reel tilbagevendende adgang uden et tokenloft, der kan tælles med) og et _boost, der låses op med en indbetaling_ (OpenRouter $10 → +24M/md.), som begge vises **separat**, så de aldrig puster overskriftstallet op.
 
-> Den detaljerede tabel pr. udbyder længere nede er et **øjebliksbillede fra 2026-06-05**; ændringerne ovenfor har forrang. Den aktuelle, autoritative kilde er kataloget pr. model i `open-sse/config/freeModelCatalog.ts`.
+> Den detaljerede tabel for hver udbyder længere nede er et **øjebliksbillede fra 2026-06-05**; ændringerne ovenfor erstatter oplysningerne i den. Den aktuelle, kanoniske kilde er kataloget pr. model i `open-sse/config/freeModelCatalog.ts`.
 
 ---
 
@@ -69,16 +71,16 @@ forhåndsvisning læste én kilde, mens serverimporten læste en anden, ville de
 forhåndsvisning, der ikke stemmer overens med det, der sker ved klik — opdelingen er bevaret
 med vilje.
 
-## Metode og forbehold
+## Metodologi og forbehold
 
-- Tallene er **øvre estimater** baseret på hver udbyders dokumenterede grænser for gratisniveauet pr. **2026-06-17**, indsamlet gennem webresearch. Gratisniveauer ændres konstant — kontrollér oplysningerne igen, før du baserer dig på et tal.
-- **Hvad en post faktisk står inde for.** Ingen post har en konfidensvurdering pr. række, og API'et leverer heller ikke en — betragt alle ovenstående tal som estimater af samme, ikke-angivne kvalitet. To oplysninger skiller sig ud, fordi de er manuelt kuraterede frem for udledte: 5 poster har et uafhængigt dokumenteret hårdt stop, og 13 poster har en oplysning om prompttræning. `hardStopGuaranteed` angives kun, når udbyderens egne vilkår siger, at overskridelse af den gratis kvote medfører, at anmodningen afvises, frem for at faktureringen starter lydløst, med kilden angivet i en kommentar ved siden af posten; værdien sættes aldrig som standard til `true`, og en post, som ingen har verificeret, forbliver uden værdi. Et manglende flag for hårdt stop betyder derfor "ikke fastslået", ikke "kendt for at fakturere dig". **STRICT-tilstand** (den frivillige routingbeskyttelse `freeAccessPolicy=strict`) har kun tillid til poster, der har flaget; alle andre gratisniveauer udelukkes som `no-hard-stop` (se `open-sse/services/autoCombo/strictZeroCostFilter.ts`).
+- Tallene er **estimater for den øvre grænse** baseret på hver udbyders dokumenterede grænser for gratisniveauet pr. **2026-06-17**, indsamlet gennem webresearch. Gratisniveauer ændres konstant — kontrollér dem igen, før du baserer dig på et tal.
+- **Hvad en post faktisk står inde for.** Ingen post har en konfidensvurdering pr. række, og API'et leverer heller ingen — betragt hvert ovenstående tal som et estimat af samme, ikke-angivne kvalitet. To fakta skiller sig ud, fordi de er kurateret manuelt frem for udledt: 44 poster har et uafhængigt dokumenteret hårdt stop (39 af dem er xKiro-rækkerne, som alle deler én daglig kvote), og 13 poster har en oplysning om prompttræning. `hardStopGuaranteed` angives kun, når udbyderens egne vilkår siger, at overskridelse af gratiskvoten medfører, at anmodningen afvises, frem for at fakturering påbegyndes uden varsel, med kilden angivet i en kommentar ved siden af posten; værdien sættes aldrig som standard til `true`, og en post, som ingen har verificeret, forbliver uden værdi. Et manglende flag for hårdt stop betyder derfor "ikke fastslået", ikke "kendt for at fakturere dig". **STRICT-tilstand** (den tilvalgte routingbeskyttelse `freeAccessPolicy=strict`) har kun tillid til poster, der har flaget; alle andre gratisniveauer udelukkes som `no-hard-stop` (se `open-sse/services/autoCombo/strictZeroCostFilter.ts`).
 - `estMonthlyFreeTokens` = kun tilbagevendende månedlige tokens. **Engangskreditter ved tilmelding gentages ikke** og tæller som 0. Udgåede niveauer tæller også som 0.
-- Dagligt tokenloft → `monthly = daily × 30`. Kun dokumenteret RPD → `RPD × ~800 output tokens × 30`. Kun RPM/TPM (intet dagligt loft) → **uden loft** (se nedenfor).
-- **Permanent gratis, men uden offentliggjort tokenloft** (`siliconflow`, `glm-cn`, `tencent`, `baidu`, `kilo-gateway`, `opencode-zen`, `gemini`, `ollama-cloud`): Dette er reel, tilbagevendende gratis adgang, som er begrænset af hastighed/samtidighed. Vi klassificerer dem som `recurring-uncapped` og **summerer dem aldrig** — at gange `RPM × 24/7 × 30d` ville give et fantasiloft (den oppustning, vi afviser). De er angivet, så du ved, at de findes.
-- **Forhøjelse låst op med indbetaling:** En mindre engangsindbetaling, der permanent hæver en gratis kvote (OpenRouter: $10 → 1000 anmodninger/dag ≈ +24M/måned). Rapporteres som et separat tal og holdes uden for det faste hovedtal.
-- **Kvalifikationsbegrænsede kvoter** (`eligibilityGate: "regional-identity"`): En reel, tilbagevendende kvote, som først åbnes efter en regionsbunden identitetskontrol (i øjeblikket identitetsverificering med rigtigt navn i Fastlandskina). Tælles med den samme regel for deduplikering af puljer i et separat tal (`gatedRecurringTokens`), aldrig i det faste hovedtal. Ordningen (`freeType`) er uændret, så routingen er uændret.
-- **Evidensklasser.** Reglen er: Et tal i kataloget angiver sin kilde i en `// evidence:`-kommentar ved siden af posten — `public-page` (en udbyderside, som alle kan læse), `api-public` (et endpoint hos udbyderen uden godkendelseskrav, f.eks. NaraRouters offentlige endpoint for abonnementer på router.bynara.id) eller `console-verified <date> por <who>` (tallet er kun synligt i en kontokonsol; kommentaren registrerer, hvem der så det og hvornår, samt den offentlige side, der oplyser, at loftet findes). Status i dag: De fem blokke, der blev genkontrolleret den 2026-09-02, har denne angivelse (`gemini`, `groq`, `mistral`, `ollama-cloud`, `nara`); poster fra før genkontrollen den 2026-09-02 arver den tidligere research, indtil de bliver berørt; ethvert **nyt eller ændret** tal uden en evidenskommentar er en fejl. I dag er kun `mistral` konsolverificeret.
+- Dagligt tokenloft → `monthly = daily × 30`. Kun dokumenteret RPD → `RPD × ~800 outputtokens × 30`. Kun RPM/TPM (intet dagligt loft) → **uden loft** (se nedenfor).
+- **Permanent gratis, men uden et offentliggjort tokenloft** (`siliconflow`, `glm-cn`, `tencent`, `baidu`, `kilo-gateway`, `opencode-zen`, `gemini`, `ollama-cloud`): Dette er reel, tilbagevendende gratis adgang, begrænset af hastighed/samtidighed. Vi klassificerer dem som `recurring-uncapped` og **summerer dem aldrig** — en multiplikation af `RPM × 24/7 × 30d` ville give et urealistisk loft (den oppustning, vi afviser). De er anført, så du ved, at de findes.
+- **Forøgelse oplåst ved indbetaling:** En lille engangsindbetaling, der permanent hæver en gratiskvote (OpenRouter: $10 → 1000 anmodninger/dag ≈ +24M/måned). Rapporteres som et særskilt tal og holdes ude af det løbende hovedtal.
+- **Adgangsbetingede kvoter** (`eligibilityGate: "regional-identity"`): En reel, tilbagevendende kvote, som først åbnes efter en regionsbunden identitetskontrol (i dag identitetsverificering med rigtigt navn i Fastlandskina). Medregnes efter den samme regel for deduplikering af puljer i et særskilt tal (`gatedRecurringTokens`), aldrig i det løbende hovedtal. Ordningen (`freeType`) er uændret, så routingen er uændret.
+- **Evidensklasser.** Reglen er: Et tal i kataloget angiver sin kilde i en `// evidence:`-kommentar ved siden af posten — `public-page` (en udbyderside, som alle kan læse), `api-public` (et ikke-godkendelseskrævende endpoint fra udbyderen, f.eks. NaraRouters offentlige endpoint for abonnementer på router.bynara.id) eller `console-verified <date> por <who>` (tallet er kun synligt inde i en kontokonsol; kommentaren registrerer, hvem der så det og hvornår, samt den offentlige side, som oplyser, at loftet findes). Status i dag: De fem blokke, der blev genkontrolleret den 2026-09-02, har denne angivelse (`gemini`, `groq`, `mistral`, `ollama-cloud`, `nara`); poster fra før genkontrollen den 2026-09-02 viderefører den tidligere research, indtil de bliver berørt; ethvert **nyt eller ændret** tal uden en evidenskommentar er en fejl. I dag er kun `mistral` konsolverificeret.
 
 ---
 
@@ -94,183 +96,185 @@ De fleste tal for "gratis tokens pr. måned" på dette område er summer af etik
 
 ---
 
-## ToS-opmærksomhedstabel
+## Tabel over opmærksomhedspunkter i servicevilkårene
 
-> **ToS-flaget er vejledende, ikke en routingblokering.** Udbydere markeret med `tos` inkluderes stadig som standard i routing og kombinations-/fallback-ruter; flaget vises kun på `/dashboard/free-tiers` og `/api/free-tier/summary`. Forespørgselsparameteren `excludeTosAvoid` påvirker kun oversigtsvisningen, ikke den globale routing. Vurderingen findes i `open-sse/config/freeTierCatalog.ts` (vejledende og læses ikke af routingmotorer).
+> **Markeringen for servicevilkår er vejledende og ikke en begrænsning for routing.** Udbydere markeret med `tos` inkluderes stadig som standard i routing og kombinations-/fallbackfunktionalitet; markeringen vises kun på `/dashboard/free-tiers` og `/api/free-tier/summary`. Forespørgselsparameteren `excludeTosAvoid` påvirker kun oversigtsvisningen, ikke global routing. Vurderingen findes i `open-sse/config/freeTierCatalog.ts` (udelukkende til orientering og læses ikke af routingmotorerne).
 
-> En hurtig gennemgang af hver udbyders vilkår for en selvhostet personlig proxy til én bruger. `caution` = en klausul om personlig brug eller proxybrug, som er værd at kontrollere; `ambiguous` = uklar; `ok` = udtrykkeligt tilladt. Kun til orientering, ikke juridisk rådgivning — du træffer beslutningen.
+> En hurtig gennemgang af hver udbyders vilkår for en selvhostet personlig proxy til én bruger. `caution` = en klausul om personlig brug eller proxybrug, der bør kontrolleres; `ambiguous` = uklar; `ok` = udtrykkeligt tilladt. Kun til orientering, ikke juridisk rådgivning — du afgør det selv.
 
-### ⚠️ Forsigtig — klausuler om personlig brug/proxybrug, som er værd at kontrollere (16)
+### ⚠️ Vær opmærksom — klausuler om personlig brug/proxybrug, der bør kontrolleres (16)
 
-> Deres gratis adgang er reel, og OmniRoute kan route til dem; klausulerne nedenfor er blot værd at kende. Dem med OAuth/nøglefri adgang kan ikke kvantificeres i tokens, så de indgår ikke i overskriftstallet (ikke fordi de er ubrugelige).
+> Deres gratis adgang er reel, og OmniRoute kan route til dem; klausulerne nedenfor er blot værd at kende. Dem, der bruger OAuth eller er nøglefri, kan ikke kvantificeres ud fra tokens, så de indgår ikke i det fremhævede tal (ikke fordi de er ubrugelige).
 
-| Udbyder          | Bemærkning                                                                                                                                                                                  |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `agy`            | Google Antigravity ToS forbyder udtrykkeligt brug af tredjepartssoftware, -værktøjer eller -tjenester (herunder proxyer) til at tilgå tjenesten via OAuth; dette…                           |
-| `ai21`           | ToS §4.2/§8.2 forbyder underlicensering eller distribution af API-adgang til tredjeparter; §3.3 begrænser prøve-/evalueringsprodukter til "intern evaluering af…                            |
-| `amazon-q`       | Produktet er udgået for nye tilmeldinger; eksisterende brugere er underlagt AWS Customer Agreement, som regulerer brugen af administrerede tjenester — selvhostet pro…                      |
-| `blackbox`       | ToS forbyder udtrykkeligt underlicensering, videresalg, at gøre tjenesten tilgængelig for tredjeparter samt opbygning af afledte tjenester — en selvhostet per…                             |
-| `coze`           | Coze ToS begrænser udtrykkeligt brugen til "personlig og ikke-kommerciel brug" og forbyder udlejning, distribution, underlicensering eller videresalg af tjenesten; en…                     |
-| `duckduckgo-web` | Duck.ai ToS (duckduckgo.com/duckai/privacy-terms) forbyder udtrykkeligt "automatiserede forespørgsler og udvikling eller udbud af AI-tjenester" samt omgåelse af …                          |
-| `featherless-ai` | Individuelle abonnementer er udtrykkeligt begrænset til "interaktiv brug eller udvikling af prototyper og eksperimentering foretaget af køberen" — videresalg af inferens og proxybrug kræ… |
-| `fireworks`      | ToS forbyder udtrykkeligt proxy-/mellemledsbrug, overførsel af API-nøgler og underlicensering (afsnit 2.1 og 2.2(i)(j)); selvhostede personlige proxyer er i…                               |
-| `friendliai`     | ToS-afsnit 8(e) og 8(f) forbyder udtrykkeligt at bruge FriendliAI som proxy eller at tillade tredjepartsadgang på selvstændigt grundlag og forbyder videresalg/…                            |
-| `iflytek`        | Afsnit 2.4(3) i iFlytek Spark LLM Service Agreement forbyder udtrykkeligt "brug af automatiserede eller programmatiske metoder til at udtrække data eller output…                           |
-| `kiro`           | Kiro FAQ forbyder udtrykkeligt brug med "OpenClaw og lignende værktøjer, der benytter tredjepartsharnesser" — en selvhostet AI-proxy (som OmniRoute), der rou…                              |
-| `modal`          | ToS-afsnit 1.3 forbyder udtrykkeligt at "udleje, videresælge eller på anden måde give en tredjepart direkte adgang til eller brug af tjenesten" — opbygning af en selvhoste…                |
-| `muse-spark-web` | Meta ToS forbyder udtrykkeligt automatiseret adgang uden forudgående tilladelse, reverse engineering uden skriftlig tilladelse samt omgåelse af teknologi…                                  |
-| `nlpcloud`       | ToS forbyder udtrykkeligt "opsætning af en proxy eller anden enhed, der giver andre adgang til tjenesten gennem den" og giver kun en ikke-overdragelig,…                                    |
-| `opencode`       | ToS (Anomaly Innovations, Inc.) begrænser udtrykkeligt brugen til "din egen interne brug og ikke på vegne af eller til fordel for nogen tredjepart" — ope…                                  |
-| `t3-web`         | ToS begrænser udtrykkeligt konti til personlig brug, forbyder deling af legitimationsoplysninger med tredjeparter og forbyder automatiseret/bot-/scrapingadgang — en s…                     |
+| Udbyder          | Bemærkning                                                                                                                                                                                     |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `agy`            | Google Antigravity-servicevilkårene forbyder udtrykkeligt brug af tredjepartssoftware, -værktøjer eller -tjenester (herunder proxyer) til at tilgå tjenesten via OAuth; dette…                 |
+| `ai21`           | Servicevilkårenes §4.2/§8.2 forbyder underlicensering eller distribution af API-adgang til tredjeparter; §3.3 begrænser prøve-/evalueringsprodukter til "intern evaluering på…                 |
+| `amazon-q`       | Produktet er udgået for nye tilmeldinger; eksisterende brugere er underlagt AWS Customer Agreement, som regulerer brugen af administrerede tjenester — selvhostet pro…                         |
+| `blackbox`       | Servicevilkårene forbyder udtrykkeligt underlicensering, videresalg, at stille tjenesten til rådighed for tredjeparter samt opbygning af afledte tjenester — en selvhostet per…                |
+| `coze`           | Coze-servicevilkårene begrænser udtrykkeligt brugen til "personlig og ikke-kommerciel brug" og forbyder udlejning, distribution, underlicensering eller videresalg af tjenesten; en…           |
+| `duckduckgo-web` | Duck.ai-servicevilkårene (duckduckgo.com/duckai/privacy-terms) forbyder udtrykkeligt "automatiserede forespørgsler og udvikling eller udbud af AI-tjenester" samt omgåelse af …                |
+| `featherless-ai` | Individuelle abonnementer er udtrykkeligt begrænset til "interaktiv brug eller prototypeudvikling og eksperimentering foretaget af køberen" — videresalg af inferens og proxybrug kræ…         |
+| `fireworks`      | Servicevilkårene forbyder udtrykkeligt brug som proxy/mellemled, overførsel af API-nøgler og underlicensering (afsnit 2.1 og 2.2(i)(j)); selvhostede personlige proxyer er i…                  |
+| `friendliai`     | Afsnit 8(e) og 8(f) i servicevilkårene forbyder udtrykkeligt brug af FriendliAI som proxy eller at give tredjeparter selvstændig adgang og forbyder videresalg/…                               |
+| `iflytek`        | Afsnit 2.4(3) i iFlytek Spark LLM Service Agreement forbyder udtrykkeligt "brug af automatiserede eller programmatiske metoder til at udtrække data eller output…                              |
+| `kiro`           | Kiro FAQ forbyder udtrykkeligt brug med "OpenClaw og lignende værktøjer, der benytter tredjepartsharnesser" — en selvhostet AI-proxy (som OmniRoute), der rou…                                 |
+| `modal`          | Afsnit 1.3 i servicevilkårene forbyder udtrykkeligt at "udleje, videresælge eller på anden måde give nogen tredjepart direkte adgang til eller brug af tjenesten" — opbygning af en selvhoste… |
+| `muse-spark-web` | Meta-servicevilkårene forbyder udtrykkeligt automatiseret adgang uden forudgående tilladelse, reverse engineering uden skriftlig tilladelse samt omgåelse af teknologi…                        |
+| `nlpcloud`       | Servicevilkårene forbyder udtrykkeligt "at opsætte en proxy eller anden enhed, der giver andre adgang til tjenesten gennem den", og giver kun en ikke-overdragelig,…                           |
+| `opencode`       | Servicevilkårene (Anomaly Innovations, Inc.) begrænser udtrykkeligt brugen til "din egen interne brug og ikke på vegne af eller til fordel for nogen tredjepart" — ope…                        |
+| `t3-web`         | Servicevilkårene begrænser udtrykkeligt konti til personlig brug, forbyder deling af loginoplysninger med tredjeparter og forbyder automatiseret adgang/botadgang/scraping — en s…             |
 
-### ✅ Generelt lempelige — forsigtig / uklar / ok (resten)
+### ✅ Generelt lempelige — vær opmærksom / uklare / ok (resten)
 
-| Udbyder          | Vilkår       | Bemærkning                                                                                                                                                                            |
-| ---------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `aimlapi`        | tvetydig     | Vilkårene giver en ikke-eksklusiv brugslicens, men tillader eller forbyder ikke udtrykkeligt en selvhostet proxy eller videresalg; ingen "pers…                                       |
-| `baichuan`       | tvetydig     | Der blev ikke fundet noget udtrykkeligt forbud mod selvhostede personlige proxyer i offentligt tilgængelig dokumentation; M3 Plus-gratisabonn…                                        |
-| `bluesminds`     | tvetydig     | Der blev ikke fundet nogen udtrykkelige vilkårsklausuler vedrørende selvhostet proxybrug eller videresalg; prissiden fokuserer på funktions-/hastighedsgrænser…                       |
-| `bytez`          | tvetydig     | Ingen udtrykkelig side med vilkår var tilgængelig (404); der blev ikke fundet offentlige klausuler om udelukkende evaluering eller forbud mod proxyer i dokumentationen, men platfor… |
-| `doubao`         | tvetydig     | Der blev ikke fundet noget udtrykkeligt forbud mod proxybrug/videresalg i offentligt indekseret dokumentation; Volcengine er en udviklerorienteret cloud…                             |
-| `gitlawb-gmi`    | tvetydig     | Der blev ikke fundet nogen udtrykkelig vilkårsklausul, der forbyder selvhostet personlig proxybrug; den gratis Nemotron-model er omfattet af en NVIDIA-ansvarsfr…                     |
-| `monsterapi`     | tvetydig     | MonsterAPI's side med vilkår (monsterapi.ai/terms-of-service) var utilgængelig under undersøgelsen; ingen specifikke begrænsninger vedrørende proxy/videresalg/person…                |
-| `nous-research`  | tvetydig     | Nous Portal er selv en aggregator-/proxytjeneste; brug af den som backend for en anden selvhostet proxy skaber en proxy-…                                                             |
-| `ollama-cloud`   | tvetydig     | Vilkårene forbyder brug af tjenesten "til at udvikle konkurrerende produkter", men indeholder ikke noget udtrykkeligt forbud mod selvhostede personlige proxyer…                      |
-| `stepfun`        | tvetydig     | Der blev ikke fundet noget udtrykkeligt forbud mod selvhostet personlig proxybrug, men vilkårene for Step Plan er rettet mod udviklere, der bruger bestemte ko…                       |
-| `api-airforce`   | forsigtighed | Vilkårene forbyder udtrykkeligt "at bygge konkurrerende tjenester uden tilladelse" og "deling af legitimationsoplysninger" — en selvhostet pers…                                      |
-| `arcee-ai`       | forsigtighed | Gratis adgang sker via OpenRouter's :free-routinglag (ikke Arcee's direkte API-vilkår); OpenRouter's vilkår tillader personlig udv…                                                   |
-| `baidu`          | forsigtighed | Vilkårene blev ikke gennemgået specifikt for klausuler om proxybrug/videresalg, men platformen kræver godkendelse med rigtigt navn (typisk kinesisk ID…                               |
-| `baseten`        | forsigtighed | Vilkårene begrænser brugen til "Kundens interne forretningsformål" og forbyder udtrykkeligt underlicensering, videresalg eller at tillad…                                             |
-| `bazaarlink`     | forsigtighed | Vilkårene forbyder udtrykkeligt videresalg eller underlicensering af API-nøgler til tredjeparter; en selvhostet personlig proxy til personlig…                                        |
-| `brave-search`   | forsigtighed | Vilkårene forbyder omfordeling, videresalg og underlicensering af søgeresultater; brug af API'en til at "replikere eller forsøge at repl…                                             |
-| `byteplus`       | forsigtighed | Tokens kan ikke overføres og er begrænset til én konto; intet udtrykkeligt proxyforbud, men BytePlus forbeholder sig retten til at…                                                   |
-| `cerebras`       | forsigtighed | Vilkårene giver en ikke-eksklusiv, ikke-overførbar og ikke-underlicenserbar ret til personlig eller erhvervsmæssig brug; forbyder videresalg, u…                                      |
-| `cloudflare-ai`  | forsigtighed | Cloudflare Self-Serve-vilkårenes §2.2.1(j) forbyder brug af tjenesterne til at "levere et virtuelt privat netværk eller en anden lignende pro…                                        |
-| `cohere`         | forsigtighed | Cohere forbyder udtrykkeligt prøvenøgler til "produktions- eller kommercielle formål"; en selvhostet personlig proxy, der videresender anm…                                           |
-| `deepinfra`      | forsigtighed | Vilkårene tillader generelt lovlig kommerciel brug, men forbyder brug, der er "direkte eller indirekte konkurrerende med nogen af virkso…                                             |
-| `deepseek`       | forsigtighed | Open Platform-vilkårene (gældende fra 2026-04-29) tillader bred brug, herunder "udvikling af afledte produkter" samt personlig/komm…                                                  |
-| `dify`           | forsigtighed | En selvhostet personlig proxy til én bruger er tilladt under den ændrede Apache 2.0-licens; udrulninger med flere lejere…                                                             |
-| `exa-search`     | forsigtighed | Der blev ikke fundet nogen udtrykkelige klausuler om "ingen proxy" eller "kun evaluering"; Exa tilbyder aktivt et partnerprogram for forhandlere, der tillader API…                   |
-| `firecrawl`      | forsigtighed | Der blev ikke fundet noget udtrykkeligt forbud mod personlige proxyer i Cloud API-vilkårene, men open source-versionen til selvhosting er AGPL-3.0 (kr…                               |
-| `gemini`         | forsigtighed | Vilkårene angiver udtrykkeligt, at gratisniveauet er til "udviklere, der bygger med Google AI-modeller til professionelle eller forretningsmæssige form…                              |
-| `groq`           | forsigtighed | Services Agreement §6.3 forbyder videresalg, underlicensering eller distribution af API-adgang; §3.2 forbyder videresalg/udlejning af kont…                                           |
-| `huggingchat`    | forsigtighed | Hugging Face-vilkårene forbyder ikke udtrykkeligt personlige selvhostede proxyer, men supplerende vilkår (som der henvises til, men som ikke er fuldt…                                |
-| `huggingface`    | forsigtighed | Vilkårene giver en begrænset licens til at tilgå/bruge tjenesten; dokumentet tillader eller forbyder ikke udtrykkeligt en enkeltbruger-…                                              |
-| `hyperbolic`     | forsigtighed | Vilkårene giver API-adgang "udelukkende til dine egne personlige eller interne forretningsformål" og forbyder udtrykkeligt licensering,…                                              |
-| `inference-net`  | forsigtighed | Vilkårene forbyder udtrykkeligt at "underlicensere, videresælge, distribuere" samt at overføre API-nøgler uden skriftligt samtykke; en enkeltbr…                                      |
-| `jina-ai`        | forsigtighed | De gratis 10M tokens er udtrykkeligt ikke-kommercielle (CC-BY-NC 4.0-modellicens); en personlig proxy til én bruger til personlig L…                                                  |
-| `jina-reader`    | forsigtighed | Vilkårene forbyder brug af output til at bygge konkurrerende tjenester og forbyder "automatiserede metoder til at udtrække oplysninger via scraping…                                  |
-| `llm7`           | forsigtighed | Vilkårene positionerer tjenesten som værende til "eksperimenter, udvikling og forskning"; intet udtrykkeligt forbud mod selvhostet personlig…                                         |
-| `longcat`        | forsigtighed | API Platform Service Agreement (longcat.chat/platform/private/) tillader kommerciel integration og selvhostede apps…                                                                  |
-| `mistral`        | forsigtighed | Forbrugervilkårene angiver udtrykkeligt, at API'er kun må bruges til "personlige behov", og forbyder at gøre API-nøgler tilgængelige for tr…                                          |
-| `morph`          | forsigtighed | Vilkårene tillader generelt kommerciel brug; selvhostede proxyudrulninger kræver en udtrykkelig aftale med salgsafdelingen. Afsnit 18.…                                               |
-| `nebius`         | forsigtighed | Vilkårene (afsnit 5f) forbyder udtrykkeligt videresalg, omfordeling eller tilbud af tjenesten "som en selvstændig løsning" — en selv-…                                                |
-| `nomic`          | forsigtighed | Vilkårene giver en ikke-eksklusiv, ikke-overførbar API-licens; afsnit 6.b forbyder opbygning af en konkurrerende tjeneste. Brug af d…                                                 |
-| `novita`         | forsigtighed | Vilkårene forbyder videresalg og konkurrerende tjenester, men omtaler ikke udtrykkeligt personlige selvhostede proxyer; personlig brug…                                               |
-| `nscale`         | forsigtighed | AUP'en forbyder at "kopiere, ændre, duplikere... indramme, spejle, genudgive... distribuere hele eller dele af Nscale-platformen…                                                     |
-| `nvidia`         | forsigtighed | Gratisniveauet er udtrykkeligt kun til prototyper/udvikling/forskning/evaluering — produktionsbrug (betjening af reelle slutbrugere) kræver…                                          |
-| `openrouter`     | forsigtighed | Vilkårene forbyder udtrykkeligt videresalg af API-adgang eller udvikling af en konkurrerende tjeneste; selvhostet personlig proxy til én bruger…                                      |
-| `pollinations`   | forsigtighed | MIT License, som nævnes i API-dokumentationen, antyder liberal genbrug; der blev ikke fundet noget udtrykkeligt forbud mod selvhostet proxybrug. Dog…                                 |
-| `predibase`      | forsigtighed | Predibase er positioneret som en virksomhedsløsning til finjustering/levering; den gratis prøveperiode er udtrykkeligt til udforskning og…                                            |
-| `publicai`       | forsigtighed | Vilkårene (publicai.co/tc) betegner tjenesterne som "primært til forsknings- og uddannelsesbrug"; intet udtrykkeligt forbud mod proxy eller videresalg…                               |
-| `qoder`          | forsigtighed | Siden med vilkår returnerede intet læsbart indhold; Qoder er en kode-IDE-klient (ikke en offentlig API), og tredjeparts proxy-wrappere…                                               |
-| `reka`           | forsigtighed | Business Terms forbyder underlicensering eller distribution af adgang til tredjeparter; en personlig proxy til én bruger er sandsynligvis i o…                                        |
-| `sambanova`      | forsigtighed | Vilkårenes afsnit 1.5(c) forbyder udtrykkeligt videresalg, underlicensering eller at gøre tjenesten tilgængelig for tredjeparter; en se…                                              |
-| `sensenova`      | forsigtighed | Der blev ikke fundet noget udtrykkeligt forbud mod proxybrug eller videresalg i de gennemgåede vilkår, men gratisniveauet er en salgsfremmende beta uden SLA, Sen…                    |
-| `serper-search`  | forsigtighed | Vilkårene forbyder udtrykkeligt "at spejle materiale på en anden server, som det er og uden merværdi" — en simpel pass-through-pr…                                                    |
-| `siliconflow`    | forsigtighed | Vilkårene (klausul 3.4(e)(f)(p)) forbyder udtrykkeligt at gøre tjenesten tilgængelig for en tredjepart, videresælge/underlicensere,…                                                  |
-| `sparkdesk`      | forsigtighed | SparkDesk User Agreement giver kun rettigheder til personlig, ikke-kommerciel brug; API Interface Policy forbyder automatiseret data…                                                 |
-| `tavily-search`  | forsigtighed | Vilkårene angiver udtrykkeligt, at API'en "ikke må overføres, tildeles, deles eller på anden måde gøres tilgængelig for nogen tredjepart…                                             |
-| `tencent`        | forsigtighed | Tencent Cloud-vilkårene forbyder udtrykkeligt underlicensering eller videresalg af API-adgang; en selvhostet personlig proxy til personlig…                                           |
-| `together`       | forsigtighed | Vilkårenes afsnit 4.3(d) forbyder udtrykkeligt overførsel, distribution, videresalg, udlejning eller tilbud af tjenesterne på en s…                                                   |
-| `uncloseai`      | forsigtighed | Personlig proxybrug er mulig, men ikke udtrykkeligt tilladt; vilkårene forbyder opbygning af "konkurrerende maskinlæringstjenester med…                                               |
-| `veoaifree-web`  | forsigtighed | Vilkårene forbyder udtrykkeligt automatiserede bots eller scripts, der kører med "umenneskelige hastigheder", og forbyder kopiering af platformen for at skabe…                       |
-| `vertex`         | forsigtighed | Google Cloud Service Terms begrænser videresalg til autoriserede forhandlere (afsnit 14 kræver en Reseller Agreement); en s…                                                          |
-| `voyage-ai`      | forsigtighed | Vilkårene giver "personlig, ikke-kommerciel brug" af webstedsindhold og forbyder deling af legitimationsoplysninger/konto med tredjeparter;…                                          |
-| `360ai`          | ukendt       | Vilkårene for udvikler-API'en er ikke offentligt tilgængelige uden registrering; adgang kræver godkendelse af en ansøgning, hvilket antyder…                                          |
-| `chutes`         | ukendt       | Der findes en side med vilkår på chutes.ai/terms, men indholdet var ikke tilgængeligt via hentning; der blev ikke fundet nogen udtrykkelige klausuler om proxy/videresalg i…          |
-| `freemodel-dev`  | ukendt       | Siden med vilkår (freemodel.dev/terms) returnerede kun en overskrift uden læsbart indhold via WebFetch; ingen klausul…                                                                |
-| `gitlawb`        | ukendt       | Der blev ikke fundet nogen vilkår eller politik for acceptabel brug; begrænsninger vedrørende proxy/videresalg er ukendte — udvis forsigtighed ved selvhostet proxybrug.              |
-| `liquid`         | ukendt       | Der findes ingen hostet API, som kan fungere som proxy; kommerciel brug af open source-modellen er gratis for organisationer med en årlig omsætning under $10M. Ingen selvhost…       |
-| `yi`             | ukendt       | Vilkårene er ikke offentligt tilgængelige uden login; ingen klausuler om proxy/videresalg kunne gennemgås. Selvhostet personlig proxybrug er st…                                      |
-| `comfyui`        | ok           | GPL-3.0-open source-licensen tillader udtrykkeligt selvhostet personlig proxybrug; Comfy Org-vilkårene bekræfter kommerciel brug af…                                                  |
-| `scaleway`       | ok           | Scaleway's General Terms of Services er en standardaftale for kommercielle cloudtjenester uden noget udtrykkeligt forbud mod selvhos…                                                 |
-| `sdwebui`        | ok           | AGPL-3.0-licens: gratis at selvhoste til personlig brug uden begrænsninger på brugsmængden; en personlig proxy, der bruger dette…                                                     |
-| `searxng-search` | ok           | AGPL-3.0-open source-licensen tillader udtrykkeligt selvhostet personlig proxybrug uden begrænsninger på brugstype, videresal…                                                        |
+| Udbyder          | Vilkår        | Bemærkning                                                                                                                                                                            |
+| ---------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `aimlapi`        | tvetydig      | Vilkårene tildeler en ikke-eksklusiv brugslicens, men tillader eller forbyder ikke udtrykkeligt en selvhostet proxy eller videresalg; ingen "pers…                                    |
+| `baichuan`       | tvetydig      | Der blev ikke fundet noget udtrykkeligt forbud mod selvhostede personlige proxyer i offentligt tilgængelig dokumentation; den gratis M3 Plus-pl…                                      |
+| `bluesminds`     | tvetydig      | Der blev ikke fundet nogen udtrykkelige vilkårsklausuler vedrørende selvhostet proxybrug eller videresalg; prissiden fokuserer på funktions-/hastighedsgrænser…                       |
+| `bytez`          | tvetydig      | Ingen udtrykkelig side med vilkår var tilgængelig (404); der blev ikke fundet offentlige klausuler om udelukkende evaluering eller forbud mod proxyer i dokumentationen, men platfor… |
+| `doubao`         | tvetydig      | Der blev ikke fundet noget udtrykkeligt forbud mod proxybrug/videresalg i offentligt indekseret dokumentation; Volcengine er en udviklerorienteret cloud…                             |
+| `gitlawb-gmi`    | tvetydig      | Der blev ikke fundet nogen udtrykkelig vilkårsklausul, der forbyder selvhostet personlig proxybrug; den gratis Nemotron-model er omfattet af en NVIDIA-ansv…                          |
+| `monsterapi`     | tvetydig      | MonsterAPI's vilkårsside (monsterapi.ai/terms-of-service) var utilgængelig under undersøgelsen; ingen specifikke klausuler om proxybrug/videresalg/person…                            |
+| `nous-research`  | tvetydig      | Nous Portal er selv en aggregator-/proxytjeneste; brug af den som backend for en anden selvhostet proxy skaber en proxy-…                                                             |
+| `ollama-cloud`   | tvetydig      | Vilkårene forbyder brug af tjenesten "til at udvikle konkurrerende produkter", men indeholder intet udtrykkeligt forbud mod selvhostede personlige proxyer…                           |
+| `stepfun`        | tvetydig      | Der blev ikke fundet noget udtrykkeligt forbud mod en selvhostet personlig proxy, men vilkårene for Step Plan er rettet mod udviklere, der bruger specifikke ko…                      |
+| `api-airforce`   | vær forsigtig | Vilkårene forbyder udtrykkeligt "opbygning af konkurrerende tjenester uden tilladelse" og "deling af legitimationsoplysninger" — en selvhostet pers…                                  |
+| `arcee-ai`       | vær forsigtig | Gratis adgang sker via OpenRouter's :free-routinglag (ikke Arcee's direkte API-vilkår); OpenRouter's vilkår tillader personlig udv…                                                   |
+| `baidu`          | vær forsigtig | Vilkårene blev ikke udtrykkeligt gennemgået for klausuler om proxybrug/videresalg, men platformen kræver identitetsbekræftelse med rigtigt navn (typisk kinesisk ID…                  |
+| `baseten`        | vær forsigtig | Vilkårene begrænser brugen til "kundens interne forretningsformål" og forbyder udtrykkeligt underlicensering, videresalg eller at tillad…                                             |
+| `bazaarlink`     | vær forsigtig | Vilkårene forbyder udtrykkeligt videresalg eller underlicensering af API-nøgler til tredjeparter; en selvhostet personlig proxy til personlig…                                        |
+| `brave-search`   | vær forsigtig | Vilkårene forbyder videredistribution, videresalg og underlicensering af søgeresultater; brug af API'en til at "replikere eller forsøge at rep…                                       |
+| `byteplus`       | vær forsigtig | Tokens kan ikke overføres og er begrænset til én konto; intet udtrykkeligt forbud mod proxyer, men BytePlus forbeholder sig retten til at…                                            |
+| `cerebras`       | vær forsigtig | Vilkårene tildeler en ikke-eksklusiv, ikke-overførbar og ikke-underlicenserbar ret til personlig eller erhvervsmæssig brug; forbyder videresalg, u…                                   |
+| `cloudflare-ai`  | vær forsigtig | Cloudflare's Self-Serve-vilkår §2.2.1(j) forbyder brug af tjenesterne til at "levere et virtuelt privat netværk eller en anden lignende pro…                                          |
+| `cohere`         | vær forsigtig | Cohere forbyder udtrykkeligt prøvenøgler til "produktionsmæssige eller kommercielle formål"; en selvhostet personlig proxy, der dirigerer anm…                                        |
+| `deepinfra`      | vær forsigtig | Vilkårene tillader generelt lovlig kommerciel brug, men forbyder brug, der er "direkte eller indirekte konkurrerende med nogen af virksomhedens…                                      |
+| `deepseek`       | vær forsigtig | Open Platform-vilkårene (gældende fra 2026-04-29) tillader bred brug, herunder "udvikling af afledte produkter" og personlig/komm…                                                    |
+| `dify`           | vær forsigtig | En selvhostet personlig proxy til én bruger er tilladt under den ændrede Apache 2.0-licens; installationer med flere lejere…                                                          |
+| `exa-search`     | vær forsigtig | Der blev ikke fundet nogen udtrykkelige klausuler om "ingen proxy" eller "kun til evaluering"; Exa tilbyder aktivt et partnerprogram for forhandlere, der tillader API-…              |
+| `firecrawl`      | vær forsigtig | Der blev ikke fundet noget udtrykkeligt forbud mod personlige proxyer i vilkårene for cloud-API'en, men den selvhostede open source-version er AGPL-3.0 (kræ…                         |
+| `gemini`         | vær forsigtig | Vilkårene angiver udtrykkeligt, at gratisniveauet er til "udviklere, der bygger med Google AI-modeller til professionelle eller forretningsmæssige form…                              |
+| `groq`           | vær forsigtig | Serviceaftalens §6.3 forbyder videresalg, underlicensering eller distribution af API-adgang; §3.2 forbyder videresalg/udlejning af konto…                                             |
+| `huggingchat`    | vær forsigtig | Hugging Face's vilkår forbyder ikke udtrykkeligt personlige selvhostede proxyer, men supplerende vilkår (der henvises til, men som ikke er fuldt…                                     |
+| `huggingface`    | vær forsigtig | Vilkårene tildeler en begrænset licens til at tilgå/bruge tjenesten; dokumentet tillader eller forbyder ikke udtrykkeligt en enkeltbruger…                                            |
+| `hyperbolic`     | vær forsigtig | Vilkårene giver API-adgang "udelukkende til dine egne personlige eller interne forretningsformål" og forbyder udtrykkeligt licensering, …                                             |
+| `inference-net`  | vær forsigtig | Vilkårene forbyder udtrykkeligt at "underlicensere, videresælge, distribuere" og at overføre API-nøgler uden skriftligt samtykke; en enkeltb…                                         |
+| `jina-ai`        | vær forsigtig | De gratis 10M tokens er udtrykkeligt ikke-kommercielle (CC-BY-NC 4.0-modellicens); en personlig proxy til én bruger til personlig L…                                                  |
+| `jina-reader`    | vær forsigtig | Vilkårene forbyder brug af output til at opbygge konkurrerende tjenester og forbyder "automatiserede metoder til at udtrække oplysninger via scraping…                                |
+| `llm7`           | vær forsigtig | Vilkårene positionerer tjenesten som værende til "eksperimenter, udvikling og forskning"; intet udtrykkeligt forbud mod selvhostede personlige…                                       |
+| `longcat`        | vær forsigtig | API Platform Service Agreement (longcat.chat/platform/private/) tillader kommerciel integration og selvhostede apps…                                                                  |
+| `mistral`        | vær forsigtig | Forbrugervilkårene angiver udtrykkeligt, at API'er kun må bruges til "personlige behov", og forbyder at gøre API-nøgler tilgængelige for tr…                                          |
+| `morph`          | forsigtighed  | Vilkårene tillader generelt kommerciel brug; selvhostede proxyimplementeringer kræver en udtrykkelig aftale med salgsafdelingen. Afsnit 18.…                                          |
+| `nebius`         | forsigtighed  | Vilkårene (afsnit 5f) forbyder udtrykkeligt videresalg, videreformidling eller tilbud af tjenesten "på selvstændig basis" — en selv-…                                                 |
+| `nomic`          | forsigtighed  | Vilkårene giver en ikke-eksklusiv API-licens, som ikke kan overdrages; afsnit 6.b forbyder opbygning af en konkurrerende tjeneste. Brug af t…                                         |
+| `novita`         | forsigtighed  | Vilkårene forbyder videresalg og konkurrerende tjenester, men omtaler ikke udtrykkeligt personlige, selvhostede proxyer; personlig brug …                                             |
+| `nscale`         | forsigtighed  | AUP'en forbyder at "kopiere, ændre, duplikere... indramme, spejle, genudgive... distribuere hele eller dele af Nscale-platformen…                                                     |
+| `nvidia`         | forsigtighed  | Gratisniveauet er udtrykkeligt kun beregnet til prototyper/udvikling/forskning/evaluering — produktionsbrug (betjening af faktiske slutbrugere) kræver…                               |
+| `openrouter`     | forsigtighed  | Vilkårene forbyder udtrykkeligt videresalg af API-adgang eller udvikling af en konkurrerende tjeneste; en selvhostet personlig proxy til én bruger…                                   |
+| `pollinations`   | forsigtighed  | MIT-licensen, der henvises til i API-dokumentationen, tyder på liberal genbrug; der blev ikke fundet noget udtrykkeligt forbud mod selvhostet proxybrug. Dog, u…                      |
+| `predibase`      | forsigtighed  | Predibase er positioneret som en virksomhedsplatform til finjustering/levering; den gratis prøveperiode er udtrykkeligt beregnet til udforskning og…                                  |
+| `publicai`       | forsigtighed  | Vilkårene (publicai.co/tc) betegner tjenesterne som "primært til forsknings- og uddannelsesbrug"; intet udtrykkeligt forbud mod proxybrug eller videresalg p…                         |
+| `qoder`          | forsigtighed  | Vilkårssiden returnerede intet læsbart indhold; Qoder er en IDE-klient til programmering (ikke et offentligt API), og proxy-wrappere fra tredjeparter …                               |
+| `reka`           | forsigtighed  | Forretningsvilkårene forbyder underlicensering eller distribution af adgang til tredjeparter; en personlig proxy til én bruger er sandsynligvis i o…                                  |
+| `sambanova`      | forsigtighed  | Vilkårenes afsnit 1.5(c) forbyder udtrykkeligt videresalg, underlicensering eller tilgængeliggørelse af tjenesten for tredjeparter; en se…                                            |
+| `sensenova`      | forsigtighed  | Der blev ikke fundet noget udtrykkeligt forbud mod proxybrug eller videresalg i de gennemgåede vilkår, men gratisniveauet er en kampagnebaseret beta uden SLA, Sen…                   |
+| `serper-search`  | forsigtighed  | Vilkårene forbyder udtrykkeligt "spejling af materialer på enhver anden server i uændret form uden merværdi" — en simpel videresendelsespr…                                           |
+| `siliconflow`    | forsigtighed  | Vilkårene (klausul 3.4(e)(f)(p)) forbyder udtrykkeligt at gøre tjenesten tilgængelig for enhver tredjepart, videresælge/underlicensere,…                                              |
+| `sparkdesk`      | forsigtighed  | SparkDesk-brugeraftalen giver kun rettigheder til personlig, ikke-kommerciel brug; politikken for API-grænseflader forbyder automatiseret data…                                       |
+| `tavily-search`  | forsigtighed  | Vilkårene fastslår udtrykkeligt, at API'et "ikke må overføres, overdrages, deles eller på anden måde gøres tilgængeligt for nogen tredjepart…                                         |
+| `tencent`        | forsigtighed  | Tencent Clouds vilkår forbyder udtrykkeligt underlicensering eller videresalg af API-adgang; en selvhostet personlig proxy til personlig …                                            |
+| `together`       | forsigtighed  | Vilkårenes afsnit 4.3(d) forbyder udtrykkeligt overførsel, distribution, videresalg, udlejning eller tilbud af tjenesterne på en s…                                                   |
+| `uncloseai`      | forsigtighed  | Personlig proxybrug er mulig, men ikke udtrykkeligt tilladt; vilkårene forbyder opbygning af "konkurrerende maskinlæringstjenester me…                                                |
+| `veoaifree-web`  | forsigtighed  | Vilkårene forbyder udtrykkeligt automatiserede bots eller scripts, der kører med "umenneskelige hastigheder", og forbyder kopiering af platformen for at oprette …                    |
+| `vertex`         | forsigtighed  | Google Cloud-servicevilkårene begrænser videresalg til kun autoriserede forhandlere (afsnit 14 kræver en forhandleraftale); en s…                                                     |
+| `voyage-ai`      | forsigtighed  | Vilkårene giver ret til "personlig, ikke-kommerciel brug" af webstedsindhold og forbyder deling af legitimationsoplysninger/konti med tredjeparter;…                                  |
+| `xkiro`          | forsigtighed  | Vilkårene (2026-07-30) forbyder videresalg/videreformidling af tjenesten og overtrædelse af de underliggende udbyderes vilkår; personlig pro…                                         |
+| `360ai`          | ukendt        | Vilkårene for udvikler-API'et er ikke offentligt tilgængelige uden registrering; adgang kræver godkendelse af en ansøgning, hvilket antyder …                                         |
+| `chutes`         | ukendt        | Der findes en vilkårsside på chutes.ai/terms, men indholdet var ikke tilgængeligt via hentning; der blev ikke fundet nogen udtrykkelige klausuler om proxybrug/videresalg i …         |
+| `freemodel-dev`  | ukendt        | Vilkårssiden (freemodel.dev/terms) returnerede kun en overskrift uden læsbart indhold via WebFetch; ingen klausul…                                                                    |
+| `gitlawb`        | ukendt        | Der blev ikke fundet nogen vilkår eller politik for acceptabel brug; begrænsninger for proxybrug/videresalg er ukendte — udvis forsigtighed ved selvhostet proxybrug.                 |
+| `liquid`         | ukendt        | Der findes intet hostet API, som kan bruges via proxy; kommerciel brug af open source-modellen er gratis for organisationer med en årlig omsætning under $10M. Ingen selvhos…         |
+| `yi`             | ukendt        | Vilkårene er ikke offentligt tilgængelige uden login; ingen klausuler om proxybrug/videresalg kunne gennemgås. Personlig brug af en selvhostet proxy er f…                            |
+| `comfyui`        | ok            | GPL-3.0-open source-licensen tillader udtrykkeligt personlig brug af en selvhostet proxy; Comfy Orgs vilkår bekræfter kommerciel brug af…                                             |
+| `scaleway`       | ok            | Scaleways generelle servicevilkår er en standardaftale for kommercielle cloudtjenester uden noget udtrykkeligt forbud mod selvhos…                                                    |
+| `sdwebui`        | ok            | AGPL-3.0-licens: gratis at selvhoste til personlig brug uden begrænsninger på brugsmængden; en personlig proxy, der bruger dette …                                                    |
+| `searxng-search` | ok            | AGPL-3.0-open source-licensen tillader udtrykkeligt personlig brug af en selvhostet proxy uden begrænsninger på brugstype, videresal…                                                 |
 
 ---
 
 ## Gratisniveau pr. udbyder (opdateret 2026-09-02 for de genkontrollerede rækker; ellers 2026-06-17)
 
-> Gendannet ud fra kataloget pr. model (`open-sse/config/freeModelCatalog.ts`) og deduplikeret på tværs af puljer. Sorteret efter tilbagevendende stabile tokens/md. `uncapped*` = permanent gratis, men uden offentliggjort tokenloft (begrænset af hastighed/samtidighed) — reel adgang, **ikke** medregnet i overskriften. `—` = kun kredit / uden nøgle / kan ikke kvantificeres i tokens.
+> Gendannet ud fra kataloget pr. model (`open-sse/config/freeModelCatalog.ts`) og deduplikeret på tværs af puljer. Sorteret efter tilbagevendende stabile tokens/md. `uncapped*` = permanent gratis, men uden en offentliggjort token-grænse (begrænset af hastighed/samtidighed) — reel adgang, **ikke** medregnet i hovedtotalen. `—` = kun kredit / uden nøgle / kan ikke kvantificeres i tokens.
 
-| Udbyder          | Gratisordning     | Faste tokens/md. | Kredit første måned | Vilkår       | Modeller |
-| ---------------- | ----------------- | ---------------- | ------------------- | ------------ | -------- |
-| `mistral`        | løbende           | ~1.00B           | —                   | forsigtighed | 5        |
-| `nara`           | løbende           | ~210M            | —                   | forsigtighed | 8        |
-| `llm7`           | løbende           | ~150M            | —                   | forsigtighed | 4        |
-| `longcat`        | engangs           | —                | 10M                 | forsigtighed | 1        |
-| `cerebras`       | engangs           | —                | $5 kredit           | forsigtighed | 2        |
-| `cloudflare-ai`  | løbende           | ~30M             | —                   | forsigtighed | 9        |
-| `groq`           | løbende           | ~30M             | —                   | forsigtighed | 5        |
-| `api-airforce`   | løbende           | ~24M             | —                   | forsigtighed | 7        |
-| `bluesminds`     | løbende           | ~7M              | —                   | tvetydig     | 22       |
-| `sambanova`      | løbende           | ~6M              | —                   | forsigtighed | 5        |
-| `arcee-ai`       | løbende           | ~5M              | —                   | forsigtighed | 1        |
-| `bazaarlink`     | løbende           | ~4M              | —                   | forsigtighed | 32       |
-| `openrouter`     | løbende           | ~1M              | —                   | forsigtighed | 1        |
-| `cohere`         | løbende           | ~800K            | —                   | forsigtighed | 6        |
-| `huggingchat`    | løbende           | ~500K            | —                   | forsigtighed | 4        |
-| `morph`          | løbende           | ~400K            | —                   | ok           | 2        |
-| `huggingface`    | løbende           | ~200K            | —                   | forsigtighed | 6        |
-| `kiro`           | løbende           | ~25K             | —                   | undgå        | 12       |
-| `glm-cn`         | ubegrænset        | ubegrænset\*     | ~20M                | ok           | 4        |
-| `baidu`          | ubegrænset        | ubegrænset\*     | —                   | forsigtighed | 1        |
-| `gemini`         | ubegrænset        | ubegrænset\*     | —                   | forsigtighed | 4        |
-| `kilo-gateway`   | ubegrænset        | ubegrænset\*     | —                   | forsigtighed | 7        |
-| `ollama-cloud`   | ubegrænset        | ubegrænset\*     | —                   | tvetydig     | 8        |
-| `opencode-zen`   | ubegrænset        | ubegrænset\*     | —                   | forsigtighed | 6        |
-| `siliconflow`    | ubegrænset        | ubegrænset\*     | —                   | forsigtighed | 10       |
-| `tencent`        | ubegrænset        | ubegrænset\*     | —                   | forsigtighed | 1        |
-| `vertex`         | tilmeldingskredit | —                | ~300M               | forsigtighed | 10       |
-| `agentrouter`    | tilmeldingskredit | —                | ~200M               | forsigtighed | 4        |
-| `predibase`      | tilmeldingskredit | —                | ~25M                | forsigtighed | 1        |
-| `doubao`         | tilmeldingskredit | —                | ~15M                | tvetydig     | 1        |
-| `ai21`           | tilmeldingskredit | —                | ~10M                | undgå        | 2        |
-| `deepseek`       | tilmeldingskredit | —                | ~5M                 | ok           | 2        |
-| `hyperbolic`     | tilmeldingskredit | —                | ~5M                 | ok           | 8        |
-| `nscale`         | tilmeldingskredit | —                | ~5M                 | forsigtighed | 6        |
-| `bytez`          | tilmeldingskredit | —                | ~1M                 | tvetydig     | 3        |
-| `deepinfra`      | tilmeldingskredit | —                | ~1M                 | forsigtighed | 22       |
-| `fireworks`      | tilmeldingskredit | —                | ~1M                 | undgå        | 10       |
-| `nebius`         | tilmeldingskredit | —                | ~1M                 | forsigtighed | 1        |
-| `qoder`          | tilmeldingskredit | —                | ~1M                 | forsigtighed | 14       |
-| `scaleway`       | tilmeldingskredit | —                | ~1M                 | ok           | 6        |
-| `novita`         | tilmeldingskredit | —                | ~500K               | forsigtighed | 1        |
-| `agy`            | uden nøgle        | —                | —                   | undgå        | 16       |
-| `baichuan`       | uden nøgle        | —                | —                   | tvetydig     | 1        |
-| `blackbox`       | uden nøgle        | —                | —                   | undgå        | 6        |
-| `coze`           | uden nøgle        | —                | —                   | undgå        | 1        |
-| `duckduckgo-web` | uden nøgle        | —                | —                   | undgå        | 6        |
-| `freemodel-dev`  | uden nøgle        | —                | —                   | ukendt       | 4        |
-| `friendliai`     | uden nøgle        | —                | —                   | undgå        | 2        |
-| `iflytek`        | uden nøgle        | —                | —                   | undgå        | 1        |
-| `inference-net`  | uden nøgle        | —                | —                   | forsigtighed | 3        |
-| `liquid`         | uden nøgle        | —                | —                   | ukendt       | 1        |
-| `monsterapi`     | uden nøgle        | —                | —                   | tvetydig     | 1        |
-| `muse-spark-web` | uden nøgle        | —                | —                   | undgå        | 3        |
-| `nlpcloud`       | uden nøgle        | —                | —                   | undgå        | 1        |
-| `nous-research`  | uden nøgle        | —                | —                   | tvetydig     | 2        |
-| `nvidia`         | uden nøgle        | —                | —                   | forsigtighed | 13       |
-| `opencode`       | uden nøgle        | —                | —                   | undgå        | 7        |
-| `pollinations`   | uden nøgle        | —                | —                   | forsigtighed | 31       |
-| `publicai`       | uden nøgle        | —                | —                   | forsigtighed | 3        |
-| `reka`           | uden nøgle        | —                | —                   | forsigtighed | 2        |
-| `sensenova`      | uden nøgle        | —                | —                   | forsigtighed | 1        |
-| `sparkdesk`      | uden nøgle        | —                | —                   | forsigtighed | 1        |
-| `stepfun`        | uden nøgle        | —                | —                   | ok           | 1        |
-| `t3-web`         | uden nøgle        | —                | —                   | undgå        | 23       |
-| `uncloseai`      | uden nøgle        | —                | —                   | forsigtighed | 3        |
+| Udbyder          | Gratis type         | Faste tokens/md. | Kredit første måned | Tjenestevilkår | Modeller |
+| ---------------- | ------------------- | ---------------- | ------------------- | -------------- | -------- |
+| `mistral`        | tilbagevendende     | ~1.00B           | —                   | forsigtighed   | 5        |
+| `nara`           | tilbagevendende     | ~210M            | —                   | forsigtighed   | 8        |
+| `llm7`           | tilbagevendende     | ~150M            | —                   | forsigtighed   | 4        |
+| `xkiro`          | tilbagevendende     | ~150M            | —                   | forsigtighed   | 39       |
+| `longcat`        | engangs             | —                | 10M                 | forsigtighed   | 1        |
+| `cerebras`       | engangs             | —                | $5 kredit           | forsigtighed   | 2        |
+| `cloudflare-ai`  | tilbagevendende     | ~30M             | —                   | forsigtighed   | 9        |
+| `groq`           | tilbagevendende     | ~30M             | —                   | forsigtighed   | 5        |
+| `api-airforce`   | tilbagevendende     | ~24M             | —                   | forsigtighed   | 7        |
+| `bluesminds`     | tilbagevendende     | ~7M              | —                   | tvetydig       | 22       |
+| `sambanova`      | tilbagevendende     | ~6M              | —                   | forsigtighed   | 5        |
+| `arcee-ai`       | tilbagevendende     | ~5M              | —                   | forsigtighed   | 1        |
+| `bazaarlink`     | tilbagevendende     | ~4M              | —                   | forsigtighed   | 32       |
+| `openrouter`     | tilbagevendende     | ~1M              | —                   | forsigtighed   | 1        |
+| `cohere`         | tilbagevendende     | ~800K            | —                   | forsigtighed   | 6        |
+| `huggingchat`    | tilbagevendende     | ~500K            | —                   | forsigtighed   | 4        |
+| `morph`          | tilbagevendende     | ~400K            | —                   | ok             | 2        |
+| `huggingface`    | tilbagevendende     | ~200K            | —                   | forsigtighed   | 6        |
+| `kiro`           | tilbagevendende     | ~25K             | —                   | undgå          | 12       |
+| `glm-cn`         | ubegrænset          | ubegrænset\*     | ~20M                | ok             | 4        |
+| `baidu`          | ubegrænset          | ubegrænset\*     | —                   | forsigtighed   | 1        |
+| `gemini`         | ubegrænset          | ubegrænset\*     | —                   | forsigtighed   | 4        |
+| `kilo-gateway`   | ubegrænset          | ubegrænset\*     | —                   | forsigtighed   | 7        |
+| `ollama-cloud`   | ubegrænset          | ubegrænset\*     | —                   | tvetydig       | 8        |
+| `opencode-zen`   | ubegrænset          | ubegrænset\*     | —                   | forsigtighed   | 6        |
+| `siliconflow`    | ubegrænset          | ubegrænset\*     | —                   | forsigtighed   | 10       |
+| `tencent`        | ubegrænset          | ubegrænset\*     | —                   | forsigtighed   | 1        |
+| `vertex`         | registreringskredit | —                | ~300M               | forsigtighed   | 10       |
+| `agentrouter`    | registreringskredit | —                | ~200M               | forsigtighed   | 4        |
+| `predibase`      | registreringskredit | —                | ~25M                | forsigtighed   | 1        |
+| `doubao`         | registreringskredit | —                | ~15M                | tvetydig       | 1        |
+| `ai21`           | registreringskredit | —                | ~10M                | undgå          | 2        |
+| `deepseek`       | registreringskredit | —                | ~5M                 | ok             | 2        |
+| `hyperbolic`     | registreringskredit | —                | ~5M                 | ok             | 8        |
+| `nscale`         | registreringskredit | —                | ~5M                 | forsigtighed   | 6        |
+| `bytez`          | registreringskredit | —                | ~1M                 | tvetydig       | 3        |
+| `deepinfra`      | registreringskredit | —                | ~1M                 | forsigtighed   | 22       |
+| `fireworks`      | registreringskredit | —                | ~1M                 | undgå          | 10       |
+| `nebius`         | registreringskredit | —                | ~1M                 | forsigtighed   | 1        |
+| `qoder`          | registreringskredit | —                | ~1M                 | forsigtighed   | 14       |
+| `scaleway`       | registreringskredit | —                | ~1M                 | ok             | 6        |
+| `novita`         | registreringskredit | —                | ~500K               | forsigtighed   | 1        |
+| `agy`            | nøglefri            | —                | —                   | undgå          | 16       |
+| `baichuan`       | nøglefri            | —                | —                   | tvetydig       | 1        |
+| `blackbox`       | nøglefri            | —                | —                   | undgå          | 6        |
+| `coze`           | nøglefri            | —                | —                   | undgå          | 1        |
+| `duckduckgo-web` | nøglefri            | —                | —                   | undgå          | 6        |
+| `freemodel-dev`  | nøglefri            | —                | —                   | ukendt         | 4        |
+| `friendliai`     | nøglefri            | —                | —                   | undgå          | 2        |
+| `iflytek`        | nøglefri            | —                | —                   | undgå          | 1        |
+| `inference-net`  | nøglefri            | —                | —                   | forsigtighed   | 3        |
+| `liquid`         | nøglefri            | —                | —                   | ukendt         | 1        |
+| `monsterapi`     | nøglefri            | —                | —                   | tvetydig       | 1        |
+| `muse-spark-web` | nøglefri            | —                | —                   | undgå          | 3        |
+| `nlpcloud`       | nøglefri            | —                | —                   | undgå          | 1        |
+| `nous-research`  | nøglefri            | —                | —                   | tvetydig       | 2        |
+| `nvidia`         | nøglefri            | —                | —                   | forsigtighed   | 13       |
+| `opencode`       | nøglefri            | —                | —                   | undgå          | 7        |
+| `pollinations`   | nøglefri            | —                | —                   | forsigtighed   | 31       |
+| `publicai`       | nøglefri            | —                | —                   | forsigtig      | 3        |
+| `reka`           | nøglefri            | —                | —                   | forsigtig      | 2        |
+| `sensenova`      | nøglefri            | —                | —                   | forsigtig      | 1        |
+| `sparkdesk`      | nøglefri            | —                | —                   | forsigtig      | 1        |
+| `stepfun`        | nøglefri            | —                | —                   | ok             | 1        |
+| `t3-web`         | nøglefri            | —                | —                   | undgå          | 23       |
+| `uncloseai`      | nøglefri            | —                | —                   | forsigtig      | 3        |
 
 ---
 

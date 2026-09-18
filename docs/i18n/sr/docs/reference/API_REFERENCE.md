@@ -12,34 +12,34 @@
 
 ## Садржај
 
-- [Chat Completions](#chat-completions)
-- [Exclusive Managed Session Leases](#exclusive-managed-session-leases)
-- [Embeddings](#embeddings)
-- [Image Generation](#image-generation)
-- [Document OCR](#document-ocr)
-- [List Models](#list-models)
-- [Provider Plugin Manifest](#provider-plugin-manifest)
-- [Compatibility Endpoints](#compatibility-endpoints)
-- [Files API](#files-api)
-- [Batches API](#batches-api)
-- [Search API](#search-api)
-- [WebSocket Streaming](#websocket-streaming)
-- [Quotas & Issues Reporting](#quotas--issues-reporting)
-- [Semantic Cache](#semantic-cache)
-- [Dashboard & Management](#dashboard--management)
-- [Combo Management](#combo-management)
-- [Webhooks](#webhooks)
-- [Registered Keys (Auto-Management)](#registered-keys-auto-management)
-- [Agents Protocol](#agents-protocol)
-- [Management Proxies](#management-proxies)
-- [Resilience (extended)](#resilience-extended)
-- [Skills](#skills)
-- [Memory](#memory)
-- [MCP Server](#mcp-server)
-- [A2A Server](#a2a-server)
-- [Cloud, Evals & Assess](#cloud-evals--assess)
-- [Request Processing](#request-processing)
-- [Authentication](#authentication)
+- [Завршавање ћаскања](#chat-completions)
+- [Ексклузивни закупи управљаних сесија](#exclusive-managed-session-leases)
+- [Уграђивања](#embeddings)
+- [Генерисање слика](#image-generation)
+- [OCR докумената](#document-ocr)
+- [Листа модела](#list-models)
+- [Манифест додатка добављача](#provider-plugin-manifest)
+- [Крајње тачке за компатибилност](#compatibility-endpoints)
+- [API за датотеке](#files-api)
+- [API за пакетну обраду](#batches-api)
+- [API за претрагу](#search-api)
+- [Стримовање путем WebSocket-а](#websocket-streaming)
+- [Квоте и пријављивање проблема](#quotas--issues-reporting)
+- [Семантички кеш](#semantic-cache)
+- [Контролна табла и управљање](#dashboard--management)
+- [Управљање комбинацијама](#combo-management)
+- [Веб-хукови](#webhooks)
+- [Регистровани кључеви (аутоматско управљање)](#registered-keys-auto-management)
+- [Протокол за агенте](#agents-protocol)
+- [Проксији за управљање](#management-proxies)
+- [Отпорност (проширено)](#resilience-extended)
+- [Вештине](#skills)
+- [Меморија](#memory)
+- [MCP сервер](#mcp-server)
+- [A2A сервер](#a2a-server)
+- [Облак, евалуације и процена](#cloud-evals--assess)
+- [Обрада захтева](#request-processing)
+- [Аутентификација](#authentication)
 
 ---
 
@@ -1614,21 +1614,21 @@ API кључ са менаџмент обимом (scope).
 
 ## Управљање CLI алатима
 
-Управљајте CLI алатима који се интегришу са OmniRoute (antigravity, chipotle, commandCode,
-devin-cli, итд.). Погледајте [Provider Reference](./PROVIDER_REFERENCE.md) за потпуну листу.
+Управљајте CLI алатима који се интегришу са OmniRoute-ом (antigravity, commandCode,
+devin-cli итд.). Погледајте [Референтну документацију добављача](./PROVIDER_REFERENCE.md) за комплетну листу.
 
-| Method | Path                                    | Description                                                                                                                                                                 |
-| ------ | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | Статус свих CLI алата (инсталиран, верзија, последње виђен)                                                                                                                 |
-| GET    | `/api/cli-tools/status`                 | Детаљан статус за један CLI алат (`?tool=` query)                                                                                                                           |
-| POST   | `/api/cli-tools/apply`                  | Уписивање генерисане конфигурације алата (`dryRun` приказује преглед; `422` + `containerEphemeralTarget` када је контејнеризовано; `migration` бележи наслеђени Codex YAML) |
-| GET    | `/api/cli-tools/backups`                | Листа резервних копија конфигурације CLI алата                                                                                                                              |
-| POST   | `/api/cli-tools/backups`                | Креирање резервне копије свих конфигурација CLI алата                                                                                                                       |
-| POST   | `/api/cli-tools/backups`                | Враћање: исти ендпоинт са `{tool, backupId}` у body-ју враћа ту резервну копију                                                                                             |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Статус antigravity MITM proxy-ja (CLI алат "antigravity-mitm")                                                                                                              |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | Конфигурисање antigravity-mitm алиаса                                                                                                                                       |
+| Метод | Путања                                  | Опис                                                                                                                                                                                    |
+| ----- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET   | `/api/cli-tools/all-statuses`           | Статус свих CLI алата (инсталираност, верзија, последње коришћење)                                                                                                                      |
+| GET   | `/api/cli-tools/status`                 | Детаљи статуса једног CLI алата (`?tool=` упит)                                                                                                                                         |
+| POST  | `/api/cli-tools/apply`                  | Уписује генерисану конфигурацију алата (`dryRun` приказује преглед; `422` + `containerEphemeralTarget` када је у контејнеру; `migration` указује на застарелу Codex YAML конфигурацију) |
+| GET   | `/api/cli-tools/backups`                | Наводи резервне копије конфигурација CLI алата                                                                                                                                          |
+| POST  | `/api/cli-tools/backups`                | Прави резервну копију конфигурација свих CLI алата                                                                                                                                      |
+| POST  | `/api/cli-tools/backups`                | Враћање: исти крајњи приступ са `{tool, backupId}` у телу захтева враћа ту резервну копију                                                                                              |
+| GET   | `/api/cli-tools/antigravity-mitm`       | Статус Antigravity MITM проксија (CLI алат „antigravity-mitm“)                                                                                                                          |
+| POST  | `/api/cli-tools/antigravity-mitm/alias` | Конфигурише antigravity-mitm алијасе                                                                                                                                                    |
 
-**Auth:** Захтева management сесију.
+**Аутентификација:** Захтева сесију за управљање.
 
 ---
 

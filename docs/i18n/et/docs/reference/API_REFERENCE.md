@@ -1590,23 +1590,23 @@ Ainult administraatoritele mõeldud lõpp-punktid operatiivseks haldamiseks.
 
 ---
 
-## CLI-tööriistade haldamine
+## CLI-tööriistade haldus
 
-Halda CLI-tööriistu, mis integreeruvad OmniRoute-iga (antigravity, chipotle, commandCode,
-devin-cli jne). Täieliku loendi leiad siit: [Pakkujate viide](./PROVIDER_REFERENCE.md).
+Hallake OmniRoute’iga integreeruvaid CLI-tööriistu (antigravity, commandCode,
+devin-cli jne). Täieliku loendi leiate jaotisest [Teenusepakkujate viited](./PROVIDER_REFERENCE.md).
 
-| Meetod | Tee                                     | Kirjeldus                                                                                                                                                                              |
-| ------ | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | Kõigi CLI-tööriistade olek (paigaldatud, versioon, viimati nähtud)                                                                                                                     |
-| GET    | `/api/cli-tools/status`                 | Ühe CLI-tööriista oleku üksikasjad (`?tool=` päring)                                                                                                                                   |
-| POST   | `/api/cli-tools/apply`                  | Kirjuta tööriista genereeritud konfiguratsioon (`dryRun` teeb eelvaate; `422` + `containerEphemeralTarget` konteineriseerituse korral; `migration` viitab vanapärasele Codex YAML-ile) |
-| GET    | `/api/cli-tools/backups`                | CLI-tööriistade konfiguratsioonide varukoopiate loend                                                                                                                                  |
-| POST   | `/api/cli-tools/backups`                | Loo varukoopia kõigist CLI-tööriistade konfiguratsioonidest                                                                                                                            |
-| POST   | `/api/cli-tools/backups`                | Taasta: sama lõpp-punkt, kuid kehas `{tool, backupId}` taastab vastava varukoopia                                                                                                      |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM-vahendusserveri olek ("antigravity-mitm" CLI-tööriist)                                                                                                                |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | Antigravity-mitm aliaste konfigureerimine                                                                                                                                              |
+| Meetod | Tee                                     | Kirjeldus                                                                                                                                                                      |
+| ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET    | `/api/cli-tools/all-statuses`           | Kõigi CLI-tööriistade olek (installitud, versioon, viimati nähtud)                                                                                                             |
+| GET    | `/api/cli-tools/status`                 | Ühe CLI-tööriista oleku üksikasjad (`?tool=` päringuparameeter)                                                                                                                |
+| POST   | `/api/cli-tools/apply`                  | Kirjutab tööriista genereeritud konfiguratsiooni (`dryRun` kuvab eelvaate; konteineris käitamisel `422` + `containerEphemeralTarget`; `migration` märgib pärand-Codexi YAML-i) |
+| GET    | `/api/cli-tools/backups`                | Loetleb CLI-tööriistade konfiguratsioonide varukoopiad                                                                                                                         |
+| POST   | `/api/cli-tools/backups`                | Loob kõigi CLI-tööriistade konfiguratsioonidest varukoopia                                                                                                                     |
+| POST   | `/api/cli-tools/backups`                | Taastamine: sama lõpp-punkt taastab vastava varukoopia, kui päringu kehas on `{tool, backupId}`                                                                                |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM-puhverserveri olek (CLI-tööriist „antigravity-mitm”)                                                                                                          |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | Konfigureerib antigravity-mitm-i aliased                                                                                                                                       |
 
-**Autentimine:** Vajalik haldusseanss.
+**Autentimine:** Nõuab haldusseanssi.
 
 ---
 

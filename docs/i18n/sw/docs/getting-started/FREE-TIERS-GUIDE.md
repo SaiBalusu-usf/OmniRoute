@@ -4,7 +4,7 @@
 
 ---
 
-> **Kwa ufupi**: OmniRoute husajili vitambulisho 352 vya watoa huduma, huku **maingizo 152 ya katalogi ya watoa huduma yakiwa yamewekewa alama ya `hasFree`**. Katalogi iliyokaguliwa kwa masharti makali zaidi ya modeli zisizolipishwa inajumuisha **funguo 34 za hifadhi zinazojirudia / maingizo 443** (436 yanayotumika + 7 yaliyositishwa). Unganisha watoa huduma kadhaa wanaofaa ili kupata uwezo mpana zaidi wa kutumia mbadala; kila kiwango cha matumizi, kanuni ya uidhinishaji, sera ya faragha na sharti la malipo kwa matumizi ya ziada bado vinatumika.
+> **Kwa ufupi**: OmniRoute husajili vitambulisho 357 vya watoa huduma, huku **maingizo 152 ya katalogi ya watoa huduma yakiwa yamewekewa alama ya `hasFree`**. Katalogi kali zaidi ya modeli zisizolipishwa iliyokaguliwa inajumuisha **funguo 35 za hifadhi zinazojirudia / maingizo 482** (475 yanayotumika + 7 yaliyositishwa). Unganisha watoa huduma kadhaa wanaofaa ili kupata uwezo mpana zaidi wa kutumia mbadala; kila kikomo cha matumizi, kanuni ya uidhinishaji, sera ya faragha na sharti la gharama za ziada zinazolipiwa bado hutumika.
 
 ---
 
@@ -160,19 +160,19 @@ kikomo au sera ya ufikiaji ya mtoa huduma.
 
 ## Hesabu za Kiwango cha Bure
 
-Katalogi ya moja kwa moja, ambayo huzuia kuhesabu nakala katika hifadhi za pamoja, kwa sasa inaripoti:
+Katalogi hai, iliyoondolewa marudio kulingana na hifadhi za pamoja, kwa sasa inaripoti:
 
-| Kipimo                                                                     |                                 Thamani ya sasa iliyokaguliwa | Ufafanuzi                                                                                                                                                     |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mgao endelevu uliopimwa                                                    |                                       **~1.47B tokeni/mwezi** | Hifadhi za pamoja zimehesabiwa mara moja; watoa huduma wasio na kikomo hawajajumuishwa katika jumla                                                           |
-| Mwezi wa kwanza wenye mgao wa kujisajili                                   |                                             **~2.07B tokeni** | Jumla endelevu pamoja na salio la mara moja na salio endelevu                                                                                                 |
-| Orodha iliyokaguliwa ya modeli za bure                                     | **funguo 34 za hifadhi endelevu / vipengee 443 vya katalogi** | 436 vinavyotumika + 7 vilivyositishwa; ni tofauti na katalogi ya watoa huduma 352                                                                             |
-| Watoa huduma wa bure milele, endelevu/wasiohitaji ufunguo, waliowakilishwa |                                                        **52** | Watoa huduma wa kipekee katika aina za katalogi za kila siku/kila mwezi/salio zisizoisha na zisizohitaji ufunguo; safu zinazotegemea ustahiki hazijajumuishwa |
-| Vipengee vya katalogi ya watoa huduma vilivyowekwa alama `hasFree`         |                                                 **152 / 352** | Metadata pana zaidi ya watoa huduma; si wote walio na kiwango endelevu kinachoweza kupimwa                                                                    |
+| Kipimo                                                                       |                                     Thamani ya sasa iliyokaguliwa | Ufafanuzi                                                                                                                                                                       |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Mgao unaojirudia uliokokotolewa                                              |                                    **~tokeni bilioni 1.62/mwezi** | Hifadhi za pamoja zimehesabiwa mara moja; watoa huduma wasio na kikomo wameondolewa kwenye jumla                                                                                |
+| Mwezi wa kwanza wenye mgao wa kujisajili                                     |                                          **~tokeni bilioni 2.22** | Jumla inayojirudia pamoja na salio la mara moja na linalojirudia                                                                                                                |
+| Orodha ya modeli za bure iliyokaguliwa                                       | **funguo 35 za hifadhi zinazojirudia / maingizo 482 ya katalogi** | 475 yanayotumika + 7 yaliyositishwa; ni tofauti na katalogi ya watoa huduma 357                                                                                                 |
+| Watoa huduma wa bure milele wanaojirudia/wasiohitaji ufunguo waliowakilishwa |                                                            **53** | Watoa huduma wa kipekee katika aina za katalogi zinazojirudia kila siku/kila mwezi/kwa salio/bila kikomo na zisizohitaji ufunguo; safu zinazodhibitiwa na ustahiki zimeondolewa |
+| Maingizo ya katalogi ya watoa huduma yaliyowekwa alama ya `hasFree`          |                                                     **152 / 357** | Metadata pana zaidi ya watoa huduma; si zote zina kiasi kinachojirudia kinachoweza kukokotolewa                                                                                 |
 
-Thamani hizi huhesabiwa kutoka `open-sse/config/freeModelCatalog.ts`; tazama
-[Rejeleo la Viwango vya Bure](../reference/FREE_TIERS.md) kwa uondoaji wa nakala katika hifadhi, viashiria vya ToS,
-vipengee vilivyositishwa na mbinu ya kuhesabu salio la kujisajili.
+Thamani hizi zimekokotolewa kutoka `open-sse/config/freeModelCatalog.ts`; tazama
+[Marejeleo ya Viwango vya Bure](../reference/FREE_TIERS.md) kwa uondoaji wa marudio ya hifadhi za pamoja, alama za ToS,
+maingizo yaliyositishwa, na mbinu ya salio la kujisajili.
 
 ---
 

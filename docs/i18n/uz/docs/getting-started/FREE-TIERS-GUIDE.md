@@ -4,7 +4,7 @@
 
 ---
 
-> **Qisqacha**: OmniRoute 352 ta provayder ID sini roʻyxatdan oʻtkazgan, ulardan **152 ta provayder katalogi yozuvi `hasFree` deb belgilangan**. Qatʼiyroq auditdan oʻtgan bepul modellar katalogi **34 ta takroriy pul kaliti / 443 ta yozuvni** (436 ta faol + 7 ta toʻxtatilgan) qamrab oladi. Kengroq zaxira imkoniyatiga ega boʻlish uchun bir nechta mos provayderni ulang; barcha kvotalar, tasdiqlash qoidalari, maxfiylik siyosatlari va limitdan oshganda haq toʻlash shartlari hamon amal qiladi.
+> **Qisqacha**: OmniRoute 357 ta provayder ID sini roʻyxatdan oʻtkazadi, ulardan **152 ta provayder katalogi yozuvi `hasFree` bilan belgilangan**. Qatʼiyroq auditdan oʻtkazilgan bepul modellar katalogi **35 ta takrorlanuvchi pul kaliti / 482 ta yozuvni** (475 ta faol + 7 ta toʻxtatilgan) qamrab oladi. Kengroq zaxira imkoniyati uchun bir nechta mos provayderni ulang; barcha kvotalar, tasdiqlash qoidalari, maxfiylik siyosatlari va pullik limitdan oshish shartlari amal qilishda davom etadi.
 
 ---
 
@@ -160,19 +160,19 @@ chetlab o‘tish uchun qo‘shimcha hisoblar yaratmang.
 
 ## Bepul tarif hisob-kitobi
 
-Jonli, pullar bo‘yicha takrorlari olib tashlangan katalog hozirda quyidagilarni ko‘rsatadi:
+Jonli, havzalar bo‘yicha takrorlari olib tashlangan katalog hozirda quyidagilarni ko‘rsatadi:
 
-| Ko‘rsatkich                                                       |                                    Joriy tekshirilgan qiymat | Izoh                                                                                                                                                       |
-| ----------------------------------------------------------------- | -----------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Takrorlanuvchi, miqdori belgilangan kvota                         |                                          **~1.47B token/oy** | Umumiy pullar bir marta hisoblangan; cheklanmagan provayderlar yig‘indiga kiritilmagan                                                                     |
-| Ro‘yxatdan o‘tish kvotalari bilan birinchi oy                     |                                             **~2.07B token** | Takrorlanuvchi jami miqdor hamda bir martalik va takrorlanuvchi kreditlar                                                                                  |
-| Tekshirilgan bepul modellar ro‘yxati                              | **34 ta takrorlanuvchi pull kaliti / 443 ta katalog yozuvi** | 436 ta faol + 7 ta to‘xtatilgan; 352 ta provayderdan iborat katalogdan alohida                                                                             |
-| Taqdim etilgan takrorlanuvchi/kalitsiz, doimiy bepul provayderlar |                                                       **52** | Takrorlanuvchi kunlik/oylik/kreditli/cheklanmagan va kalitsiz katalog turlari bo‘yicha noyob provayderlar; muvofiqlik shartli qatorlar chiqarib tashlangan |
-| `hasFree` deb belgilangan provayder katalogi yozuvlari            |                                                **152 / 352** | Kengroq provayder metama’lumotlari; ularning barchasida ham miqdorini hisoblash mumkin bo‘lgan takrorlanuvchi kvota mavjud emas                            |
+| Ko‘rsatkich                                              |                             Joriy tekshirilgan qiymat | Talqin                                                                                                                                          |
+| -------------------------------------------------------- | ----------------------------------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Davriy hisoblangan limit                                 |                                   **~1.62B token/oy** | Umumiy havzalar bir marta hisoblangan; cheklanmagan provayderlar yig‘indiga kiritilmagan                                                        |
+| Ro‘yxatdan o‘tish limitlari bilan birinchi oy            |                                      **~2.22B token** | Davriy jami miqdor hamda bir martalik va davriy kreditlar                                                                                       |
+| Tekshirilgan bepul modellar ro‘yxati                     | **35 ta davriy havza kaliti / 482 ta katalog yozuvi** | 475 tasi faol + 7 tasi to‘xtatilgan; 357 ta provayderdan iborat katalogdan farq qiladi                                                          |
+| Taqdim etilgan davriy/kalitsiz doimiy bepul provayderlar |                                                **53** | Davriy kunlik/oylik/kreditli/cheklanmagan va kalitsiz katalog turlaridagi noyob provayderlar; muvofiqlik bilan cheklangan qatorlar kiritilmagan |
+| `hasFree` bilan belgilangan provayder katalogi yozuvlari |                                         **152 / 357** | Kengroq provayder metama’lumotlari; ularning barchasida ham miqdoriy baholash mumkin bo‘lgan davriy kvota mavjud emas                           |
 
-Bu qiymatlar `open-sse/config/freeModelCatalog.ts` asosida hisoblangan; pullar bo‘yicha takrorlarni olib tashlash, ToS belgilari,
+Bu qiymatlar `open-sse/config/freeModelCatalog.ts` asosida hisoblangan; havzalar bo‘yicha takrorlarni olib tashlash, ToS bayroqlari,
 to‘xtatilgan yozuvlar va ro‘yxatdan o‘tish kreditlarini hisoblash metodologiyasi uchun
-[Bepul tariflar ma’lumotnomasi](../reference/FREE_TIERS.md) bilan tanishing.
+[Bepul tariflar ma’lumotnomasi](../reference/FREE_TIERS.md)ga qarang.
 
 ---
 

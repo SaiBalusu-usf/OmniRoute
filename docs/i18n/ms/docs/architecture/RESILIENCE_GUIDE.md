@@ -71,11 +71,11 @@ Pelindung regresi: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
 **Skop:** satu sambungan/akaun/kunci penyedia.
 
-**Tujuan:** melangkau satu kunci yang bermasalah sementara sambungan lain untuk penyedia yang sama terus menyediakan perkhidmatan.
+**Tujuan:** melangkau satu kunci yang bermasalah sementara sambungan lain bagi penyedia yang sama terus berkhidmat.
 
 **Pelaksanaan:**
 
-- Tandakan tidak tersedia: `src/sse/services/auth.ts::markAccountUnavailable()`
+- Tandakan sebagai tidak tersedia: `src/sse/services/auth.ts::markAccountUnavailable()`
 - Pemilihan: `getProviderCredentials*` dalam fail yang sama
 - Pengiraan tempoh bertenang: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Tetapan: `src/lib/resilience/settings.ts`
@@ -91,84 +91,99 @@ Pelindung regresi: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
 - Asas OAuth: 5s
 - Asas kunci API: 3s
-- 429 kunci API: mengutamakan pengepala `Retry-After`/tetapan semula huluan/teks tetapan semula yang boleh dihuraikan
+- Kunci API 429: mengutamakan pengepala `Retry-After`/tetapan semula huluan/teks tetapan semula yang boleh dihuraikan
 - Undur: `baseCooldownMs * 2 ** failureIndex`
 
-**Perlindungan antikawanan serentak:** menghalang kegagalan serentak daripada memanjangkan tempoh bertenang secara berlebihan atau menambah `backoffLevel` sebanyak dua kali.
+**Pelindung antikumpulan serentak:** menghalang kegagalan serentak daripada memanjangkan tempoh bertenang secara berlebihan atau menaikkan `backoffLevel` dua kali.
 
 **Keadaan terminal (BUKAN tempoh bertenang):**
 
-- `banned` — ditetapkan oleh pengesanan kata kunci larangan / sekatan akaun (lihat [BAN_DETECTION](../security/BAN_DETECTION.md))
+- `banned` — ditetapkan oleh pengesanan kata kunci larangan / larangan akaun (lihat [BAN_DETECTION](../security/BAN_DETECTION.md)), dan oleh tiga penolakan huluan berturut-turut bagi setiap permintaan (`request_rejected`, contohnya Anthropic OAuth 403 "Permintaan tidak dibenarkan" — `open-sse/services/requestRejectedStreak.ts`); satu penolakan sahaja hanya mengenakan tempoh bertenang pada sambungan
 - `expired` (beralih kepada keadaan terminal selepas percubaan semula terhad — `EXPIRED_RETRY_MAX = 3` dengan undur eksponen — supaya ralat OAuth sementara boleh pulih sendiri sebelum akaun dinyahaktifkan secara kekal)
 - `credits_exhausted`
 
-Keadaan ini kekal sehingga bukti kelayakan berubah atau operator menetapkannya semula. Jangan timpa keadaan terminal dengan keadaan tempoh bertenang sementara.
+Keadaan ini kekal sehingga kelayakan berubah atau operator menetapkannya semula. Jangan tindih keadaan terminal dengan keadaan tempoh bertenang sementara.
 
-**Pemulihan malas:** apabila `rateLimitedUntil` telah berlalu, sambungan menjadi layak semula. Selepas penggunaan berjaya, `clearAccountError()` mengosongkan semua medan ralat.
+**Pemulihan malas:** apabila `rateLimitedUntil` telah berlalu, sambungan menjadi layak semula. Selepas penggunaan yang berjaya, `clearAccountError()` mengosongkan semua medan ralat.
 
-### Keakraban sesi (#7274)
+### Afiniti sesi (#7274)
 
 **Skop:** satu sesi klien (pengepala `X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`) disematkan pada satu sambungan, untuk **mana-mana** penyedia.
 
-**Tujuan:** mengekalkan agen berbilang giliran (Claude Code, aider, agen tersuai) pada akaun yang sama merentas permintaan, sekali gus mengurangkan kehilangan konteks merentas akaun dan ralat 429 mula dingin yang berulang pada penyedia dengan keadaan sesi per akaun.
+**Tujuan:** mengekalkan agen berbilang giliran (Claude Code, aider, agen tersuai) pada akaun yang sama merentas permintaan, sekali gus mengurangkan kehilangan konteks rentas akaun dan 429 permulaan sejuk yang berulang pada penyedia dengan keadaan sesi per akaun.
 
 **Pelaksanaan:**
 
 - Resolusi TTL: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Pemilihan/penciptaan sematan: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
 - Pengekstrakan pengepala (generik, mana-mana penyedia): `src/sse/services/auth.ts::extractSessionAffinityKey()`
-- Jadual sematan tersimpan: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Tetapan: `sessionAffinityTtlMs` (TTL global dalam ms, `0` menyahdayakan) — `src/lib/db/settings.ts`. Dinamakan semula daripada `codexSessionAffinityTtlMs` yang khusus untuk Codex melalui migrasi `124_generic_session_affinity_ttl.sql`, yang memindahkan mana-mana TTL Codex yang telah dikonfigurasikan sebelum ini sebagai nilai lalai baharu.
+- Jadual sematan berterusan: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
+- Tetapan: `sessionAffinityTtlMs` (TTL global dalam ms, `0` menyahdayakan) — `src/lib/db/settings.ts`. Dinamakan semula daripada `codexSessionAffinityTtlMs` yang khusus untuk Codex melalui migrasi `124_generic_session_affinity_ttl.sql`, yang memindahkan sebarang TTL Codex yang dikonfigurasikan sebelum ini sebagai lalai baharu.
 
-Sebelum #7274, `resolveSessionAffinityTtlMs()` terus mengembalikan `0` untuk setiap penyedia kecuali `codex`, maka tetapan TTL (dan pengepala sesi) tidak berkuat kuasa di tempat lain walaupun mekanisme penyematan dan pengekstrakan pengepala sudah pun tidak bergantung pada penyedia. Pembetulan tersebut membuang pemulangan awal itu; TTL kini digunakan secara seragam pada setiap penyedia setelah ditetapkan secara global melebihi `0`.
+Sebelum #7274, `resolveSessionAffinityTtlMs()` terus mengembalikan `0` bagi setiap penyedia kecuali `codex`, jadi tetapan TTL (dan pengepala sesi) tidak mempunyai kesan di tempat lain walaupun mekanisme penyematan dan pengekstrakan pengepala sudah pun tidak bergantung pada penyedia. Pembetulan tersebut mengalih keluar pengembalian awal itu; TTL kini digunakan secara seragam pada setiap penyedia setelah ditetapkan secara global melebihi `0`.
 
-Ketiga-tiga pengepala keakraban sesi tidak pernah dimajukan ke huluan — pelaksana membina pengepala huluan mereka sendiri dari awal dan bukannya meneruskan pengepala klien, maka pengepala ini kekal sebagai ID korelasi dalaman sahaja.
+Ketiga-tiga pengepala afiniti sesi tidak pernah dimajukan ke huluan — pelaksana membina pengepala huluan mereka sendiri dari awal dan bukannya meneruskan pengepala klien, jadi pengepala ini kekal sebagai ID korelasi dalaman sahaja.
 
 ### Pajakan sambungan sesi terurus eksklusif
 
 **Skop:** satu klien/sesi HTTP terurus yang aktif memiliki satu sambungan OmniRoute yang layak.
 
-**Tujuan:** menyediakan pemilikan sambungan eksklusif yang tahan lama untuk klien yang memerlukan sempadan penghalaan
-tegas merentas permintaan. Ini berbeza daripada keakraban sesi, yang merupakan keutamaan kesinambungan lembut:
+**Tujuan:** menyediakan pemilikan sambungan eksklusif yang tahan lama untuk klien yang memerlukan pagar penghalaan
+tegar merentas permintaan. Ini berbeza daripada afiniti sesi, yang merupakan keutamaan kesinambungan lembut:
 pajakan eksklusif mengekalkan keadaan kitar hayat dalam SQLite, menguatkuasakan keunikan global pemilik aktif dan
 sambungan aktif, serta menolak generasi lapuk sebelum penghantaran kepada penyedia.
 
 Ciri ini perlu dipilih secara khusus bagi setiap kunci API. Kunci terurus mesti mempunyai skop `lease:exclusive` dan
-senarai `allowedConnections` yang jelas serta tidak kosong. Mana-mana klien HTTP boleh menggunakan titik akhir kitar hayat; tiada
+senarai `allowedConnections` eksplisit yang tidak kosong. Mana-mana klien HTTP boleh menggunakan titik akhir kitar hayat; tiada
 nama klien, ejen pengguna, penyedia, kaedah OAuth atau model diperlukan. Pajakan memiliki sambungan,
-bukannya model, maka perubahan model mengekalkan pengikatan selagi sambungan tersebut kekal layak
-seperti biasa. Peraturan model, kuota, kesihatan, tempoh bertenang dan senarai dibenarkan yang lazim kekal
+bukan model, jadi perubahan model mengekalkan ikatan selagi sambungan tersebut kekal
+layak seperti biasa. Peraturan biasa berkaitan model, kuota, kesihatan, tempoh bertenang dan senarai dibenarkan kekal
 berkuat kuasa dan boleh mengalihkan generasi yang sama kepada sambungan layak lain yang bebas.
 
 Kitar hayat ialah `POST /api/v1/session-leases` dengan tindakan JSON `acquire`, `renew` dan `release`.
-Permintaan inferens terurus menyertakan nilai legap `X-OmniRoute-Lease-Owner` dan
-`X-OmniRoute-Lease-Generation` yang tepat. Pemilik menggunakan `vlo_` diikuti oleh 43 aksara base64url; hanya
-cincangan SHA-256 pemilik tersebut disimpan. Setiap sempadan penghantaran akhir turut mengikat ID kunci API yang disahkan dan
-ID sambungan aktif. Pengepala kawalan pajakan dikeluarkan daripada log, petikan permintaan yang disimpan dan
+Permintaan inferens terurus mengemukakan nilai legap `X-OmniRoute-Lease-Owner` dan nilai tepat
+`X-OmniRoute-Lease-Generation`. Pemilik menggunakan `vlo_` diikuti oleh 43 aksara base64url; hanya
+cincangan SHA-256nya disimpan. Setiap pagar penghantaran akhir turut mengikat ID kunci API yang disahkan dan
+ID sambungan aktif. Pengepala kawalan pajakan dialih keluar daripada log, petikan permintaan yang disimpan dan
 pengepala pelaksana huluan.
 
 Jika penghalaan biasa mempunyai calon terurus yang layak tetapi setiap calon bebas diduduki oleh
-pajakan aktif asing, OmniRoute mengembalikan HTTP `429`, kod kapasiti-pajakan-tidak-tersedia,
-keadaan menunggu-kapasiti dan `Retry-After` terhad yang diperoleh daripada waktu tamat relevan paling awal.
-Ketiadaan kelayakan biasa bukan pertikaian pajakan dan mengekalkan semantik ralat penghalaan sedia ada.
+pajakan aktif asing, OmniRoute mengembalikan HTTP `429`, kod lease-capacity-unavailable,
+keadaan menunggu kapasiti dan `Retry-After` terhad yang diperoleh daripada masa tamat relevan paling awal.
+Ketiadaan kelayakan biasa bukanlah pertikaian pajakan dan mengekalkan semantik ralat penghalaan sedia ada.
 
 Mekanisme berkaitan kekal berasingan:
 
 - Penghunian sesi OAuth ialah pengagihan lembut setempat proses untuk akaun OAuth.
-- Semafor akaun memberikan permit konkurensi permintaan dan tamat apabila permintaan selesai.
-- Pajakan sambungan sesi terurus eksklusif ialah pemilikan kitar hayat tahan lama dengan sempadan generasi.
+- Semafor akaun memberikan permit keserentakan permintaan dan tamat apabila permintaan selesai.
+- Pajakan sambungan sesi terurus eksklusif ialah pemilikan kitar hayat tahan lama dengan pagar generasi.
 
 ---
 
-## 3. Sekatan Model
+## 3. Penguncian Model
 
 **Skop:** gabungan penyedia + sambungan + model.
 
-**Tujuan:** mengelakkan keseluruhan sambungan dinyahdayakan apabila hanya satu model tidak tersedia atau dikenakan had kuota.
+**Skop kunci mengikut status:** status kegagalan menentukan kunci yang akan ditulis oleh penguncian
+(`resolveLockoutScope()` dalam `open-sse/services/accountFallback/exactModelLock.ts`):
+
+- `429` / `403` / `402` — isyarat kuota atau kelayakan — mengunci **keluarga kuota**:
+  untuk codex, seluruh skop `codex` / `spark` (setiap model `gpt-5*` bagi
+  sambungan tersebut), manakala untuk penyedia lain, `getQuotaScopedModelForProvider()`.
+- `404` mengunci model asas (`getModelLockKey()` mengecilkan skop `not_found`).
+- Sebarang status lain — kegagalan pengangkutan/pelayan `5xx` dan `502` tersintesis
+  OmniRoute sendiri daripada pengesahan kualiti — hanya mengunci tupel
+  penyedia/sambungan/model yang **tepat**. Strim yang bermasalah pada satu model bukan bukti
+  tentang kuota akaun; sebelum peraturan ini, satu respons kosong pada
+  `codex/gpt-5.6-luna` menyingkirkan setiap model `gpt-5*` bagi sambungan tersebut
+  daripada penghalaan selama 2–30 min (meningkat secara berperingkat) walaupun kuotanya tidak terjejas.
+- Pilihan `scope` eksplisit pemanggil sentiasa diutamakan (Antigravity menghantar `"exact"`).
+
+**Tujuan:** mengelakkan seluruh sambungan dinyahdayakan apabila hanya satu model tidak tersedia atau dihadkan kuota.
 
 **Contoh:**
 
-- Penyedia dengan kuota mengikut model yang mengembalikan 429
+- Penyedia dengan kuota per model yang mengembalikan 429
 - Penyedia setempat yang mengembalikan 404 untuk satu model yang tiada
 - Kegagalan kebenaran mod/model khusus penyedia (contohnya, mod Grok)
 
@@ -178,53 +193,54 @@ Mekanisme berkaitan kekal berasingan:
 
 UI: Tetapan → Tempoh Bertenang Model (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-Menyenaraikan sekatan aktif bersama: penyedia, sambungan, model, sebab, expiresAt. Pengendali boleh mendayakan semula model secara manual daripada kad tersebut.
+Menyenaraikan penguncian aktif dengan: penyedia, sambungan, model, sebab, expiresAt. Pengendali boleh mendayakan semula model secara manual daripada kad tersebut.
 
-**API REST:**
+**REST API:**
 
-- `GET /api/resilience/model-cooldowns` — senaraikan sekatan aktif
+- `GET /api/resilience/model-cooldowns` — senaraikan penguncian aktif
 - `DELETE /api/resilience/model-cooldowns` — dayakan semula secara manual. Isi: `{provider, connection, model}`. Pengesahan: pengurusan.
 
-### UI tetapan sekatan + pemulihan penyusutan kejayaan (v3.8.23)
+### UI tetapan penguncian + pemulihan susutan kejayaan (v3.8.23)
 
-Sekatan model berubah daripada tingkah laku berkod keras yang sentiasa aktif kepada ciri
-pilihan ikut serta yang boleh dikonfigurasikan sepenuhnya, dengan kad tetapannya sendiri dan laluan pemulihan yang memulihkan diri.
+Penguncian model berubah daripada tingkah laku berkod keras yang sentiasa aktif kepada ciri
+ikut serta yang boleh dikonfigurasikan sepenuhnya, dengan kad tetapannya sendiri dan laluan pemulihan yang membaiki kendiri.
 
-**Kad tetapan:** Tetapan → Sekatan Model
+**Kad tetapan:** Tetapan → Penguncian Model
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
 Ini **berbeza** daripada `ModelCooldownsCard` baca sahaja di atas (yang hanya
-_menyenaraikan_ sekatan aktif) — kad baharu ini _mengkonfigurasikan parameter_. Nilai lalai
+_menyenaraikan_ penguncian aktif) — kad baharu _mengkonfigurasikan parameter_. Nilai lalai
 terdapat dalam `DEFAULT_MODEL_LOCKOUT_SETTINGS`
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
 | Tetapan                 | Lalai                            | Maksud                                                                     |
 | ----------------------- | -------------------------------- | -------------------------------------------------------------------------- |
-| `enabled`               | `false`                          | Togol utama — sekatan model **dimatikan secara lalai**.                    |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Status huluan yang dikira sebagai kegagalan khusus model.                  |
-| `baseCooldownMs`        | `120_000` (120 s)                | Tempoh sekatan awal bagi kegagalan pertama.                                |
-| `maxCooldownMs`         | `1_800_000` (30 min)             | Had maksimum bagi tempoh bertenang yang ditingkatkan.                      |
-| `maxBackoffSteps`       | `10`                             | Langkah peningkatan undur eksponen maksimum.                               |
+| `enabled`               | `false`                          | Togol utama — penguncian model **dimatikan secara lalai**.                 |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Status huluan yang dikira sebagai kegagalan berskop model.                 |
+| `baseCooldownMs`        | `120_000` (120 s)                | Tempoh penguncian awal untuk kegagalan pertama.                            |
+| `maxCooldownMs`         | `1_800_000` (30 min)             | Had tempoh bertenang yang ditingkatkan.                                    |
+| `maxBackoffSteps`       | `10`                             | Bilangan maksimum langkah peningkatan undur eksponen.                      |
 | `useExponentialBackoff` | `true`                           | Sama ada kegagalan berulang meningkatkan tempoh bertenang secara eksponen. |
 
-Tetapan dikekalkan melalui stor tetapan biasa dan disahkan melalui
+Tetapan disimpan melalui stor tetapan biasa dan disahkan melalui
 skema tetapan daya tahan; kad tersebut mengehadkan `baseCooldownMs`/`maxCooldownMs`
 (dengan `maxCooldownMs ≥ baseCooldownMs`) dan `maxBackoffSteps`.
 
-**Pemulihan penyusutan kejayaan:** pemulihan **bukan** semata-mata berdasarkan tamat tempoh pemasa. Respons
-yang sihat mengurangkan kiraan kegagalan model supaya model yang telah pulih
-di pertengahan tetingkap berhenti meningkat (dan sekatannya dibersihkan) sebelum pemasa tamat. Apabila sasaran
-gabungan berjaya, `open-sse/services/combo.ts` memanggil `decayModelFailureCount()`
+**Pemulihan susutan kejayaan:** pemulihan **bukan** semata-mata melalui tamat tempoh pemasa. Respons yang sihat
+mengurangkan kiraan kegagalan model secara berperingkat supaya model yang pulih
+dalam tetingkap berhenti meningkat (dan dikosongkan) sebelum pemasa tamat. Apabila sasaran
+kombo berjaya, `open-sse/services/combo.ts` memanggil `decayModelFailureCount()`
 (`open-sse/services/accountFallback.ts`), yang **membahagikan dua** nilai
-`failureCount` yang disimpan (`Math.floor(failureCount / 2)`); apabila nilainya mencapai `0`, entri sekatan
-dipadamkan sepenuhnya. Fungsi pasangannya, `recordModelLockoutFailure()`,
-menambah kiraan (dan meningkatkan tempoh bertenang) apabila kegagalan berlaku dalam
-tetingkap peningkatan. Penyusutan kejayaan ini adalah tambahan kepada tamat tempoh pemasa biasa —
+`failureCount` yang disimpan (`Math.floor(failureCount / 2)`); apabila nilainya mencapai `0`, entri penguncian
+dipadam sepenuhnya. Fungsi pelengkap `recordModelLockoutFailure()`
+meningkatkan kiraan (dan tempoh bertenang) apabila berlaku kegagalan dalam
+tetingkap peningkatan. Susutan kejayaan ini adalah tambahan kepada tamat tempoh pemasa biasa —
 mana-mana laluan boleh mendayakan semula model.
 
-**Keadaan:** sekatan disimpan **dalam memori** (`Map` setiap proses bagi
-`ModelLockoutEntry` yang menggunakan `provider:connectionId:model` sebagai kunci), dan tidak dikekalkan dalam
-DB — sekatan akan hilang apabila dimulakan semula. _Tetapan_ dikekalkan; _keadaan_ sekatan
-aktif bersifat sementara.
+**Keadaan:** penguncian disimpan **dalam memori** (`Map` bagi setiap proses yang mengandungi
+`ModelLockoutEntry` dan menggunakan `provider:connectionId:model` sebagai kunci, manakala penguncian skop tepat menggunakan
+`provider:connectionId:exact:model`), dan tidak disimpan ke dalam
+DB — ia akan hilang apabila dimulakan semula. _Tetapan_ disimpan secara berterusan; _keadaan_
+penguncian aktif bersifat sementara.
 
 ---
 
@@ -635,11 +651,12 @@ berkelompok mengikut IP merupakan isyarat yang sama seperti kuota yang telah hab
 
 ## Penyahpepijatan
 
-- Semua kunci untuk sesuatu penyedia dilangkau → semak kedua-dua keadaan pemutus litar DAN `rateLimitedUntil`/`testStatus` bagi setiap sambungan.
-- Penyedia dikecualikan secara kekal selepas tetingkap tetapan semula → kod membaca `state` mentah dan bukannya `getStatus()`/`canExecute()`.
-- Satu kunci gagal, yang lain sepatutnya berfungsi → utamakan tempoh bertenang sambungan berbanding pemutus litar.
+- Jawapan combo berwajaran `503 all_targets_cooling_down` (`Retry-After` ditetapkan, `diagnostics.excluded` menyenaraikan setiap sasaran dengan `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → kumpulan telah dikonfigurasikan dan disambungkan, tetapi setiap sasaran dikecualikan oleh pemasa daya tahan; amaran `[COMBO] Weighted selection: every target excluded before dispatch — …` menyatakan sebab dan baki saat. Respons `404 no_executable_targets` daripada combo yang sama bermaksud tiada pemasa daya tahan yang terlibat (tiada apa-apa untuk dijalankan, atau setiap akaun gagal dalam semakan ketersediaan). Terbina dalam `open-sse/services/combo/pinRecovery.ts` berdasarkan pengecualian yang dikumpulkan dalam `targetResolution.ts`.
+- Semua kekunci bagi penyedia dilangkau → semak kedua-dua keadaan pemutus litar DAN `rateLimitedUntil`/`testStatus` bagi setiap sambungan.
+- Penyedia dikecualikan secara kekal selepas tetingkap penetapan semula → kod membaca `state` mentah dan bukannya `getStatus()`/`canExecute()`.
+- Satu kekunci gagal, yang lain sepatutnya berfungsi → utamakan tempoh bertenang sambungan berbanding pemutus litar.
 - Hanya satu model gagal → utamakan sekatan model berbanding tempoh bertenang sambungan.
-- Keadaan sepatutnya pulih sendiri tetapi tidak → semak cap masa pada masa hadapan + laluan bacaan yang menyegarkan keadaan tamat tempoh. Status kekal memerlukan perubahan manual.
+- Keadaan sepatutnya pulih sendiri tetapi tidak → semak cap masa pada masa hadapan + laluan bacaan yang menyegarkan keadaan yang telah tamat tempoh. Status kekal memerlukan perubahan manual.
 
 ---
 

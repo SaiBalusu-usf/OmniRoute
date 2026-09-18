@@ -74,8 +74,8 @@ Regresszióvédelmi teszt: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
 **Megvalósítás:**
 
-- Elérhetetlenként megjelölés: `src/sse/services/auth.ts::markAccountUnavailable()`
-- Kiválasztás: `getProviderCredentials*` ugyanebben a fájlban
+- Elérhetetlenként való megjelölés: `src/sse/services/auth.ts::markAccountUnavailable()`
+- Kiválasztás: `getProviderCredentials*` ugyanabban a fájlban
 - Várakozási idő kiszámítása: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Beállítások: `src/lib/resilience/settings.ts`
 
@@ -84,32 +84,32 @@ Regresszióvédelmi teszt: `tests/unit/provider-cooldown-window-gate.test.ts`.
 - `rateLimitedUntil` — időbélyeg, ameddig a várakozási idő tart
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
-- `backoffLevel` — az exponenciális visszalépés számlálója
+- `backoffLevel` — exponenciális visszalépési számláló
 
 **Alapértelmezett várakozási idők:**
 
-- OAuth-alapérték: 5s
-- API-kulcs-alapérték: 3s
-- API-kulcs esetén 429: elsődlegesen a felsőbb szintű szolgáltató `Retry-After`/visszaállítási fejléceit, illetve az értelmezhető visszaállítási szöveget használja
+- OAuth-alapérték: 5 s
+- API-kulcs-alapérték: 3 s
+- API-kulcs 429: előnyben részesíti a felsőbb szintű szolgáltató `Retry-After`/visszaállítási fejléceit vagy az értelmezhető visszaállítási szöveget
 - Visszalépés: `baseCooldownMs * 2 ** failureIndex`
 
-**Egyidejű kéréshullám elleni védelem:** megakadályozza, hogy az egyidejű hibák túlzottan meghosszabbítsák a várakozási időt, vagy kétszer növeljék a `backoffLevel` értékét.
+**Túlterhelési roham elleni védelem:** megakadályozza, hogy az egyidejű hibák túlzottan meghosszabbítsák a várakozási időt, vagy kétszer növeljék a `backoffLevel` értékét.
 
 **Végállapotok (NEM várakozási idők):**
 
-- `banned` — tiltott kulcsszó / fióktiltás észlelése állítja be (lásd: [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (korlátozott számú újrapróbálkozás után végállapotba kerül — `EXPIRED_RETRY_MAX = 3`, exponenciális visszalépéssel —, így az átmeneti OAuth-hibák maguktól helyreállhatnak, mielőtt a fiókot véglegesen deaktiválná a rendszer)
+- `banned` — tiltott kulcsszó/fióktiltás észlelésekor kerül beállításra (lásd: [BAN_DETECTION](../security/BAN_DETECTION.md)), valamint három egymást követő, kérésenkénti felsőbb szintű elutasítás után (`request_rejected`, például Anthropic OAuth 403 „Request not allowed” — `open-sse/services/requestRejectedStreak.ts`); egyetlen elutasítás csak várakozási állapotba helyezi a kapcsolatot
+- `expired` (korlátozott számú újrapróbálkozás után válik végállapottá — `EXPIRED_RETRY_MAX = 3` exponenciális visszalépéssel —, így az átmeneti OAuth-hibák maguktól helyreállhatnak, mielőtt a fiók véglegesen deaktiválódna)
 - `credits_exhausted`
 
 Ezek mindaddig megmaradnak, amíg a hitelesítő adatok meg nem változnak, vagy egy üzemeltető vissza nem állítja őket. A végállapotokat nem szabad átmeneti várakozási állapottal felülírni.
 
-**Lusta helyreállítás:** amikor a `rateLimitedUntil` időpont elmúlt, a kapcsolat ismét kiválaszthatóvá válik. Sikeres használat esetén a `clearAccountError()` törli az összes hibamezőt.
+**Lusta helyreállítás:** amikor a `rateLimitedUntil` időpontja elmúlt, a kapcsolat ismét kiválaszthatóvá válik. Sikeres használatkor a `clearAccountError()` törli az összes hibamezőt.
 
 ### Munkamenet-affinitás (#7274)
 
-**Hatókör:** egyetlen kliensmunkamenet (`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session` fejléc), amely egyetlen kapcsolathoz van rögzítve, **bármely** szolgáltató esetén.
+**Hatókör:** egy ügyfél-munkamenet (`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session` fejléc), amely egy kapcsolathoz van rögzítve, **bármely** szolgáltató esetén.
 
-**Cél:** egy többfordulós ügynököt (Claude Code, aider, egyéni ügynökök) a kérések között ugyanazon a fiókon tartani, csökkentve a fiókok közötti kontextusvesztést és az ismételt hidegindítási 429-es hibákat azoknál a szolgáltatóknál, amelyek fiókonkénti munkamenet-állapotot használnak.
+**Cél:** egy többfordulós ügynök (Claude Code, aider, egyéni ügynökök) ugyanazon a fiókon tartása a kérések között, csökkentve a fiókok közötti kontextusvesztést és az ismétlődő hidegindítási 429-es hibákat azoknál a szolgáltatóknál, amelyek fiókonkénti munkamenet-állapotot használnak.
 
 **Megvalósítás:**
 
@@ -117,45 +117,45 @@ Ezek mindaddig megmaradnak, amíg a hitelesítő adatok meg nem változnak, vagy
 - Rögzítés kiválasztása/létrehozása: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
 - Fejléc kinyerése (általános, bármely szolgáltató): `src/sse/services/auth.ts::extractSessionAffinityKey()`
 - Tartós rögzítési tábla: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Beállítás: `sessionAffinityTtlMs` (globális TTL ezredmásodpercben, `0` esetén letiltva) — `src/lib/db/settings.ts`. A korábbi, kizárólag Codexhez tartozó `codexSessionAffinityTtlMs` névről a `124_generic_session_affinity_ttl.sql` migráció nevezte át, amely a korábban konfigurált Codex TTL-értéket viszi tovább új alapértelmezett értékként.
+- Beállítás: `sessionAffinityTtlMs` (globális TTL ezredmásodpercben, a `0` letiltja) — `src/lib/db/settings.ts`. A kizárólag Codexhez tartozó `codexSessionAffinityTtlMs` névről a `124_generic_session_affinity_ttl.sql` migráció nevezte át, amely minden korábban konfigurált Codex TTL-t átvisz új alapértelmezett értékként.
 
-A #7274 előtt a `resolveSessionAffinityTtlMs()` azonnal `0` értékkel tért vissza a `codex` kivételével minden szolgáltatónál, így a TTL-beállításnak (és a munkamenet-fejléceknek) sehol máshol nem volt hatása, annak ellenére, hogy a rögzítési mechanizmus és a fejléckinyerés már szolgáltatófüggetlen volt. A javítás eltávolította ezt a korai visszatérést; a TTL mostantól egységesen vonatkozik minden szolgáltatóra, ha globálisan `0` fölötti értékre van állítva.
+A #7274 előtt a `resolveSessionAffinityTtlMs()` minden, nem `codex` szolgáltató esetén azonnal `0` értékkel tért vissza, ezért a TTL-beállításnak (és a munkamenet-fejléceknek) máshol nem volt hatása, noha a rögzítési mechanizmus és a fejléckinyerés már szolgáltatófüggetlen volt. A javítás eltávolította ezt a korai visszatérést; a TTL mostantól egységesen alkalmazandó minden szolgáltatóra, ha globális értékét `0` fölé állítják.
 
-A három munkamenet-affinitási fejlécet a rendszer soha nem továbbítja a felsőbb szintű szolgáltatóhoz — a végrehajtók saját felsőbb szintű fejléceiket teljesen elölről építik fel ahelyett, hogy továbbítanák a kliens fejléceit, így ez kizárólag belső korrelációs azonosító marad.
+A három munkamenet-affinitási fejlécet a rendszer soha nem továbbítja a felsőbb szintű szolgáltatónak — a végrehajtók saját felsőbb szintű fejléceiket az alapoktól építik fel, ahelyett, hogy továbbítanák az ügyfél fejléceit, így ez kizárólag belső korrelációs azonosító marad.
 
-### Exkluzív felügyelt munkamenet-kapcsolati bérletek
+### Kizárólagos felügyelt munkamenet-kapcsolati bérletek
 
-**Hatókör:** egy aktív felügyelt HTTP-kliens/munkamenet birtokol egy kiválasztható OmniRoute-kapcsolatot.
+**Hatókör:** egy aktív felügyelt HTTP-ügyfél/munkamenet egyetlen alkalmas OmniRoute-kapcsolatot birtokol.
 
-**Cél:** tartós, exkluzív kapcsolattulajdon biztosítása azoknak a klienseknek, amelyeknek a kérések között szigorú útválasztási
-korlátra van szükségük. Ez eltér a munkamenet-affinitástól, amely csak puha folytonossági preferencia:
-az exkluzív bérlet SQLite-ban őrzi meg az életciklus állapotát, kikényszeríti az aktív tulajdonosok és
-aktív kapcsolatok globális egyediségét, és a szolgáltatóhoz történő továbbítás előtt elutasítja az elavult generációt.
+**Cél:** tartós, kizárólagos kapcsolattulajdont biztosítani azoknak az ügyfeleknek, amelyeknek szigorú útválasztási
+korlátra van szükségük a kérések között. Ez eltér a munkamenet-affinitástól, amely egy enyhe folytonossági preferencia:
+a kizárólagos bérlet életciklus-állapotot őriz az SQLite-ban, kikényszeríti az aktív tulajdonos és az
+aktív kapcsolat globális egyediségét, valamint a szolgáltatói továbbítás előtt elutasítja az elavult generációt.
 
-A funkció API-kulcsonként külön engedélyezhető. A felügyelt kulcsnak rendelkeznie kell a `lease:exclusive` hatókörrel és egy
-kifejezetten megadott, nem üres `allowedConnections` listával. Az életciklus-végpontot bármely HTTP-kliens használhatja; nincs
-szükség kliensnévre, felhasználói ügynökre, szolgáltatóra, OAuth-módszerre vagy modellre. A bérlet egy kapcsolatot birtokol,
-nem pedig egy modellt, így a modell módosítása megtartja a kötést, amíg a kapcsolat a szokásos módon
-kiválasztható marad. A normál modell-, kvóta-, állapot-, várakozási és engedélyezésilista-szabályok továbbra is mérvadók, és
-ugyanazt a generációt egy másik szabad, kiválasztható kapcsolatra állíthatják át.
+A funkció API-kulcsonként külön engedélyezhető. Egy felügyelt kulcsnak rendelkeznie kell a `lease:exclusive` hatókörrel és egy
+explicit, nem üres `allowedConnections` listával. Bármely HTTP-ügyfél használhatja az életciklus-végpontot; nincs szükség
+ügyfélnévre, felhasználói ügynökre, szolgáltatóra, OAuth-módszerre vagy modellre. A bérlet egy kapcsolatot birtokol,
+nem pedig egy modellt, ezért a modellváltás megtartja a kötést, amíg a kapcsolat a szokásos feltételek szerint
+alkalmas marad. A normál modell-, kvóta-, állapot-, várakozásiidő- és engedélyezésilista-szabályok továbbra is mérvadók, és
+ugyanazt a generációt egy másik szabad, alkalmas kapcsolatra válthatják át.
 
 Az életciklus a `POST /api/v1/session-leases` végponton keresztül kezelhető az `acquire`, `renew` és `release` JSON-műveletekkel.
 A felügyelt következtetési kérések az átlátszatlan `X-OmniRoute-Lease-Owner` értéket és a pontos
-`X-OmniRoute-Lease-Generation` értéket adják meg. A tulajdonos azonosítója `vlo_` előtagból és az azt követő 43 base64url karakterből áll; csak
-az SHA-256 kivonata kerül tárolásra. Minden végső továbbítási korlát a hitelesített API-kulcs azonosítóját és
-az aktív kapcsolat azonosítóját is hozzáköti. A bérletvezérlő fejlécek eltávolításra kerülnek a naplókból, a megőrzött kéréspillanatképekből és
+`X-OmniRoute-Lease-Generation` értéket adják meg. A tulajdonos azonosítója `vlo_` előtagból és azt követő 43 base64url-karakterből áll; csak
+az SHA-256 kivonata kerül tárolásra. Minden végső továbbítási korlát azonosítja a hitelesített API-kulcs azonosítóját és
+az aktív kapcsolat azonosítóját is. A bérletvezérlő fejlécek eltávolításra kerülnek a naplókból, a megőrzött kérési pillanatképekből és
 a felsőbb szintű végrehajtók fejléceiből.
 
-Ha a szokásos útválasztás rendelkezik kiválasztható felügyelt jelöltekkel, de minden szabad jelöltet
-egy idegen aktív bérlet foglal el, az OmniRoute HTTP `429` választ, lease-capacity-unavailable kódot,
-kapacitásra várakozó állapotot és a legkorábbi releváns lejáratból származtatott, korlátozott `Retry-After` értéket ad vissza.
-A kiválasztható kapcsolatok szokásos hiánya nem bérletütközés, és megtartja a meglévő útválasztási hibaszemantikát.
+Ha a szokásos útválasztás rendelkezik alkalmas felügyelt jelöltekkel, de minden szabad jelöltet egy
+idegen aktív bérlet foglal el, az OmniRoute HTTP `429` választ, bérleti kapacitás hiányát jelző kódot,
+kapacitásra várakozó állapotot, valamint a legkorábbi releváns lejáratból származtatott, korlátozott `Retry-After` értéket ad vissza.
+Az alkalmassági halmaz szokásos üressége nem bérleti ütközés, és megtartja a meglévő útválasztási hibaszemantikát.
 
 A kapcsolódó mechanizmusok továbbra is elkülönülnek:
 
-- Az OAuth-munkamenetek foglaltsága folyamaton belüli, puha elosztást biztosít az OAuth-fiókok számára.
+- Az OAuth-munkamenetek foglaltsága folyamaton belüli, enyhe elosztást biztosít az OAuth-fiókok számára.
 - A fiókszemaforok kérés-egyidejűségi engedélyeket adnak, amelyek a kérés befejezésekor megszűnnek.
-- Az exkluzív felügyelt munkamenet-bérletek tartós életciklus-tulajdont biztosítanak generációs korláttal.
+- A kizárólagos felügyelt munkamenet-bérletek tartós életciklus-tulajdont biztosítanak generációs korláttal.
 
 ---
 
@@ -163,66 +163,83 @@ A kapcsolódó mechanizmusok továbbra is elkülönülnek:
 
 **Hatókör:** szolgáltató + kapcsolat + modell hármasa.
 
-**Cél:** elkerülni egy teljes kapcsolat letiltását, amikor csak egyetlen modell nem érhető el, vagy érte el a kvótakorlátot.
+**A kulcs hatóköre állapotkód szerint:** a hibát jelző állapotkód határozza meg, hogy a zárolás melyik kulcsba kerül
+(`resolveLockoutScope()` az `open-sse/services/accountFallback/exactModelLock.ts` fájlban):
+
+- `429` / `403` / `402` — kvótára vagy jogosultságra utaló jelzés — zárolja a **kvótacsaládot**:
+  codex esetén a kapcsolat teljes `codex` / `spark` hatókörét (a kapcsolat minden
+  `gpt-5*` modelljét), más szolgáltatóknál pedig a `getQuotaScopedModelForProvider()` által meghatározott hatókört.
+- A `404` az alapmodellt zárolja (a `getModelLockKey()` leszűkíti a `not_found` esetet).
+- Minden más állapotkód — az `5xx` átviteli-/szerverhibák, valamint az OmniRoute
+  minőségellenőrzése által előállított `502` — kizárólag a **pontos**
+  szolgáltató/kapcsolat/modell hármast zárolja. Egy modell hibás adatfolyama nem bizonyíték
+  a fiók kvótahelyzetére; e szabály előtt egyetlen üres válasz a
+  `codex/gpt-5.6-luna` modellen 2–30 percre (fokozatosan növekvő időtartammal) eltávolította
+  az adott kapcsolat összes `gpt-5*` modelljét az útválasztásból,
+  miközben a kvótája érintetlen maradt.
+- A hívó explicit `scope` beállítása mindig elsőbbséget élvez (az Antigravity az `"exact"` értéket adja át).
+
+**Cél:** elkerülni egy teljes kapcsolat letiltását, amikor csak egyetlen modell nem érhető el, vagy annak kvótája korlátozott.
 
 **Példák:**
 
-- Modellenkénti kvótát alkalmazó szolgáltatók, amelyek 429-es állapotkódot adnak vissza
-- Helyi szolgáltatók, amelyek 404-es állapotkódot adnak vissza egy hiányzó modell esetén
-- Szolgáltatóspecifikus mód-/modellengedélyezési hibák (pl. Grok-módok)
+- Modellenkénti kvótát alkalmazó szolgáltatók, amelyek 429-et adnak vissza
+- Helyi szolgáltatók, amelyek 404-et adnak vissza egyetlen hiányzó modell esetén
+- Szolgáltatóspecifikus mód-/modelljogosultsági hibák (pl. Grok módok)
 
 **Megvalósítás:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
-### Modell-várakozási idők irányítópultja (v3.8.0)
+### Modell-lehűlési irányítópult (v3.8.0)
 
-Felület: Beállítások → Modell-várakozási idők (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
+Felhasználói felület: Beállítások → Modell-lehűlések (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-Az aktív zárolásokat a következő adatokkal sorolja fel: szolgáltató, kapcsolat, modell, ok, expiresAt. Az üzemeltetők a kártyáról manuálisan újra engedélyezhetik a modelleket.
+Az aktív zárolásokat a következő adatokkal sorolja fel: szolgáltató, kapcsolat, modell, ok, expiresAt. Az üzemeltetők a kártyáról manuálisan újra engedélyezhetnek egy modellt.
 
 **REST API:**
 
 - `GET /api/resilience/model-cooldowns` — aktív zárolások listázása
-- `DELETE /api/resilience/model-cooldowns` — manuális újraengedélyezés. Törzs: `{provider, connection, model}`. Hitelesítés: kezelői.
+- `DELETE /api/resilience/model-cooldowns` — manuális újraengedélyezés. Törzs: `{provider, connection, model}`. Hitelesítés: felügyeleti.
 
-### Zárolási beállítások felülete + siker miatti fokozatos helyreállítás (v3.8.23)
+### Zárolási beállítások felhasználói felülete + siker-alapú lecsengéses helyreállítás (v3.8.23)
 
-A modellzárolás korábbi, mindig bekapcsolt, rögzített működése teljesen konfigurálható,
-külön bekapcsolható funkcióvá vált, saját beállításkártyával és önjavító helyreállítási folyamattal.
+A modellzárolás a mindig bekapcsolt, beégetett működésből teljesen konfigurálható,
+külön bekapcsolható funkcióvá vált, saját beállításkártyával és öngyógyító helyreállítási útvonallal.
 
 **Beállításkártya:** Beállítások → Modellzárolás
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-Ez **különbözik** a fenti, csak olvasható `ModelCooldownsCard` kártyától (amely kizárólag
-_felsorolja_ az aktív zárolásokat) — az új kártyán _a paraméterek konfigurálhatók_. Az alapértékek
-a `DEFAULT_MODEL_LOCKOUT_SETTINGS` objektumban találhatók
+Ez **különbözik** a fenti, csak olvasható `ModelCooldownsCard` kártyától (amely csak
+_felsorolja_ az aktív zárolásokat) — az új kártya _a paramétereket konfigurálja_. Az alapértelmezett értékek a
+`DEFAULT_MODEL_LOCKOUT_SETTINGS` konstansban találhatók
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
-| Beállítás               | Alapérték                        | Jelentés                                                                  |
+| Beállítás               | Alapértelmezett                  | Jelentés                                                                  |
 | ----------------------- | -------------------------------- | ------------------------------------------------------------------------- |
 | `enabled`               | `false`                          | Főkapcsoló — a modellzárolás **alapértelmezés szerint ki van kapcsolva**. |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Modellhatókörű hibának számító felsőbb rétegbeli állapotkódok.            |
-| `baseCooldownMs`        | `120_000` (120 mp)               | Az első hibát követő kezdeti zárolás időtartama.                          |
-| `maxCooldownMs`         | `1_800_000` (30 perc)            | A fokozatosan növelt várakozási idő felső korlátja.                       |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Modellhatókörű hibának számító upstream állapotkódok.                     |
+| `baseCooldownMs`        | `120_000` (120 mp)               | Az első hiba kezdeti zárolási időtartama.                                 |
+| `maxCooldownMs`         | `1_800_000` (30 perc)            | A fokozatosan növelt lehűlési idő felső korlátja.                         |
 | `maxBackoffSteps`       | `10`                             | Az exponenciális visszalépés növelési lépéseinek maximális száma.         |
-| `useExponentialBackoff` | `true`                           | Ismétlődő hibák esetén exponenciálisan növekedjen-e a várakozási idő.     |
+| `useExponentialBackoff` | `true`                           | Ismétlődő hibák esetén exponenciálisan növekedjen-e a lehűlési idő.       |
 
-A beállítások a szokásos beállítástáron keresztül maradnak meg, és a rezilienciabeállítások sémája
-ellenőrzi őket; a kártya korlátozza a `baseCooldownMs`/`maxCooldownMs`
-értékeket (ahol `maxCooldownMs ≥ baseCooldownMs`), valamint a `maxBackoffSteps` értékét.
+A beállítások a szokásos beállítástáron keresztül maradnak fenn, és az ellenálló képességi
+beállítások sémája alapján lesznek ellenőrizve; a kártya korlátozza a `baseCooldownMs`/`maxCooldownMs`
+értékeket (`maxCooldownMs ≥ baseCooldownMs`), valamint a `maxBackoffSteps` értékét.
 
-**Siker miatti fokozatos helyreállítás:** a helyreállítás **nem** pusztán az időzítő lejáratán alapul. Egy hibátlan
-válasz fokozatosan csökkenti a modell hibaszámlálóját, így az időablakon belül
-helyreállt modell büntetési szintje a várakozási idő lejárta előtt csökkenhet (és a zárolás megszűnhet).
-Sikeres kombinált cél esetén az `open-sse/services/combo.ts` meghívja a `decayModelFailureCount()`
+**Siker-alapú lecsengéses helyreállítás:** a helyreállítás **nem** kizárólag az időzítő lejáratán alapul. Egy megfelelő
+válasz fokozatosan csökkenti a modell hibaszámát, így az időablak közben helyreállt modell
+növekvő büntetése megszűnik (és a zárolása törlődik), még mielőtt az időzítője lejárna. Sikeres
+kombinált cél esetén az `open-sse/services/combo.ts` meghívja a `decayModelFailureCount()`
 függvényt (`open-sse/services/accountFallback.ts`), amely **megfelezi** a tárolt
-`failureCount` értéket (`Math.floor(failureCount / 2)`); amikor az eléri a `0` értéket, a zárolási
-bejegyzés teljes egészében törlődik. Ennek párja, a `recordModelLockoutFailure()`
-növeli a számlálót (és a várakozási időt) a növelési időablakon belüli hibák esetén.
-Ez a siker miatti fokozatos helyreállítás az egyszerű időzítő-lejáraton felül működik —
+`failureCount` értékét (`Math.floor(failureCount / 2)`); amikor az eléri a `0` értéket, a zárolási
+bejegyzés teljes egészében törlődik. A párja, a `recordModelLockoutFailure()`,
+a növelési időablakon belüli hibák esetén növeli a számlálót (és meghosszabbítja a lehűlési időt).
+Ez a siker-alapú lecsengés az egyszerű időzítőlejáraton felül működik —
 bármelyik útvonal újra engedélyezheti a modellt.
 
 **Állapot:** a zárolások **memóriában** vannak tárolva (folyamatonkénti `Map` példányokban,
-`ModelLockoutEntry` értékekkel, `provider:connectionId:model` kulcs alapján), és nincsenek tartósan
-az adatbázisban tárolva — újraindításkor elvesznek. A _beállítások_ tartósan tárolódnak; az aktív
+`ModelLockoutEntry` bejegyzésekkel, amelyek kulcsa `provider:connectionId:model`, míg a pontos hatókörű zárolásoké
+`provider:connectionId:exact:model`), és nem kerülnek mentésre
+az adatbázisba — újraindításkor elvesznek. A _beállítások_ megmaradnak; az aktív
 zárolási _állapot_ átmeneti.
 
 ---
@@ -594,11 +611,12 @@ kimerült kvóta. Valós korlátok:
 
 ## Hibakeresés
 
-- Egy szolgáltató összes kulcsa kihagyásra kerül → ellenőrizze a megszakító állapotát ÉS az egyes kapcsolatok `rateLimitedUntil`/`testStatus` értékét.
-- A szolgáltató a visszaállítási ablak után is véglegesen ki van zárva → a kód a nyers `state` értéket olvassa a `getStatus()`/`canExecute()` helyett.
-- Egy kulcs meghibásodik, de a többinek működnie kellene → a megszakító helyett részesítse előnyben a kapcsolat várakoztatását.
-- Csak egy modell hibásodik meg → a kapcsolat várakoztatása helyett részesítse előnyben a modell kizárását.
-- Az állapotnak automatikusan helyre kellene állnia, de nem teszi → ellenőrizze, nincs-e jövőbeli időbélyeg, valamint hogy az olvasási útvonal frissíti-e a lejárt állapotot. Az állandó állapotok kézi módosítást igényelnek.
+- A súlyozott kombináció `503 all_targets_cooling_down` választ ad (a `Retry-After` be van állítva, a `diagnostics.excluded` pedig minden célpontot felsorol `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable` állapottal) → a készlet konfigurálva és csatlakoztatva van, csupán minden célpontot kizár egy rezilienciát biztosító időzítő; a `[COMBO] Weighted selection: every target excluded before dispatch — …` figyelmeztetés megnevezi az okokat és a hátralévő másodperceket. Az ugyanettől a kombinációtól érkező `404 no_executable_targets` azt jelenti, hogy nem volt érintett rezilienciát biztosító időzítő (nincs mit futtatni, vagy minden fiók sikertelen volt az elérhetőségi ellenőrzésen). Az `open-sse/services/combo/pinRecovery.ts` fájlban valósul meg, a `targetResolution.ts` fájlban összegyűjtött kizárások alapján.
+- Egy szolgáltató összes kulcsa ki lett hagyva → ellenőrizze a megszakító állapotát ÉS minden kapcsolat `rateLimitedUntil`/`testStatus` értékét.
+- A szolgáltató a visszaállítási időablak után is véglegesen ki van zárva → a kód a nyers `state` értéket olvassa a `getStatus()`/`canExecute()` helyett.
+- Egy kulcs meghibásodik, a többinek működnie kellene → részesítse előnyben a kapcsolat lehűlési idejét a megszakítóval szemben.
+- Csak egy modell hibásodik meg → részesítse előnyben a modell zárolását a kapcsolat lehűlési idejével szemben.
+- Az állapotnak magától helyre kellene állnia, de nem teszi → ellenőrizze, van-e jövőbeli időbélyeg, valamint olyan olvasási útvonal, amely frissíti a lejárt állapotot. Az állandó állapotok kézi módosítást igényelnek.
 
 ---
 

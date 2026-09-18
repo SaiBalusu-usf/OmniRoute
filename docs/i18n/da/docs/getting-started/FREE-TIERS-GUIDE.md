@@ -4,7 +4,7 @@
 
 ---
 
-> **TL;DR**: OmniRoute registrerer 352 udbyder-id'er, med **152 poster i udbyderkataloget markeret med `hasFree`**. Det strengere, reviderede katalog over gratis modeller omfatter **34 tilbagevendende puljenøgler / 443 poster** (436 aktive + 7 udgåede). Forbind flere egnede udbydere for at få større fallback-kapacitet; alle kvoter, godkendelsesregler, privatlivspolitikker og vilkår for betalt overforbrug gælder stadig.
+> **Kort fortalt**: OmniRoute registrerer 357 udbyder-id'er med **152 poster i udbyderkataloget markeret med `hasFree`**. Det strengere, reviderede katalog over gratis modeller omfatter **35 tilbagevendende puljenøgler / 482 poster** (475 aktive + 7 udgåede). Tilslut flere egnede udbydere for at få større fallback-kapacitet; alle kvoter, godkendelsesregler, privatlivspolitikker og vilkår for betalt overforbrug gælder fortsat.
 
 ---
 
@@ -158,21 +158,21 @@ udbyders kvote- eller adgangspolitik.
 
 ---
 
-## Beregning af gratisniveau
+## Beregning for gratisniveauet
 
-Det aktive, puljededuplikerede katalog rapporterer i øjeblikket:
+Det aktuelle, puljededuplikerede katalog rapporterer:
 
-| Målepunkt                                           |                                 Aktuel revideret værdi | Fortolkning                                                                                                                                            |
-| --------------------------------------------------- | -----------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Tilbagevendende kvantificeret tildeling             |                                **~1.47B tokens/måned** | Delte puljer tælles én gang; udbydere uden loft er ikke medregnet i summen                                                                             |
-| Første måned med tilmeldingskreditter               |                                      **~2.07B tokens** | Tilbagevendende total plus engangskreditter og tilbagevendende kreditter                                                                               |
-| Revideret beholdning af gratis modeller             | **34 tilbagevendende puljenøgler / 443 katalogposter** | 436 aktive + 7 udgåede; adskilt fra kataloget med 352 udbydere                                                                                         |
-| Repræsenterede udbydere med permanent gratis adgang |                                                 **52** | Unikke udbydere på tværs af tilbagevendende daglige/månedlige/kreditbaserede/ubegrænsede og nøglefri katalogtyper; adgangsbegrænsede rækker er udeladt |
-| Udbyderkatalogposter markeret med `hasFree`         |                                          **152 / 352** | Bredere udbydermetadata; ikke alle har en kvantificerbar tilbagevendende kvote                                                                         |
+| Målepunkt                                                                 |                                 Aktuel revideret værdi | Fortolkning                                                                                                                                            |
+| ------------------------------------------------------------------------- | -----------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Tilbagevendende kvantificeret tildeling                                   |                                **~1.62B tokens/måned** | Delte puljer tælles én gang; udbydere uden loft er ikke medregnet i summen                                                                             |
+| Første måned med tilmeldingstildelinger                                   |                                      **~2.22B tokens** | Tilbagevendende total plus engangskreditter og tilbagevendende kreditter                                                                               |
+| Revideret beholdning af gratis modeller                                   | **35 tilbagevendende puljenøgler / 482 katalogposter** | 475 aktive + 7 udgåede; adskilt fra kataloget med 357 udbydere                                                                                         |
+| Repræsenterede tilbagevendende/nøglefri udbydere, der er gratis for altid |                                                 **53** | Unikke udbydere på tværs af tilbagevendende daglige/månedlige/kreditbaserede/ubegrænsede og nøglefri katalogtyper; adgangsbegrænsede rækker er udeladt |
+| Udbyderkatalogposter markeret med `hasFree`                               |                                          **152 / 357** | Bredere udbydermetadata; ikke alle har en kvantificerbar tilbagevendende kvote                                                                         |
 
 Disse værdier beregnes ud fra `open-sse/config/freeModelCatalog.ts`; se
-[Reference til gratisniveauer](../reference/FREE_TIERS.md) for deduplikering af puljer, ToS-flag,
-udgåede poster og metodologien for tilmeldingskreditter.
+[Referencen for gratisniveauer](../reference/FREE_TIERS.md) for puljededuplikering, ToS-flag,
+udgåede poster og metodologi for tilmeldingskreditter.
 
 ---
 

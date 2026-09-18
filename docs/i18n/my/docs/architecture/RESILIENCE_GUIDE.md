@@ -67,163 +67,155 @@ exponential `minRetryCooldownMs → maxRetryCooldownMs` backoff ကို ဆက
 `OMNIROUTE_PROVIDER_BREAKER_{OAUTH,API_KEY}_{FAILURE_THRESHOLD,FAILURE_WINDOW_MS,COOLDOWN_MS}`။
 Regression ကာကွယ်မှု- `tests/unit/provider-cooldown-window-gate.test.ts`။
 
-## 2. ချိတ်ဆက်မှု Cooldown
+## 2. ချိတ်ဆက်မှု ခေတ္တရပ်နားချိန်
 
 **သက်ရောက်မှုနယ်ပယ်:** provider ချိတ်ဆက်မှု/account/key တစ်ခုတည်း။
 
-**ရည်ရွယ်ချက်:** provider တစ်ခုတည်းရှိ အခြားချိတ်ဆက်မှုများက ဆက်လက်ဝန်ဆောင်မှုပေးနေစဉ် ပြဿနာရှိသော key တစ်ခုကို ကျော်သွားရန်။
+**ရည်ရွယ်ချက်:** provider တစ်ခုတည်းအတွက် အခြားချိတ်ဆက်မှုများက ဆက်လက်ဝန်ဆောင်မှုပေးနေစဉ် ပြဿနာရှိသော key တစ်ခုကို ကျော်သွားရန်။
 
 **အကောင်အထည်ဖော်မှု:**
 
-- အသုံးမပြုနိုင်ဟု သတ်မှတ်ခြင်း: `src/sse/services/auth.ts::markAccountUnavailable()`
-- ရွေးချယ်မှု: တူညီသောဖိုင်ရှိ `getProviderCredentials*`
-- Cooldown တွက်ချက်မှု: `open-sse/services/accountFallback.ts::checkFallbackError()`
+- မရရှိနိုင်ဟု သတ်မှတ်ခြင်း: `src/sse/services/auth.ts::markAccountUnavailable()`
+- ရွေးချယ်မှု: ဖိုင်တစ်ခုတည်းရှိ `getProviderCredentials*`
+- ခေတ္တရပ်နားချိန် တွက်ချက်မှု: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - ဆက်တင်များ: `src/lib/resilience/settings.ts`
 
-**ချိတ်ဆက်မှုတစ်ခုစီရှိ field များ:**
+**ချိတ်ဆက်မှုတစ်ခုစီအလိုက် field များ:**
 
-- `rateLimitedUntil` — cooldown သက်တမ်းကုန်ဆုံးမည့်အချိန်အထိ timestamp
+- `rateLimitedUntil` — ခေတ္တရပ်နားချိန် ကုန်ဆုံးမည့်အချိန်အထိ timestamp
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
 - `backoffLevel` — exponential backoff counter
 
-**ပုံသေ cooldown များ:**
+**မူလသတ်မှတ် ခေတ္တရပ်နားချိန်များ:**
 
-- OAuth အခြေခံတန်ဖိုး: 5s
-- API-key အခြေခံတန်ဖိုး: 3s
+- OAuth အခြေခံ: 5s
+- API-key အခြေခံ: 3s
 - API-key 429: upstream `Retry-After`/reset header များ/ခွဲခြမ်းဖတ်ရှုနိုင်သော reset စာသားကို ဦးစားပေးသည်
 - Backoff: `baseCooldownMs * 2 ** failureIndex`
 
-**Anti-thundering-herd ကာကွယ်မှု:** တစ်ပြိုင်နက်ဖြစ်ပေါ်သော failure များကြောင့် cooldown ကို အလွန်အကျွံ တိုးချဲ့မိခြင်း သို့မဟုတ် `backoffLevel` ကို နှစ်ကြိမ်တိုးမိခြင်းအား တားဆီးသည်။
+**တစ်ပြိုင်နက်တည်း အလုံးအရင်းဖြင့် တောင်းဆိုမှုကို တားဆီးသည့် အကာအကွယ်:** တစ်ပြိုင်နက်ဖြစ်ပေါ်သော ချို့ယွင်းမှုများကြောင့် ခေတ္တရပ်နားချိန်ကို အလွန်အကျွံတိုးချဲ့ခြင်း သို့မဟုတ် `backoffLevel` ကို နှစ်ကြိမ်တိုးခြင်းမှ ကာကွယ်ပေးသည်။
 
-**အပြီးသတ်အခြေအနေများ (cooldown များ မဟုတ်ပါ):**
+**အပြီးသတ်အခြေအနေများ (ခေတ္တရပ်နားချိန်များ မဟုတ်ပါ):**
 
-- `banned` — banned-keyword / account-ban စစ်ဆေးတွေ့ရှိမှုက သတ်မှတ်သည် ([BAN_DETECTION](../security/BAN_DETECTION.md) ကိုကြည့်ပါ)
-- `expired` (ကန့်သတ်ထားသော ပြန်လည်ကြိုးစားမှုများပြီးနောက် အပြီးသတ်အခြေအနေသို့ ပြောင်းလဲသည် — exponential backoff နှင့်အတူ `EXPIRED_RETRY_MAX = 3` — ထို့ကြောင့် ယာယီ OAuth error များသည် account ကို အပြီးတိုင်ပိတ်သိမ်းခြင်းမပြုမီ မိမိဘာသာ ပြန်လည်ကောင်းမွန်နိုင်သည်)
+- `banned` — ပိတ်ပင်ထားသော keyword / account-ban ရှာဖွေစစ်ဆေးမှု (ကြည့်ရန် [BAN_DETECTION](../security/BAN_DETECTION.md)) နှင့် ဆက်တိုက် upstream per-request ငြင်းပယ်မှု သုံးကြိမ် (`request_rejected`၊ ဥပမာ Anthropic OAuth 403 "Request not allowed" — `open-sse/services/requestRejectedStreak.ts`) ကြောင့် သတ်မှတ်သည်။ တစ်ကြိမ်သာ ငြင်းပယ်မှုသည် ချိတ်ဆက်မှုကို ခေတ္တရပ်နားစေခြင်းသာ ဖြစ်သည်
+- `expired` (အကန့်အသတ်ရှိသော ပြန်လည်ကြိုးစားမှုများပြီးနောက် အပြီးသတ်အခြေအနေသို့ ပြောင်းသည် — exponential backoff ဖြင့် `EXPIRED_RETRY_MAX = 3` — ထို့ကြောင့် ယာယီ OAuth error များသည် account ကို အမြဲတမ်းပိတ်ထားခြင်းမပြုမီ အလိုအလျောက် ပြန်လည်ကောင်းမွန်နိုင်သည်)
 - `credits_exhausted`
 
-ဤအခြေအနေများသည် credential များ ပြောင်းလဲသွားသည်အထိ သို့မဟုတ် operator တစ်ဦးက ၎င်းတို့ကို reset လုပ်သည်အထိ ဆက်လက်တည်ရှိနေသည်။ အပြီးသတ်အခြေအနေများကို ယာယီ cooldown အခြေအနေဖြင့် မရေးထပ်ပါနှင့်။
+credentials များ ပြောင်းလဲသည်အထိ သို့မဟုတ် operator တစ်ဦးက ၎င်းတို့ကို reset လုပ်သည်အထိ ဤအခြေအနေများ ဆက်လက်တည်ရှိသည်။ အပြီးသတ်အခြေအနေများကို ယာယီ ခေတ္တရပ်နားမှုအခြေအနေဖြင့် မရေးထပ်ပါနှင့်။
 
-**Lazy recovery:** `rateLimitedUntil` ကျော်လွန်သွားသောအခါ ချိတ်ဆက်မှုကို ပြန်လည်ရွေးချယ်အသုံးပြုနိုင်သည်။ အောင်မြင်စွာ အသုံးပြုပြီးနောက် `clearAccountError()` သည် error field အားလုံးကို ရှင်းလင်းသည်။
+**လိုအပ်မှ ပြန်လည်ရယူခြင်း:** `rateLimitedUntil` ကျော်လွန်သွားသည့်အခါ ချိတ်ဆက်မှုသည် ထပ်မံရွေးချယ်အသုံးပြုနိုင်လာသည်။ အောင်မြင်စွာ အသုံးပြုပြီးသည့်အခါ `clearAccountError()` က error field အားလုံးကို ရှင်းလင်းသည်။
 
 ### Session affinity (#7274)
 
 **သက်ရောက်မှုနယ်ပယ်:** **မည်သည့်** provider အတွက်မဆို ချိတ်ဆက်မှုတစ်ခုနှင့် pin လုပ်ထားသော client session တစ်ခု (`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session` header)။
 
-**ရည်ရွယ်ချက်:** အကြိမ်များစွာ အပြန်အလှန်လုပ်ဆောင်ရသော agent (Claude Code, aider, စိတ်ကြိုက် agent များ) ကို request များတစ်လျှောက် account တစ်ခုတည်းတွင် ထိန်းသိမ်းထားခြင်းဖြင့် account များအကြား context ဆုံးရှုံးမှုနှင့် account အလိုက် session state ရှိသော provider များတွင် ထပ်ခါတလဲလဲ ဖြစ်ပေါ်သော cold-start 429 များကို လျှော့ချရန်။
+**ရည်ရွယ်ချက်:** request များတစ်လျှောက် multi-turn agent (Claude Code, aider, custom agent များ) ကို account တစ်ခုတည်းတွင် ထိန်းထားခြင်းဖြင့် account များအကြား context ဆုံးရှုံးမှုနှင့် per-account session state ရှိသော provider များတွင် ထပ်တလဲလဲ cold-start 429 ဖြစ်ပေါ်မှုတို့ကို လျှော့ချရန်။
 
 **အကောင်အထည်ဖော်မှု:**
 
-- TTL ဖြေရှင်းသတ်မှတ်မှု: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
+- TTL ဆုံးဖြတ်မှု: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Pin ရွေးချယ်မှု/ဖန်တီးမှု: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
-- Header ထုတ်ယူမှု (ယေဘုယျ၊ မည်သည့် provider မဆို): `src/sse/services/auth.ts::extractSessionAffinityKey()`
-- သိမ်းဆည်းထားသော pin table: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- ဆက်တင်: `sessionAffinityTtlMs` (ms ဖြင့် သတ်မှတ်သော global TTL၊ `0` သည် ပိတ်ထားသည်) — `src/lib/db/settings.ts`။ ယခင်က Codex အတွက်သာဖြစ်သော `codexSessionAffinityTtlMs` မှ migration `124_generic_session_affinity_ttl.sql` က အမည်ပြောင်းထားပြီး၊ ယခင်က configure လုပ်ထားသော Codex TTL တန်ဖိုးကို ပုံသေအသစ်အဖြစ် ဆက်လက်ယူဆောင်လာသည်။
+- Header ထုတ်ယူမှု (ယေဘုယျဖြစ်ပြီး မည်သည့် provider မဆို): `src/sse/services/auth.ts::extractSessionAffinityKey()`
+- အမြဲတမ်းသိမ်းဆည်းထားသော pin table: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
+- ဆက်တင်: `sessionAffinityTtlMs` (ms ဖြင့် global TTL၊ `0` သည် ပိတ်သည်) — `src/lib/db/settings.ts`။ ယခင် configure လုပ်ထားသည့် Codex TTL ကို မူလတန်ဖိုးအသစ်အဖြစ် ဆက်လက်သယ်ဆောင်သည့် migration `124_generic_session_affinity_ttl.sql` ဖြင့် Codex အတွက်သာဖြစ်သော `codexSessionAffinityTtlMs` မှ အမည်ပြောင်းထားသည်။
 
-#7274 မတိုင်မီ `resolveSessionAffinityTtlMs()` သည် `codex` မှလွဲ၍ provider တိုင်းအတွက် `0` ဖြင့် ချက်ချင်းရပ်တန့်သွားသောကြောင့် pinning mechanism နှင့် header ထုတ်ယူမှုတို့သည် provider အပေါ် မမူတည်ဘဲ အသုံးပြုနိုင်ပြီးဖြစ်သော်လည်း TTL ဆက်တင် (နှင့် session header များ) သည် အခြားမည်သည့်နေရာတွင်မျှ သက်ရောက်မှုမရှိခဲ့ပါ။ ပြင်ဆင်မှုတွင် ထို early-return ကို ဖယ်ရှားခဲ့သည်။ ယခု TTL ကို global တန်ဖိုး `0` အထက် သတ်မှတ်လိုက်သည်နှင့် provider တိုင်းတွင် တစ်ပြေးညီ အသုံးပြုသည်။
+#7274 မတိုင်မီ `resolveSessionAffinityTtlMs()` သည် `codex` မှလွဲ၍ provider အားလုံးအတွက် `0` သို့ ချက်ချင်းရပ်တန့်ပြန်ပို့ခဲ့သောကြောင့် pinning mechanism နှင့် header ထုတ်ယူမှုတို့က provider အပေါ် မမှီခိုဘဲ ရှိနှင့်ပြီးဖြစ်သော်လည်း TTL ဆက်တင် (နှင့် session header များ) သည် အခြားမည်သည့်နေရာတွင်မျှ သက်ရောက်မှုမရှိခဲ့ပါ။ ပြင်ဆင်မှုက အဆိုပါ early-return ကို ဖယ်ရှားခဲ့သည်။ ယခုအခါ TTL ကို globally `0` အထက် သတ်မှတ်ပြီးသည်နှင့် provider အားလုံးတွင် တစ်ပြေးညီ သက်ရောက်သည်။
 
-session-affinity header သုံးခုကို upstream သို့ မည်သည့်အခါမျှ forward မလုပ်ပါ — executor များသည် client header များကို တိုက်ရိုက်ပေးပို့မည့်အစား မိမိတို့၏ upstream header များကို အစမှ ပြန်လည်တည်ဆောက်သောကြောင့်၊ ၎င်းသည် internal correlation id အဖြစ်သာ ဆက်လက်တည်ရှိသည်။
+session-affinity header သုံးခုကို upstream သို့ မည်သည့်အခါမျှ forward မလုပ်ပါ — executor များသည် client header များကို တိုက်ရိုက်ဖြတ်သန်းပေးမည့်အစား ၎င်းတို့၏ကိုယ်ပိုင် upstream header များကို အစမှ ပြန်လည်တည်ဆောက်သောကြောင့် ၎င်းသည် internal correlation id အဖြစ်သာ ရှိနေသည်။
 
 ### သီးသန့် managed session ချိတ်ဆက်မှု lease များ
 
-**သက်ရောက်မှုနယ်ပယ်:** လက်ရှိအသုံးပြုနေသော managed HTTP client/session တစ်ခုက သတ်မှတ်ချက်နှင့်ကိုက်ညီသော OmniRoute ချိတ်ဆက်မှုတစ်ခုကို ပိုင်ဆိုင်သည်။
+**သက်ရောက်မှုနယ်ပယ်:** လက်ရှိအသုံးပြုနေသော managed HTTP client/session တစ်ခုက အရည်အချင်းပြည့်မီသော OmniRoute ချိတ်ဆက်မှုတစ်ခုကို ပိုင်ဆိုင်သည်။
 
 **ရည်ရွယ်ချက်:** request များတစ်လျှောက် တင်းကျပ်သော routing
-fence လိုအပ်သည့် client များအတွက် ရေရှည်တည်တံ့သော သီးသန့်ချိတ်ဆက်မှု ပိုင်ဆိုင်ခွင့်ကို ပေးရန်။ ၎င်းသည် ပျော့ပြောင်းသော continuity ဦးစားပေးမှုဖြစ်သည့် session affinity နှင့် ကွာခြားသည်:
-သီးသန့် lease တစ်ခုသည် lifecycle state ကို SQLite တွင် သိမ်းဆည်းထားပြီး၊ global active-owner နှင့်
-active-connection တစ်မျိုးစီသာ ရှိနိုင်စေရန် အတည်ပြုကာ provider dispatch မပြုမီ stale generation ကို ငြင်းပယ်သည်။
+အတားအဆီး လိုအပ်သည့် client များအတွက် ကြာရှည်တည်တံ့သော သီးသန့်ချိတ်ဆက်မှုပိုင်ဆိုင်ခွင့်ကို ပေးရန်။ ၎င်းသည် soft continuity preference ဖြစ်သည့် session affinity နှင့် ကွာခြားသည်-
+သီးသန့် lease တစ်ခုသည် lifecycle state ကို SQLite တွင် အမြဲတမ်းသိမ်းဆည်းထားပြီး global active-owner နှင့်
+active-connection တစ်ခုတည်းသာရှိမှုကို အတည်ပြုစေကာ provider dispatch မတိုင်မီ stale generation ကို ငြင်းပယ်သည်။
 
-ဤ feature သည် API key တစ်ခုစီအလိုက် မိမိဆန္ဒဖြင့် ဖွင့်သုံးရသည်။ managed key တစ်ခုတွင် `lease:exclusive` scope နှင့်
-ဗလာမဟုတ်သော `allowedConnections` list ကို အတိအလင်း ထည့်သွင်းထားရမည်။ မည်သည့် HTTP client မဆို lifecycle endpoint ကို အသုံးပြုနိုင်ပြီး၊
-client အမည်၊ user-agent၊ provider၊ OAuth method သို့မဟုတ် model မလိုအပ်ပါ။ lease သည် model တစ်ခုကိုမဟုတ်ဘဲ ချိတ်ဆက်မှုတစ်ခုကို ပိုင်ဆိုင်သောကြောင့်
-ချိတ်ဆက်မှုသည် ပုံမှန်အတိုင်း သတ်မှတ်ချက်နှင့်ကိုက်ညီနေသရွေ့ model ပြောင်းလဲခြင်းက binding ကို ဆက်လက်ထိန်းသိမ်းထားသည်။
-ပုံမှန် model၊ quota၊ health၊ cooldown နှင့် allowlist စည်းမျဉ်းများသည် ဆက်လက်အာဏာသက်ရောက်ပြီး
-တူညီသော generation ကို အခြားလွတ်လပ်၍ သတ်မှတ်ချက်နှင့်ကိုက်ညီသည့် ချိတ်ဆက်မှုသို့ ပြောင်းလဲနိုင်သည်။
+ဤလုပ်ဆောင်ချက်ကို API key တစ်ခုစီအလိုက် ရွေးချယ်ဖွင့်ရသည်။ managed key တစ်ခုတွင် `lease:exclusive` scope နှင့်
+အလွတ်မဟုတ်သော `allowedConnections` စာရင်းကို တိတိကျကျ သတ်မှတ်ထားရမည်။ မည်သည့် HTTP client မဆို lifecycle endpoint ကို အသုံးပြုနိုင်သည်။
+client name၊ user-agent၊ provider၊ OAuth method သို့မဟုတ် model မလိုအပ်ပါ။ lease သည် model ကိုမဟုတ်ဘဲ ချိတ်ဆက်မှုတစ်ခုကို ပိုင်ဆိုင်သောကြောင့် ချိတ်ဆက်မှုသည် ပုံမှန်အတိုင်း
+အရည်အချင်းပြည့်မီနေသရွေ့ model ပြောင်းလဲမှုသည် ချိတ်ဆက်ထားမှုကို ဆက်လက်ထိန်းသိမ်းထားသည်။ ပုံမှန် model၊ quota၊ health၊ cooldown နှင့် allowlist စည်းမျဉ်းများသည် ဆက်လက်အာဏာသက်ရောက်ပြီး
+တူညီသော generation ကို အခြားလွတ်နေသည့် အရည်အချင်းပြည့်မီသော ချိတ်ဆက်မှုသို့ ပြောင်းနိုင်သည်။
 
-lifecycle သည် JSON action များဖြစ်သော `acquire`, `renew` နှင့် `release` ပါဝင်သည့် `POST /api/v1/session-leases` ဖြစ်သည်။
-Managed inference request များသည် ဖတ်ရှု၍အဓိပ္ပာယ်ကောက်ယူမရသော `X-OmniRoute-Lease-Owner` တန်ဖိုးနှင့် အတိအကျဖြစ်သော
-`X-OmniRoute-Lease-Generation` ကို ပေးပို့သည်။ owner သည် `vlo_` နောက်တွင် base64url character 43 လုံးကို အသုံးပြုသည်။ ၎င်း၏
-SHA-256 hash ကိုသာ သိမ်းဆည်းသည်။ နောက်ဆုံး dispatch fence တစ်ခုစီသည် အတည်ပြုထားသော API key ID နှင့်
-လက်ရှိအသုံးပြုနေသော ချိတ်ဆက်မှု ID တို့ကိုလည်း ချိတ်ဆက်သတ်မှတ်သည်။ Lease control header များကို log များ၊ သိမ်းဆည်းထားသော request snapshot များနှင့်
+lifecycle သည် JSON action များဖြစ်သော `acquire`၊ `renew` နှင့် `release` တို့ပါဝင်သည့် `POST /api/v1/session-leases` ဖြစ်သည်။
+managed inference request များသည် မထင်ရှားသော `X-OmniRoute-Lease-Owner` တန်ဖိုးနှင့် အတိအကျဖြစ်သော
+`X-OmniRoute-Lease-Generation` ကို ပေးပို့သည်။ owner သည် `vlo_` နောက်တွင် base64url character 43 လုံးကို ထည့်သုံးသည်။
+၎င်း၏ SHA-256 hash ကိုသာ သိမ်းဆည်းသည်။ နောက်ဆုံး dispatch fence တစ်ခုစီသည် authenticated API key ID နှင့်
+active connection ID ကိုလည်း ချိတ်ဆက်ထားသည်။ Lease control header များကို log များ၊ သိမ်းဆည်းထားသော request snapshot များနှင့်
 upstream executor header များမှ ဖယ်ရှားထားသည်။
 
-ပုံမှန် routing တွင် သတ်မှတ်ချက်နှင့်ကိုက်ညီသော managed candidate များရှိသော်လည်း လွတ်လပ်သော candidate အားလုံးကို
-အခြား active lease များက ပိုင်ဆိုင်ထားပါက OmniRoute သည် HTTP `429`၊ lease-capacity-unavailable code၊
-capacity စောင့်ဆိုင်းနေသည့် state နှင့် သက်ဆိုင်ရာ အစောဆုံး expiry မှ ရရှိသော ကန့်သတ်ထားသည့် `Retry-After` ကို ပြန်ပေးသည်။
-ပုံမှန် eligibility ဗလာဖြစ်ခြင်းသည် lease contention မဟုတ်သဖြင့် ၎င်း၏ လက်ရှိ routing error semantics ကို ဆက်လက်အသုံးပြုသည်။
+သာမန် routing တွင် အရည်အချင်းပြည့်မီသော managed candidate များရှိသော်လည်း လွတ်နေသည့် candidate အားလုံးကို
+အခြားသူပိုင် active lease များက အသုံးပြုထားလျှင် OmniRoute သည် HTTP `429`၊ lease-capacity-unavailable code၊
+စွမ်းရည်လွတ်လာရန် စောင့်ဆိုင်းနေသော state နှင့် သက်ဆိုင်ရာ အစောဆုံးသက်တမ်းကုန်ဆုံးချိန်မှ ဆင်းသက်လာသည့် အကန့်အသတ်ရှိသော `Retry-After` ကို ပြန်ပေးသည်။
+သာမန်အရည်အချင်းပြည့်မီမှု ဗလာဖြစ်ခြင်းသည် lease contention မဟုတ်ဘဲ လက်ရှိ routing error အဓိပ္ပာယ်သတ်မှတ်ချက်များကို ဆက်လက်ထားရှိသည်။
 
-ဆက်စပ် mechanism များသည် သီးခြားစီ ဆက်လက်တည်ရှိသည်:
+ဆက်စပ် mechanism များသည် သီးခြားစီ ဆက်လက်ရှိနေသည်-
 
 - OAuth session occupancy သည် OAuth account များအတွက် process-local soft distribution ဖြစ်သည်။
-- Account semaphore များသည် request-concurrency permit များကို ပေးပြီး request ပြီးဆုံးသောအခါ အဆုံးသတ်သည်။
-- သီးသန့် managed session lease များသည် generation fence ပါဝင်သော ရေရှည်တည်တံ့သည့် lifecycle ပိုင်ဆိုင်မှုဖြစ်သည်။
+- Account semaphore များသည် request-concurrency permit များကို ပေးပြီး request တစ်ခုပြီးဆုံးသည့်အခါ အဆုံးသတ်သည်။
+- သီးသန့် managed session lease များသည် generation fence ပါဝင်သော ကြာရှည်တည်တံ့သည့် lifecycle ပိုင်ဆိုင်မှုဖြစ်သည်။
 
 ---
 
 ## 3. မော်ဒယ် လော့ခ်ချခြင်း
 
-**သက်ရောက်မှုနယ်ပယ်:** provider + connection + model အတွဲသုံးခု။
+**သက်ရောက်မှုနယ်ပယ်:** provider + connection + model သုံးခုတွဲ။
 
-**ရည်ရွယ်ချက်:** မော်ဒယ်တစ်ခုတည်းကိုသာ အသုံးမပြုနိုင်ခြင်း သို့မဟုတ် quota ကန့်သတ်ခံရခြင်းဖြစ်သည့်အခါ connection တစ်ခုလုံးကို ပိတ်ခြင်းမှ ရှောင်ရှားရန်။
+**အခြေအနေအလိုက် key သက်ရောက်မှုနယ်ပယ်:** လော့ခ်ချမှုကို မည်သည့် key တွင် ရေးမည်ကို ပျက်ကွက်နေသည့် status က ဆုံးဖြတ်သည် (`open-sse/services/accountFallback/exactModelLock.ts` ရှိ `resolveLockoutScope()`):
+
+- `429` / `403` / `402` — quota သို့မဟုတ် အသုံးပြုခွင့်ဆိုင်ရာ အချက်ပြမှု — **quota family** ကို လော့ခ်ချသည်။ codex အတွက် connection ၏ `gpt-5*` model အားလုံးပါဝင်သည့် `codex` / `spark` scope တစ်ခုလုံး၊ အခြား provider များအတွက် `getQuotaScopedModelForProvider()`။
+- `404` သည် မူလ model ကို လော့ခ်ချသည် (`getModelLockKey()` က `not_found` ကို နယ်ပယ်ကျဉ်းစေသည်)။
+- အခြား status အားလုံး — `5xx` transport/server ပျက်ကွက်မှုများနှင့် quality validation မှ OmniRoute ကိုယ်တိုင် ဖန်တီးသည့် `502` — သည် **အတိအကျဖြစ်သော** provider/connection/model သုံးခုတွဲကိုသာ လော့ခ်ချသည်။ model တစ်ခုရှိ မကောင်းသော stream သည် account ၏ quota နှင့်ပတ်သက်သည့် အထောက်အထား မဟုတ်ပါ။ ဤစည်းမျဉ်း မရှိမီက `codex/gpt-5.6-luna` ရှိ အလွတ် response တစ်ခုကြောင့် quota ကို မထိခိုက်သော်လည်း ထို connection ၏ `gpt-5*` model အားလုံးကို routing မှ 2–30 min အထိ (အဆင့်ဆင့်တိုး၍) ဖယ်ရှားခဲ့သည်။
+- ခေါ်ယူသူက `scope` option ကို အတိအလင်း သတ်မှတ်ထားပါက ၎င်းကို အမြဲ ဦးစားပေးသည် (Antigravity က `"exact"` ကို ပေးပို့သည်)။
+
+**ရည်ရွယ်ချက်:** model တစ်ခုသာ မရနိုင်သည့်အခါ သို့မဟုတ် quota ကန့်သတ်ခံရသည့်အခါ connection တစ်ခုလုံးကို ပိတ်မိခြင်းမှ ရှောင်ရှားရန်။
 
 **ဥပမာများ:**
 
-- မော်ဒယ်တစ်ခုချင်းစီအလိုက် quota သတ်မှတ်ထားသော provider များက 429 ပြန်ပေးခြင်း
-- မော်ဒယ်တစ်ခု မရှိသည့်အတွက် local provider များက 404 ပြန်ပေးခြင်း
-- Provider အလိုက် mode/model ခွင့်ပြုချက် မအောင်မြင်မှုများ (ဥပမာ၊ Grok mode များ)
+- 429 ပြန်ပေးသည့် model တစ်ခုချင်းစီအလိုက် quota သတ်မှတ်ထားသော provider များ
+- ပျောက်ဆုံးနေသည့် model တစ်ခုအတွက် 404 ပြန်ပေးသည့် local provider များ
+- Provider အလိုက် mode/model အသုံးပြုခွင့် ပျက်ကွက်မှုများ (ဥပမာ၊ Grok mode များ)
 
-**အကောင်အထည်ဖော်မှု:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`။
+**အကောင်အထည်ဖော်ထားမှု:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`။
 
-### မော်ဒယ် Cooldown Dashboard (v3.8.0)
+### Model Cooldowns Dashboard (v3.8.0)
 
 UI: Settings → Model Cooldowns (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-လက်ရှိအသုံးဝင်နေသော lockout များကို အောက်ပါအချက်များနှင့် စာရင်းပြုစုထားသည်- provider၊ connection၊ model၊ reason၊ expiresAt။ Operator များသည် card မှတစ်ဆင့် မော်ဒယ်တစ်ခုကို ကိုယ်တိုင် ပြန်လည်ဖွင့်နိုင်သည်။
+လက်ရှိ အသက်ဝင်နေသော lockout များကို provider, connection, model, reason, expiresAt တို့နှင့်အတူ စာရင်းပြုစုဖော်ပြသည်။ Operator များသည် card မှ model တစ်ခုကို ကိုယ်တိုင် ပြန်လည်ဖွင့်နိုင်သည်။
 
 **REST API:**
 
-- `GET /api/resilience/model-cooldowns` — လက်ရှိအသုံးဝင်နေသော lockout များကို စာရင်းပြုစုရန်
+- `GET /api/resilience/model-cooldowns` — လက်ရှိ အသက်ဝင်နေသော lockout များကို စာရင်းပြုစုရန်
 - `DELETE /api/resilience/model-cooldowns` — ကိုယ်တိုင် ပြန်လည်ဖွင့်ရန်။ Body: `{provider, connection, model}`။ Auth: management။
 
-### Lockout ဆက်တင် UI + အောင်မြင်မှုအလိုက် လျော့ကျသည့် ပြန်လည်ကောင်းမွန်ရေး (v3.8.23)
+### Lockout ဆက်တင် UI + အောင်မြင်မှုအလိုက် တဖြည်းဖြည်းပြန်လည်ရယူခြင်း (v3.8.23)
 
-မော်ဒယ် lockout သည် အမြဲဖွင့်ထားသော hardcoded လုပ်ဆောင်ချက်မှ ကိုယ်ပိုင်ဆက်တင် card နှင့် အလိုအလျောက် ပြန်လည်ကောင်းမွန်နိုင်သည့် လမ်းကြောင်းပါသော၊ အပြည့်အဝ ပြင်ဆင်သတ်မှတ်နိုင်ပြီး ကိုယ်တိုင်ဖွင့်ရသည့် လုပ်ဆောင်ချက်တစ်ခုအဖြစ် ပြောင်းလဲခဲ့သည်။
+Model lockout ကို အမြဲဖွင့်ထားသည့် hardcoded လုပ်ဆောင်ပုံမှ ကိုယ်ပိုင် settings card နှင့် မိမိဘာသာ ပြန်လည်ကောင်းမွန်နိုင်သည့် recovery လမ်းကြောင်းပါဝင်သော၊ အပြည့်အဝ ပြင်ဆင်သတ်မှတ်နိုင်ပြီး ရွေးချယ်ဖွင့်ရသည့် feature အဖြစ် ပြောင်းလဲခဲ့သည်။
 
-**ဆက်တင် card:** Settings → Model Lockout
+**Settings card:** Settings → Model Lockout
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`)။
-၎င်းသည် အထက်ပါ read-only `ModelCooldownsCard` နှင့် **သီးခြားဖြစ်သည်** (၎င်းက လက်ရှိအသုံးဝင်နေသော lockout များကိုသာ
-_စာရင်းပြုစုသည်_) — card အသစ်က _parameter များကို ပြင်ဆင်သတ်မှတ်ပေးသည်_။ ပုံသေတန်ဖိုးများကို
-`DEFAULT_MODEL_LOCKOUT_SETTINGS`
-(`src/lib/resilience/modelLockoutSettings.ts`) တွင် ထားရှိသည်-
+၎င်းသည် အထက်ပါ ဖတ်ရှုရန်သာဖြစ်သော `ModelCooldownsCard` (လက်ရှိ အသက်ဝင်နေသော lockout များကိုသာ _စာရင်းပြုစုဖော်ပြသည်_) နှင့် **သီးခြားဖြစ်သည်** — card အသစ်က _parameter များကို ပြင်ဆင်သတ်မှတ်ပေးသည်_။ Default တန်ဖိုးများသည် `DEFAULT_MODEL_LOCKOUT_SETTINGS`
+(`src/lib/resilience/modelLockoutSettings.ts`) တွင် ရှိသည်-
 
-| ဆက်တင်                  | ပုံသေတန်ဖိုး                     | အဓိပ္ပာယ်                                                                                      |
-| ----------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `enabled`               | `false`                          | ပင်မအဖွင့်အပိတ် — မော်ဒယ် lockout ကို **ပုံသေအားဖြင့် ပိတ်ထားသည်**။                            |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | မော်ဒယ်အဆင့် မအောင်မြင်မှုအဖြစ် သတ်မှတ်မည့် upstream status များ။                              |
-| `baseCooldownMs`        | `120_000` (120 s)                | ပထမဆုံးမအောင်မြင်မှုအတွက် ကနဦး lockout ကြာချိန်။                                               |
-| `maxCooldownMs`         | `1_800_000` (30 min)             | တိုးမြှင့်ထားသော cooldown ၏ အမြင့်ဆုံးကန့်သတ်ချက်။                                             |
-| `maxBackoffSteps`       | `10`                             | Exponential-backoff တိုးမြှင့်မှုအဆင့်များ၏ အများဆုံးအရေအတွက်။                                 |
-| `useExponentialBackoff` | `true`                           | ထပ်တလဲလဲ မအောင်မြင်မှုများက cooldown ကို exponential ပုံစံဖြင့် တိုးမြှင့်မည်၊ မတိုးမြှင့်မည်။ |
+| ဆက်တင်                  | Default                          | အဓိပ္ပာယ်                                                                                  |
+| ----------------------- | -------------------------------- | ------------------------------------------------------------------------------------------ |
+| `enabled`               | `false`                          | အဓိက toggle — model lockout ကို **default အနေဖြင့် ပိတ်ထားသည်**။                           |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Model နယ်ပယ်အလိုက် ပျက်ကွက်မှုအဖြစ် ရေတွက်သော upstream status များ။                        |
+| `baseCooldownMs`        | `120_000` (120 s)                | ပထမဆုံး ပျက်ကွက်မှုအတွက် ကနဦး lockout ကြာချိန်။                                            |
+| `maxCooldownMs`         | `1_800_000` (30 min)             | အဆင့်ဆင့်တိုးသည့် cooldown ၏ အများဆုံး ကန့်သတ်ချက်။                                        |
+| `maxBackoffSteps`       | `10`                             | Exponential-backoff အဆင့်တိုးမှု၏ အများဆုံး အဆင့်အရေအတွက်။                                 |
+| `useExponentialBackoff` | `true`                           | ထပ်တလဲလဲ ပျက်ကွက်မှုများကြောင့် cooldown ကို exponential ပုံစံဖြင့် တိုးစေမည်၊ မတိုးစေမည်။ |
 
-ဆက်တင်များကို ပုံမှန် settings store မှတစ်ဆင့် အမြဲတမ်းသိမ်းဆည်းထားပြီး
-resilience settings schema မှတစ်ဆင့် မှန်ကန်မှုစစ်ဆေးသည်။ Card သည် `baseCooldownMs`/`maxCooldownMs`
-ကို (`maxCooldownMs ≥ baseCooldownMs` ဖြစ်စေပြီး) ကန့်သတ်ပေးသကဲ့သို့ `maxBackoffSteps` ကိုလည်း ကန့်သတ်ပေးသည်။
+ဆက်တင်များကို ပုံမှန် settings store မှတစ်ဆင့် သိမ်းဆည်းထားပြီး resilience settings schema ဖြင့် အတည်ပြုစစ်ဆေးသည်။ Card သည် `baseCooldownMs`/`maxCooldownMs`
+(`maxCooldownMs ≥ baseCooldownMs` ဖြစ်စေ၍) နှင့် `maxBackoffSteps` ကို ခွင့်ပြုထားသော အတိုင်းအတာအတွင်း ကန့်သတ်ပေးသည်။
 
-**အောင်မြင်မှုအလိုက် လျော့ကျသည့် ပြန်လည်ကောင်းမွန်ရေး:** ပြန်လည်ကောင်းမွန်မှုသည် timer သက်တမ်းကုန်ဆုံးမှုသက်သက် **မဟုတ်ပါ**။ ကောင်းမွန်သော
-တုံ့ပြန်မှုတစ်ခုသည် မော်ဒယ်၏ မအောင်မြင်မှုအရေအတွက်ကို တဖြည်းဖြည်း ပြန်လျှော့ချပေးသဖြင့်
-အချိန်ကာလအလယ်တွင် ပြန်လည်ကောင်းမွန်လာသော မော်ဒယ်သည် ၎င်း၏ timer မကုန်ဆုံးမီ တိုးမြှင့်မှုရပ်တန့်ပြီး lockout ကို ရှင်းလင်းနိုင်သည်။ အောင်မြင်သော
-combo target တစ်ခုတွင် `open-sse/services/combo.ts` က `decayModelFailureCount()`
-(`open-sse/services/accountFallback.ts`) ကို ခေါ်ပြီး သိမ်းဆည်းထားသော
-`failureCount` ကို **တစ်ဝက်လျှော့သည်** (`Math.floor(failureCount / 2)`)။ ၎င်းသည် `0` သို့ရောက်သောအခါ lockout
-entry ကို အပြီးတိုင် ဖျက်ပစ်သည်။ ဆန့်ကျင်ဘက်ဖြစ်သော `recordModelLockoutFailure()` သည်
-escalation window အတွင်း မအောင်မြင်မှုများဖြစ်ပေါ်ပါက count ကို တိုးစေပြီး cooldown ကိုလည်း တိုးမြှင့်ပေးသည်။ ဤအောင်မြင်မှုအလိုက် လျော့ကျခြင်းသည် ပုံမှန် timer သက်တမ်းကုန်ဆုံးမှုအပြင် ထပ်ဆောင်းလုပ်ဆောင်ခြင်းဖြစ်သည် —
-လမ်းကြောင်းနှစ်ခုထဲမှ တစ်ခုခုက မော်ဒယ်ကို ပြန်လည်ဖွင့်နိုင်သည်။
+**အောင်မြင်မှုအလိုက် တဖြည်းဖြည်းပြန်လည်ရယူခြင်း:** recovery သည် timer သက်တမ်းကုန်ဆုံးမှုတစ်ခုတည်းအပေါ် **မမူတည်ပါ**။ အောင်မြင်ကောင်းမွန်သော response တစ်ခုသည် model ၏ failure count ကို တဖြည်းဖြည်း ပြန်လျှော့ပေးသောကြောင့် အချိန်ကာလအလယ်တွင် ပြန်လည်ကောင်းမွန်လာသည့် model သည် timer မကုန်ဆုံးမီ အဆင့်တိုးခြင်းကို ရပ်တန့်ပြီး lockout ကို ရှင်းလင်းနိုင်သည်။ အောင်မြင်သော combo target တစ်ခုတွင် `open-sse/services/combo.ts` သည် `decayModelFailureCount()`
+(`open-sse/services/accountFallback.ts`) ကို ခေါ်ပြီး သိမ်းဆည်းထားသော `failureCount` ကို **တစ်ဝက်လျှော့သည်** (`Math.floor(failureCount / 2)`)။ ၎င်းသည် `0` သို့ ရောက်သည့်အခါ lockout entry ကို လုံးဝဖျက်ပစ်သည်။ အပြန်အလှန်အားဖြင့် `recordModelLockoutFailure()` သည် escalation window အတွင်း ပျက်ကွက်မှုများ ဖြစ်ပေါ်ပါက count ကို တိုးပြီး cooldown ကို အဆင့်မြှင့်သည်။ ဤ success-decay သည် ပုံမှန် timer သက်တမ်းကုန်ဆုံးမှုအပြင် ထပ်ဆောင်း recovery နည်းလမ်းဖြစ်သည် — မည်သည့်လမ်းကြောင်းမဆို model တစ်ခုကို ပြန်လည်ဖွင့်နိုင်သည်။
 
-**အခြေအနေ:** lockout များကို DB တွင် အမြဲတမ်းသိမ်းဆည်းထားခြင်းမရှိဘဲ
-**in-memory** အဖြစ် (process တစ်ခုချင်းစီ၏ `Map` များတွင်
-`provider:connectionId:model` ဖြင့် key သတ်မှတ်ထားသော `ModelLockoutEntry` များအဖြစ်) ထိန်းသိမ်းထားသည် —
-restart လုပ်သည့်အခါ ၎င်းတို့ ပျောက်ဆုံးသွားမည်။ _ဆက်တင်များ_ ကို အမြဲတမ်းသိမ်းဆည်းထားသော်လည်း လက်ရှိအသုံးဝင်နေသော
-lockout _အခြေအနေ_ သည် ယာယီသာဖြစ်သည်။
+**State:** lockout များကို **memory အတွင်း၌သာ** ထိန်းသိမ်းထားသည် (`provider:connectionId:model` ဖြင့် key သတ်မှတ်ထားသော process တစ်ခုချင်းစီ၏ `ModelLockoutEntry` `Map` များ၊ `provider:connectionId:exact:model` ဖြင့် exact-scope lock များ)။ DB တွင် သိမ်းဆည်းထားခြင်း မရှိသဖြင့် restart လုပ်ပါက ပျောက်ဆုံးသွားမည်။ _Settings_ များကို သိမ်းဆည်းထားသော်လည်း လက်ရှိ အသက်ဝင်နေသော lockout _state_ သည် ယာယီသာဖြစ်သည်။
 
 ---
 
@@ -604,13 +596,14 @@ rate limit သည် ကုန်ဆုံးသွားသော quota နှ�
 
 ---
 
-## အမှားရှာဖွေခြင်း
+## အမှားရှာဖွေပြင်ဆင်ခြင်း
 
-- ပံ့ပိုးသူတစ်ခုအတွက် ကီးအားလုံးကို ကျော်သွားသည် → circuit breaker အခြေအနေနှင့် ချိတ်ဆက်မှုတစ်ခုစီ၏ `rateLimitedUntil`/`testStatus` နှစ်မျိုးစလုံးကို စစ်ဆေးပါ။
-- ပြန်လည်သတ်မှတ်ချိန်ကာလပြီးနောက် ပံ့ပိုးသူကို အမြဲတမ်းဖယ်ထုတ်ထားသည် → `getStatus()`/`canExecute()` အစား မူရင်း `state` ကို တိုက်ရိုက်ဖတ်နေသည့် ကုဒ်ရှိမရှိ စစ်ဆေးပါ။
-- ကီးတစ်ခု ပျက်ကွက်သော်လည်း အခြားကီးများ အလုပ်လုပ်သင့်သည် → circuit breaker အစား ချိတ်ဆက်မှု အနားပေးကာလကို ဦးစားပေးပါ။
-- မော်ဒယ်တစ်ခုသာ ပျက်ကွက်သည် → ချိတ်ဆက်မှု အနားပေးကာလအစား မော်ဒယ် ပိတ်ပင်မှုကို ဦးစားပေးပါ။
-- အခြေအနေသည် အလိုအလျောက် ပြန်လည်ကောင်းမွန်သင့်သော်လည်း မကောင်းမွန်ပါ → အနာဂတ် အချိန်တံဆိပ်နှင့် သက်တမ်းကုန်သွားသော အခြေအနေကို ပြန်လည်စတင်ပေးသည့် ဖတ်ရှုမှုလမ်းကြောင်း ရှိမရှိ စစ်ဆေးပါ။ အမြဲတမ်း အခြေအနေများကို လူကိုယ်တိုင် ပြောင်းလဲရန် လိုအပ်သည်။
+- Weighted combo က `503 all_targets_cooling_down` ဖြင့် တုံ့ပြန်သည် (`Retry-After` ကို သတ်မှတ်ထားပြီး `diagnostics.excluded` တွင် target တိုင်းကို `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable` နှင့်အတူ စာရင်းပြုထားသည်) → pool ကို configure လုပ်ပြီး ချိတ်ဆက်ထားသော်လည်း target တိုင်းကို resilience timer တစ်ခုကြောင့်သာ ဖယ်ထုတ်ထားခြင်းဖြစ်သည်။ `[COMBO] Weighted selection: every target excluded before dispatch — …` သတိပေးချက်တွင် အကြောင်းရင်းများနှင့် ကျန်ရှိနေသည့် စက္ကန့်များကို ဖော်ပြထားသည်။ အလားတူ combo မှ `404 no_executable_targets` ပြန်လာပါက resilience timer မပါဝင်ခဲ့ကြောင်း ဆိုလိုသည် (လုပ်ဆောင်ရန် ဘာမျှမရှိခြင်း သို့မဟုတ် account တိုင်းသည် availability probe ကို မအောင်မြင်ခြင်း)။ `targetResolution.ts` တွင် စုဆောင်းထားသော exclusions များမှ `open-sse/services/combo/pinRecovery.ts` တွင် ထည့်သွင်းတည်ဆောက်ထားသည်။
+- Provider တစ်ခုအတွက် key အားလုံးကို ကျော်သွားသည် → circuit breaker state နှင့် connection တစ်ခုချင်းစီ၏ `rateLimitedUntil`/`testStatus` နှစ်ခုစလုံးကို စစ်ဆေးပါ။
+- Reset window ပြီးနောက် provider ကို အမြဲတမ်း ဖယ်ထုတ်ထားသည် → code သည် `getStatus()`/`canExecute()` အစား raw `state` ကို ဖတ်နေခြင်း ဖြစ်နိုင်သည်။
+- Key တစ်ခု မအောင်မြင်သော်လည်း အခြား key များ အလုပ်လုပ်သင့်သည် → circuit breaker အစား connection cooldown ကို ဦးစားပေးပါ။
+- Model တစ်ခုတည်းသာ မအောင်မြင်သည် → connection cooldown အစား model lockout ကို ဦးစားပေးပါ။
+- State သည် အလိုအလျောက် ပြန်လည်ကောင်းမွန်သင့်သော်လည်း မကောင်းမွန်ပါ → အနာဂတ် timestamp နှင့် သက်တမ်းကုန်သွားသော state ကို refresh လုပ်ပေးသည့် read path ရှိမရှိ စစ်ဆေးပါ။ Permanent status များကို manual ပြောင်းလဲမှုများ ပြုလုပ်ရန် လိုအပ်သည်။
 
 ---
 

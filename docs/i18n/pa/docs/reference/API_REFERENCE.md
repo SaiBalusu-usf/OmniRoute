@@ -1612,21 +1612,21 @@ GET /.well-known/agent.json
 
 ## CLI ਟੂਲ ਪ੍ਰਬੰਧਨ
 
-OmniRoute ਨਾਲ ਏਕੀਕ੍ਰਿਤ ਹੋਣ ਵਾਲੇ CLI ਟੂਲਾਂ ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ (antigravity, chipotle, commandCode,
-devin-cli, ਆਦਿ)। ਪੂਰੀ ਸੂਚੀ ਲਈ [ਪ੍ਰਦਾਤਾ ਹਵਾਲਾ](./PROVIDER_REFERENCE.md) ਵੇਖੋ।
+OmniRoute ਨਾਲ ਏਕੀਕ੍ਰਿਤ ਹੋਣ ਵਾਲੇ CLI ਟੂਲਾਂ (antigravity, commandCode,
+devin-cli, ਆਦਿ) ਦਾ ਪ੍ਰਬੰਧਨ ਕਰੋ। ਪੂਰੀ ਸੂਚੀ ਲਈ [ਪ੍ਰਦਾਤਾ ਹਵਾਲਾ](./PROVIDER_REFERENCE.md) ਵੇਖੋ।
 
-| ਵਿਧੀ | ਪਾਥ                                     | ਵੇਰਵਾ                                                                                                                                                        |
-| ---- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| GET  | `/api/cli-tools/all-statuses`           | ਸਾਰੇ CLI ਟੂਲਾਂ ਦੀ ਸਥਿਤੀ (ਇੰਸਟਾਲ ਹੋਏ, ਵਰਜਨ, ਆਖਰੀ ਵਾਰ ਦੇਖੇ ਗਏ)                                                                                                 |
-| GET  | `/api/cli-tools/status`                 | ਇੱਕ CLI ਟੂਲ ਲਈ ਸਥਿਤੀ ਦਾ ਵੇਰਵਾ (`?tool=` ਕਿਊਰੀ)                                                                                                               |
-| POST | `/api/cli-tools/apply`                  | ਟੂਲ ਦੀ ਤਿਆਰ ਕੀਤੀ ਸੰਰਚਨਾ ਲਿਖੋ (`dryRun` ਪੂਰਵਦਰਸ਼ਨ ਕਰਦਾ ਹੈ; ਕੰਟੇਨਰਾਈਜ਼ਡ ਹੋਣ 'ਤੇ `422` + `containerEphemeralTarget`; `migration` ਪੁਰਾਣੀ Codex YAML ਦਰਸਾਉਂਦਾ ਹੈ) |
-| GET  | `/api/cli-tools/backups`                | CLI ਟੂਲ ਸੰਰਚਨਾ ਬੈਕਅੱਪਾਂ ਦੀ ਸੂਚੀ ਦਿਖਾਓ                                                                                                                        |
-| POST | `/api/cli-tools/backups`                | ਸਾਰੀਆਂ CLI ਟੂਲ ਸੰਰਚਨਾਵਾਂ ਦਾ ਬੈਕਅੱਪ ਬਣਾਓ                                                                                                                      |
-| POST | `/api/cli-tools/backups`                | ਰੀਸਟੋਰ ਕਰੋ: ਬਾਡੀ ਵਿੱਚ `{tool, backupId}` ਦੇ ਨਾਲ ਇਹੀ ਐਂਡਪੌਇੰਟ ਉਸ ਬੈਕਅੱਪ ਨੂੰ ਰੀਸਟੋਰ ਕਰਦਾ ਹੈ                                                                    |
-| GET  | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM ਪ੍ਰੌਕਸੀ ਦੀ ਸਥਿਤੀ ("antigravity-mitm" CLI ਟੂਲ)                                                                                               |
-| POST | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm ਉਪਨਾਮਾਂ ਦੀ ਸੰਰਚਨਾ ਕਰੋ                                                                                                                       |
+| ਢੰਗ  | ਪਾਥ                                     | ਵੇਰਵਾ                                                                                                                                                                        |
+| ---- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET  | `/api/cli-tools/all-statuses`           | ਸਾਰੇ CLI ਟੂਲਾਂ ਦੀ ਸਥਿਤੀ (ਇੰਸਟਾਲ ਹੋਏ, ਵਰਜਨ, ਆਖਰੀ ਵਾਰ ਦੇਖੇ ਗਏ)                                                                                                                 |
+| GET  | `/api/cli-tools/status`                 | ਇੱਕ CLI ਟੂਲ ਦੀ ਵਿਸਤ੍ਰਿਤ ਸਥਿਤੀ (`?tool=` ਕਵੇਰੀ)                                                                                                                               |
+| POST | `/api/cli-tools/apply`                  | ਕਿਸੇ ਟੂਲ ਦੀ ਬਣਾਈ ਗਈ ਸੰਰਚਨਾ ਲਿਖੋ (`dryRun` ਪੂਰਵ-ਝਲਕ ਦਿਖਾਉਂਦਾ ਹੈ; ਕੰਟੇਨਰ ਵਿੱਚ ਹੋਣ 'ਤੇ `422` + `containerEphemeralTarget`; `migration` ਪੁਰਾਣੀ Codex YAML ਬਾਰੇ ਜਾਣਕਾਰੀ ਦਿੰਦਾ ਹੈ) |
+| GET  | `/api/cli-tools/backups`                | CLI ਟੂਲ ਸੰਰਚਨਾ ਬੈਕਅੱਪਾਂ ਦੀ ਸੂਚੀ ਦਿਖਾਓ                                                                                                                                        |
+| POST | `/api/cli-tools/backups`                | ਸਾਰੀਆਂ CLI ਟੂਲ ਸੰਰਚਨਾਵਾਂ ਦਾ ਬੈਕਅੱਪ ਬਣਾਓ                                                                                                                                      |
+| POST | `/api/cli-tools/backups`                | ਮੁੜ-ਬਹਾਲੀ: ਬਾਡੀ ਵਿੱਚ `{tool, backupId}` ਦੇ ਨਾਲ ਇਹੀ ਐਂਡਪੌਇੰਟ ਉਸ ਬੈਕਅੱਪ ਨੂੰ ਮੁੜ-ਬਹਾਲ ਕਰਦਾ ਹੈ                                                                                   |
+| GET  | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM ਪ੍ਰੌਕਸੀ ਦੀ ਸਥਿਤੀ (`antigravity-mitm` CLI ਟੂਲ)                                                                                                               |
+| POST | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm ਉਪਨਾਮ ਸੰਰਚਿਤ ਕਰੋ                                                                                                                                            |
 
-**ਪ੍ਰਮਾਣੀਕਰਨ:** ਪ੍ਰਬੰਧਨ ਸੈਸ਼ਨ ਦੀ ਲੋੜ ਹੈ।
+**ਪ੍ਰਮਾਣੀਕਰਨ:** ਪ੍ਰਬੰਧਨ ਸੈਸ਼ਨ ਲੋੜੀਂਦਾ ਹੈ।
 
 ---
 

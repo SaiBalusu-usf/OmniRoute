@@ -1596,23 +1596,23 @@ GET /.well-known/agent.json
 
 ---
 
-## CLI ટૂલ્સનું વ્યવસ્થાપન
+## CLI ટૂલ્સનું સંચાલન
 
-OmniRoute સાથે સંકલિત થતા CLI ટૂલ્સનું વ્યવસ્થાપન કરો (antigravity, chipotle, commandCode,
-devin-cli, વગેરે). સંપૂર્ણ સૂચિ માટે [પ્રદાતા સંદર્ભ](./PROVIDER_REFERENCE.md) જુઓ.
+OmniRoute સાથે સંકલિત થતા CLI ટૂલ્સ (antigravity, commandCode,
+devin-cli વગેરે)નું સંચાલન કરો. સંપૂર્ણ સૂચિ માટે [પ્રદાતા સંદર્ભ](./PROVIDER_REFERENCE.md) જુઓ.
 
-| પદ્ધતિ | પાથ                                     | વર્ણન                                                                                                                                                                 |
-| ------ | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | તમામ CLI ટૂલ્સની સ્થિતિ (ઇન્સ્ટોલ થયેલ, વર્ઝન, છેલ્લે જોવામાં આવેલ)                                                                                                   |
-| GET    | `/api/cli-tools/status`                 | એક CLI ટૂલ માટે સ્થિતિની વિગતો (`?tool=` ક્વેરી)                                                                                                                      |
-| POST   | `/api/cli-tools/apply`                  | ટૂલનું જનરેટ કરેલું કૉન્ફિગ લખો (`dryRun` પૂર્વાવલોકન કરે છે; કન્ટેનરાઇઝ્ડ હોય ત્યારે `422` + `containerEphemeralTarget`; `migration` લેગસી Codex YAMLની નોંધ કરે છે) |
-| GET    | `/api/cli-tools/backups`                | CLI ટૂલ કૉન્ફિગરેશન બૅકઅપ્સની સૂચિ મેળવો                                                                                                                              |
-| POST   | `/api/cli-tools/backups`                | તમામ CLI ટૂલ કૉન્ફિગરેશન્સનો બૅકઅપ બનાવો                                                                                                                              |
-| POST   | `/api/cli-tools/backups`                | પુનઃસ્થાપિત કરો: બોડીમાં `{tool, backupId}` સાથે એ જ એન્ડપોઇન્ટ તે બૅકઅપને પુનઃસ્થાપિત કરે છે                                                                         |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM પ્રૉક્સીની સ્થિતિ ("antigravity-mitm" CLI ટૂલ)                                                                                                       |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm ઉપનામોને કૉન્ફિગર કરો                                                                                                                                |
+| પદ્ધતિ | પાથ                                     | વર્ણન                                                                                                                                                                    |
+| ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET    | `/api/cli-tools/all-statuses`           | તમામ CLI ટૂલ્સની સ્થિતિ (ઇન્સ્ટોલ થયેલ, વર્ઝન, છેલ્લે જોવામાં આવેલ સમય)                                                                                                  |
+| GET    | `/api/cli-tools/status`                 | એક CLI ટૂલ માટેની વિગતવાર સ્થિતિ (`?tool=` ક્વેરી)                                                                                                                       |
+| POST   | `/api/cli-tools/apply`                  | ટૂલનું જનરેટ કરેલું કૉન્ફિગ લખે છે (`dryRun` પૂર્વાવલોકન કરે છે; કન્ટેનરાઇઝ્ડ હોય ત્યારે `422` + `containerEphemeralTarget`; `migration` લેગસી Codex YAMLની નોંધ કરે છે) |
+| GET    | `/api/cli-tools/backups`                | CLI ટૂલ કૉન્ફિગરેશન બૅકઅપ્સની સૂચિ આપે છે                                                                                                                                |
+| POST   | `/api/cli-tools/backups`                | તમામ CLI ટૂલ કૉન્ફિગરેશન્સનો બૅકઅપ બનાવે છે                                                                                                                              |
+| POST   | `/api/cli-tools/backups`                | પુનઃસ્થાપન: બોડીમાં `{tool, backupId}` સાથેનો સમાન એન્ડપોઇન્ટ તે બૅકઅપને પુનઃસ્થાપિત કરે છે                                                                              |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM પ્રૉક્સીની સ્થિતિ ("antigravity-mitm" CLI ટૂલ)                                                                                                          |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm ઉપનામો કૉન્ફિગર કરે છે                                                                                                                                  |
 
-**પ્રમાણીકરણ:** મેનેજમેન્ટ સત્ર જરૂરી છે.
+**પ્રમાણીકરણ:** મેનેજમેન્ટ સત્ર આવશ્યક છે.
 
 ---
 

@@ -4,7 +4,7 @@
 
 ---
 
-> **Pe scurt**: OmniRoute înregistrează 352 de ID-uri de furnizori, cu **152 de intrări în catalogul furnizorilor marcate `hasFree`**. Catalogul auditat mai strict al modelelor gratuite acoperă **34 de chei recurente pentru pool-uri / 443 de intrări** (436 active + 7 retrase). Conectați mai mulți furnizori potriviți pentru o capacitate de rezervă mai mare; toate cotele, regulile de aprobare, politicile de confidențialitate și condițiile privind depășirile contra cost continuă să se aplice.
+> **Pe scurt**: OmniRoute înregistrează 357 de ID-uri de furnizor, cu **152 de intrări în catalogul furnizorilor marcate `hasFree`**. Catalogul auditat mai strict al modelelor gratuite acoperă **35 de chei recurente de grup / 482 de intrări** (475 active + 7 retrase). Conectați mai mulți furnizori adecvați pentru o capacitate de rezervă mai extinsă; toate cotele, regulile de aprobare, politicile de confidențialitate și condițiile privind depășirile contra cost rămân aplicabile.
 
 ---
 
@@ -160,19 +160,19 @@ cota sau politica de acces a unui furnizor.
 
 ## Calculul nivelului gratuit
 
-Catalogul live, cu deduplicare la nivel de pool, raportează în prezent:
+Catalogul live, cu deduplicare la nivel de grup, raportează în prezent:
 
-| Metrică                                                          |                                     Valoare auditată curentă | Interpretare                                                                                                                                                           |
-| ---------------------------------------------------------------- | -----------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Alocare cuantificată recurentă                                   |                                 **~1,47 mld. tokenuri/lună** | Pool-urile partajate sunt numărate o singură dată; furnizorii fără limită nu sunt incluși în sumă                                                                      |
-| Prima lună cu alocări la înregistrare                            |                                      **~2,07 mld. tokenuri** | Totalul recurent plus creditele acordate o singură dată și cele recurente                                                                                              |
-| Inventar auditat de modele gratuite                              | **34 de chei de pool recurente / 443 de intrări în catalog** | 436 active + 7 retrase; distinct de catalogul cu 352 de furnizori                                                                                                      |
-| Furnizori recurenți/fără cheie, gratuiți permanent, reprezentați |                                                       **52** | Furnizori unici din categoriile de catalog recurente zilnice/lunare/pe bază de credite/fără limită și fără cheie; rândurile condiționate de eligibilitate sunt excluse |
-| Intrări din catalogul de furnizori marcate `hasFree`             |                                                **152 / 352** | Metadate mai ample despre furnizori; nu toate au o cotă recurentă cuantificabilă                                                                                       |
+| Metrică                                                          |                                     Valoare auditată actuală | Interpretare                                                                                                                                                        |
+| ---------------------------------------------------------------- | -----------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Alocare recurentă cuantificată                                   |                                     **~1.62B tokenuri/lună** | Grupurile partajate sunt numărate o singură dată; furnizorii fără limită sunt excluși din sumă                                                                      |
+| Prima lună, cu alocările de la înregistrare                      |                                          **~2.22B tokenuri** | Totalul recurent plus creditele unice și recurente                                                                                                                  |
+| Inventarul auditat de modele gratuite                            | **35 de chei de grup recurente / 482 de intrări în catalog** | 475 active + 7 retrase; diferit de catalogul cu 357 de furnizori                                                                                                    |
+| Furnizori recurenți/fără cheie, gratuiți permanent, reprezentați |                                                       **53** | Furnizori unici din tipurile de catalog recurente zilnice/lunare/pe bază de credite/fără limită și fără cheie; rândurile condiționate de eligibilitate sunt excluse |
+| Intrări din catalogul de furnizori marcate cu `hasFree`          |                                                **152 / 357** | Metadate mai ample despre furnizori; nu toate au o cotă recurentă cuantificabilă                                                                                    |
 
 Aceste valori sunt calculate din `open-sse/config/freeModelCatalog.ts`; consultați
-[Referința nivelurilor gratuite](../reference/FREE_TIERS.md) pentru deduplicarea pool-urilor, marcajele ToS,
-intrările retrase și metodologia privind creditele acordate la înregistrare.
+[Referința nivelurilor gratuite](../reference/FREE_TIERS.md) pentru deduplicarea grupurilor, marcajele ToS,
+intrările retrase și metodologia creditelor acordate la înregistrare.
 
 ---
 

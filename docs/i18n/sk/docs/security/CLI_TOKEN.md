@@ -6,49 +6,59 @@
 
 ## Prehľad
 
-Príkazy OmniRoute CLI sa autentifikujú voči lokálnemu správcovskému API pomocou
-tokenu `HMAC-SHA256(machine-id, salt)` odosielaného prostredníctvom hlavičky
-požiadavky `x-omniroute-cli-token`.
+Príkazy OmniRoute CLI sa autentifikujú voči lokálnemu API na správu pomocou tokenu
+`HMAC-SHA256(machine-id, salt)` odoslaného v hlavičke požiadavky
+`x-omniroute-cli-token`.
 
-Vďaka tomu môžu podpríkazy CLI (`omniroute status`, `omniroute providers` atď.)
-volať správcovské koncové body bez toho, aby používateľ musel pri každom spustení
+To umožňuje podpríkazom CLI (`omniroute status`, `omniroute providers` atď.)
+volať koncové body správy bez toho, aby používateľ musel pri každom spustení
 zadávať JWT alebo heslo.
 
 ## Ako to funguje
 
-1. `getMachineTokenSync()` načíta hardvérový identifikátor zariadenia pomocou
-   `node-machine-id` (v prípade zlyhania použije prázdny reťazec, čím vypne
-   autentifikáciu CLI).
+1. `getMachineTokenSync()` načíta hardvérové ID zariadenia prostredníctvom `node-machine-id`
+   (pri zlyhaní použije prázdny reťazec, čím deaktivuje autentifikáciu CLI).
 2. Vypočíta `HMAC-SHA256(machine_id, salt)` a vráti úplný 64-znakový
-   hexadecimálny odtlačok — deterministický, nevratný token viazaný na toto
-   zariadenie.
-3. CLI odošle token ako `x-omniroute-cli-token` iba vtedy, keď je výsledným cieľom
-   explicitná adresa URL spätnej slučky (`localhost`, `127.0.0.0/8` alebo IPv6
-   spätnej slučky). Požiadavky obsahujúce token používajú `redirect: error`, takže
-   lokálne presmerovanie ho nemôže preposlať na iný pôvod. Vzdialené kontexty
-   namiesto toho používajú prístupové tokeny s obmedzeným rozsahom. Ak odvodenie
-   nie je dostupné, CLI hlavičku vynechá a `omniroute doctor` nahlási zlyhanie
-   namiesto toho, aby prázdny token považoval za platný.
-4. Server (`src/server/authz/policies/management.ts`) prepočíta očakávaný token
-   s rovnakým saltom a porovná ho pomocou `timingSafeEqual`, aby zabránil jeho
-   získaniu na základe časovania.
+   hexadecimálny súhrn — deterministický, nevratný token viazaný na toto zariadenie.
+3. CLI odošle token ako `x-omniroute-cli-token` iba vtedy, keď je určeným
+   cieľom explicitná adresa URL spätnej slučky (`localhost`, `127.0.0.0/8` alebo
+   IPv6 spätnej slučky). Požiadavky obsahujúce token používajú `redirect: error`,
+   takže lokálne presmerovanie ho nemôže preposlať na iný zdroj. Vzdialené kontexty
+   namiesto neho používajú prístupové tokeny s obmedzeným rozsahom. Ak odvodenie
+   nie je dostupné, CLI vynechá hlavičku a `omniroute doctor` ohlási zlyhanie
+   namiesto toho, aby považoval prázdny token za platný.
+4. Server (`src/server/authz/policies/management.ts`) opätovne vypočíta
+   očakávaný token s rovnakou soľou a porovná ho pomocou `timingSafeEqual`,
+   aby zabránil jeho získaniu na základe časovania.
 
 ## Bezpečnostné vlastnosti
 
-| Vlastnosť                         | Podrobnosti                                                                                                                                                                                                         |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Iba spätná slučka**             | Akceptuje sa iba vtedy, keď dôveryhodná značka lokality partnera na serveri (odvodená zo skutočnej adresy partnera TCP) označuje spätnú slučku. Klientom ovládaná hlavička `Host` sa na určenie lokality nepoužíva. |
-| **Porovnanie v konštantnom čase** | `crypto.timingSafeEqual` zabraňuje útokom založeným na časovaní.                                                                                                                                                    |
-| **Nevratnosť**                    | Z výstupu HMAC nie je možné získať machine-id.                                                                                                                                                                      |
-| **Bez obídenia ochrany `always`** | `isAlwaysProtectedPath()` sa vyhodnotí pred kontrolou tokenu CLI. `/api/shutdown` a `/api/settings/database` vždy vyžadujú JWT.                                                                                     |
-| **Neexportovateľnosť**            | Token sa nikdy nezapisuje na disk ani do protokolov.                                                                                                                                                                |
+| Vlastnosť                         | Podrobnosti                                                                                                                                                                                                                                                |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Iba spätná slučka**             | Akceptuje sa iba vtedy, keď dôveryhodná serverová značka lokality rovnocenného uzla (odvodená zo skutočnej TCP adresy rovnocenného uzla) označuje spätnú slučku. Klientom ovládaná hlavička `Host` sa na určenie lokality nikdy nepovažuje za dôveryhodnú. |
+| **Porovnanie v konštantnom čase** | `crypto.timingSafeEqual` zabraňuje útokom založeným na časovaní.                                                                                                                                                                                           |
+| **Nevratnosť**                    | Z výstupu HMAC nemožno obnoviť ID zariadenia.                                                                                                                                                                                                              |
+| **Bez obídenia ochrany `always`** | `isAlwaysProtectedPath()` sa vyhodnotí pred kontrolou tokenu CLI. `/api/shutdown` a `/api/settings/database` vždy vyžadujú JWT.                                                                                                                            |
+| **Neexportovateľnosť**            | Token sa nikdy nezapisuje na disk ani nezaznamenáva do protokolov.                                                                                                                                                                                         |
 
-## Rotácia saltu
+## Predvolená soľ (náhodná pre každú inštaláciu)
 
-Nastavením `OMNIROUTE_CLI_SALT` môžete odvodený token zmeniť bez úprav kódu.
-Po rotácii budú všetky procesy CLI na tomto zariadení automaticky používať nový
-token. Je to užitočné po úniku zoznamu procesov, ktorý mohol odhaliť predchádzajúcu
-odvodenú hodnotu.
+Keď `OMNIROUTE_CLI_SALT` nie je nastavená, soľ je náhodný 64-znakový hexadecimálny
+reťazec, ktorý sa vygeneruje raz a uloží do `<DATA_DIR>/cli-token-salt.json`
+(režim `0600`) — nejde o reťazec `omniroute-cli-auth-v1` uložený v repozitári.
+Funkcia `getActiveSalt()` v `src/lib/machineToken.ts` aj jej zrkadlová implementácia
+v `bin/cli/utils/cliToken.mjs` čítajú rovnaký súbor, takže server a každé spustenie
+CLI v tejto inštalácii používajú rovnakú hodnotu. Reťazec uložený v repozitári sa
+použije iba ako núdzová záložná hodnota, keď zatiaľ nemožno získať uloženú soľ ani
+soľ z prostredia (napríklad pri čerstvej inštalácii obsahujúcej iba CLI, pred prvým
+spustením servera). Tým sa odstraňuje slabina starého predvoleného pevného reťazca:
+`/etc/machine-id` je bežne čitateľný pre všetkých používateľov, takže ktorýkoľvek
+lokálny používateľ by inak mohol odvodiť rovnaký token pre každú inštaláciu, ktorá
+nikdy nenastavila `OMNIROUTE_CLI_SALT`.
+
+## Rotácia soli
+
+Nastavte `OMNIROUTE_CLI_SALT`, aby ste zmenili odvodený token bez zmien kódu — táto hodnota má vždy prednosť pred uloženou soľou pre konkrétnu inštaláciu. Po rotácii budú všetky procesy CLI na tomto počítači automaticky používať nový token. Je to užitočné po úniku zoznamu procesov, ktorý mohol odhaliť predchádzajúcu odvodenú hodnotu.
 
 ```bash
 # Trvalá rotácia (pridajte do profilu shellu)
@@ -58,37 +68,33 @@ export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 omniroute status
 ```
 
-Predvolený salt: `omniroute-cli-auth-v1`
+## Starší formát (SHA-256, 32 znakov) — stále akceptovaný
 
-## Starší formát (SHA-256, 32-znakový) — stále sa akceptuje
-
-Pred zavedením vyššie uvedeného formátu HMAC odvodzovalo CLI svoj token ako
-`SHA-256(machineId + salt).hex[0..32]` (32-znakový prefix) v súbore
+Pred vyššie uvedeným formátom HMAC odvodzovalo CLI svoj token ako
+`SHA-256(machineId + salt).hex[0..32]` (32-znakový prefix) v
 `bin/cli/utils/cliToken.mjs` (`getLegacyCliTokenSync` v `src/lib/machineToken.ts`).
 
-Z dôvodu spätnej kompatibility server akceptuje **oba** formáty: overovateľ zostaví
+Pre spätnú kompatibilitu server akceptuje **oba** formáty: overovací mechanizmus zostaví
 `expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` a porovná
-prichádzajúcu hlavičku s každým z nich pomocou `timingSafeEqual`
+prichádzajúcu hlavičku s každou hodnotou pomocou `timingSafeEqual`
 (`src/server/authz/policies/management.ts` a `src/lib/middleware/cliTokenAuth.ts`).
-Token je teda platný, ak sa zhoduje **buď** so 64-znakovým odtlačkom HMAC, alebo
-s 32-znakovým prefixom staršieho formátu SHA-256.
+Token je teda platný, ak sa zhoduje **buď** so 64-znakovým digestom HMAC, alebo s 32-znakovým
+starším prefixom SHA-256.
 
-**Vypnutie:** nastavením `OMNIROUTE_DISABLE_CLI_TOKEN=true` (v prostredí alebo
-v `.env`) úplne vypnete mechanizmus tokenu CLI; každý prístup potom vyžaduje
-explicitný kľúč API. Na hostiteľoch s viacerými používateľmi sa to odporúča,
-pretože `machine-id` je špecifický pre zariadenie (nie pre používateľa) a iný
-používateľ na rovnakom hostiteľovi by mohol vypočítať rovnaký token.
+**Vypnutie:** nastavte `OMNIROUTE_DISABLE_CLI_TOKEN=true` (v prostredí alebo súbore `.env`), aby ste mechanizmus tokenu CLI úplne vypli; každý prístup potom vyžaduje explicitný kľúč API. Na hostiteľoch s viacerými používateľmi sa to odporúča, pretože `machine-id` je špecifické pre zariadenie (nie pre používateľa) a iný používateľ na rovnakom hostiteľovi by mohol vypočítať rovnaký token.
 
 ## Súbory
 
-| Súbor                                     | Účel                                                 |
-| ----------------------------------------- | ---------------------------------------------------- |
-| `src/lib/machineToken.ts`                 | Odvodenie tokenu (`getMachineTokenSync`)             |
-| `src/server/authz/headers.ts`             | Konštanta `CLI_TOKEN_HEADER`                         |
-| `src/server/authz/policies/management.ts` | Overenie na strane servera                           |
-| `src/server/authz/routeGuard.ts`          | Kontrola hostiteľa spätnej slučky (`isLoopbackHost`) |
+| Súbor                                     | Účel                                              |
+| ----------------------------------------- | ------------------------------------------------- |
+| `src/lib/machineToken.ts`                 | Odvodenie tokenu (`getMachineTokenSync`)          |
+| `bin/cli/utils/cliToken.mjs`              | Zrkadlová implementácia rovnakého odvodenia v CLI |
+| `<DATA_DIR>/cli-token-salt.json`          | Uložená náhodná soľ pre konkrétnu inštaláciu      |
+| `src/server/authz/headers.ts`             | Konštanta `CLI_TOKEN_HEADER`                      |
+| `src/server/authz/policies/management.ts` | Overenie na strane servera                        |
+| `src/server/authz/routeGuard.ts`          | Kontrola lokálneho hostiteľa (`isLoopbackHost`)   |
 
 ## Pozrite tiež
 
 - `docs/security/ROUTE_GUARD_TIERS.md` — úrovne ochrany trás
-- `docs/architecture/AUTHZ_GUIDE.md` — úplný proces autorizácie
+- `docs/architecture/AUTHZ_GUIDE.md` — kompletný proces autorizácie

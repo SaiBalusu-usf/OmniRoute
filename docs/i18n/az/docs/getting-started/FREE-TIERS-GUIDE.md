@@ -4,7 +4,7 @@
 
 ---
 
-> **Qısa xülasə**: OmniRoute 352 provayder ID-sini qeydiyyatdan keçirir və onların **152 provayder kataloqu qeydi `hasFree` kimi işarələnib**. Daha sərt auditdən keçirilmiş pulsuz model kataloqu **34 təkrarlanan hovuz açarını / 443 qeydi** (436 aktiv + 7 dayandırılmış) əhatə edir. Daha geniş ehtiyat keçid imkanları üçün bir neçə uyğun provayderi qoşun; bütün kvotalar, təsdiq qaydaları, məxfilik siyasətləri və ödənişli limit aşımı şərtləri qüvvədə qalır.
+> **Qısa xülasə**: OmniRoute 357 provayder ID-sini qeydiyyata alır və **provayder kataloqundakı 152 qeyd `hasFree` ilə işarələnib**. Daha ciddi şəkildə audit edilmiş pulsuz model kataloqu **35 təkrarlanan hovuz açarını / 482 qeydi** (475 aktiv + 7 dayandırılmış) əhatə edir. Daha geniş ehtiyat keçid imkanları üçün bir neçə uyğun provayderi qoşun; bütün kvotalar, təsdiq qaydaları, məxfilik siyasətləri və ödənişli limit aşımı şərtləri qüvvədə qalır.
 
 ---
 
@@ -158,19 +158,19 @@ giriş siyasətindən yayınmaq üçün əlavə hesablar yaratmayın.
 
 ---
 
-## Pulsuz Səviyyə Hesablaması
+## Pulsuz Səviyyə Hesablamaları
 
-Canlı, hovuzlar üzrə dublikatları aradan qaldırılmış kataloq hazırda aşağıdakı göstəriciləri təqdim edir:
+Canlı, hovuzlar üzrə dublikatları aradan qaldırılmış kataloq hazırda aşağıdakıları göstərir:
 
-| Göstərici                                                    |                           Cari audit edilmiş dəyər | Şərh                                                                                                                                    |
-| ------------------------------------------------------------ | -------------------------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Təkrarlanan kəmiyyətlə ölçülmüş kvota                        |                                **~1.47B token/ay** | Paylaşılan hovuzlar bir dəfə hesablanıb; limitsiz provayderlər cəmə daxil edilməyib                                                     |
-| Qeydiyyat kvotaları ilə ilk ay                               |                                   **~2.07B token** | Təkrarlanan ümumi həcm, üstəgəl birdəfəlik və təkrarlanan kreditlər                                                                     |
-| Audit edilmiş pulsuz model inventarı                         | **34 təkrarlanan hovuz açarı / 443 kataloq qeydi** | 436 aktiv + 7 dayandırılmış; 352 provayderlik kataloqdan fərqlidir                                                                      |
-| Təqdim edilən təkrarlanan/açarsız həmişə pulsuz provayderlər |                                             **52** | Təkrarlanan gündəlik/aylıq/kredit/limitsiz və açarsız kataloq növləri üzrə unikal provayderlər; uyğunluq şərtli sətirlər istisna edilib |
-| `hasFree` ilə işarələnmiş provayder kataloq qeydləri         |                                      **152 / 352** | Daha geniş provayder metadatası; hamısında kəmiyyətlə ölçülə bilən təkrarlanan kvota yoxdur                                             |
+| Metrika                                                       |                           Cari audit edilmiş dəyər | Şərh                                                                                                                                    |
+| ------------------------------------------------------------- | -------------------------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Təkrarlanan, kəmiyyətlə ifadə edilmiş kvota                   |                                **~1.62B token/ay** | Ortaq hovuzlar bir dəfə hesablanıb; limitsiz provayderlər cəmdən çıxarılıb                                                              |
+| Qeydiyyat kvotaları ilə ilk ay                                |                                   **~2.22B token** | Təkrarlanan cəm, üstəgəl birdəfəlik və təkrarlanan kreditlər                                                                            |
+| Audit edilmiş pulsuz model inventarı                          | **35 təkrarlanan hovuz açarı / 482 kataloq qeydi** | 475 aktiv + 7 dayandırılmış; 357 provayderlik kataloqdan fərqlidir                                                                      |
+| Təqdim olunan təkrarlanan/açarsız, həmişə pulsuz provayderlər |                                             **53** | Təkrarlanan gündəlik/aylıq/kredit/limitsiz və açarsız kataloq növləri üzrə unikal provayderlər; uyğunluq şərtli sətirlər istisna edilib |
+| `hasFree` ilə işarələnmiş provayder kataloqu qeydləri         |                                      **152 / 357** | Daha geniş provayder metadatası; hamısının kəmiyyətlə ifadə edilə bilən təkrarlanan kvotası yoxdur                                      |
 
-Bu dəyərlər `open-sse/config/freeModelCatalog.ts` faylından hesablanır; hovuzların dublikatlarının aradan qaldırılması, ToS bayraqları,
+Bu dəyərlər `open-sse/config/freeModelCatalog.ts` faylından hesablanır; hovuzlar üzrə dublikatların aradan qaldırılması, ToS işarələri,
 dayandırılmış qeydlər və qeydiyyat krediti metodologiyası üçün
 [Pulsuz Səviyyələr üzrə İstinad](../reference/FREE_TIERS.md) sənədinə baxın.
 

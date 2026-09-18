@@ -4,7 +4,7 @@
 
 ---
 
-> **Özet**: OmniRoute, **`hasFree` olarak işaretlenmiş 152 sağlayıcı kataloğu girdisiyle** birlikte 352 sağlayıcı kimliği kaydeder. Daha sıkı biçimde denetlenmiş ücretsiz model kataloğu, **34 yinelenen havuz anahtarını / 443 girdiyi** (436 etkin + 7 kullanımdan kaldırılmış) kapsar. Daha geniş yedek kapasite için uygun birkaç sağlayıcıyı bağlayın; tüm kota, onay kuralı, gizlilik politikası ve ücretli aşım koşulları geçerliliğini korur.
+> **Kısaca**: OmniRoute, **`hasFree` olarak işaretlenmiş 152 sağlayıcı kataloğu girdisiyle** 357 sağlayıcı kimliği kaydeder. Daha sıkı şekilde denetlenmiş ücretsiz model kataloğu, **35 yinelenen havuz anahtarını / 482 girdiyi** (475 etkin + 7 kullanımdan kaldırılmış) kapsar. Daha geniş yedek kapasitesi için uygun birkaç sağlayıcıyı bağlayın; tüm kota, onay kuralı, gizlilik politikası ve ücretli kota aşımı koşulları geçerliliğini korur.
 
 ---
 
@@ -160,19 +160,19 @@ erişim politikasını aşmak amacıyla ek hesaplar oluşturmayın.
 
 ## Ücretsiz Katman Hesaplaması
 
-Canlı, havuz bazında yinelenenleri ayıklanmış katalog şu anda şunları bildiriyor:
+Canlı, havuz bazında yinelenen kayıtları kaldırılmış katalog şu anda şunları bildiriyor:
 
-| Metrik                                                            |                              Güncel denetlenmiş değer | Yorum                                                                                                                                               |
-| ----------------------------------------------------------------- | ----------------------------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Yinelenen, nicelendirilmiş tahsisat                               |                                   **~1.47B token/ay** | Paylaşılan havuzlar bir kez sayılmıştır; sınırsız sağlayıcılar toplama dahil edilmemiştir                                                           |
-| Kayıt tahsisatlarıyla birlikte ilk ay                             |                                      **~2.07B token** | Yinelenen toplamın yanı sıra tek seferlik ve yinelenen krediler                                                                                     |
-| Denetlenmiş ücretsiz model envanteri                              | **34 yinelenen havuz anahtarı / 443 katalog girdisi** | 436 etkin + 7 kullanımdan kaldırılmış; 352 sağlayıcılı katalogdan farklıdır                                                                         |
-| Temsil edilen yinelenen/anahtarsız, süresiz ücretsiz sağlayıcılar |                                                **52** | Yinelenen günlük/aylık/kredi/sınırsız ve anahtarsız katalog türlerindeki benzersiz sağlayıcılar; uygunluk koşuluna bağlı satırlar hariç tutulmuştur |
-| `hasFree` olarak işaretlenmiş sağlayıcı kataloğu girdileri        |                                         **152 / 352** | Daha kapsamlı sağlayıcı meta verileri; tümünün nicelendirilebilir yinelenen kotası yoktur                                                           |
+| Metrik                                                            |                              Güncel denetlenmiş değer | Yorum                                                                                                                                        |
+| ----------------------------------------------------------------- | ----------------------------------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Yinelenen nicelendirilmiş tahsisat                                |                                   **~1.62B token/ay** | Paylaşılan havuzlar bir kez sayılır; sınırsız sağlayıcılar toplama dahil edilmez                                                             |
+| Kayıt tahsisatlarıyla ilk ay                                      |                                      **~2.22B token** | Yinelenen toplam ile tek seferlik ve yinelenen kredilerin toplamı                                                                            |
+| Denetlenmiş ücretsiz model envanteri                              | **35 yinelenen havuz anahtarı / 482 katalog girdisi** | 475 etkin + 7 kullanımdan kaldırılmış; 357 sağlayıcılı katalogdan farklıdır                                                                  |
+| Temsil edilen yinelenen/anahtarsız, süresiz ücretsiz sağlayıcılar |                                                **53** | Yinelenen günlük/aylık/kredi/sınırsız ve anahtarsız katalog türlerindeki benzersiz sağlayıcılar; uygunluk koşullu satırlar hariç tutulmuştur |
+| `hasFree` olarak işaretlenen sağlayıcı katalog girdileri          |                                         **152 / 357** | Daha geniş sağlayıcı meta verileri; tümünün nicelendirilebilir yinelenen kotası yoktur                                                       |
 
-Bu değerler `open-sse/config/freeModelCatalog.ts` dosyasından hesaplanmıştır; havuz bazında yinelenenleri ayıklama, kullanım şartları işaretleri,
+Bu değerler `open-sse/config/freeModelCatalog.ts` dosyasından hesaplanır; havuz bazında yinelenen kayıtların kaldırılması, ToS işaretleri,
 kullanımdan kaldırılmış girdiler ve kayıt kredisi metodolojisi için
-[Ücretsiz Katmanlar Referansı](../reference/FREE_TIERS.md) bölümüne bakın.
+[Ücretsiz Katmanlar Referansı](../reference/FREE_TIERS.md) belgesine bakın.
 
 ---
 

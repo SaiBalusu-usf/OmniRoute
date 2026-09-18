@@ -9,46 +9,48 @@
 > **Ìwádìí tó ṣẹ̀ṣẹ̀ parí:** 2026-06-17 — ìwádìí wẹ́ẹ̀bù fún olùpèsè kọ̀ọ̀kan (àwọn àkọsílẹ̀ ìfẹ̀sẹ̀múlẹ̀ + ìròyìn ọjọ́ méje tó kọjá, àyẹ̀wò aṣojú 50 pẹ̀lú ìmúdájú alátakò) láti sọ gbogbo ìwọ̀n ìpele-ọ̀fẹ́ + ToS di tuntun. **Àtúnyẹ̀wò apá kan 2026-09-02** (`gemini`, `ollama-cloud`, `groq`, `nara`, `mistral` — wo àkọsílẹ̀ onídéètì ní ìsàlẹ̀).
 > **Orísun òtítọ́ (àkójọ):** `open-sse/config/freeModelCatalog.ts` (àwọn ìwọ̀n fún MODEL kọ̀ọ̀kan, tí a yọ àtúnkà àkójọpọ̀ kúrò). Àwọn iye ìwọ̀n tọ́kìn ní ìsàlẹ̀ wá láti inú ìwádìí wẹ́ẹ̀bù aláàyè, wọ́n sì jẹ́ **ìṣírò ìsúnmọ́** — wo [Ọ̀nà ìṣèwádìí & àwọn àkíyèsí](#methodology--caveats).
 
-## TL;DR — iye ìṣirò AI ọ̀fẹ́ mélòó ni OmniRoute ń kó jọ ní tòótọ́?
+## TL;DR — ìwọ̀n inference ọ̀fẹ́ mélòó ni OmniRoute ń kó jọ ní tòótọ́?
 
-| Ìwọ̀n                                         | Tọ́kìn / oṣù         | Ìtumọ̀                                                                                                                                                                                                                                                                                                             |
-| -------------------------------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Ìpínlẹ̀ àtúnwá tí a ṣàkọsílẹ̀ (títẹ̀síwájú)** | **~1.47B**          | Àwọn **àkójọpọ̀** ìpele-ọ̀fẹ́ (àkójọ fún model kọ̀ọ̀kan), tí a ka àkójọpọ̀ pínpín kọ̀ọ̀kan **lẹ́ẹ̀kan ṣoṣo**. Èyí ni orísun aláàyè tó wà lẹ́yìn `/api/free-tier/summary` àti ojúewé Ìwọ̀n Ìpele-Ọ̀fẹ́ lórí dashboard. **Lo iye yìí.**                                                                                           |
-| **+ oṣù àkọ́kọ́ pẹ̀lú kírẹ́díìtì ìforúkọsílẹ̀**   | **~2.07B**          | Ìpínlẹ̀ títẹ̀síwájú + àwọn kírẹ́díìtì ìforúkọsílẹ̀ ẹ̀ẹ̀kan ṣoṣo (Z.AI 20M, DeepSeek 5M, …), tí a yọ àtúnkà rẹ̀ kúrò fún account kọ̀ọ̀kan. **Fún oṣù àkọ́kọ́ nìkan** — kò ní tún wá.                                                                                                                                          |
-| **+ ọ̀fẹ́ títí láé, kò sí ààlà tí a tẹ̀ jáde**  | _kò ṣeé fi iye kan_ | `siliconflow`, `glm-cn` (GLM-4-Flash), `tencent`, `baidu`, `kilo-gateway`, `opencode-zen`, `gemini`, `ollama-cloud` — ààyè lílò àtúnwá gidi, tí oṣùwọ̀n/ìṣiṣẹ́pọ̀ ní ẹ̀ẹ̀kan fi ààlà sí, **kò sí ààlà tọ́kìn láti kà**. A ṣe àkójọ wọn, a kò sì ṣàpapọ̀ wọn láéláé (kíka wọn gẹ́gẹ́ bí `RPM×24/7` ni ìfúnkún iye tí a kọ̀). |
-| **+ ìgbélárugẹ tí ìdépósítì ṣí sílẹ̀**        | **+~24M**           | Àfikún owó OpenRouter **$10** ẹ̀ẹ̀kan ṣoṣo ń gbé àkójọpọ̀ ọ̀fẹ́ rẹ̀ láti 50 → 1000 request/ọjọ́. A jabo rẹ̀ lọ́tọ̀ kí ó má bàa mú iye títẹ̀síwájú pọ̀ ju bó ṣe yẹ lọ.                                                                                                                                                         |
-| **+ lẹ́yìn àyẹ̀wò ìdánimọ̀ agbègbè**            | **+~6M**            | `modelscope` (ìsopọ̀ Alibaba Cloud + ìmúdájú orúkọ gidi ní ilẹ̀ China). Ìwọ̀n àtúnwá gidi, tí a ṣí síta gẹ́gẹ́ bí `gatedRecurringTokens` / `gatedProviders` àti lórí dashboard. A kò ṣàpapọ̀ rẹ̀ mọ́ àkọlé pàtàkì láéláé: +~6M lẹ́yìn ìmúdájú ìdánimọ̀ agbègbè.                                                             |
-| Òrùlé ìṣirò àbáyọ (gbogbo ààlà oṣùwọ̀n, 24/7) | ~10B                | Àpapọ̀ gbogbo ààlà oṣùwọ̀n olùpèsè tí a gbooro sí lílò láìdáwọ́ dúró. **Kì í ṣe ìlérí** — má ṣe fi èyí ṣe àkọlé pàtàkì.                                                                                                                                                                                              |
+| Ìwọ̀n                                                | Tókẹ́ẹ̀nù / oṣù           | Ìtumọ̀                                                                                                                                                                                                                                                                                                                 |
+| --------------------------------------------------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Ìpín tí a ṣàkọsílẹ̀ pé ó ń tún wá (dídúróṣinṣin)** | **~1.62B**              | **Àkójọpọ̀** ipele-ọ̀fẹ́ (kátálọ́ọ̀gù fún awoṣe kọ̀ọ̀kan), a ka àkójọpọ̀ tí wọ́n ń pín pọ̀ kọ̀ọ̀kan **lẹ́ẹ̀kan ṣoṣo**. Orísun aláàyè tó wà lẹ́yìn `/api/free-tier/summary` àti ojú-ìwé Free-Tier Budget lórí dashboard. **Lo nọ́mbà yìí.**                                                                                            |
+| **+ oṣù àkọ́kọ́ pẹ̀lú kírẹ́díìtì ìforúkọsílẹ̀**          | **~2.22B**              | Dídúróṣinṣin + àwọn kírẹ́díìtì ìforúkọsílẹ̀ ẹ̀ẹ̀kan ṣoṣo (Z.AI 20M, DeepSeek 5M, …), tí a ti yọ àtúnka kúrò fún àkọọ́lẹ̀ kọ̀ọ̀kan. **Oṣù àkọ́kọ́ nìkan** — kò ní tún wá.                                                                                                                                                        |
+| **+ ọ̀fẹ́ títí láé, kò sí òpin tí a tẹ̀ jáde**         | _kò ṣeé fi iye lé lórí_ | `siliconflow`, `glm-cn` (GLM-4-Flash), `tencent`, `baidu`, `kilo-gateway`, `opencode-zen`, `gemini`, `ollama-cloud` — ààyè lílò gidi tó ń tún wá, tí iye ìbéèrè/ìṣiṣẹ́pọ̀ lẹ́ẹ̀kan náà fi òpin sí, **kò sí òpin tókẹ́ẹ̀nù láti kà**. A tò wọ́n sílẹ̀, a kì í ṣe àròpọ̀ wọn láé (kíka wọn ní `RPM×24/7` ni ìfọnká iye tí a kọ̀). |
+| **+ ìgbéga tí ìdọ́pọ̀ owó ń ṣí sílẹ̀**                 | **+~24M**               | Fífún OpenRouter ní owó **$10** lẹ́ẹ̀kan ṣoṣo ń gbé àkójọpọ̀ ọ̀fẹ́ rẹ̀ láti ìbéèrè 50 → 1000/ọjọ́. A ròyìn rẹ̀ lọ́tọ̀ kí ó má bàa fi ìfọnká kún nọ́mbà dídúróṣinṣin náà.                                                                                                                                                         |
+| **+ lẹ́yìn àyẹ̀wò ìdánimọ̀ agbègbè kan**               | **+~6M**                | `modelscope` (ìsopọ̀ Alibaba Cloud + ìjẹ́rìísí orúkọ gidi ti ilẹ̀ China). Ìpín tó ń tún wá gidi, tí a ṣí síta gẹ́gẹ́ bí `gatedRecurringTokens` / `gatedProviders` àti lórí dashboard. A kì í fi kún akọlé àkọ́kọ́ láé: +~6M lẹ́yìn ìjẹ́rìísí ìdánimọ̀ agbègbè.                                                                  |
+| Òrùlé àfojúsùn (gbogbo òpin ìwọ̀n, 24/7)             | ~10B                    | Àròpọ̀ gbogbo òpin ìwọ̀n olùpèsè tí a fa gùn sí lílò láìdáwọ́ dúró. **Kì í ṣe ìdánilójú** — má ṣe fi èyí ṣe akọlé àkọ́kọ́.                                                                                                                                                                                                 |
 
-**Àkọlé olóòótọ́:** _OmniRoute ń kó **~1.47B tọ́kìn ọ̀fẹ́ tí a ṣàkọsílẹ̀ ní oṣù kan** jọ (títí dé ~2.07B ní oṣù àkọ́kọ́ rẹ pẹ̀lú àwọn kírẹ́díìtì ìforúkọsílẹ̀) láti inú àkójọpọ̀ ìpele-ọ̀fẹ́ 34 — pẹ̀lú ọ̀pọ̀ àwọn olùpèsè ọ̀fẹ́-títí-láé tí kò ní ààlà ní ẹ̀yìn rẹ̀ — RTK + ìfúnpọ̀ Caveman (ìfipamọ́ tọ́kìn 15–95%) sì ń mú un gùn sí i._
+**Akọlé òtítọ́:** _OmniRoute ń kó **~1.62B tókẹ́ẹ̀nù ọ̀fẹ́ tí a ṣàkọsílẹ̀ jọ lóṣooṣù** (títí dé ~2.22B ní oṣù àkọ́kọ́ rẹ pẹ̀lú àwọn kírẹ́díìtì ìforúkọsílẹ̀) káàkiri àwọn àkójọpọ̀ ipele-ọ̀fẹ́ 35 — pẹ̀lú ọ̀pọ̀ àwọn olùpèsè ọ̀fẹ́ títí láé tí kò ní òpin — RTK + Caveman compression (ìfipamọ́ tókẹ́ẹ̀nù 15–95%) sì ń mú un gùn síwájú sí i._
 
-> **Ìdí tí èyí fi dín kù láti ~1.94B tẹ́lẹ̀.** Ìmúdójúìwọ̀n 2026-06-17 jẹ́ àtúnṣe fún òtítọ́, kì í ṣe àdánù: a ti yọ àtúnkà àkójọpọ̀ kúrò fún `gemini` báyìí (a ti mú iye rẹ̀ pọ̀ ju bó ṣe yẹ lọ tẹ́lẹ̀ nípa kíka ẹ̀yà Flash kọ̀ọ̀kan lọ́tọ̀, 462M → 60M), a ṣàtúnṣe `cloudflare-ai` sí iye gidi rẹ̀ ti 10k-Neurons/ọjọ́ (122M → 30M), a tún pín `doubao` sí ẹ̀ka kírẹ́díìtì ìforúkọsílẹ̀ ẹ̀ẹ̀kan ṣoṣo (kì í ṣe àtúnwá), a sì yọ àwọn ìpele tí wọ́n ti dá dúró (`chutes`/`phind`/`kluster` ti parí). `llm7` (iye tó tọ́ 5M/ọjọ́ → 150M) àti àwọn olùpèsè ọ̀fẹ́ tuntun (Kilo, OpenCode Zen, Z.AI GLM-Flash) dín àbájáde yìí kù díẹ̀.
+> **Ìdí tí èyí fi dín kù láti ~1.94B ti tẹ́lẹ̀.** Ìmúdójúìwọ̀n 2026-06-17 jẹ́ àtúnṣe fún òtítọ́, kì í ṣe àdánù: a ti yọ àtúnkà àkójọpọ̀ `gemini` kúrò báyìí (tẹ́lẹ̀, iye rẹ̀ pọ̀ ju bó ṣe yẹ lọ nítorí a ka ọ̀kọ̀ọ̀kan irú Flash lọ́tọ̀, 462M → 60M), a ṣàtúnṣe `cloudflare-ai` sí 10k-Neurons/ọjọ́ gidi rẹ̀ (122M → 30M), a tún pín `doubao` sí kírẹ́díìtì ìforúkọsílẹ̀ ẹ̀ẹ̀kan ṣoṣo (kì í ṣe èyí tó ń tún wá), a sì yọ àwọn ipele tí a ti dáwọ́ dúró (`chutes`/`phind`/`kluster` tí a ti fòpin sí). `llm7` (5M/ọjọ́ tó tọ́ → 150M) àti àwọn olùpèsè ọ̀fẹ́ tuntun (Kilo, OpenCode Zen, Z.AI GLM-Flash) díẹ̀ lára ìdínkù náà padà.
 >
-> **A tún ṣàtúnṣe rẹ̀ sí ~1.37B nínú v3.8.42:** a tún pín `longcat` láti inú ìpínlẹ̀ àtúnwá 150M/oṣù sí kírẹ́díìtì ìforúkọsílẹ̀ 10M ẹ̀ẹ̀kan ṣoṣo lẹ́yìn tí àkókò àfihàn ọ̀fẹ́ rẹ̀ parí. Òfin òtítọ́ kan náà — kò sí olùpèsè tí a yọ kúrò ní àṣìṣe.
+> **A tún ṣàtúnṣe sí ~1.37B nínú v3.8.42:** a tún pín `longcat` láti inú ìpín 150M/oṣù tó ń tún wá sí kírẹ́díìtì ìforúkọsílẹ̀ 10M ẹ̀ẹ̀kan ṣoṣo lẹ́yìn tí àfihàn ọ̀fẹ́ rẹ̀ parí. Òfin òtítọ́ kan náà — a kò yọ olùpèsè kankan kúrò nípasẹ̀ àṣìṣe.
 >
-> **A mú un dójú ìwọ̀n ní 2026-08-26 lẹ́yìn fífi Felo Web sílẹ̀:** A yọ Felo Web kúrò nígbà tí orísun GPL/ìwé-àṣẹ rẹ̀ ṣì wà ní HOLD; orísun náà jabo pool key 38 ní àkókò náà. Iye àkójọpọ̀ náà jẹ́ aláàyè, CI sì ń ṣọ́ ọ (`check:docs-counts` máa mú build kùnà bí àwọn iye tó wà lókè bá yà kúrò ní `computeFreeModelTotals()`).
+> **A ṣe ìmúdójúìwọ̀n ní 2026-08-26 lẹ́yìn fífi Felo Web sílẹ̀:** A yọ Felo Web sílẹ̀ nígbà tí orísun/ìwé-àṣẹ rẹ̀ tí a mú láti GPL ṣì wà ní HOLD; orísun náà ròyìn àwọn kọ́kọ́rọ́ àkójọpọ̀ 38 ní àkókò náà. Ìkà àkójọpọ̀ náà jẹ́ aláàyè, CI sì ń ṣọ́ ọ (`check:docs-counts` yóò mú build kùnà bí àwọn nọ́mbà òkè bá yà kúrò ní `computeFreeModelTotals()`).
 >
-> **A tún ṣàyẹ̀wò ní 2026-09-02 pẹ̀lú àwọn ojúewé àwọn olùpèsè fúnra wọn** (àwọn orísun: àwọn comment `// evidence:` lẹ́gbẹ̀ẹ́ entry kọ̀ọ̀kan tí a tún ṣàyẹ̀wò nínú `open-sse/config/freeModelCatalog.data.ts`): `gemini` àti `ollama-cloud` kò tẹ iye tọ́kìn jáde mọ́ (Google yọ tábìlì ọ̀fẹ́ fún model kọ̀ọ̀kan ní 2025-12-23; ètò Free ti Ollama jẹ́ "starter usage credits"), a sì ti ṣe àkójọ wọn báyìí gẹ́gẹ́ bí **aláìláàlà**, a kò ṣàpapọ̀ wọn láéláé (−80M); `groq` ní ààlà **fún model kọ̀ọ̀kan** márùn-ún ti 200K-TPD (6M kọ̀ọ̀kan, +15M), a sì yọ ID mẹ́ta tí a ti dáwọ́ dúró; `nara` jẹ́ àpò kan ti 7M/ọjọ́ (+60M, 210M). 1B ti `mistral` hàn nínú console account nìkan — wo _Àwọn ẹ̀ka ẹ̀rí_ lábẹ́ Ọ̀nà ìṣèwádìí. Orísun náà jabo key irú bẹ́ẹ̀ 35 ní àkókò yẹn (−3: `gemini` àti `ollama-cloud` lọ sí àkójọ aláìláàlà, àwọn ààlà fún model kọ̀ọ̀kan ti Groq kì í sì í ṣe àkójọpọ̀ pínpín).
+> **A tún ṣàyẹ̀wò ní 2026-09-02 pẹ̀lú àwọn ojú-ìwé ti àwọn olùpèsè fúnra wọn** (àwọn orísun: àwọn àlàyé `// evidence:` lẹ́gbẹ̀ẹ́ ìkọ̀ọ̀kan tí a tún ṣàyẹ̀wò nínú `open-sse/config/freeModelCatalog.data.ts`): `gemini` àti `ollama-cloud` kò tẹ iye tókẹ́ẹ̀nù jáde mọ́ (Google yọ tábìlì ọ̀fẹ́ fún awoṣe kọ̀ọ̀kan ní 2025-12-23; ètò Free ti Ollama jẹ́ "starter usage credits"), a sì ti tò wọ́n sílẹ̀ báyìí gẹ́gẹ́ bí **aláìlópin**, a kì í ṣe àròpọ̀ wọn láé (−80M); `groq` jẹ́ àwọn òpin 200K-TPD **fún awoṣe kọ̀ọ̀kan** márùn-ún (6M kọ̀ọ̀kan, +15M), pẹ̀lú àwọn ID mẹ́ta tí a ti fi sílẹ̀ tí a yọ kúrò; `nara` jẹ́ àpò kan ti 7M/ọjọ́ (+60M, 210M). 1B ti `mistral` hàn nínú console àkọọ́lẹ̀ nìkan — wo _Àwọn ẹ̀ka ẹ̀rí_ lábẹ́ Ọ̀nà ìṣe.
 >
-> **A ṣàtúnṣe rẹ̀ sí ~1.47B ní 2026-09-03 (#11773):** a tún pín `cerebras` láti inú ìpínlẹ̀ àtúnwá 30M/oṣù (ìdánwò atijọ́ láìsí káàdì ti tọ́kìn 1M/ọjọ́) sí kírẹ́díìtì ìforúkọsílẹ̀ $5 ẹ̀ẹ̀kan ṣoṣo tí ó nílò ọ̀nà ìsanwó. Òfin òtítọ́ kan náà bí ti LongCat. Orísun náà ń jabo pool key àtúnwá 34 àti ~1.47B títẹ̀síwájú báyìí.
+> **A ṣàtúnṣe ní 2026-09-03 (#11773):** a tún pín `cerebras` láti inú ìpín 30M/oṣù tó ń tún wá (ìdánwò àtijọ́ tí kò nílò káàdì, tókẹ́ẹ̀nù 1M/ọjọ́) sí kírẹ́díìtì ìforúkọsílẹ̀ $5 ẹ̀ẹ̀kan ṣoṣo tí ó nílò ọ̀nà ìsanwó. Òfin òtítọ́ kan náà bíi LongCat.
+>
+> **Pẹ̀lú xKiro (2026-09-03):** àkójọpọ̀ `xkiro-free` tuntun (150M/oṣù) fi kọ́kọ́rọ́ àkójọpọ̀ tó ń tún wá kọkànlélọ́gbọ̀n kún un. Felo Web ṣì wà ní ìyọkúrò nígbà tí orísun/ìwé-àṣẹ rẹ̀ tí a mú láti GPL ṣì wà ní HOLD. Orísun náà ń ròyìn **àwọn kọ́kọ́rọ́ àkójọpọ̀ tó ń tún wá 35** àti **~1.62B tó dúróṣinṣin** báyìí — nọ́mbà aláàyè tí CI ń ṣọ́ (`check:docs-counts` yóò mú build kùnà bí èyí bá yà kúrò ní `computeFreeModelTotals()`).
 
-Àwọn olùkópa **tí a ṣàkọsílẹ̀** tó pọ̀ jù lọ: `mistral` 1.00B, `nara` 210M, `llm7` 150M, `groq` 30M (àwọn òpin márùn-ún fún àwòṣe kọ̀ọ̀kan), `cloudflare-ai` 30M, `api-airforce` 24M. (A yọ `longcat` kúrò — ẹ̀bùn LongCat-2.0 10M rẹ̀ jẹ́ kirẹditi ìforúkọsílẹ̀ ẹ̀ẹ̀kan ṣoṣo tí KYC ń ṣàkóso, kì í ṣe ìnáwó oṣooṣù tó ń tún wáyé.)
+Àwọn olùkópa **tí a ṣàkọsílẹ̀** tó tóbi jù lọ: `mistral` 1.00B, `nara` 210M, `llm7` 150M, `xkiro` 150M, `groq` 30M (àwọn òpin fún awoṣe kọ̀ọ̀kan márùn-ún), `cloudflare-ai` 30M, `api-airforce` 24M. (A yọ `longcat` sílẹ̀ — ìpín LongCat-2.0 10M rẹ̀ jẹ́ kírẹ́díìtì ìforúkọsílẹ̀ ẹ̀ẹ̀kan ṣoṣo tí KYC ń dí mọ́, kì í ṣe ìnáwó oṣooṣù tó ń tún wá.)
 
-> ⚠️ Òpin àfojúsùn ìṣirò (~10B) ga ju bó ṣe yẹ lọ nítorí àwọn olùpèsè tí wọ́n ní òpin ìwọ̀n ìbéèrè nìkan, tí wọn kò sì ní **òpin token tí a tẹ̀ jáde** (`tencent`, `siliconflow`, `nvidia`, `baidu`, `glm-cn`, `sparkdesk`), tí àwọn iye wọn yóò jẹ́ `RPM/TPM × 24/7 × 30d` — ìyẹn ni iye tó pọ̀ jù lọ ní àfojúsùn tí kò sí àkọọ́lẹ̀ kan ṣoṣo tó lè máa tẹ̀síwájú láti lò. A **yọ wọ́n kúrò** nínú iye tí a lè fi ẹ̀rí gbè lẹ́yìn (dípò bẹ́ẹ̀, a fi wọ́n hàn ní ìlà "ọ̀fẹ́ títí láé, kò ní òpin"). Àfikún àsọdùn yìí kan náà ló ń mú kí àwọn ìjẹ́rìí ọ̀pọ̀ bílíọ̀nù ti àwọn olùdíje má ṣe ṣeé gbẹ́kẹ̀ lé.
+> ⚠️ Òrùlé àbáyọ̀ ìmọ̀-ẹ̀kọ́ (~10B) ga jù nítorí àwọn olùpèsè tí ìdíwọ̀ wọn dá lórí òṣùwọ̀n ìbéèrè nìkan, tí wọn sì **kò ṣe àtẹ̀jáde òpin token kankan** (`tencent`, `siliconflow`, `nvidia`, `baidu`, `glm-cn`, `sparkdesk`), tí iye wọn yóò jẹ́ `RPM/TPM × 24/7 × 30d` — iye tó pọ̀ jù lọ ní ìmọ̀-ẹ̀kọ́ tí kò sí àkọọ́lẹ̀ kan ṣoṣo tó lè máa gbé ró. A **yọ wọ́n kúrò** nínú iye tí a lè dáàbò bo pẹ̀lú ẹ̀rí (a fi wọ́n hàn dípò bẹ́ẹ̀ ní ìlà “ọ̀fẹ́ títí láé, kò sí òpin”). Ìgbégasẹ̀ iye kan náà yìí ló mú kí àwọn ìkéde iye bílíọ̀nù púpọ̀ ti àwọn olùdíje má ṣe ṣeé gbẹ́kẹ̀ lé.
 
 ---
 
 ## Ìmúdójúìwọ̀n 2026-06-17 — ohun tó yí padà láti 2026-06-05
 
-Ìwádìí wẹ́ẹ̀bù pẹ̀lú aṣojú 50 (àwọn ìwé àṣẹ́ṣẹ̀ + ìròyìn ọjọ́ méje tó kọjá, tí a ṣàyẹ̀wò ní ọ̀nà àtakò) mú gbogbo àkójọ náà dọ̀tun. Àwọn kókó pàtàkì:
+Àyẹ̀wò ìwádìí orí wẹ́ẹ̀bù pẹ̀lú aṣojú 50 (àwọn ìwé ìtọ́sọ́nà osìṣẹ́ + ìròyìn ọjọ́ méje tó kọjá, tí a sì fìdí rẹ̀ múlẹ̀ pẹ̀lú àyẹ̀wò atakò) ti sọ gbogbo àkójọ náà di tuntun. Àwọn kókó pàtàkì:
 
-- **A yọ kúrò / kò sí ìpele ọ̀fẹ́ (2026):** `chutes` (ìpele ọ̀fẹ́ parí ní 2026-03), `phind` (ilé-iṣẹ́ dáwọ́ iṣẹ́ dúró ní 2026-01), `kluster` (fòpin sí ní 2026-06-09 → MITO), `gitlawb` + `gitlawb-gmi` (a fagilé ọ̀fẹ́ MiMo ní 2026-05-24, ìpolówó Nemotron parí ní 2026-06 — a tún ṣàyẹ̀wò rẹ̀ ní 2026-06-18), `aimlapi` (ìpele ọ̀fẹ́ wà ní ìdádúró — a tún ṣàyẹ̀wò rẹ̀ ní 2026-06-18), `yi` (a fi Yi-Light sílẹ̀ lẹ́yìn iṣẹ́, ó di sísan bí o ṣe ń lò ó — a tún ṣàyẹ̀wò rẹ̀ ní 2026-06-18), `featherless-ai` (kò ní ìpele ọ̀fẹ́ lọ́wọ́lọ́wọ́). `iflytek` / `sparkdesk` ṣì wà nínú àkójọ, ṣùgbọ́n wọ́n ní àkọsílẹ̀ ìkìlọ̀ ToS (Spark Lite jẹ́ ọ̀fẹ́; ToS náà fi òfin de lílo proxy/relay).
-- **Gemini** — `2.0 Flash` / `2.0 Flash-Lite` dáwọ́ iṣẹ́ dúró ní 2026-06-01, `2.5 Pro` sì kúrò ní ìpele ọ̀fẹ́ (2026-04); ìpele ọ̀fẹ́ jẹ́ ti **ìdílé Flash nìkan** báyìí (2.5/3/3.1/3.5 Flash + Gemma). Àkójọ náà ti **ṣàkójọpọ̀** ìdílé Flash báyìí (tẹ́lẹ̀, ó pọ̀ ju bó ṣe yẹ lọ nítorí kíkà oríṣìíríṣìí kọ̀ọ̀kan lọ́tọ̀ọ̀tọ̀: 462M → 60M).
-- **Àwọn iye tí a ṣàtúnṣe:** `cloudflare-ai` 122M → **30M** (10k-Neurons/day gidi), a tún pín `doubao` sí kirẹditi ìforúkọsílẹ̀ ìgbà kan (kì í tún ara rẹ̀ ṣe), àwọn endpoint "-Free" ti `together` ti dáwọ́ dúró → a tún yọ kirẹditi ìforúkọsílẹ̀ $25 kúrò (ó nílò rírà tó kéré jù $5, kò sí àdánwò ọ̀fẹ́), Preview `longcat` parí + àwọn àwòṣe Flash ti fẹ̀yìntì → **LongCat-2.0** nìkan, a tún pín in sí kirẹditi ìforúkọsílẹ̀ token **10M** ìgbà kan (KYC ló ń ṣí i sílẹ̀, kì í tún ara rẹ̀ ṣe).
-- **Àwọn olupèsè ọ̀fẹ́ tuntun tí a ṣàwárí:** ⭐ **Kilo Code** (`kilo-gateway` — àkójọpọ̀ "Auto Free" tó ń yípadà: ìdílé NVIDIA Nemotron 3, StepFun, Poolside, Nex-N2-Pro), ⭐ **OpenCode Zen** (`opencode-zen` — àwọn àwòṣe kíkọ kóòdù ọ̀fẹ́ mẹ́fà tó ń yípadà), ⭐ **Z.AI / Zhipu** (`glm-cn` — GLM-4-Flash / 4.5-Flash / 4.7-Flash jẹ́ ọ̀fẹ́ títí láé + ẹ̀bùn ìforúkọsílẹ̀ 20M), àti Trinity Large Preview ti `arcee-ai`.
-- **Àwọn ìpele òtítọ́ tuntun** (wo Ọ̀nà Ìṣèwádìí): ẹ̀ka _ọ̀fẹ́-títí-láé-ṣùgbọ́n-kò-ní-ààlà_ (àyè ìlò tó ń tún ara rẹ̀ ṣe ní ti gidi, láìsí ààlà token láti kà) àti _ìgbélárugẹ tí ìdógò-owó ń ṣí sílẹ̀_ (OpenRouter $10 → +24M/mo), a sì fi àwọn méjèèjì hàn **lọ́tọ̀ọ̀tọ̀** kí wọ́n má bàa mú àkòrí iye lapapọ̀ pọ̀ ju bó ṣe yẹ lọ.
+- **Yọ kúrò / kò ní ìpele ọ̀fẹ́ mọ́ (2026):** `chutes` (ìpele ọ̀fẹ́ parí ní 2026-03), `phind` (ilé-iṣẹ́ náà ti dópin ní 2026-01), `kluster` (fòpin sí iṣẹ́ ní 2026-06-09 → MITO), `gitlawb` + `gitlawb-gmi` (a fagilé MiMo ọ̀fẹ́ ní 2026-05-24, ìpolówó Nemotron parí ní 2026-06 — a tún fìdí rẹ̀ múlẹ̀ ní 2026-06-18), `aimlapi` (ìpele ọ̀fẹ́ wà ní ìdádúró — a tún fìdí rẹ̀ múlẹ̀ ní 2026-06-18), `yi` (a dá Yi-Light dúró, ó di sísan bí o ṣe ń lò ó — a tún fìdí rẹ̀ múlẹ̀ ní 2026-06-18), `featherless-ai` (kò ní ìpele ọ̀fẹ́ lọ́wọ́lọ́wọ́), `chipotle` ("Pepper AI" ti Chipotle — ẹrọ ìfọ̀rọ̀wérọ̀ Amelia `amelia.chipotle.com` tí a tú ìmọ̀-ẹ̀rọ rẹ̀ padà, tí olùpèsè náà sì ń bá sọ̀rọ̀, ti ń dá 404 padà lórí gbogbo ọ̀nà, títí kan gbòǹgbò; a ti dá ẹ̀yìn-iṣẹ́ náà dúró/tàbí gbé e lọ, a fìdí rẹ̀ múlẹ̀ ní 2026-09-15 — a yọ ọ́ kúrò pátápátá nínú àkójọ náà, #13131/#4037). `iflytek` / `sparkdesk` ṣì wà nínú àkójọ ṣùgbọ́n wọ́n ní àkíyèsí ìṣọ́ra ToS (Spark Lite jẹ́ ọ̀fẹ́; ToS náà fi òfin sí lílo aṣojú/ìránṣẹ́-àárín).
+- **Gemini** — a dá `2.0 Flash` / `2.0 Flash-Lite` dúró ní 2026-06-01, `2.5 Pro` sì kúrò ní ìpele ọ̀fẹ́ (2026-04); ìpele ọ̀fẹ́ jẹ́ ti **ìdílé Flash nìkan** báyìí (2.5/3/3.1/3.5 Flash + Gemma). Àkójọ náà ti **kó** ìdílé Flash jọ báyìí (tẹ́lẹ̀, iye náà pọ̀ ju òtítọ́ lọ nítorí kíkà ẹ̀yà kọ̀ọ̀kan lọ́tọ̀ọ̀tọ̀: 462M → 60M).
+- **Àwọn iye tí a ṣàtúnṣe:** `cloudflare-ai` 122M → **30M** (10k-Neurons/ọjọ́ gidi), a tún pín `doubao` sí ẹ̀ka kírẹ́dítì ìforúkọsílẹ̀ ẹ̀ẹ̀kan ṣoṣo (kì í ṣe ohun tó ń tún wá), `llm7` 4M → **150M** (tókìnì 5M/ọjọ́ gẹ́gẹ́ bí ìwé ìtọ́sọ́nà), a ti dá àwọn endpoint "-Free" ti `together` dúró → a tún yọ kírẹ́dítì ìforúkọsílẹ̀ $25 kúrò (ó béèrè fún ìrà tó kéré jù lọ ti $5, kò sí ìdánwò ọ̀fẹ́), Akókò Ìṣáájú `longcat` parí + a dá àwọn awoṣe Flash dúró → **LongCat-2.0** nìkan, a tún pín in sí ẹ̀ka kírẹ́dítì ìforúkọsílẹ̀ tókìnì **10M** ẹ̀ẹ̀kan ṣoṣo (KYC ló ń ṣí i sílẹ̀, kì í ṣe ohun tó ń tún wá).
+- **Àwọn olùpèsè ọ̀fẹ́ tuntun tí a ṣàwárí:** ⭐ **Kilo Code** (`kilo-gateway` — àkójọpọ̀ "Auto Free" tó ń yí padà: ìdílé NVIDIA Nemotron 3, StepFun, Poolside, Nex-N2-Pro), ⭐ **OpenCode Zen** (`opencode-zen` — àwọn awoṣe ìkọ́kóòdù ọ̀fẹ́ mẹ́fà tó ń yí padà), ⭐ **Z.AI / Zhipu** (`glm-cn` — GLM-4-Flash / 4.5-Flash / 4.7-Flash jẹ́ ọ̀fẹ́ títí láé + ẹ̀bùn ìforúkọsílẹ̀ 20M), àti `arcee-ai` Trinity Large Preview.
+- **Àwọn ìpele tuntun tó jẹ́ òtítọ́** (wo Ìlànà Ìwádìí): ẹ̀ka _ọ̀fẹ́-títí-láé-ṣùgbọ́n-tí-kò-ní-ààlà_ (ìráyè gidi tó ń tún wá, láìsí ààlà tókìnì láti kà) àti _ìlọsíwájú tí ìdogo ń ṣí sílẹ̀_ (OpenRouter $10 → +24M/oṣù), a fi àwọn méjèèjì hàn **lọ́tọ̀ọ̀tọ̀** kí wọ́n má bàa mú iye àkọ́lé pọ̀ ju òtítọ́ lọ.
 
-> Tábìlì ẹ̀kúnrẹ́rẹ́ fún olupèsè kọ̀ọ̀kan tó wà ní ìsàlẹ̀ jẹ́ **àwòrán-àkókò 2026-06-05**; àwọn ìyàtọ̀ tó wà lókè rọ́pò rẹ̀. Orísun àṣẹ́ṣẹ̀ tó ń ṣiṣẹ́ lọ́wọ́lọ́wọ́ ni àkójọ fún àwòṣe kọ̀ọ̀kan `open-sse/config/freeModelCatalog.ts`.
+> Tábìlì alálàyé fún olùpèsè kọ̀ọ̀kan tó wà ní ìsàlẹ̀ jẹ́ **àwòrán-ipò 2026-06-05**; àwọn ìyípadà tó wà lókè rọ́pò rẹ̀. Orísun ààyè gidi tó jẹ́ ojúlówó ni àkójọ fún awoṣe kọ̀ọ̀kan `open-sse/config/freeModelCatalog.ts`.
 
 ---
 
@@ -69,16 +71,16 @@ a lè tún un ṣe láìsí ìsopọ̀ ayélujára, a sì lè dán an wò láìs
 àwòkọ́ṣe kan jáde tí kò bá ohun tó ṣẹlẹ̀ nígbà títẹ̀ mu — a mọ̀ọ́mọ̀ pa
 ìpínyà náà mọ́.
 
-## Ọ̀nà ìṣèwádìí & àwọn ìkìlọ̀
+## Ọ̀nà ìṣèwádìí & àwọn ohun tó yẹ ká ṣọ́ra nípa wọn
 
-- Àwọn nọ́ńbà jẹ́ **ìṣírò ààlà-gíga** láti inú àwọn ààlà ipele ọ̀fẹ́ tí olùpèsè kọ̀ọ̀kan ṣàkọsílẹ̀ gẹ́gẹ́ bí ó ti rí ní **2026-06-17**, tí a kójọ nípasẹ̀ ìwádìí lórí wẹ́ẹ̀bù. Àwọn ipele ọ̀fẹ́ máa ń yí padà nígbà gbogbo — tún un yẹ̀ wò kí o tó gbára lé nọ́ńbà kan.
-- **Ohun tí àkọsílẹ̀ kan ń jẹ́rìí sí gan-an.** Kò sí àkọsílẹ̀ kankan tó ní ìwọ̀n ìgbẹ́kẹ̀lé fún ìlà kọ̀ọ̀kan, API náà kò sì pèsè èyíkéyìí — ka gbogbo nọ́ńbà tó wà lókè sí ìṣírò tó ní irú dídára kan náà tí a kò sọ ní pàtó. Àwọn òtítọ́ méjì yàtọ̀, nítorí pé a fi ọwọ́ ṣàkójọ wọn dípò kíkó wọn jáde láti inú ìtọ́kasí: àwọn àkọsílẹ̀ 5 ní ìdádúró líle tí a ṣàkọsílẹ̀ lọ́nà òmìnira, àwọn àkọsílẹ̀ 13 sì ní ìṣípayá nípa lílo prompt fún ìdánilẹ́kọ̀ọ́. A ṣètò `hardStopGuaranteed` kìkì nígbà tí àwọn òfin olùpèsè fúnra rẹ̀ bá sọ pé jíjá kọjá ìpín ọ̀fẹ́ yóò kọ ìbéèrè náà dípò bíbẹ̀rẹ̀ sí í gba owó lọ́nà àìmọ̀, pẹ̀lú orísun nínú àlàyé lẹ́gbẹ̀ẹ́ àkọsílẹ̀ náà; a kì í fi `true` ṣe iye àìyípadà rẹ̀ láéláé, àti pé àkọsílẹ̀ tí ẹnikẹ́ni kò tíì jẹ́rìí sí yóò wà láìṣètò. Nítorí náà, àìsí àmì ìdádúró líle túmọ̀ sí “a kò tíì fìdí rẹ̀ múlẹ̀”, kì í ṣe “a mọ̀ pé yóò gba owó lọ́wọ́ rẹ”. Ipo **STRICT** (olùṣọ́ ìdarí `freeAccessPolicy=strict` tí a yàn láti mú ṣiṣẹ́) gbẹ́kẹ̀lé kìkì àwọn àkọsílẹ̀ tó ní àmì náà; a yọ gbogbo ipele ọ̀fẹ́ mìíràn kúrò gẹ́gẹ́ bí `no-hard-stop` (wo `open-sse/services/autoCombo/strictZeroCostFilter.ts`).
-- `estMonthlyFreeTokens` = àwọn token oṣooṣù tó ń tún wá nìkan. **Kírẹ́díìtì ìforúkọsílẹ̀ ìgbà-kan kò tún wá** ó sì jẹ́ 0. Àwọn ipele tí a ti dáwọ́ dúró náà tún jẹ́ 0.
-- Ààlà token ojoojúmọ́ → `monthly = daily × 30`. Tí RPD nìkan ni a ṣàkọsílẹ̀ → `RPD × ~800 output tokens × 30`. Tí RPM/TPM nìkan bá wà (láìsí ààlà ojoojúmọ́) → **láìní ààlà** (wo ìsàlẹ̀).
-- **Ọ̀fẹ́ títí láé, ṣùgbọ́n láìsí ààlà token tí a tẹ̀ jáde** (`siliconflow`, `glm-cn`, `tencent`, `baidu`, `kilo-gateway`, `opencode-zen`, `gemini`, `ollama-cloud`): ìwọ̀lé ọ̀fẹ́ gidi tó ń tún wá ni ìwọ̀nyí, tí ìwọ̀n ìbéèrè/ìṣiṣẹ́pọ̀ ní ààlà. A pín wọn sí `recurring-uncapped` a sì **kì í ṣàkópọ̀ wọn láéláé** — sísọ `RPM × 24/7 × 30d` di púpọ̀ yóò mú ààlà àlá kan jáde (ìfọnkálẹ̀ tí a kọ̀). A tò wọ́n síbí kí o lè mọ̀ pé wọ́n wà.
-- **Ìgbéga ṣíṣí-pẹ̀lú-ìdógò:** àfikún owó kékeré ìgbà-kan tó ń gbé ìpín ọ̀fẹ́ ga títí láé (OpenRouter: $10 → 1000 req/day ≈ +24M/mo). A ròyìn rẹ̀ gẹ́gẹ́ bí nọ́ńbà ọ̀tọ̀, a sì yọ ọ́ kúrò nínú àkọlé iye tó dúró ṣinṣin.
-- **Àwọn ìpín tí ẹ̀tọ́ lílò dí mọ́** (`eligibilityGate: "regional-identity"`): ìpín gidi tó ń tún wá tí yóò ṣí kìkì lẹ́yìn àyẹ̀wò ìdánimọ̀ tó so mọ́ agbègbè kan (ìjẹ́rìísí orúkọ-gidi ní ilẹ̀ China lónìí). A kà á pẹ̀lú òfin yíyọ àdáwòkọ adágún kan náà sínú nọ́ńbà ọ̀tọ̀ (`gatedRecurringTokens`), kì í sì í wọ inú àkọlé iye tó dúró ṣinṣin láéláé. Ètò náà (`freeType`) kò yí padà, nítorí náà ìdarí náà kò yí padà.
-- **Àwọn ẹ̀ka ẹ̀rí.** Òfin náà ni pé: nọ́ńbà kan nínú àkójọ náà máa ń tọ́ka sí orísun rẹ̀ nínú àlàyé `// evidence:` lẹ́gbẹ̀ẹ́ àkọsílẹ̀ náà — `public-page` (ojú-ewé olùpèsè tí ẹnikẹ́ni lè kà), `api-public` (endpoint olùpèsè tí kò nílò ìfàṣẹsí, àpẹẹrẹ ni endpoint ètò gbogbogbò NaraRouter ní router.bynara.id), tàbí `console-verified <date> por <who>` (nọ́ńbà náà hàn kìkì nínú console àkántì; àlàyé náà ṣàkọsílẹ̀ ẹni tó rí i àti ìgbà tó rí i, àti ojú-ewé gbogbogbò tó sọ pé ààlà náà wà). Ipò rẹ̀ lónìí: àwọn ìdípọ̀ márùn-ún tí a tún ṣàyẹ̀wò ní 2026-09-02 ní àmì yìí (`gemini`, `groq`, `mistral`, `ollama-cloud`, `nara`); àwọn àkọsílẹ̀ tó ti wà ṣáájú àtúnyẹ̀wò 2026-09-02 ń jogún ìwádìí àtijọ́ títí tí a ó fi tún fọwọ́ kàn wọ́n; nọ́ńbà **tuntun tàbí tí a yí padà** èyíkéyìí tí kò ní àlàyé ẹ̀rí jẹ́ àṣìṣe. Lónìí `mistral` nìkan ni a jẹ́rìí sí nínú console.
+- Àwọn nọ́ńbà jẹ́ **ìṣírò ààlà-gíga** láti inú àwọn ààlà ipele ọ̀fẹ́ tí olùpèsè kọ̀ọ̀kan ṣàkọsílẹ̀ gẹ́gẹ́ bí ó ti rí ní **2026-06-17**, tí a kójọ nípasẹ̀ ìwádìí lórí wẹ́ẹ̀bù. Àwọn ipele ọ̀fẹ́ máa ń yí padà nígbà gbogbo — tún un ṣàyẹ̀wò kí o tó gbára lé nọ́ńbà kan.
+- **Ohun tí àkọsílẹ̀ kan ń fi ìdánilójú fún gan-an.** Kò sí àkọsílẹ̀ kankan tó ní ìwọ̀n ìgbẹ́kẹ̀lé fún ìlà kọ̀ọ̀kan, API náà kò sì pèsè èyíkéyìí — ka gbogbo nọ́ńbà tó wà lókè sí ìṣírò tí wọ́n ní irú dídára kan náà tí a kò sọ ní pàtó. Òtítọ́ méjì yàtọ̀, nítorí pé ọwọ́ ènìyàn ni ó ṣàkójọ wọn dípò kí a ṣe ìfọ̀rọ̀wérọ̀ wọn láti inú dátà: àwọn àkọsílẹ̀ 44 ní ìdádúró líle tí a ṣàkọsílẹ̀ lọ́tọ̀ (39 nínú wọn ni àwọn ìlà xKiro, tí gbogbo wọn ń lo ìpín ojoojúmọ́ kan náà), àwọn àkọsílẹ̀ 13 sì ní ìṣípayá nípa lílo prompt fún ìkẹ́kọ̀ọ́. A máa ń ṣètò `hardStopGuaranteed` kìkì nígbà tí àwọn òfin olùpèsè fúnra rẹ̀ sọ pé bí a bá kọjá ìpín ọ̀fẹ́, a ó kọ ìbéèrè náà dípò kí a bẹ̀rẹ̀ sí í gba owó lọ́nà àìkìlọ̀, pẹ̀lú orísun nínú àlàyé lẹ́gbẹ̀ẹ́ àkọsílẹ̀ náà; a kì í ṣètò rẹ̀ sí `true` láìfọwọ́sí láé, àkọsílẹ̀ tí ẹnikẹ́ni kò sì tíì ṣàyẹ̀wò á wà láìṣètò. Nítorí náà, àìsí àmì ìdádúró líle túmọ̀ sí “a kò tíì fi ìdí rẹ̀ múlẹ̀”, kì í ṣe “a mọ̀ pé yóò gba owó lọ́wọ́ rẹ”. **Ìpo STRICT** (ìdènà ìdarí `freeAccessPolicy=strict` tí a yàn láti mú ṣiṣẹ́) ń gbẹ́kẹ̀lé kìkì àwọn àkọsílẹ̀ tó ní àmì náà; gbogbo ipele ọ̀fẹ́ yòókù ni a yọ sílẹ̀ gẹ́gẹ́ bí `no-hard-stop` (wo `open-sse/services/autoCombo/strictZeroCostFilter.ts`).
+- `estMonthlyFreeTokens` = àwọn token oṣooṣù tó ń tún wá nìkan. **Àwọn kírẹ́díìtì ìforúkọsílẹ̀ ẹ̀ẹ̀kan ṣoṣo kì í tún wá** wọ́n sì ka sí 0. Àwọn ipele tí a ti fòpin sí tún jẹ́ 0.
+- Ààlà token ojoojúmọ́ → `monthly = daily × 30`. Bí RPD nìkan ni a ṣàkọsílẹ̀ → `RPD × ~800 output tokens × 30`. Bí RPM/TPM nìkan (láìsí ààlà ojoojúmọ́) → **kò ní ààlà** (wo ìsàlẹ̀).
+- **Ọ̀fẹ́ títí láé, ṣùgbọ́n kò ní ààlà token tí a tẹ̀ jáde** (`siliconflow`, `glm-cn`, `tencent`, `baidu`, `kilo-gateway`, `opencode-zen`, `gemini`, `ollama-cloud`): ìwọ̀nyí jẹ́ ìráyè ọ̀fẹ́ tó ń tún wá ní tòótọ́, tí ìwọ̀n ìbéèrè/àpapọ̀ lílo ní àkókò kan dí ní ààlà. A pín wọn sí `recurring-uncapped`, a kò sì **fi wọ́n kún ara wọn láé** — ṣíṣe ìṣírò `RPM × 24/7 × 30d` yóò mú ààlà àròsọ jáde (ìfẹ́síwájú asán tí a kọ̀). A ṣe àkójọ wọn kí o lè mọ̀ pé wọ́n wà.
+- **Ìgbéga tí ìdépósítì ń ṣí sílẹ̀:** ìfikún owó kékeré ẹ̀ẹ̀kan ṣoṣo tó ń gbé ìpín ọ̀fẹ́ ga títí láé (OpenRouter: $10 → 1000 req/day ≈ +24M/mo). A jùmọ̀ rẹ̀ gẹ́gẹ́ bí nọ́ńbà ọ̀tọ̀, a kò sì fi kún àkójọpọ̀ pàtàkì tó dúró ṣinṣin.
+- **Àwọn ìpín tí ẹ̀tọ́-lílo ń dí ní ààlà** (`eligibilityGate: "regional-identity"`): ìpín gidi tó ń tún wá, tí yóò ṣí kìkì lẹ́yìn àyẹ̀wò ìdánimọ̀ tó so mọ́ ẹkùn kan (àyẹ̀wò orúkọ-gidi ti ilẹ̀ China ní báyìí). A kà á pẹ̀lú òfin yíyọ àdáwòkọ adágún kan náà sínú nọ́ńbà ọ̀tọ̀ (`gatedRecurringTokens`), a kì í sì fi kún àkójọpọ̀ pàtàkì tó dúró ṣinṣin láé. Ètò náà (`freeType`) kò yí padà, nítorí náà ìdarí kò yí padà.
+- **Àwọn ẹ̀ka ẹ̀rí.** Òfin náà ni pé: nọ́ńbà kan nínú katalogi máa ń tọ́ka sí orísun rẹ̀ nínú àlàyé `// evidence:` lẹ́gbẹ̀ẹ́ àkọsílẹ̀ náà — `public-page` (ojú-ewé olùpèsè tí ẹnikẹ́ni lè kà), `api-public` (endpoint olùpèsè tí kò béèrè ìfàṣẹsí, àpẹẹrẹ ni endpoint ètò gbogbogbò NaraRouter ní router.bynara.id), tàbí `console-verified <date> por <who>` (nọ́ńbà náà hàn kìkì nínú console àkántì; àlàyé náà ń ṣàkọsílẹ̀ ẹni tó rí i àti ìgbà tó rí i, àti ojú-ewé gbogbogbò tó sọ pé ààlà náà wà). Ipò rẹ̀ lónìí: àwọn ìdípọ̀ márùn-ún tí a tún ṣàyẹ̀wò ní 2026-09-02 ní àlàyé náà (`gemini`, `groq`, `mistral`, `ollama-cloud`, `nara`); àwọn àkọsílẹ̀ tó ti wà ṣáájú àtúnyẹ̀wò 2026-09-02 ń jogún ìwádìí àtijọ́ títí a ó fi tún fọwọ́ kan wọn; nọ́ńbà **tuntun tàbí tí a yí padà** èyíkéyìí tí kò ní àlàyé ẹ̀rí jẹ́ bug. Lónìí, `mistral` nìkan ni a ti ṣàyẹ̀wò nínú console.
 
 ---
 
@@ -94,183 +96,185 @@ a lè tún un ṣe láìsí ìsopọ̀ ayélujára, a sì lè dán an wò láìs
 
 ---
 
-## Tábìlì àwọn ohun tó yẹ kí a kíyè sí nínú ToS
+## Tábìlì àkíyèsí ToS
 
-> **Àmì ToS jẹ́ ìmọ̀ràn, kì í ṣe ẹnubodè ìdarí.** Àwọn olùpèsè tí a sàmì sí `tos` ṣì wà nínú ìdarí àti combo/fallback láìyípadà; àmì náà ń fara hàn lórí `/dashboard/free-tiers` àti `/api/free-tier/summary` nìkan. Párámítà ìbéèrè `excludeTosAvoid` kan àwòrán àkótán nìkan, kì í kan ìdarí àgbáyé. Ìpinnu náà wà nínú `open-sse/config/freeTierCatalog.ts` (fún ìfitonilétí, àwọn ẹ̀rọ ìdarí kì í kà á).
+> **Àmì ToS jẹ́ ìkìlọ̀ ìmọ̀ràn, kì í ṣe ìdènà ìdarí.** Àwọn olùpèsè tí a fi àmì `tos` sí ṣì wà nínú ìdarí àti combo/fallback ní àìyípadà; àmì náà máa ń hàn lórí `/dashboard/free-tiers` àti `/api/free-tier/summary` nìkan. Párámítà ìbéèrè `excludeTosAvoid` kan àwòrán àkótán nìkan, kì í kan ìdarí gbogbogbòò. Ìdájọ́ náà wà nínú `open-sse/config/freeTierCatalog.ts` (fún ìfitónilétí, àwọn ẹ̀rọ ìdarí kì í kà á).
 
-> Àgbéyẹ̀wò kúkúrú ti àwọn òfin olùpèsè kọ̀ọ̀kan fún aṣojú aládàáni tí olùlò kan ṣoṣo ń gbàlejò fún ara rẹ̀. `caution` = gbólóhùn nípa lílò ti ara ẹni tàbí aṣojú tí ó yẹ kí a ṣàyẹ̀wò; `ambiguous` = kò ṣe kedere; `ok` = a fàyè gbà á ní kedere. Fún ìfitonilétí ni, kì í ṣe ìmọ̀ràn òfin — ìwọ ló máa pinnu.
+> Àkótán kíákíá nípa àwọn òfin olùpèsè kọ̀ọ̀kan fún proxy ti ara ẹni, fún olùlò kan ṣoṣo, tí a gbalejo fúnra ẹni. `caution` = òfin nípa lílò ti ara ẹni tàbí proxy tí ó yẹ kí a yẹ̀ wò; `ambiguous` = kò ṣe kedere; `ok` = a fàyè gbà á ní kedere. Fún ìfitónilétí nìkan, kì í ṣe ìmọ̀ràn òfin — ìwọ ni yóò pinnu.
 
-### ⚠️ Ìṣọ́ra — àwọn gbólóhùn nípa lílò ti ara ẹni / aṣojú tí ó yẹ kí a ṣàyẹ̀wò (16)
+### ⚠️ Ìṣọ́ra — àwọn òfin lílò ti ara ẹni / proxy tí ó yẹ kí a yẹ̀ wò (16)
 
-> Àǹfààní ọ̀fẹ́ wọn jẹ́ ojúlówó, OmniRoute sì lè darí sí wọn; àwọn gbólóhùn tó wà nísàlẹ̀ kàn jẹ́ ohun tó yẹ kí a mọ̀. Àwọn tí ń lo OAuth/tí kò nílò kọ́kọ́rọ́ kò ṣeé díwọ̀n ní àmì, nítorí náà wọn kò sí nínú iye àkọlé (kì í ṣe nítorí pé wọn kò ṣeé lò).
+> Wọ́n ní ààyè lílò ọ̀fẹ́ ní tòótọ́, OmniRoute sì lè darí sí wọn; àwọn òfin tó wà nísàlẹ̀ jẹ́ ohun tó yẹ kí a mọ̀ nìkan. Àwọn tó ń lo OAuth/tí kò nílò kọ́kọ́rọ́ kò ṣeé wọ̀n pẹ̀lú token, nítorí náà wọn kò sí nínú nọ́ńbà àkọ́lé (kì í ṣe nítorí pé wọn kò ṣeé lò).
 
-| Olùpèsè          | Àkíyèsí                                                                                                                                                                                         |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `agy`            | ToS Google Antigravity fi òfin dè lílo sọ́fítíwẹ̀, irinṣẹ́, tàbí iṣẹ́ ẹni-kẹta (pẹ̀lú àwọn aṣojú) láti ráyè sí iṣẹ́ náà nípasẹ̀ OAuth; ṣíṣe bẹ́ẹ̀…                                                       |
-| `ai21`           | ToS §4.2/§8.2 fi òfin de fífún ẹni mìíràn ní ìwé-àṣẹ abẹ́ tàbí pínpín àǹfààní API fún àwọn ẹni-kẹta; §3.3 fi òpin sí àwọn ọjà àdánwò/àgbéyẹ̀wò sí “àgbéyẹ̀wò inú…”                                 |
-| `amazon-q`       | A ti dá ọjà náà dúró fún àwọn ìforúkọsílẹ̀ tuntun; àwọn olùlò tó ti wà tẹ́lẹ̀ wà lábẹ́ Àdéhùn Oníbàárà AWS, èyí tó ń darí lílo àwọn iṣẹ́ tí a ń ṣàkóso — iṣẹ́ aṣojú tí a gbàlejò fúnra ẹni…           |
-| `blackbox`       | ToS fi òfin de fífún ẹni mìíràn ní ìwé-àṣẹ abẹ́, títún iṣẹ́ náà tà, mímú un wà fún àwọn ẹni-kẹta, àti kíkọ́ àwọn iṣẹ́ àtẹ̀jáde — aṣojú ti ara ẹni tí a gbàlejò fúnra ẹni…                            |
-| `coze`           | ToS Coze fi òpin sí lílo fún “lílo ti ara ẹni àti tí kì í ṣe ti òwò” ní kedere, ó sì fi òfin de fífúnni ní ayálégbé, pípín, fífúnni ní ìwé-àṣẹ abẹ́, tàbí títún iṣẹ́ náà tà;…                     |
-| `duckduckgo-web` | ToS Duck.ai (duckduckgo.com/duckai/privacy-terms) fi òfin de “ìbéèrè aládàáṣe àti ṣíṣe àgbékalẹ̀ tàbí fífúnni ní àwọn iṣẹ́ AI” àti yíyẹra fún…                                                    |
-| `featherless-ai` | Àwọn ètò ẹnìkọ̀ọ̀kan ní òpin kedere sí “lílo alábáṣepọ̀ tàbí ṣíṣe àwòṣe àkọ́kọ́ àti àdánwò láti ọwọ́ olùrà” — títún àbájáde ìfojúsọ́nà tà àti lílo aṣojú nílò…                                         |
-| `fireworks`      | ToS fi òfin de lílo aṣojú/alárinà, fífi kọ́kọ́rọ́ API ránṣẹ́, àti fífúnni ní ìwé-àṣẹ abẹ́ ní kedere (Àwọn Abala 2.1 àti 2.2(i)(j)); a kò fàyè gba àwọn aṣojú ti ara ẹni tí a gbàlejò fúnra ẹni…      |
-| `friendliai`     | Abala 8(e) àti 8(f) ti ToS fi òfin de lílo FriendliAI gẹ́gẹ́ bí aṣojú tàbí fífàyè gba ẹni-kẹta láti ráyè sí i lọ́tọ̀, wọ́n sì fi òfin de títún un tà/…                                               |
-| `iflytek`        | Abala 2.4(3) ti Àdéhùn Iṣẹ́ iFlytek Spark LLM fi òfin de “lílo àwọn ọ̀nà aládàáṣe tàbí ti ètò kọ̀ǹpútà láti yọ dátà tàbí àbájáde…” ní kedere                                                       |
-| `kiro`           | FAQ Kiro fi òfin de lílo pẹ̀lú “OpenClaw àti àwọn irinṣẹ́ tó jọ ọ́ tí ń lo àwọn ètò ìṣiṣẹ́ ẹni-kẹta” ní kedere — aṣojú AI tí a gbàlejò fúnra ẹni (bíi OmniRoute) tí ń darí…                         |
-| `modal`          | Abala 1.3 ti ToS fi òfin de “fífúnni ní ayálégbé, títún tà, tàbí fífàyè gba ẹni-kẹta èyíkéyìí ní ọ̀nà mìíràn láti ráyè sí tàbí lo Iṣẹ́ náà ní tààrà” ní kedere — kíkọ́ iṣẹ́ tí a gbàlejò fúnra ẹni… |
-| `muse-spark-web` | ToS Meta fi òfin de àǹfààní aládàáṣe láìgba àṣẹ ṣáájú, ìtúpalẹ̀ ẹ̀rọ láìgba àṣẹ tí a kọ sílẹ̀, àti yíyẹra fún àwọn ìdènà ìmọ̀-ẹ̀rọ…                                                                  |
-| `nlpcloud`       | ToS fi òfin de “ṣíṣe àgbékalẹ̀ aṣojú tàbí ẹ̀rọ mìíràn tó ń jẹ́ kí àwọn ẹlòmíràn ráyè sí Iṣẹ́ náà nípasẹ̀ rẹ̀” ní kedere, ó sì fúnni ní ẹ̀tọ́ tí kò ṣeé gbé lọ sí ẹlòmíràn nìkan,…                       |
-| `opencode`       | ToS (Anomaly Innovations, Inc.) fi òpin sí lílo fún “lílo inú tìrẹ nìkan, kì í sì í ṣe ní orúkọ tàbí fún àǹfààní ẹni-kẹta èyíkéyìí” ní kedere — ope…                                            |
-| `t3-web`         | ToS fi òpin sí àwọn àkọọ́lẹ̀ fún lílo ti ara ẹni nìkan, ó fi òfin de pípín ẹ̀rí ìwọlé pẹ̀lú àwọn ẹni-kẹta, ó sì fòfin de àǹfààní aládàáṣe/bot/scraping — s…                                         |
+| Olùpèsè          | Àkíyèsí                                                                                                                                                                                    |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `agy`            | ToS Google Antigravity fi òfin de lílo sọ́fítíwẹ̀, irinṣẹ́, tàbí iṣẹ́ ẹlòmíràn (pẹ̀lú àwọn proxy) láti ráyè sí iṣẹ́ náà nípasẹ̀ OAuth; ṣíṣe bẹ́ẹ̀…                                                  |
+| `ai21`           | ToS §4.2/§8.2 fi òfin de fífún ẹlòmíràn ní ìwé-àṣẹ abẹ́ tàbí pínpín ààyè API fún àwọn ẹnikẹta; §3.3 fi ààlà sí àwọn ọjà ìdánwò/ìṣàyẹ̀wò sí "ìṣàyẹ̀wò abẹ́lé lórí…                              |
+| `amazon-q`       | A ti dá ọjà náà dúró fún àwọn ìforúkọsílẹ̀ tuntun; àwọn olùlò tó ti wà tẹ́lẹ̀ wà lábẹ́ Àdéhùn Oníbàárà AWS tó ń ṣàkóso lílo àwọn iṣẹ́ tí a ń bójú tó — proxy tí a gbalejo fúnra ẹni…            |
+| `blackbox`       | ToS fi òfin de fífún ẹlòmíràn ní ìwé-àṣẹ abẹ́, àtúntà, mímú iṣẹ́ náà wà fún àwọn ẹnikẹta, àti ṣíṣe àwọn iṣẹ́ àtọmọdọ́mọ — proxy ti ara ẹni tí a gbalejo fúnra ẹni…                             |
+| `coze`           | ToS Coze fi ààlà sí lílò fún "lílò ti ara ẹni àti tí kì í ṣe ti òwò" ó sì fi òfin de fífúnni yá, pínpín, fífún ẹlòmíràn ní ìwé-àṣẹ abẹ́, tàbí àtúntà iṣẹ́ náà; …                             |
+| `duckduckgo-web` | ToS Duck.ai (duckduckgo.com/duckai/privacy-terms) fi òfin de "fífi ẹ̀rọ ṣe ìbéèrè àti ṣíṣe tàbí fífúnni ní àwọn iṣẹ́ AI" àti yíyẹra fún…                                                     |
+| `featherless-ai` | Àwọn ètò ẹnìkọ̀ọ̀kan ní ààlà kedere sí "lílò alábàáṣiṣẹ́ tàbí ṣíṣe àwòṣe àti àdánwò látọwọ́ ẹni tó rà á" — àtúntà inference àti lílo proxy nílò…                                               |
+| `fireworks`      | ToS fi òfin de lílò proxy/alárinà, gbígbé àwọn kọ́kọ́rọ́ API fún ẹlòmíràn, àti fífún ẹlòmíràn ní ìwé-àṣẹ abẹ́ (Àwọn Abala 2.1 àti 2.2(i)(j)); àwọn proxy ti ara ẹni tí a gbalejo fúnra ẹni kò… |
+| `friendliai`     | Abala 8(e) àti 8(f) ti ToS fi òfin de lílo FriendliAI gẹ́gẹ́ bí proxy tàbí fífàyè gba ẹnikẹta láti wọlé sí i lọ́nà òmìnira, ó sì kọ àtúntà/…                                                  |
+| `iflytek`        | Abala 2.4(3) ti Àdéhùn Iṣẹ́ iFlytek Spark LLM fi òfin de "lílo ọ̀nà èyíkéyìí tí ẹ̀rọ ń ṣiṣẹ́ fúnra rẹ̀ tàbí tí a kọ ètò fún láti yọ dátà tàbí àbájáde…                                          |
+| `kiro`           | FAQ Kiro fi òfin de lílò pẹ̀lú "OpenClaw àti àwọn irinṣẹ́ tó jọ ọ́ tí ń lo àwọn ètò ìṣàkóso ẹnikẹta" — proxy AI tí a gbalejo fúnra ẹni (bí OmniRoute) tó ń darí…                              |
+| `modal`          | Abala 1.3 ti ToS fi òfin de "fífi fúnni yá, àtúntà tàbí fífàyè gba ẹnikẹta láti ráyè sí tàbí lo Iṣẹ́ náà ní tààràtà" — ṣíṣe ètò tí a gbalejo fúnra ẹni…                                     |
+| `muse-spark-web` | ToS Meta fi òfin de ìráyè sí i nípasẹ̀ ẹ̀rọ láìgba àṣẹ ṣáájú, reverse engineering láìgba àṣẹ ní kíkọ, àti yíyẹra fún àwọn ìmọ̀ ẹ̀rọ…                                                           |
+| `nlpcloud`       | ToS fi òfin de "ṣíṣètò proxy tàbí ohun èlò mìíràn tó ń jẹ́ kí àwọn ẹlòmíràn ráyè sí Iṣẹ́ náà nípasẹ̀ rẹ̀" ó sì fúnni ní ẹ̀tọ́ tí kò ṣeé gbé fún ẹlòmíràn nìkan,…                                 |
+| `opencode`       | ToS (Anomaly Innovations, Inc.) fi ààlà kedere sí lílò fún "lílò abẹ́lé tìrẹ nìkan, kì í ṣe dípò tàbí fún àǹfààní ẹnikẹta kankan" — ṣiṣi…                                                   |
+| `t3-web`         | ToS fi ààlà kedere sí àwọn àkọọ́lẹ̀ fún lílò ti ara ẹni nìkan, ó fi òfin de pípín ẹ̀rí ìdánimọ̀ pẹ̀lú àwọn ẹnikẹta, ó sì fòfin de ìráyè aládàáṣiṣẹ́/bot/scraping — …                             |
 
-### ✅ Ó ní ìfàyègbà ní gbogbogbòò — ìṣọ́ra / àìṣe kedere / ó dára (àwọn tó kù)
+### ✅ Ó sábà máa ń fàyè gbà — ìṣọ́ra / àìṣe kedere / ó dára (àwọn tó kù)
 
-| Olùpèsè          | Àwọn òfin iṣẹ́ | Àkíyèsí                                                                                                                                                                      |
-| ---------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `aimlapi`        | kò ṣe kedere  | Àwọn òfin iṣẹ́ fúnni ní ìwé-àṣẹ lílò tí kì í ṣe ti ẹnì kan ṣoṣo, ṣùgbọ́n wọn kò sọ ní kedere bóyá wọ́n fàyè gba tàbí kọ aṣojú alágbàlejò-tirẹ̀ tàbí àtúntà; kò sí "pers…         |
-| `baichuan`       | kò ṣe kedere  | A kò rí ìfòfindè tó ṣe kedere lórí àwọn aṣojú ara ẹni alágbàlejò-tirẹ̀ nínú àwọn ìwé àkọsílẹ̀ tí gbogbo ènìyàn lè wọlé sí; síbẹ̀, ètò ọ̀fẹ́ M3 Plus pl…                           |
-| `bluesminds`     | kò ṣe kedere  | A kò rí àwọn ẹ̀ka òfin iṣẹ́ tó ṣe kedere nípa fífi aṣojú alágbàlejò-tirẹ̀ ṣiṣẹ́ tàbí àtúntà; ojú-ìwé ìdíyelé dá lórí àwọn ààlà ẹ̀yà/oṣùwọ̀n…                                       |
-| `bytez`          | kò ṣe kedere  | A kò lè wọlé sí ojú-ìwé àwọn òfin iṣẹ́ tó ṣe kedere (404); a kò rí àwọn ẹ̀ka gbangba tó sọ pé fún àyẹ̀wò nìkan tàbí pé kò gbọdọ̀ lo aṣojú nínú àwọn ìwé àkọsílẹ̀, ṣùgbọ́n platfor… |
-| `doubao`         | kò ṣe kedere  | A kò rí ìfòfindè tó ṣe kedere lórí aṣojú/àtúntà nínú àwọn ìwé àkọsílẹ̀ tí ẹ̀rọ ìṣàwárí ti ṣe atọ́ka fún gbogbo ènìyàn; Volcengine jẹ́ cloud tó dá lórí àwọn olùgbéejáde …        |
-| `gitlawb-gmi`    | kò ṣe kedere  | A kò rí ẹ̀ka òfin iṣẹ́ tó ṣe kedere tó fi òfin de lílo aṣojú ara ẹni alágbàlejò-tirẹ̀; módẹ́ẹ̀lì Nemotron ọ̀fẹ́ ní àlàyé ìkìlọ̀ NVIDIA…                                              |
-| `monsterapi`     | kò ṣe kedere  | Ojú-ìwé àwọn òfin iṣẹ́ MonsterAPI (monsterapi.ai/terms-of-service) kò ṣeé dé nígbà ìwádìí; kò sí àwọn ẹ̀ka pàtó nípa aṣojú/àtúntà/ara-ẹni…                                     |
-| `nous-research`  | kò ṣe kedere  | Nous Portal fúnra rẹ̀ jẹ́ iṣẹ́ akójọpọ̀/aṣojú; lílò rẹ̀ gẹ́gẹ́ bí ẹ̀yìn fún aṣojú alágbàlejò-tirẹ̀ mìíràn ń ṣẹ̀dá proxy-…                                                              |
-| `ollama-cloud`   | kò ṣe kedere  | Àwọn òfin iṣẹ́ fi òfin de lílo iṣẹ́ náà “láti ṣe àgbékalẹ̀ àwọn ọjà tó ń bá a díje” ṣùgbọ́n kò ní ìfòfindè tó ṣe kedere lórí àwọn aṣojú ara ẹni alágbàlejò-tirẹ̀…                 |
-| `stepfun`        | kò ṣe kedere  | A kò rí ìfòfindè tó ṣe kedere lórí aṣojú ara ẹni alágbàlejò-tirẹ̀, ṣùgbọ́n àwọn òfin iṣẹ́ Step Plan dá lórí àwọn olùgbéejáde tó ń lo àwọn co… pàtó                              |
-| `api-airforce`   | ìṣọ́ra         | Àwọn òfin iṣẹ́ fi òfin de “kíkọ́ àwọn iṣẹ́ tó ń bá a díje láìgba àṣẹ” àti “pípín ìjẹ́rìísí ìwọlé” ní kedere — aṣojú ara ẹni alágbàlejò-tirẹ̀ pers…                                |
-| `arcee-ai`       | ìṣọ́ra         | Ìwọlé ọ̀fẹ́ wà nípasẹ̀ fẹ́lẹ́fẹ́lẹ́ ìdarí :free ti OpenRouter (kì í ṣe àwọn òfin API tààrà ti Arcee); àwọn òfin iṣẹ́ OpenRouter fàyè gba ìdàgbàsókè ara ẹni…                         |
-| `baidu`          | ìṣọ́ra         | A kò ṣe àyẹ̀wò àwọn òfin iṣẹ́ ní kedere fún àwọn ẹ̀ka aṣojú/àtúntà, ṣùgbọ́n pèpéle náà nílò ìfàṣẹsí orúkọ gidi (ID Ṣáínà ní ọ̀pọ̀ ìgbà…                                            |
-| `baseten`        | ìṣọ́ra         | Àwọn òfin iṣẹ́ fi lílò mọ́ “àwọn ète iṣẹ́ inú ilé Oníbàárà” wọ́n sì fi òfin de fífúnni ní ìwé-àṣẹ abẹ́, àtúntà, tàbí fífàyè gba…                                                  |
-| `bazaarlink`     | ìṣọ́ra         | Àwọn òfin iṣẹ́ fi òfin de àtúntà tàbí fífún àwọn ẹlòmíràn ní ìwé-àṣẹ abẹ́ fún àwọn kọ́kọ́rọ́ API ní kedere; aṣojú ara ẹni alágbàlejò-tirẹ̀ fún lílò ara ẹni…                       |
-| `brave-search`   | ìṣọ́ra         | Àwọn òfin iṣẹ́ fi òfin de àtúnpín, àtúntà, àti fífúnni ní ìwé-àṣẹ abẹ́ fún àwọn èsì ìṣàwárí; lílo API láti “ṣe ẹ̀dà tàbí gbìyànjú láti rep…                                     |
-| `byteplus`       | ìṣọ́ra         | Àwọn token kò ṣeé gbé láti ọwọ́ kan sí òmíràn, àkọọ́lẹ̀ kan ṣoṣo sì ni wọ́n wà fún; kò sí ìfòfindè aṣojú tó ṣe kedere, ṣùgbọ́n BytePlus ní ẹ̀tọ́ láti …                             |
-| `cerebras`       | ìṣọ́ra         | Àwọn òfin iṣẹ́ fúnni ní ẹ̀tọ́ tí kì í ṣe ti ẹnì kan ṣoṣo, tí kò ṣeé gbé, tí kò sì ṣeé fúnni gẹ́gẹ́ bí ìwé-àṣẹ abẹ́ fún lílò ara ẹni tàbí ti òwò; wọ́n fi òfin de àtúntà, s…         |
-| `cloudflare-ai`  | ìṣọ́ra         | Àwọn òfin iṣẹ́ Cloudflare Self-Serve §2.2.1(j) fi òfin de lílo àwọn Iṣẹ́ láti “pèsè nẹ́tíwọ̀ọ̀kì aládàáni foju tàbí aṣojú mìíràn tó jọra…                                         |
-| `cohere`         | ìṣọ́ra         | Cohere fi òfin de lílo àwọn kọ́kọ́rọ́ ìdánwò fún “àwọn ète iṣelọpọ tàbí ti òwò” ní kedere; aṣojú ara ẹni alágbàlejò-tirẹ̀ tó ń darí re…                                          |
-| `deepinfra`      | ìṣọ́ra         | Àwọn òfin iṣẹ́ fàyè gba lílò ti òwò tó bófin mu ní gbòòrò, ṣùgbọ́n wọ́n fi òfin de lílò “tó ń bá èyíkéyìí nínú àwọn òwò the… díje tààrà tàbí lọ́nà àìtààrà”                      |
-| `deepseek`       | ìṣọ́ra         | Àwọn òfin iṣẹ́ Open Platform (tó bẹ̀rẹ̀ sí í ṣiṣẹ́ 2026-04-29) fàyè gba lílò ní gbòòrò, títí kan “ìdàgbàsókè ọjà àtọwọ́dọ́wọ́” àti ti ara ẹni/comm…                                 |
-| `dify`           | ìṣọ́ra         | A fàyè gba aṣojú ara ẹni elédè kan alágbàlejò-tirẹ̀ lábẹ́ ìwé-àṣẹ Apache 2.0 tí a ṣàtúnṣe; síbẹ̀, ìmúṣẹ oní-ayálégbé-púpọ̀…                                                      |
-| `exa-search`     | ìṣọ́ra         | A kò rí àwọn ẹ̀ka tó sọ ní kedere pé “kò sí aṣojú” tàbí “fún àyẹ̀wò nìkan”; Exa ń pèsè ètò alájọṣepọ̀ alátúntà tó fàyè gba API …                                                |
-| `firecrawl`      | ìṣọ́ra         | A kò rí ìfòfindè tó ṣe kedere lórí aṣojú ara ẹni nínú àwọn òfin iṣẹ́ Cloud API, ṣùgbọ́n ẹ̀yà orísun-ṣíṣí alágbàlejò-tirẹ̀ jẹ́ AGPL-3.0 (re…                                       |
-| `gemini`         | ìṣọ́ra         | Àwọn òfin iṣẹ́ sọ ní kedere pé ipele ọ̀fẹ́ jẹ́ fún “àwọn olùgbéejáde tó ń kọ́ pẹ̀lú àwọn módẹ́ẹ̀lì Google AI fún àwọn ète amọ̀ṣẹ́dunjú tàbí ti òwò…                                    |
-| `groq`           | ìṣọ́ra         | Àdéhùn Iṣẹ́ §6.3 fi òfin de àtúntà, fífúnni ní ìwé-àṣẹ abẹ́, tàbí pípín ìwọlé API; §3.2 kò fàyè gba àtúntà/yíyá acco…                                                          |
-| `huggingchat`    | ìṣọ́ra         | Àwọn òfin iṣẹ́ Hugging Face kò fi òfin de àwọn aṣojú ara ẹni alágbàlejò-tirẹ̀ ní kedere, ṣùgbọ́n àwọn òfin àfikún (tí a tọ́ka sí ṣùgbọ́n tí kò ṣeé rí ní kíkún…                   |
-| `huggingface`    | ìṣọ́ra         | Àwọn òfin iṣẹ́ fúnni ní ìwé-àṣẹ tó lopin láti wọlé sí/lo iṣẹ́ náà; ìwé náà kò fàyè gba tàbí fi òfin de single-user… ní kedere                                                  |
-| `hyperbolic`     | ìṣọ́ra         | Àwọn òfin iṣẹ́ fúnni ní ìwọlé API “fún àwọn ète ara ẹni tàbí òwò inú ilé rẹ nìkan” wọ́n sì fi òfin de fífúnni ní ìwé-àṣẹ, … ní kedere                                          |
-| `inference-net`  | ìṣọ́ra         | Àwọn òfin iṣẹ́ fi òfin de “fífúnni ní ìwé-àṣẹ abẹ́, àtúntà, àtúnpín” àti gbígbé àwọn kọ́kọ́rọ́ API láìsí ìfọwọ́sí ní kíkọ; single-u…                                               |
-| `jina-ai`        | ìṣọ́ra         | Àwọn token 10M ọ̀fẹ́ jẹ́ fún ohun tí kì í ṣe ti òwò ní kedere (ìwé-àṣẹ módẹ́ẹ̀lì CC-BY-NC 4.0); aṣojú ara ẹni elédè kan fún L… ara ẹni                                            |
-| `jina-reader`    | ìṣọ́ra         | Àwọn òfin iṣẹ́ fi òfin de lílo àwọn àbájáde láti kọ́ àwọn iṣẹ́ tó ń bá a díje, wọ́n sì fòfin de “àwọn ọ̀nà aládàáṣiṣẹ́ láti yọ ìwífún jáde nípasẹ̀ scraping…                        |
-| `llm7`           | ìṣọ́ra         | Àwọn òfin iṣẹ́ gbé iṣẹ́ náà kalẹ̀ gẹ́gẹ́ bí èyí tó wà fún “ìdánwò, ìdàgbàsókè, àti ìwádìí”; kò sí ìfòfindè tó ṣe kedere lórí aṣojú ara ẹni alágbàlejò-tirẹ̀…                       |
-| `longcat`        | ìṣọ́ra         | Àdéhùn Iṣẹ́ Pẹpẹ API (longcat.chat/platform/private/) fàyè gba ìṣọ̀kan ti òwò àti àwọn app alágbàlejò-tirẹ̀…                                                                    |
-| `mistral`        | ìṣọ́ra         | Àwọn òfin iṣẹ́ Oníbàárà sọ ní kedere pé a lè lo àwọn API fún “àwọn àìní ara ẹni” nìkan, wọ́n sì fi òfin de jíjẹ́ kí àwọn kọ́kọ́rọ́ API wà fún th…                                  |
-| `morph`          | ìṣọ́ra         | ToS gba ìlò fún èrè láyè ní gbogbogbòò; àwọn ìmúṣiṣẹ́ aṣojú alágbàlejò-fúnra-ẹni nílò àdéhùn tó ṣe kedere pẹ̀lú ẹ̀ka títà. Abala 18.…                                           |
-| `nebius`         | ìṣọ́ra         | ToS (Abala 5f) fi ẹ̀tọ́ kọ ìtúnrà, ìtúnpín, tàbí fífi iṣẹ́ náà pèsè “gẹ́gẹ́ bí iṣẹ́ olómìnira” — aṣojú alágbàlejò-fúnra-ẹni…                                                       |
-| `nomic`          | ìṣọ́ra         | ToS fúnni ní àṣẹ API tí kì í ṣe àdádó, tí kò sì ṣe é gbé lọ; Abala 6.b kò gba kí a kọ́ iṣẹ́ olùdíje. Lílo t…                                                                   |
-| `novita`         | ìṣọ́ra         | ToS kò gba ìtúnrà àti àwọn iṣẹ́ olùdíje, ṣùgbọ́n kò sọ̀rọ̀ ní kedere nípa àwọn aṣojú alágbàlejò-fúnra-ẹni ti ara ẹni; ìlò ara ẹni …                                              |
-| `nscale`         | ìṣọ́ra         | AUP kò gba “dídàkọ, ṣíṣe àtúnṣe, ṣíṣe ẹ̀dà méjì... fífi sínú férémù, ṣíṣe àwòjìji, títẹ̀jáde lẹ́ẹ̀kansi... pín gbogbo tàbí èyíkéyìí apá Platform Nscale…                         |
-| `nvidia`         | ìṣọ́ra         | Ìpele ọ̀fẹ́ jẹ́ fún ṣíṣe àwòṣe àkọ́kọ́/ìdàgbàsókè/ìwádìí/àyẹ̀wò nìkan ní kedere — ìlò ní iṣelọpọ (sísìn àwọn olùlò gidi) nílò…                                                     |
-| `openrouter`     | ìṣọ́ra         | ToS kò gba ìtúnrà àyè sí API tàbí ṣíṣe iṣẹ́ olùdíje ní kedere; aṣojú ara ẹni alágbàlejò-fúnra-ẹni fún olùlò kan ṣoṣo…                                                         |
-| `pollinations`   | ìṣọ́ra         | MIT License tí a tọ́ka sí nínú àkọsílẹ̀ API fi hàn pé àtúnlò ní òmìnira gbòòrò wà; a kò rí ìfòfindè tó ṣe kedere lórí aṣojú alágbàlejò-fúnra-ẹni. Síbẹ̀, u…                     |
-| `predibase`      | ìṣọ́ra         | Predibase jẹ́ pẹpẹ ìṣàtúnṣe-kékeré/ìpèsè iṣẹ́ fún ilé-iṣẹ́; àkókò ìdánwò ọ̀fẹ́ jẹ́ fún àwárí àti… ní kedere                                                                        |
-| `publicai`       | ìṣọ́ra         | ToS (publicai.co/tc) sọ àwọn iṣẹ́ di “ní pàtàkì fún ìwádìí àti ìlò ẹ̀kọ́”; kò sí òfin tó ṣe kedere nípa aṣojú tàbí ìtúnrà p…                                                    |
-| `qoder`          | ìṣọ́ra         | Ojúewé ToS kò dá àkóónú tó ṣe é kà padà; Qoder jẹ́ IDE client fún kíkọ kóòdù (kì í ṣe API gbogbogbòò), àwọn àpò aṣojú ti ẹnikẹ́ta sì …                                         |
-| `reka`           | ìṣọ́ra         | Àwọn Òfin Ìṣòwò kò gba fífúnni ní àṣẹ abẹ́ tàbí pínpín àyè sí àwọn ẹnikẹ́ta; ó ṣeé ṣe kí aṣojú ara ẹni fún olùlò kan ṣoṣo dára…                                                |
-| `sambanova`      | ìṣọ́ra         | ToS Abala 1.5(c) kò gba ìtúnrà, fífúnni ní àṣẹ abẹ́, tàbí jíjẹ́ kí iṣẹ́ náà wà fún àwọn ẹnikẹ́ta ní kedere; se…                                                                  |
-| `sensenova`      | ìṣọ́ra         | A kò rí ìfòfindè tó ṣe kedere lórí aṣojú tàbí ìtúnrà nínú ToS tí a ṣàyẹ̀wò, ṣùgbọ́n ìpele ọ̀fẹ́ jẹ́ beta ìpolówó tí kò ní SLA, Sen…                                               |
-| `serper-search`  | ìṣọ́ra         | ToS kò gba “ṣíṣe àwòjìji àwọn ohun èlò lórí server mìíràn bí wọ́n ṣe rí láìfi iye kún un” ní kedere — aṣojú ìgbéjáde-taara tó rọrùn pr…                                       |
-| `siliconflow`    | ìṣọ́ra         | ToS (Clause 3.4(e)(f)(p)) kò gba jíjẹ́ kí iṣẹ́ náà wà fún ẹnikẹ́ta èyíkéyìí, ìtúnrà/fífúnni ní àṣẹ abẹ́,… ní kedere                                                              |
-| `sparkdesk`      | ìṣọ́ra         | Àdéhùn Olùlò SparkDesk fúnni ní ẹ̀tọ́ ìlò ara ẹni, tí kì í ṣe fún èrè nìkan; Ìlànà API Interface kò gba ìkójọ data aládàáṣiṣẹ́…                                                 |
-| `tavily-search`  | ìṣọ́ra         | ToS sọ ní kedere pé API “kò gbọdọ̀ jẹ́ gbígbé lọ, yíyan fún ẹlòmíràn, pínpín, tàbí mímú kí ó wà fún ẹnikẹ́ta ní ọ̀nà mìíràn…                                                     |
-| `tencent`        | ìṣọ́ra         | Tencent Cloud ToS kò gba fífúnni ní àṣẹ abẹ́ tàbí ìtúnrà àyè sí API ní kedere; aṣojú ara ẹni alágbàlejò-fúnra-ẹni fún ìlò ara ẹni …                                           |
-| `together`       | ìṣọ́ra         | ToS Abala 4.3(d) kò gba gbígbé, pínpín, ìtúnrà, yíyá, tàbí fífi àwọn Iṣẹ́ náà pèsè lórí s… ní kedere                                                                          |
-| `uncloseai`      | ìṣọ́ra         | Ìlò aṣojú ara ẹni ṣeé ṣe ṣùgbọ́n a kò fàyè gbà á ní kedere; ToS kò gba kíkọ “àwọn iṣẹ́ ẹ̀kọ́ ẹ̀rọ olùdíje wi…                                                                     |
-| `veoaifree-web`  | ìṣọ́ra         | ToS kò gba àwọn bot tàbí script aládàáṣiṣẹ́ tí ń ṣiṣẹ́ ní “iyára tí kì í ṣe ti ènìyàn” ní kedere, ó sì kò gba dídàkọ pẹpẹ náà láti ṣẹ̀dá …                                      |
-| `vertex`         | ìṣọ́ra         | Àwọn Òfin Iṣẹ́ Google Cloud fi ìtúnrà sí àwọn olùtúnrà tí a fún láṣẹ nìkan (Abala 14 nílò Reseller Agreement); s…                                                             |
-| `voyage-ai`      | ìṣọ́ra         | ToS fúnni ní “ìlò ara ẹni, tí kì í ṣe fún èrè” fún àkóónú ojúlé, ó sì kò gba pínpín ẹ̀rí ìwọlé/àkọọ́lẹ̀ pẹ̀lú àwọn ẹnikẹ́ta;…                                                     |
-| `360ai`          | àìmọ̀          | ToS fún API olùgbéejáde kò ṣeé ráyè sí ní gbangba láìforúkọsílẹ̀; àyè sí i nílò ìfọwọ́sí ìbéèrè, èyí tó túmọ̀ sí pé …                                                           |
-| `chutes`         | àìmọ̀          | Ojúewé ToS wà ní chutes.ai/terms ṣùgbọ́n àkóónú rẹ̀ kò ṣeé ráyè sí nípasẹ̀ fetch; a kò rí àwọn gbólóhùn tó ṣe kedere nípa aṣojú/ìtúnrà nínú …                                   |
-| `freemodel-dev`  | àìmọ̀          | Ojúewé Terms of Service (freemodel.dev/terms) dá àkọlé nìkan padà, láìsí àkóónú tó ṣe é kà nípasẹ̀ WebFetch; kò sí gbólóhùn…                                                  |
-| `gitlawb`        | àìmọ̀          | A kò rí ToS tàbí ìlànà ìlò tó ṣe ìtẹ́wọ́gbà; àwọn ìdènà aṣojú/ìtúnrà jẹ́ àìmọ̀ — ro pé ìṣọ́ra yẹ fún ìlò aṣojú alágbàlejò-fúnra-ẹni.                                              |
-| `liquid`         | àìmọ̀          | Kò sí API alágbàlejò láti ṣe aṣojú rẹ̀; ìlò àwòṣe orísun-ṣíṣí fún èrè jẹ́ ọ̀fẹ́ fún àwọn àjọ tó ní owó-wiwọlé ọdún tó kéré ju $10M. Kò sí alágbàlejò-fúnra-ẹni…                  |
-| `yi`             | àìmọ̀          | ToS kò ṣeé ráyè sí ní gbangba láìwọlé; a kò lè ṣàyẹ̀wò àwọn gbólóhùn nípa aṣojú/ìtúnrà. Ìlò aṣojú ara ẹni alágbàlejò-fúnra-ẹni ṣì…                                            |
-| `comfyui`        | ó dára        | GPL-3.0 ìwé-àṣẹ orísun-ṣíṣí gba ìlò aṣojú ara ẹni alágbàlejò-fúnra-ẹni láyè ní kedere; Comfy Org ToS jẹ́rìí sí ìlò fún èrè ti…                                                |
-| `scaleway`       | ó dára        | Àwọn Òfin Gbogbogbòò ti Àwọn Iṣẹ́ Scaleway jẹ́ àdéhùn cloud ìṣòwò boṣewa tí kò ní ìfòfindè tó ṣe kedere lórí alágbàlejò-fúnra-ẹni…                                             |
-| `sdwebui`        | ó dára        | AGPL-3.0 ìwé-àṣẹ: ó lómìnira láti gbàlejò rẹ̀ fúnra rẹ fún ìlò ara ẹni láìsí ìdènà lórí iye ìlò; aṣojú ara ẹni tó ń lo èyí …                                                  |
-| `searxng-search` | ó dára        | AGPL-3.0 ìwé-àṣẹ orísun-ṣíṣí gba ìlò aṣojú ara ẹni alágbàlejò-fúnra-ẹni láyè ní kedere láìsí ìdènà lórí irú ìlò, ìtúnrà…                                                     |
+| Olùpèsè          | ToS          | Àkíyèsí                                                                                                                                                                         |
+| ---------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `aimlapi`        | kò ṣe kedere | ToS fúnni ní ìwé-àṣẹ lílò tí kì í ṣe ti ẹnì kan ṣoṣo, ṣùgbọ́n kò fàyè gba tàbí fòfin de aṣojú tí a gbàlejò fúnra ẹni tàbí àtúntà ní kedere; kò sí "pers…                         |
+| `baichuan`       | kò ṣe kedere | A kò rí ìfòfindè tó ṣe kedere lórí àwọn aṣojú ara ẹni tí a gbàlejò fúnra ẹni nínú àwọn ìwé àkọsílẹ̀ tí gbogbo ènìyàn lè ráyè kà; síbẹ̀, ètò ọ̀fẹ́ M3 Plus…                          |
+| `bluesminds`     | kò ṣe kedere | A kò rí àwọn abala ToS tó ṣe kedere nípa ṣíṣe aṣojú tí a gbàlejò fúnra ẹni tàbí àtúntà; ojú-ewé iye owó dá lórí àwọn ààlà ẹ̀ya/ìwọ̀n lílò…                                        |
+| `bytez`          | kò ṣe kedere | Ojú-ewé ToS tó ṣe kedere kò ṣeé ráyè wọlé (404); a kò rí àwọn abala gbogbo-gbòò fún ìdánwò-nìkan tàbí tí kò gba aṣojú nínú àwọn ìwé àkọsílẹ̀, ṣùgbọ́n pẹpẹ náà…                   |
+| `doubao`         | kò ṣe kedere | A kò rí ìfòfindè tó ṣe kedere lórí aṣojú/àtúntà nínú àwọn ìwé àkọsílẹ̀ tí a ṣe atọ́ka wọn fún gbogbo ènìyàn; Volcengine jẹ́ ìkùùkuu tó dá lórí àwọn olùgbéejáde…                   |
+| `gitlawb-gmi`    | kò ṣe kedere | A kò rí abala ToS tó ṣe kedere tó fòfin de lílo aṣojú ara ẹni tí a gbàlejò fúnra ẹni; àwòṣe Nemotron ọ̀fẹ́ náà ní ìkìlọ̀ NVIDIA…                                                   |
+| `monsterapi`     | kò ṣe kedere | Ojú-ewé ToS MonsterAPI (monsterapi.ai/terms-of-service) kò ṣeé wọlé nígbà ìwádìí; kò sí àlàyé pàtó nípa aṣojú/àtúntà/ara ẹni…                                                   |
+| `nous-research`  | kò ṣe kedere | Nous Portal fúnra rẹ̀ jẹ́ iṣẹ́ alákójọpọ̀/aṣojú; lílò ó gẹ́gẹ́ bí ẹ̀yìn fún aṣojú mìíràn tí a gbàlejò fúnra ẹni ń ṣẹ̀dá aṣojú-…                                                         |
+| `ollama-cloud`   | kò ṣe kedere | ToS fòfin de lílo iṣẹ́ náà "láti ṣe agbekalẹ̀ àwọn ọjà olùdíje" ṣùgbọ́n kò ní ìfòfindè tó ṣe kedere lórí àwọn aṣojú ara ẹni tí a gbàlejò fúnra ẹni…                                |
+| `stepfun`        | kò ṣe kedere | A kò rí ìfòfindè tó ṣe kedere lórí aṣojú ara ẹni tí a gbàlejò fúnra ẹni, ṣùgbọ́n ToS Step Plan dá lórí àwọn olùgbéejáde tó ń lo àwọn co… pàtó                                    |
+| `api-airforce`   | ìṣọ́ra        | ToS fòfin de "kíkọ́ àwọn iṣẹ́ olùdíje láìgba àṣẹ" àti "pínpín ẹ̀rí ìdánimọ̀" ní kedere — aṣojú pers… tí a gbàlejò fúnra ẹni                                                         |
+| `arcee-ai`       | ìṣọ́ra        | Ìráyè ọ̀fẹ́ wà nípasẹ̀ ipele ìdarí :free ti OpenRouter (kì í ṣe àwọn òfin API tààrà ti Arcee); ToS OpenRouter fàyè gba ìdàgbàsókè ara ẹni…                                         |
+| `baidu`          | ìṣọ́ra        | A kò ṣàyẹ̀wò ToS ní kedere fún àwọn abala aṣojú/àtúntà, ṣùgbọ́n pẹpẹ náà béèrè ìfàṣẹsí orúkọ gidi (ID Ṣáínà ní ọ̀pọ̀ ìgbà…                                                          |
+| `baseten`        | ìṣọ́ra        | ToS fi lílò sí "àwọn ète iṣẹ́ inú ilé ti Oníbàárà" ó sì fòfin de fífúnni ní ìwé-àṣẹ abẹ́, àtúntà, tàbí gbígba…                                                                    |
+| `bazaarlink`     | ìṣọ́ra        | ToS fòfin de àtúntà tàbí fífún àwọn ẹgbẹ́ kẹta ní ìwé-àṣẹ abẹ́ fún àwọn kọ́kọ́rọ́ API ní kedere; aṣojú ara ẹni tí a gbàlejò fúnra ẹni fún lílò ara ẹni…                              |
+| `brave-search`   | ìṣọ́ra        | ToS fòfin de àtúnpín, àtúntà, àti fífúnni ní ìwé-àṣẹ abẹ́ fún àwọn èsì ìṣàwárí; lílo API láti "ṣe àdáṣe tàbí gbìyànjú láti ṣe àdáṣe…                                             |
+| `byteplus`       | ìṣọ́ra        | Àwọn token kò ṣeé gbé lọ, wọ́n sì jẹ́ fún àkọọ́lẹ̀ kan ṣoṣo; kò sí ìfòfindè aṣojú tó ṣe kedere, ṣùgbọ́n BytePlus ní ẹ̀tọ́ láti…                                                        |
+| `cerebras`       | ìṣọ́ra        | ToS fúnni ní ẹ̀tọ́ tí kì í ṣe ti ẹnì kan ṣoṣo, tí kò ṣeé gbé lọ, tí kò sì ṣeé fún ní ìwé-àṣẹ abẹ́ fún lílò ara ẹni tàbí iṣẹ́ ajé; ó fòfin de àtúntà, s…                             |
+| `cloudflare-ai`  | ìṣọ́ra        | Cloudflare Self-Serve ToS §2.2.1(j) fòfin de lílo Àwọn Iṣẹ́ láti "pèsè nẹ́tíwọ́ọ̀kì aládàáni àfọwọ́ṣe tàbí pro… mìíràn tó jọ ọ́                                                       |
+| `cohere`         | ìṣọ́ra        | Cohere fòfin de àwọn kọ́kọ́rọ́ ìdánwò fún "àwọn ète iṣelọpọ tàbí ti òwò" ní kedere; aṣojú ara ẹni tí a gbàlejò fúnra ẹni tó ń darí re…                                             |
+| `deepinfra`      | ìṣọ́ra        | ToS gba lílò ti òwò tó bófin mu láàyè ní gbòòrò, ṣùgbọ́n ó fòfin de lílò "tó ń bá èyíkéyìí nínú àwọn iṣẹ́ ajé the… dije ní tààrà tàbí lọ́nà àìtààrà                                |
+| `deepseek`       | ìṣọ́ra        | Open Platform ToS (tó bẹ̀rẹ̀ sí í ṣiṣẹ́ 2026-04-29) fàyè gba lílò tó gbòòrò, tó fi mọ́ "ìdàgbàsókè ọjà àtọ̀wọ́dá" àti lílò ara ẹni/comm…                                              |
+| `dify`           | ìṣọ́ra        | A fàyè gba aṣojú ara ẹni olùlò-kan tí a gbàlejò fúnra ẹni lábẹ́ ìwé-àṣẹ Apache 2.0 tí a ṣe àtúnṣe sí; síbẹ̀, ìmúṣiṣẹ́ olùgbé-ọ̀pọ̀…                                                  |
+| `exa-search`     | ìṣọ́ra        | A kò rí àwọn abala tó sọ ní kedere pé "kò sí aṣojú" tàbí "fún ìdánwò nìkan"; Exa ń pèsè ètò alábàáṣiṣẹ́ àtúntà tó fàyè gba API…                                                  |
+| `firecrawl`      | ìṣọ́ra        | A kò rí ìfòfindè aṣojú ara ẹni tó ṣe kedere nínú ToS Cloud API, ṣùgbọ́n ẹ̀yà orísun-ṣíṣí tí a gbàlejò fúnra ẹni jẹ́ AGPL-3.0 (re…                                                  |
+| `gemini`         | ìṣọ́ra        | ToS sọ ní kedere pé ipele ọ̀fẹ́ jẹ́ fún "àwọn olùgbéejáde tó ń kọ́ nǹkan pẹ̀lú àwọn àwòṣe Google AI fún àwọn ète amọ̀ṣẹ́dunjú tàbí iṣẹ́ ajé…                                            |
+| `groq`           | ìṣọ́ra        | Services Agreement §6.3 fòfin de àtúntà, fífúnni ní ìwé-àṣẹ abẹ́, tàbí pínpín ìráyè API; §3.2 dí àtúntà/yíyá acco…                                                               |
+| `huggingchat`    | ìṣọ́ra        | ToS Hugging Face kò fòfin de àwọn aṣojú ara ẹni tí a gbàlejò fúnra ẹni ní kedere, ṣùgbọ́n àwọn òfin àfikún (tí a tọ́ka sí ṣùgbọ́n tí kò ṣeé kà ní kíkún…                           |
+| `huggingface`    | ìṣọ́ra        | ToS fúnni ní ìwé-àṣẹ tó ní ààlà láti ráyè wọlé sí/lo iṣẹ́ náà; ìwé náà kò fàyè gba tàbí fòfin de aṣojú olùlò-kan ní kedere…                                                      |
+| `hyperbolic`     | ìṣọ́ra        | ToS fúnni ní ìráyè API "fún àwọn ète ara rẹ nìkan tàbí àwọn ète iṣẹ́ inú ilé" ó sì fòfin de fífúnni ní ìwé-àṣẹ, …                                                                |
+| `inference-net`  | ìṣọ́ra        | ToS fòfin de "fífun ní ìwé-àṣẹ abẹ́, àtúntà, pínpín" àti gbígbé àwọn kọ́kọ́rọ́ API lọ láìsí ìfọwọ́sí kíkọ; olùlò-kan…                                                                |
+| `jina-ai`        | ìṣọ́ra        | Àwọn token 10M ọ̀fẹ́ jẹ́ fún ohun tí kì í ṣe ti òwò ní kedere (ìwé-àṣẹ àwòṣe CC-BY-NC 4.0); aṣojú ara ẹni olùlò-kan fún L… ara ẹni                                                 |
+| `jina-reader`    | ìṣọ́ra        | ToS fòfin de lílo àwọn àbájáde láti kọ́ àwọn iṣẹ́ olùdíje, ó sì de "àwọn ọ̀nà aládàáṣiṣẹ́ láti yọ ìwífún jáde nípasẹ̀ scraping…                                                      |
+| `llm7`           | ìṣọ́ra        | ToS fi iṣẹ́ náà hàn gẹ́gẹ́ bí ohun fún "àdánwò, ìdàgbàsókè, àti ìwádìí"; kò sí ìfòfindè tó ṣe kedere lórí aṣojú ara ẹni tí a gbàlejò fúnra ẹni…                                    |
+| `longcat`        | ìṣọ́ra        | API Platform Service Agreement (longcat.chat/platform/private/) fàyè gba ìṣọ̀kan ti òwò àti àwọn app tí a gbàlejò fúnra ẹni…                                                     |
+| `mistral`        | ìṣọ́ra        | Consumer ToS sọ ní kedere pé a lè lo àwọn API fún "àwọn àìní ara ẹni" nìkan, ó sì fòfin de mímú kí àwọn kọ́kọ́rọ́ API wà fún th…                                                   |
+| `morph`          | ìkìlọ̀        | ToS gba lílo fún ìṣòwò láyè ní gbogbogbòò; àwọn ìmúṣiṣẹ́ aṣojú tí a gbàlejò fúnra ẹni nílò ìṣètò pàtó pẹ̀lú ẹ̀ka títà. Abala 18.…                                                  |
+| `nebius`         | ìkìlọ̀        | ToS (Abala 5f) fi pàtó fòfin de àtúntà, àtúnpín, tàbí fífúnni ní iṣẹ́ náà “gẹ́gẹ́ bí iṣẹ́ olómìnira” — iṣẹ́ aṣojú tí a…                                                              |
+| `nomic`          | ìkìlọ̀        | ToS fúnni ní ìwé-àṣẹ API tí kì í ṣe ti ẹnìkan ṣoṣo, tí kò sì ṣeé gbé lọ; Abala 6.b fòfin de kíkọ́ iṣẹ́ afigagbága. Lílo…                                                          |
+| `novita`         | ìkìlọ̀        | ToS fòfin de àtúntà àti àwọn iṣẹ́ afigagbága, ṣùgbọ́n kò sọ ní pàtó nípa àwọn iṣẹ́ aṣojú aládàáni tí a gbàlejò fúnra ẹni; lílo ara ẹni…                                            |
+| `nscale`         | ìkìlọ̀        | AUP fòfin de “dídàkọ, ṣíṣe àtúnṣe, ṣíṣe àdàkọ méjì... fífi sínú férémù, ṣíṣe àwòrán ojú-ewé, àtẹ̀jáde... pín gbogbo tàbí apá èyíkéyìí ti Nscale Platform…                        |
+| `nvidia`         | ìkìlọ̀        | Ìpele ọ̀fẹ́ jẹ́ fún ṣíṣe àwòṣe ìdánwò/ìdàgbàsókè/ìwádìí/àyẹ̀wò nìkan ní pàtó — lílo ní ìmúṣiṣẹ́ gidi (sísìn àwọn aṣàmúlò gidi) nílò…                                                 |
+| `openrouter`     | ìkìlọ̀        | ToS fi pàtó fòfin de àtúntà ìráàyèsí API tàbí ṣíṣe ìdàgbàsókè iṣẹ́ afigagbága; iṣẹ́ aṣojú ara ẹni tí a gbàlejò fúnra ẹni fún aṣàmúlò kan ṣoṣo…                                    |
+| `pollinations`   | ìkìlọ̀        | MIT License tí a tọ́ka sí nínú àwọn ìwé API fi hàn pé àtúnlò gbooro jẹ́ ìfàyègbà; kò sí ìfòfin-denà pàtó lórí fífi iṣẹ́ aṣojú tí a gbàlejò fúnra ẹni ṣe tí a rí. Síbẹ̀, …           |
+| `predibase`      | ìkìlọ̀        | Predibase wà gẹ́gẹ́ bí pẹpẹ ìṣàtúnṣe-àrà-ọ̀tọ̀/ìpèsè iṣẹ́ fún ilé-iṣẹ́; àkókò ìdánwò ọ̀fẹ́ jẹ́ fún ìṣàwárí àti…                                                                          |
+| `publicai`       | ìkìlọ̀        | ToS (publicai.co/tc) sọ pé àwọn iṣẹ́ náà jẹ́ “ní pàtàkì fún ìwádìí àti lílo ẹ̀kọ́”; kò sí ìfòfin-denà pàtó lórí iṣẹ́ aṣojú tàbí àtúntà…                                              |
+| `qoder`          | ìkìlọ̀        | Ojú-ewé ToS kò dá àkóónú tó ṣeé kà padà; Qoder jẹ́ kíláyẹ́ǹtì IDE fún kíkọ kóòdù (kì í ṣe API gbogbogbòò), àwọn àpótí iṣẹ́ aṣojú ẹni-kẹta sì…                                      |
+| `reka`           | ìkìlọ̀        | Business Terms fòfin de fífúnni ní ìwé-àṣẹ abẹ́ tàbí pínpín ìráàyèsí sí àwọn ẹni-kẹta; ó ṣeé ṣe kí iṣẹ́ aṣojú ara ẹni fún aṣàmúlò kan ṣoṣo dára…                                  |
+| `sambanova`      | ìkìlọ̀        | Abala 1.5(c) ti ToS fi pàtó fòfin de àtúntà, fífúnni ní ìwé-àṣẹ abẹ́, tàbí mímú iṣẹ́ náà wà fún àwọn ẹni-kẹta; …                                                                  |
+| `sensenova`      | ìkìlọ̀        | Kò sí ìfòfin-denà pàtó lórí iṣẹ́ aṣojú tàbí àtúntà tí a rí nínú ToS tí a ṣàyẹ̀wò, ṣùgbọ́n ìpele ọ̀fẹ́ jẹ́ beta ìpolówó tí kò ní SLA, Sen…                                             |
+| `serper-search`  | ìkìlọ̀        | ToS fi pàtó fòfin de “ṣíṣe àwòrán ojú-ewé àwọn ohun èlò lórí olupin mìíràn gẹ́gẹ́ bí wọ́n ṣe rí láìfi iye kún un” — iṣẹ́ aṣojú ìkọjá-lásán…                                         |
+| `siliconflow`    | ìkìlọ̀        | ToS (Ìpèsè 3.4(e)(f)(p)) fi pàtó fòfin de mímú iṣẹ́ náà wà fún ẹni-kẹta èyíkéyìí, àtúntà/fífúnni ní ìwé-àṣẹ abẹ́,…                                                                |
+| `sparkdesk`      | ìkìlọ̀        | Àdéhùn Aṣàmúlò SparkDesk fúnni ní ẹ̀tọ́ lílo ara ẹni, tí kì í ṣe ti ìṣòwò nìkan; Ìlànà Ìbára-ẹni-sọ̀rọ̀ API fòfin de ìkójọ dátà aládàáṣe…                                           |
+| `tavily-search`  | ìkìlọ̀        | ToS sọ ní pàtó pé API náà “kò gbọdọ̀ jẹ́ gbígbé lọ, yíyàn fún ẹlòmíràn, pínpín, tàbí mímú wà fún ẹni-kẹta èyíkéyìí ní ọ̀nà mìíràn…                                                 |
+| `tencent`        | ìkìlọ̀        | Tencent Cloud ToS fi pàtó fòfin de fífúnni ní ìwé-àṣẹ abẹ́ tàbí àtúntà ìráàyèsí API; iṣẹ́ aṣojú ara ẹni tí a gbàlejò fúnra ẹni fún lílo ara ẹni…                                  |
+| `together`       | ìkìlọ̀        | Abala 4.3(d) ti ToS fi pàtó fòfin de gbígbé lọ, pínpín, àtúntà, yíyá, tàbí fífúnni ní Àwọn Iṣẹ́ náà gẹ́gẹ́ bí…                                                                     |
+| `uncloseai`      | ìkìlọ̀        | Lílo iṣẹ́ aṣojú ara ẹni ṣeé ṣe ṣùgbọ́n kò gba àṣẹ ní pàtó; ToS fòfin de kíkọ́ “àwọn iṣẹ́ ẹ̀kọ́ ẹ̀rọ afigagbága pẹ̀lú…                                                                   |
+| `veoaifree-web`  | ìkìlọ̀        | ToS fi pàtó fòfin de àwọn bot tàbí script aládàáṣe tí ń ṣiṣẹ́ ní “ìyára tí kò bá ti ènìyàn mu,” ó sì fòfin de dídàkọ pẹpẹ náà láti ṣẹ̀dá…                                         |
+| `vertex`         | ìkìlọ̀        | Google Cloud Service Terms dín àtúntà kù sí àwọn alátúntà tí a fún láṣẹ nìkan (Abala 14 nílò Reseller Agreement); …                                                             |
+| `voyage-ai`      | ìkìlọ̀        | ToS fúnni ní “lílo ara ẹni, tí kì í ṣe ti ìṣòwò” fún àkóónú ojúlé, ó sì fòfin de pínpín ẹ̀rí ìdánimọ̀/àkọọ́lẹ̀ pẹ̀lú àwọn ẹni-kẹta;…                                                 |
+| `xkiro`          | ìkìlọ̀        | ToS (2026-07-30) fòfin de àtúntà/àtúnpín iṣẹ́ náà àti rírú àwọn òfin olùpèsè òkè; iṣẹ́ aṣojú ara ẹni…                                                                             |
+| `360ai`          | àìmọ̀         | ToS fún API olùdàgbàsókè kò ṣeé ráyè sí ní gbangba láìforúkọsílẹ̀; ìráàyèsí nílò ìfọwọ́sí ìbéèrè, èyí tó túmọ̀ sí…                                                                 |
+| `chutes`         | àìmọ̀         | Ojú-ewé ToS wà ní chutes.ai/terms ṣùgbọ́n àkóónú rẹ̀ kò ṣeé ráyè sí nípasẹ̀ ìgbàjáde; kò sí àwọn ìpèsè pàtó lórí iṣẹ́ aṣojú/àtúntà tí a rí nínú…                                    |
+| `freemodel-dev`  | àìmọ̀         | Ojú-ewé Terms of Service (freemodel.dev/terms) dá àkọlé nìkan padà láìsí àkóónú tó ṣeé kà nípasẹ̀ WebFetch; kò sí ìpèsè…                                                         |
+| `gitlawb`        | àìmọ̀         | Kò sí ToS tàbí ìlànà lílo tó ṣeé gbà tí a rí; àwọn ìfòfin-denà iṣẹ́ aṣojú/àtúntà jẹ́ àìmọ̀ — fi ìkìlọ̀ sí lílo iṣẹ́ aṣojú tí a gbàlejò fúnra ẹni.                                    |
+| `liquid`         | àìmọ̀         | Kò sí API tí a gbàlejò láti ṣe iṣẹ́ aṣojú fún; lílo àwòṣe orísun-ṣíṣi fún ìṣòwò jẹ́ ọ̀fẹ́ fún àwọn àjọ tó ní owó-wiwọlé ọdún tí kò tó $10M. Kò sí iṣẹ́ aṣojú tí a gbàlejò fúnra ẹni… |
+| `yi`             | àìmọ̀         | ToS kò ṣeé ráyè sí ní gbangba láìwọlé; a kò lè ṣàyẹ̀wò àwọn ìpèsè iṣẹ́ aṣojú/àtúntà. Lílo iṣẹ́ aṣojú ara ẹni tí a gbàlejò fúnra ẹni ṣì…                                            |
+| `comfyui`        | ó dára       | Ìwé-àṣẹ orísun-ṣíṣi GPL-3.0 fi pàtó gba lílo iṣẹ́ aṣojú ara ẹni tí a gbàlejò fúnra ẹni láyè; ToS Comfy Org jẹ́rìí sí lílo fún ìṣòwò ti…                                           |
+| `scaleway`       | ó dára       | General Terms of Services ti Scaleway jẹ́ àdéhùn awọsánmà ìṣòwò tó wọ́pọ̀ láìsí ìfòfin-denà pàtó lórí iṣẹ́ aṣojú tí a gbàlejò fúnra ẹni…                                            |
+| `sdwebui`        | ó dára       | Ìwé-àṣẹ AGPL-3.0: ó jẹ́ ọ̀fẹ́ láti gbàlejò fúnra ẹni fún lílo ara ẹni láìsí ìdíwọ́ lórí ìwọ̀n lílo; iṣẹ́ aṣojú ara ẹni tó ń lo èyí…                                                   |
+| `searxng-search` | ó dára       | Ìwé-àṣẹ orísun-ṣíṣi AGPL-3.0 fi pàtó gba lílo iṣẹ́ aṣojú ara ẹni tí a gbàlejò fúnra ẹni láyè láìsí ìdíwọ́ lórí irú lílo, àtúntà…                                                  |
 
 ---
 
-## Ìpele ọ̀fẹ́ fún olùpèsè kọ̀ọ̀kan (túnṣe ní 2026-09-02 fún àwọn ìlà tí a tún ṣe àyẹ̀wò wọn; 2026-06-17 fún àwọn yòókù)
+## Ìpele ọ̀fẹ́ fún olùpèsè kọ̀ọ̀kan (a tún un ṣe ní 2026-09-02 fún àwọn ìlà tí a tún ṣàyẹ̀wò; 2026-06-17 fún àwọn yòókù)
 
-> A tún un ṣe láti inú àkójọ àwọn módẹ́lì kọ̀ọ̀kan (`open-sse/config/freeModelCatalog.ts`), a sì yọ àwọn àdáwòkọ inú àkójọpọ̀ kúrò. A ṣètò rẹ̀ ní ìbámu pẹ̀lú iye tóókìnì àtúnṣe déédéé fún oṣù kan. `uncapped*` = ọ̀fẹ́ títí láé ṣùgbọ́n kò ní ààlà tóókìnì tí a tẹ̀ jáde (ìwọ̀n/ìṣiṣẹ́-pọ̀ ní àkókò kan ló fi ààlà sí i) — ó jẹ́ àyè ìlò gidi, **a kò** sì kà á pọ̀ mọ́ àpapọ̀ inú àkọlé. `—` = kírẹ́díìtì nìkan / kò nílò kọ́kọ́rọ́ / kò ṣeé wọn ní tóókìnì.
+> A tún un ṣe láti inú àkójọ awoṣe kọ̀ọ̀kan (`open-sse/config/freeModelCatalog.ts`), pẹ̀lú yíyọ àwọn àdáwòkọ inú àkójọpọ̀ kúrò. A tò ó gẹ́gẹ́ bí iye token tí ó ń wà ní ìdúróṣinṣin lóṣooṣù. `uncapped*` = ó jẹ́ ọ̀fẹ́ títí láé ṣùgbọ́n kò sí òpin token tí a tẹ̀ jáde (ó ní ìdíwọ́ ìwọ̀n-ìbéèrè/ìṣiṣẹ́pọ̀-lẹ́ẹ̀kan) — ìráyè gidi ni, **a kò** sì kà á pọ̀ mọ́ àpapọ̀ pàtàkì. `—` = kírẹ́díìtì-nìkan / láìsí kọ́kọ́rọ́ / kò ṣeé fi token wọ̀n.
 
-| Olùpèsè          | Irú ọ̀fẹ́              | Tóòkì dídúró/oṣù | Kirẹditi oṣù àkọ́kọ́ | Àwọn Òfin Iṣẹ́ | Àwọn àwòṣe |
-| ---------------- | -------------------- | ---------------- | ------------------ | ------------- | ---------- |
-| `mistral`        | tó ń tún wá          | ~1.00B           | —                  | ìṣọ́ra         | 5          |
-| `nara`           | tó ń tún wá          | ~210M            | —                  | ìṣọ́ra         | 8          |
-| `llm7`           | tó ń tún wá          | ~150M            | —                  | ìṣọ́ra         | 4          |
-| `longcat`        | ẹ̀ẹ̀kan ṣoṣo           | —                | 10M                | ìṣọ́ra         | 1          |
-| `cerebras`       | ẹ̀ẹ̀kan ṣoṣo           | —                | kirẹditi $5        | ìṣọ́ra         | 2          |
-| `cloudflare-ai`  | tó ń tún wá          | ~30M             | —                  | ìṣọ́ra         | 9          |
-| `groq`           | tó ń tún wá          | ~30M             | —                  | ìṣọ́ra         | 5          |
-| `api-airforce`   | tó ń tún wá          | ~24M             | —                  | ìṣọ́ra         | 7          |
-| `bluesminds`     | tó ń tún wá          | ~7M              | —                  | àìnídánilójú  | 22         |
-| `sambanova`      | tó ń tún wá          | ~6M              | —                  | ìṣọ́ra         | 5          |
-| `arcee-ai`       | tó ń tún wá          | ~5M              | —                  | ìṣọ́ra         | 1          |
-| `bazaarlink`     | tó ń tún wá          | ~4M              | —                  | ìṣọ́ra         | 32         |
-| `openrouter`     | tó ń tún wá          | ~1M              | —                  | ìṣọ́ra         | 1          |
-| `cohere`         | tó ń tún wá          | ~800K            | —                  | ìṣọ́ra         | 6          |
-| `huggingchat`    | tó ń tún wá          | ~500K            | —                  | ìṣọ́ra         | 4          |
-| `morph`          | tó ń tún wá          | ~400K            | —                  | ó dára        | 2          |
-| `huggingface`    | tó ń tún wá          | ~200K            | —                  | ìṣọ́ra         | 6          |
-| `kiro`           | tó ń tún wá          | ~25K             | —                  | yẹra          | 12         |
-| `glm-cn`         | kò ní òpin           | kò ní òpin\*     | ~20M               | ó dára        | 4          |
-| `baidu`          | kò ní òpin           | kò ní òpin\*     | —                  | ìṣọ́ra         | 1          |
-| `gemini`         | kò ní òpin           | kò ní òpin\*     | —                  | ìṣọ́ra         | 4          |
-| `kilo-gateway`   | kò ní òpin           | kò ní òpin\*     | —                  | ìṣọ́ra         | 7          |
-| `ollama-cloud`   | kò ní òpin           | kò ní òpin\*     | —                  | àìnídánilójú  | 8          |
-| `opencode-zen`   | kò ní òpin           | kò ní òpin\*     | —                  | ìṣọ́ra         | 6          |
-| `siliconflow`    | kò ní òpin           | kò ní òpin\*     | —                  | ìṣọ́ra         | 10         |
-| `tencent`        | kò ní òpin           | kò ní òpin\*     | —                  | ìṣọ́ra         | 1          |
-| `vertex`         | kirẹditi ìforúkọsílẹ̀ | —                | ~300M              | ìṣọ́ra         | 10         |
-| `agentrouter`    | kirẹditi ìforúkọsílẹ̀ | —                | ~200M              | ìṣọ́ra         | 4          |
-| `predibase`      | kirẹditi ìforúkọsílẹ̀ | —                | ~25M               | ìṣọ́ra         | 1          |
-| `doubao`         | kirẹditi ìforúkọsílẹ̀ | —                | ~15M               | àìnídánilójú  | 1          |
-| `ai21`           | kirẹditi ìforúkọsílẹ̀ | —                | ~10M               | yẹra          | 2          |
-| `deepseek`       | kirẹditi ìforúkọsílẹ̀ | —                | ~5M                | ó dára        | 2          |
-| `hyperbolic`     | kirẹditi ìforúkọsílẹ̀ | —                | ~5M                | ó dára        | 8          |
-| `nscale`         | kirẹditi ìforúkọsílẹ̀ | —                | ~5M                | ìṣọ́ra         | 6          |
-| `bytez`          | kirẹditi ìforúkọsílẹ̀ | —                | ~1M                | àìnídánilójú  | 3          |
-| `deepinfra`      | kirẹditi ìforúkọsílẹ̀ | —                | ~1M                | ìṣọ́ra         | 22         |
-| `fireworks`      | kirẹditi ìforúkọsílẹ̀ | —                | ~1M                | yẹra          | 10         |
-| `nebius`         | kirẹditi ìforúkọsílẹ̀ | —                | ~1M                | ìṣọ́ra         | 1          |
-| `qoder`          | kirẹditi ìforúkọsílẹ̀ | —                | ~1M                | ìṣọ́ra         | 14         |
-| `scaleway`       | kirẹditi ìforúkọsílẹ̀ | —                | ~1M                | ó dára        | 6          |
-| `novita`         | kirẹditi ìforúkọsílẹ̀ | —                | ~500K              | ìṣọ́ra         | 1          |
-| `agy`            | láìsí kọ́kọ́rọ́         | —                | —                  | yẹra          | 16         |
-| `baichuan`       | láìsí kọ́kọ́rọ́         | —                | —                  | àìnídánilójú  | 1          |
-| `blackbox`       | láìsí kọ́kọ́rọ́         | —                | —                  | yẹra          | 6          |
-| `coze`           | láìsí kọ́kọ́rọ́         | —                | —                  | yẹra          | 1          |
-| `duckduckgo-web` | láìsí kọ́kọ́rọ́         | —                | —                  | yẹra          | 6          |
-| `freemodel-dev`  | láìsí kọ́kọ́rọ́         | —                | —                  | àìmọ̀          | 4          |
-| `friendliai`     | láìsí kọ́kọ́rọ́         | —                | —                  | yẹra          | 2          |
-| `iflytek`        | láìsí kọ́kọ́rọ́         | —                | —                  | yẹra          | 1          |
-| `inference-net`  | láìsí kọ́kọ́rọ́         | —                | —                  | ìṣọ́ra         | 3          |
-| `liquid`         | láìsí kọ́kọ́rọ́         | —                | —                  | àìmọ̀          | 1          |
-| `monsterapi`     | láìsí kọ́kọ́rọ́         | —                | —                  | àìnídánilójú  | 1          |
-| `muse-spark-web` | láìsí kọ́kọ́rọ́         | —                | —                  | yẹra          | 3          |
-| `nlpcloud`       | láìsí kọ́kọ́rọ́         | —                | —                  | yẹra          | 1          |
-| `nous-research`  | láìsí kọ́kọ́rọ́         | —                | —                  | àìnídánilójú  | 2          |
-| `nvidia`         | láìsí kọ́kọ́rọ́         | —                | —                  | ìṣọ́ra         | 13         |
-| `opencode`       | láìsí kọ́kọ́rọ́         | —                | —                  | yẹra          | 7          |
-| `pollinations`   | láìsí kọ́kọ́rọ́         | —                | —                  | ìṣọ́ra         | 31         |
-| `publicai`       | láìsí kọ́kọ́rọ́         | —                | —                  | ìṣọ́ra         | 3          |
-| `reka`           | láìsí kọ́kọ́rọ́         | —                | —                  | ìṣọ́ra         | 2          |
-| `sensenova`      | láìsí kọ́kọ́rọ́         | —                | —                  | ìṣọ́ra         | 1          |
-| `sparkdesk`      | láìsí kọ́kọ́rọ́         | —                | —                  | ìṣọ́ra         | 1          |
-| `stepfun`        | láìsí kọ́kọ́rọ́         | —                | —                  | ó dára        | 1          |
-| `t3-web`         | láìsí kọ́kọ́rọ́         | —                | —                  | yẹra fún      | 23         |
-| `uncloseai`      | láìsí kọ́kọ́rọ́         | —                | —                  | ìṣọ́ra         | 3          |
+| Olùpèsè          | Irú ọ̀fẹ́               | Àwọn tókìn tó dúróṣinṣin/osù | Kírẹ́díìtì oṣù àkọ́kọ́ | Àwọn òfin iṣẹ́ | Àwọn àwòṣe |
+| ---------------- | --------------------- | ---------------------------- | ------------------- | ------------- | ---------- |
+| `mistral`        | àsìkò-dé-àsìkò        | ~1.00B                       | —                   | ṣọ́ra          | 5          |
+| `nara`           | àsìkò-dé-àsìkò        | ~210M                        | —                   | ṣọ́ra          | 8          |
+| `llm7`           | àsìkò-dé-àsìkò        | ~150M                        | —                   | ṣọ́ra          | 4          |
+| `xkiro`          | àsìkò-dé-àsìkò        | ~150M                        | —                   | ṣọ́ra          | 39         |
+| `longcat`        | ẹ̀ẹ̀kan ṣoṣo            | —                            | 10M                 | ṣọ́ra          | 1          |
+| `cerebras`       | ẹ̀ẹ̀kan ṣoṣo            | —                            | kírẹ́díìtì $5        | ṣọ́ra          | 2          |
+| `cloudflare-ai`  | àsìkò-dé-àsìkò        | ~30M                         | —                   | ṣọ́ra          | 9          |
+| `groq`           | àsìkò-dé-àsìkò        | ~30M                         | —                   | ṣọ́ra          | 5          |
+| `api-airforce`   | àsìkò-dé-àsìkò        | ~24M                         | —                   | ṣọ́ra          | 7          |
+| `bluesminds`     | àsìkò-dé-àsìkò        | ~7M                          | —                   | kò ṣe kedere  | 22         |
+| `sambanova`      | àsìkò-dé-àsìkò        | ~6M                          | —                   | ṣọ́ra          | 5          |
+| `arcee-ai`       | àsìkò-dé-àsìkò        | ~5M                          | —                   | ṣọ́ra          | 1          |
+| `bazaarlink`     | àsìkò-dé-àsìkò        | ~4M                          | —                   | ṣọ́ra          | 32         |
+| `openrouter`     | àsìkò-dé-àsìkò        | ~1M                          | —                   | ṣọ́ra          | 1          |
+| `cohere`         | àsìkò-dé-àsìkò        | ~800K                        | —                   | ṣọ́ra          | 6          |
+| `huggingchat`    | àsìkò-dé-àsìkò        | ~500K                        | —                   | ṣọ́ra          | 4          |
+| `morph`          | àsìkò-dé-àsìkò        | ~400K                        | —                   | ó dára        | 2          |
+| `huggingface`    | àsìkò-dé-àsìkò        | ~200K                        | —                   | ṣọ́ra          | 6          |
+| `kiro`           | àsìkò-dé-àsìkò        | ~25K                         | —                   | yẹra fún      | 12         |
+| `glm-cn`         | aláìlópin             | aláìlópin\*                  | ~20M                | ó dára        | 4          |
+| `baidu`          | aláìlópin             | aláìlópin\*                  | —                   | ṣọ́ra          | 1          |
+| `gemini`         | aláìlópin             | aláìlópin\*                  | —                   | ṣọ́ra          | 4          |
+| `kilo-gateway`   | aláìlópin             | aláìlópin\*                  | —                   | ṣọ́ra          | 7          |
+| `ollama-cloud`   | aláìlópin             | aláìlópin\*                  | —                   | kò ṣe kedere  | 8          |
+| `opencode-zen`   | aláìlópin             | aláìlópin\*                  | —                   | ṣọ́ra          | 6          |
+| `siliconflow`    | aláìlópin             | aláìlópin\*                  | —                   | ṣọ́ra          | 10         |
+| `tencent`        | aláìlópin             | aláìlópin\*                  | —                   | ṣọ́ra          | 1          |
+| `vertex`         | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~300M               | ṣọ́ra          | 10         |
+| `agentrouter`    | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~200M               | ṣọ́ra          | 4          |
+| `predibase`      | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~25M                | ṣọ́ra          | 1          |
+| `doubao`         | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~15M                | kò ṣe kedere  | 1          |
+| `ai21`           | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~10M                | yẹra fún      | 2          |
+| `deepseek`       | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~5M                 | ó dára        | 2          |
+| `hyperbolic`     | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~5M                 | ó dára        | 8          |
+| `nscale`         | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~5M                 | ṣọ́ra          | 6          |
+| `bytez`          | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~1M                 | kò ṣe kedere  | 3          |
+| `deepinfra`      | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~1M                 | ṣọ́ra          | 22         |
+| `fireworks`      | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~1M                 | yẹra fún      | 10         |
+| `nebius`         | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~1M                 | ṣọ́ra          | 1          |
+| `qoder`          | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~1M                 | ṣọ́ra          | 14         |
+| `scaleway`       | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~1M                 | ó dára        | 6          |
+| `novita`         | kírẹ́díìtì ìforúkọsílẹ̀ | —                            | ~500K               | ṣọ́ra          | 1          |
+| `agy`            | láìsí kọ́kọ́rọ́          | —                            | —                   | yẹra fún      | 16         |
+| `baichuan`       | láìsí kọ́kọ́rọ́          | —                            | —                   | kò ṣe kedere  | 1          |
+| `blackbox`       | láìsí kọ́kọ́rọ́          | —                            | —                   | yẹra fún      | 6          |
+| `coze`           | láìsí kọ́kọ́rọ́          | —                            | —                   | yẹra fún      | 1          |
+| `duckduckgo-web` | láìsí kọ́kọ́rọ́          | —                            | —                   | yẹra fún      | 6          |
+| `freemodel-dev`  | láìsí kọ́kọ́rọ́          | —                            | —                   | àìmọ̀          | 4          |
+| `friendliai`     | láìsí kọ́kọ́rọ́          | —                            | —                   | yẹra fún      | 2          |
+| `iflytek`        | láìsí kọ́kọ́rọ́          | —                            | —                   | yẹra fún      | 1          |
+| `inference-net`  | láìsí kọ́kọ́rọ́          | —                            | —                   | ṣọ́ra          | 3          |
+| `liquid`         | láìsí kọ́kọ́rọ́          | —                            | —                   | àìmọ̀          | 1          |
+| `monsterapi`     | láìsí kọ́kọ́rọ́          | —                            | —                   | kò ṣe kedere  | 1          |
+| `muse-spark-web` | láìsí kọ́kọ́rọ́          | —                            | —                   | yẹra fún      | 3          |
+| `nlpcloud`       | láìsí kọ́kọ́rọ́          | —                            | —                   | yẹra fún      | 1          |
+| `nous-research`  | láìsí kọ́kọ́rọ́          | —                            | —                   | kò ṣe kedere  | 2          |
+| `nvidia`         | láìsí kọ́kọ́rọ́          | —                            | —                   | ṣọ́ra          | 13         |
+| `opencode`       | láìsí kọ́kọ́rọ́          | —                            | —                   | yẹra fún      | 7          |
+| `pollinations`   | láìsí kọ́kọ́rọ́          | —                            | —                   | ṣọ́ra          | 31         |
+| `publicai`       | láìsí kọ́kọ́rọ́          | —                            | —                   | ìṣọ́ra         | 3          |
+| `reka`           | láìsí kọ́kọ́rọ́          | —                            | —                   | ìṣọ́ra         | 2          |
+| `sensenova`      | láìsí kọ́kọ́rọ́          | —                            | —                   | ìṣọ́ra         | 1          |
+| `sparkdesk`      | láìsí kọ́kọ́rọ́          | —                            | —                   | ìṣọ́ra         | 1          |
+| `stepfun`        | láìsí kọ́kọ́rọ́          | —                            | —                   | ó dára        | 1          |
+| `t3-web`         | láìsí kọ́kọ́rọ́          | —                            | —                   | yẹra          | 23         |
+| `uncloseai`      | láìsí kọ́kọ́rọ́          | —                            | —                   | ìṣọ́ra         | 3          |
 
 ---
 

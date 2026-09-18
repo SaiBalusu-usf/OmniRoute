@@ -1615,19 +1615,19 @@ Slutpunkter för realtidsanalys av dirigering, komprimering och leverantörsmån
 
 ## Hantering av CLI-verktyg
 
-Hantera CLI-verktyg som integreras med OmniRoute (antigravity, chipotle, commandCode,
+Hantera CLI-verktyg som integreras med OmniRoute (antigravity, commandCode,
 devin-cli osv.). Se [Leverantörsreferens](./PROVIDER_REFERENCE.md) för den fullständiga listan.
 
-| Metod | Sökväg                                  | Beskrivning                                                                                                                                                       |
-| ----- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET   | `/api/cli-tools/all-statuses`           | Status för alla CLI-verktyg (installerat, version, senast sett)                                                                                                   |
-| GET   | `/api/cli-tools/status`                 | Detaljerad status för ett CLI-verktyg (`?tool=`-fråga)                                                                                                            |
-| POST  | `/api/cli-tools/apply`                  | Skriv ett verktygs genererade konfiguration (`dryRun` förhandsvisar; `422` + `containerEphemeralTarget` vid containerkörning; `migration` anger äldre Codex-YAML) |
-| GET   | `/api/cli-tools/backups`                | Lista säkerhetskopior av CLI-verktygens konfigurationer                                                                                                           |
-| POST  | `/api/cli-tools/backups`                | Skapa en säkerhetskopia av alla CLI-verktygskonfigurationer                                                                                                       |
-| POST  | `/api/cli-tools/backups`                | Återställ: samma ändpunkt med `{tool, backupId}` i brödtexten återställer den säkerhetskopian                                                                     |
-| GET   | `/api/cli-tools/antigravity-mitm`       | Status för Antigravity MITM-proxyn (CLI-verktyget "antigravity-mitm")                                                                                             |
-| POST  | `/api/cli-tools/antigravity-mitm/alias` | Konfigurera alias för antigravity-mitm                                                                                                                            |
+| Metod | Sökväg                                  | Beskrivning                                                                                                                                                             |
+| ----- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET   | `/api/cli-tools/all-statuses`           | Status för alla CLI-verktyg (installerat, version, senast observerat)                                                                                                   |
+| GET   | `/api/cli-tools/status`                 | Detaljerad status för ett CLI-verktyg (`?tool=`-fråga)                                                                                                                  |
+| POST  | `/api/cli-tools/apply`                  | Skriv ett verktygs genererade konfiguration (`dryRun` förhandsgranskar; `422` + `containerEphemeralTarget` vid containerkörning; `migration` anger en äldre Codex-YAML) |
+| GET   | `/api/cli-tools/backups`                | Lista säkerhetskopior av CLI-verktygens konfigurationer                                                                                                                 |
+| POST  | `/api/cli-tools/backups`                | Skapa en säkerhetskopia av alla CLI-verktygskonfigurationer                                                                                                             |
+| POST  | `/api/cli-tools/backups`                | Återställning: samma slutpunkt med `{tool, backupId}` i brödtexten återställer den säkerhetskopian                                                                      |
+| GET   | `/api/cli-tools/antigravity-mitm`       | Status för Antigravity MITM-proxyn (CLI-verktyget "antigravity-mitm")                                                                                                   |
+| POST  | `/api/cli-tools/antigravity-mitm/alias` | Konfigurera alias för antigravity-mitm                                                                                                                                  |
 
 **Autentisering:** Kräver en hanteringssession.
 

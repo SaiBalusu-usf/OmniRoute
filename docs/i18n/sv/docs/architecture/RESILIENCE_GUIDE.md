@@ -82,148 +82,149 @@ Regressionsskydd: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
 **Fält per anslutning:**
 
-- `rateLimitedUntil` — tidsstämpel för när nedkylningsperioden löper ut
+- `rateLimitedUntil` — tidsstämpel fram till dess att nedkylningsperioden löper ut
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
 - `backoffLevel` — räknare för exponentiell backoff
 
-**Standardvärden för nedkylningsperioder:**
+**Förvalda nedkylningsperioder:**
 
-- OAuth-bas: 5s
-- API-nyckelbas: 3s
-- API-nyckel 429: föredrar uppströms `Retry-After`-/återställningshuvuden eller tolkningsbar återställningstext
+- OAuth-bas: 5 s
+- API-nyckelbas: 3 s
+- API-nyckel 429: föredrar uppströms `Retry-After`-/återställningshuvuden eller tolkbar återställningstext
 - Backoff: `baseCooldownMs * 2 ** failureIndex`
 
-**Skydd mot anhopningseffekt:** förhindrar att samtidiga fel förlänger nedkylningsperioden för mycket eller inkrementerar `backoffLevel` dubbelt.
+**Skydd mot samtidiga anropsstormar:** förhindrar att samtidiga fel förlänger nedkylningsperioden för mycket eller ökar `backoffLevel` dubbelt.
 
-**Slutliga tillstånd (INTE nedkylningsperioder):**
+**Sluttillstånd (INTE nedkylningsperioder):**
 
-- `banned` — anges vid identifiering av förbjudna nyckelord/kontoblockering (se [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (övergår till ett slutligt tillstånd efter ett begränsat antal återförsök — `EXPIRED_RETRY_MAX = 3` med exponentiell backoff — så att tillfälliga OAuth-fel kan självläka innan kontot inaktiveras permanent)
+- `banned` — anges vid identifiering av förbjudna nyckelord/kontospärrar (se [BAN_DETECTION](../security/BAN_DETECTION.md)) och vid tre på varandra följande uppströmsavslag per begäran (`request_rejected`, t.ex. Anthropic OAuth 403 "Request not allowed" — `open-sse/services/requestRejectedStreak.ts`); ett enskilt avslag försätter endast anslutningen i en nedkylningsperiod
+- `expired` (övergår till ett sluttillstånd efter ett begränsat antal återförsök — `EXPIRED_RETRY_MAX = 3` med exponentiell backoff — så att övergående OAuth-fel kan självläka innan kontot inaktiveras permanent)
 - `credits_exhausted`
 
-Dessa kvarstår tills autentiseringsuppgifterna ändras eller en operatör återställer dem. Skriv inte över slutliga tillstånd med ett tillfälligt nedkylningstillstånd.
+Dessa kvarstår tills autentiseringsuppgifterna ändras eller en operatör återställer dem. Skriv inte över sluttillstånd med ett tillfälligt nedkylningstillstånd.
 
-**Lat återställning:** när `rateLimitedUntil` har passerat blir anslutningen valbar igen. Efter lyckad användning rensar `clearAccountError()` alla felfält.
+**Lat återställning:** när `rateLimitedUntil` har passerat blir anslutningen valbar igen. Efter framgångsrik användning rensar `clearAccountError()` alla felfält.
 
 ### Sessionsaffinitet (#7274)
 
-**Omfattning:** en klientsession (`X-Session-Id`- / `x-codex-session-id`- / `x-omniroute-session`-huvud) som är fäst vid en anslutning, för **alla** leverantörer.
+**Omfattning:** en klientsession (`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`-huvud) fästs vid en anslutning, för **valfri** leverantör.
 
-**Syfte:** hålla en agent med flera interaktioner (Claude Code, aider, anpassade agenter) på samma konto mellan förfrågningar, vilket minskar kontextförlust mellan konton och upprepade 429-fel vid kallstart hos leverantörer med sessionsstatus per konto.
+**Syfte:** behålla en agent med flera interaktionssteg (Claude Code, aider, anpassade agenter) på samma konto mellan begäranden, vilket minskar kontextförlust mellan konton och upprepade 429-fel vid kallstart hos leverantörer med sessionsstatus per konto.
 
 **Implementering:**
 
 - TTL-matchning: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Val/skapande av fästning: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
-- Extrahering av huvud (generisk, alla leverantörer): `src/sse/services/auth.ts::extractSessionAffinityKey()`
+- Extrahering av huvud (generisk, valfri leverantör): `src/sse/services/auth.ts::extractSessionAffinityKey()`
 - Beständig fästningstabell: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Inställning: `sessionAffinityTtlMs` (global TTL i ms, `0` inaktiverar) — `src/lib/db/settings.ts`. Bytte namn från den Codex-specifika `codexSessionAffinityTtlMs` genom migreringen `124_generic_session_affinity_ttl.sql`, som överför en eventuellt tidigare konfigurerad Codex-TTL som det nya standardvärdet.
+- Inställning: `sessionAffinityTtlMs` (global TTL i ms, `0` inaktiverar) — `src/lib/db/settings.ts`. Namnet ändrades från den Codex-specifika `codexSessionAffinityTtlMs` genom migreringen `124_generic_session_affinity_ttl.sql`, som överför en eventuell tidigare konfigurerad Codex-TTL som det nya standardvärdet.
 
-Före #7274 avbröt `resolveSessionAffinityTtlMs()` omedelbart med `0` för alla leverantörer utom `codex`, så TTL-inställningen (och sessionshuvudena) hade ingen effekt någon annanstans, trots att mekanismen för fästning och extraheringen av huvuden redan var leverantörsoberoende. Korrigeringen tog bort denna tidiga retur; TTL-värdet gäller nu enhetligt för alla leverantörer när det globala värdet har angetts till mer än `0`.
+Före #7274 avbröt `resolveSessionAffinityTtlMs()` omedelbart med `0` för alla leverantörer utom `codex`, så TTL-inställningen (och sessionshuvudena) hade ingen effekt någon annanstans, trots att fästningsmekanismen och extraheringen av huvuden redan var leverantörsoberoende. Korrigeringen tog bort denna tidiga retur; TTL-värdet tillämpas nu enhetligt på alla leverantörer när det globala värdet är större än `0`.
 
-De tre sessionsaffinitetshuvudena vidarebefordras aldrig uppströms — exekverarna skapar sina egna uppströmshuvuden från grunden i stället för att vidarebefordra klienthuvuden, så detta förblir enbart ett internt korrelations-ID.
+De tre sessionsaffinitetshuvudena vidarebefordras aldrig uppströms — exekverare bygger sina egna uppströmshuvuden från grunden i stället för att vidarebefordra klienthuvuden, så detta förblir endast ett internt korrelations-id.
 
-### Exklusiva anslutningslån för hanterade sessioner
+### Exklusiva anslutningsleasingar för hanterade sessioner
 
 **Omfattning:** en aktiv hanterad HTTP-klient/session äger en valbar OmniRoute-anslutning.
 
-**Syfte:** tillhandahålla beständigt exklusivt ägarskap av anslutningar för klienter som behöver en strikt
-routningsbarriär mellan förfrågningar. Detta skiljer sig från sessionsaffinitet, som är en mjuk kontinuitetspreferens:
-ett exklusivt lån lagrar livscykelstatus beständigt i SQLite, framtvingar global unikhet för aktiva ägare och
-aktiva anslutningar samt avvisar en inaktuell generation före leverantörsvidarebefordran.
+**Syfte:** tillhandahålla beständigt exklusivt anslutningsägande för klienter som behöver en strikt dirigeringsbarriär mellan begäranden. Detta skiljer sig från sessionsaffinitet, som är en mjuk kontinuitetspreferens: en exklusiv leasing lagrar livscykelstatus i SQLite, upprätthåller global unikhet för aktiva ägare och aktiva anslutningar samt avvisar en inaktuell generation före leverantörsdispatch.
 
-Funktionen är valfri per API-nyckel. En hanterad nyckel måste ha omfånget `lease:exclusive` och en
-explicit icke-tom `allowedConnections`-lista. Alla HTTP-klienter kan använda livscykelslutpunkten; inget
-klientnamn, ingen user-agent, leverantör, OAuth-metod eller modell krävs. Lånet äger en anslutning,
-inte en modell, så ett modellbyte behåller bindningen så länge anslutningen normalt förblir
-valbar. Normala regler för modell, kvot, hälsa, nedkylningsperiod och tillåtelselista är fortsatt
-auktoritativa och kan flytta samma generation till en annan ledig valbar anslutning.
+Funktionen aktiveras separat per API-nyckel. En hanterad nyckel måste ha omfånget `lease:exclusive` och en explicit icke-tom `allowedConnections`-lista. Alla HTTP-klienter kan använda livscykelslutpunkten; inget klientnamn, ingen user-agent, leverantör, OAuth-metod eller modell krävs. Leasingen äger en anslutning, inte en modell, så ett modellbyte behåller bindningen så länge anslutningen förblir valbar enligt ordinarie regler. Normala regler för modell, kvot, hälsa, nedkylningsperiod och tillåtelselista förblir styrande och kan flytta samma generation till en annan ledig och valbar anslutning.
 
-Livscykeln är `POST /api/v1/session-leases` med JSON-åtgärderna `acquire`, `renew` och `release`.
-Hanterade inferensförfrågningar skickar det ogenomskinliga värdet `X-OmniRoute-Lease-Owner` och den exakta
-`X-OmniRoute-Lease-Generation`. Ägaren använder `vlo_` följt av 43 base64url-tecken; endast
-dess SHA-256-hash lagras. Varje slutlig vidarebefordringsbarriär binder även det autentiserade API-nyckel-ID:t och
-det aktiva anslutnings-ID:t. Lånekontrollhuvuden tas bort från loggar, sparade förfrågningsögonblicksbilder och
-uppströms exekveringshuvuden.
+Livscykeln är `POST /api/v1/session-leases` med JSON-åtgärderna `acquire`, `renew` och `release`. Hanterade inferensbegäranden tillhandahåller det ogenomskinliga värdet `X-OmniRoute-Lease-Owner` och det exakta `X-OmniRoute-Lease-Generation`. Ägaren använder `vlo_` följt av 43 base64url-tecken; endast dess SHA-256-hash lagras. Varje slutlig dispatchbarriär binder även det autentiserade API-nyckel-id:t och det aktiva anslutnings-id:t. Leasingkontrollhuvuden tas bort från loggar, sparade ögonblicksbilder av begäranden och uppströmsexekverarnas huvuden.
 
-Om vanlig routning har valbara hanterade kandidater men varje ledig kandidat är upptagen av ett
-främmande aktivt lån returnerar OmniRoute HTTP `429`, koden lease-capacity-unavailable, ett
-tillstånd som väntar på kapacitet och ett begränsat `Retry-After` som härleds från den tidigaste relevanta utgångstiden.
-En vanlig tom valbarhetsmängd är inte lånekonkurrens och behåller sin befintliga semantik för routningsfel.
+Om den ordinarie dirigeringen har valbara hanterade kandidater men varje ledig kandidat är upptagen av en främmande aktiv leasing, returnerar OmniRoute HTTP `429`, koden lease-capacity-unavailable, ett tillstånd som väntar på kapacitet och ett begränsat `Retry-After` som härleds från den tidigaste relevanta utgångstiden. Vanlig tom valbarhet är inte leasingkonkurrens och behåller sin befintliga semantik för dirigeringsfel.
 
 Relaterade mekanismer förblir separata:
 
 - OAuth-sessionsbeläggning är en processlokal mjuk fördelning för OAuth-konton.
-- Kontosemaforer beviljar behörigheter för samtidiga förfrågningar och upphör när en förfrågan slutförs.
-- Exklusiva lån för hanterade sessioner är beständigt livscykelägarskap med en generationsbarriär.
+- Kontosemaforer beviljar behörigheter för samtidiga begäranden och upphör när en begäran slutförs.
+- Exklusiva leasingar för hanterade sessioner är beständigt livscykelägande med en generationsbarriär.
 
 ---
 
-## 3. Modellåsning
+## 3. Modellspärr
 
 **Omfattning:** kombinationen leverantör + anslutning + modell.
+
+**Nyckelomfattning efter status:** den felande statusen avgör vilken nyckel en spärr skrivs
+till (`resolveLockoutScope()` i `open-sse/services/accountFallback/exactModelLock.ts`):
+
+- `429` / `403` / `402` — en kvot- eller behörighetssignal — spärrar **kvotfamiljen**:
+  för codex hela omfattningen `codex` / `spark` (varje `gpt-5*`-modell för
+  anslutningen), för andra leverantörer `getQuotaScopedModelForProvider()`.
+- `404` spärrar enbart modellen (`getModelLockKey()` avgränsar `not_found`).
+- Alla andra statuskoder — `5xx`-transport-/serverfel och OmniRoutes egen
+  syntetiserade `502` från kvalitetsvalidering — spärrar endast den **exakta**
+  kombinationen av leverantör/anslutning/modell. En felaktig ström för en modell är inte belägg
+  för något om kontots kvot; före den här regeln tog ett tomt svar från
+  `codex/gpt-5.6-luna` bort varje `gpt-5*`-modell för den anslutningen från
+  routningen i 2–30 min (med eskalering), trots att dess kvot var orörd.
+- Ett explicit `scope`-alternativ från anroparen har alltid företräde (Antigravity skickar `"exact"`).
 
 **Syfte:** undvika att inaktivera en hel anslutning när endast en modell är otillgänglig eller kvotbegränsad.
 
 **Exempel:**
 
-- Leverantörer med kvoter per modell som returnerar 429
+- Leverantörer med kvot per modell som returnerar 429
 - Lokala leverantörer som returnerar 404 för en enskild modell som saknas
 - Leverantörsspecifika behörighetsfel för lägen/modeller (t.ex. Grok-lägen)
 
 **Implementering:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
-### Kontrollpanel för modellernas vänteperioder (v3.8.0)
+### Instrumentpanel för modellnedkylningar (v3.8.0)
 
-Gränssnitt: Inställningar → Modellernas vänteperioder (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
+Gränssnitt: Inställningar → Modellnedkylningar (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-Visar aktiva låsningar med: leverantör, anslutning, modell, orsak, expiresAt. Operatörer kan manuellt återaktivera en modell från kortet.
+Visar aktiva spärrar med: leverantör, anslutning, modell, orsak, expiresAt. Operatörer kan återaktivera en modell manuellt från kortet.
 
 **REST-API:**
 
-- `GET /api/resilience/model-cooldowns` — visa aktiva låsningar
+- `GET /api/resilience/model-cooldowns` — lista aktiva spärrar
 - `DELETE /api/resilience/model-cooldowns` — manuell återaktivering. Brödtext: `{provider, connection, model}`. Autentisering: hantering.
 
-### Gränssnitt för låsningsinställningar + återställning genom framgångsbaserad minskning (v3.8.23)
+### Gränssnitt för spärrinställningar + återställning genom avklingning vid framgång (v3.8.23)
 
-Modellåsning gick från ett alltid aktiverat, hårdkodat beteende till en fullständigt konfigurerbar funktion som måste aktiveras explicit, med ett eget inställningskort och en självläkande återställningsmekanism.
+Modellspärren gick från ett alltid aktivt, hårdkodat beteende till en helt konfigurerbar
+funktion som måste aktiveras explicit, med ett eget inställningskort och en självläkande återställningsväg.
 
-**Inställningskort:** Inställningar → Modellåsning
+**Inställningskort:** Inställningar → Modellspärr
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-Detta är **separat** från det skrivskyddade `ModelCooldownsCard` ovan (som endast
-_visar_ aktiva låsningar) — det nya kortet _konfigurerar parametrarna_. Standardvärdena
+Detta är **skilt** från det skrivskyddade `ModelCooldownsCard` ovan (som endast
+_listar_ aktiva spärrar) — det nya kortet _konfigurerar parametrarna_. Standardvärden
 finns i `DEFAULT_MODEL_LOCKOUT_SETTINGS`
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
-| Inställning             | Standardvärde                    | Betydelse                                                  |
-| ----------------------- | -------------------------------- | ---------------------------------------------------------- |
-| `enabled`               | `false`                          | Huvudreglage — modellåsning är **av som standard**.        |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Uppströmsstatusar som räknas som ett modellspecifikt fel.  |
-| `baseCooldownMs`        | `120_000` (120 s)                | Inledande låsningstid för det första felet.                |
-| `maxCooldownMs`         | `1_800_000` (30 min)             | Övre gräns för den eskalerade vänteperioden.               |
-| `maxBackoffSteps`       | `10`                             | Maximalt antal eskaleringssteg för exponentiell återgång.  |
-| `useExponentialBackoff` | `true`                           | Om upprepade fel ska eskalera vänteperioden exponentiellt. |
+| Inställning             | Standard                         | Betydelse                                                                |
+| ----------------------- | -------------------------------- | ------------------------------------------------------------------------ |
+| `enabled`               | `false`                          | Huvudreglage — modellspärr är **avstängd som standard**.                 |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Statuskoder från uppströmskällan som räknas som ett modellspecifikt fel. |
+| `baseCooldownMs`        | `120_000` (120 s)                | Initial spärrtid för det första felet.                                   |
+| `maxCooldownMs`         | `1_800_000` (30 min)             | Övre gräns för den eskalerade nedkylningen.                              |
+| `maxBackoffSteps`       | `10`                             | Maximalt antal eskaleringssteg för exponentiell backoff.                 |
+| `useExponentialBackoff` | `true`                           | Om upprepade fel ska eskalera nedkylningen exponentiellt.                |
 
-Inställningarna lagras via det normala inställningslagret och valideras med
+Inställningarna sparas via det vanliga inställningslagret och valideras genom
 schemat för resiliensinställningar; kortet begränsar `baseCooldownMs`/`maxCooldownMs`
 (med `maxCooldownMs ≥ baseCooldownMs`) och `maxBackoffSteps`.
 
-**Återställning genom framgångsbaserad minskning:** återställningen sker **inte** enbart när timern löper ut. Ett friskt
-svar minskar modellens felantal så att en modell som återhämtar sig
-mitt i tidsfönstret slutar eskalera (och frigörs) innan timern annars skulle göra det. Vid ett lyckat
-kombinationsmål anropar `open-sse/services/combo.ts` funktionen `decayModelFailureCount()`
-(`open-sse/services/accountFallback.ts`), som **halverar** det lagrade
-`failureCount` (`Math.floor(failureCount / 2)`); när det når `0` tas låsningsposten
-bort helt. Motsvarigheten `recordModelLockoutFailure()`
-ökar antalet (och eskalerar vänteperioden) vid fel inom
-eskaleringsfönstret. Denna framgångsbaserade minskning sker utöver att timern helt enkelt löper ut —
+**Återställning genom avklingning vid framgång:** återställning sker **inte** enbart genom att en timer löper ut. Ett felfritt
+svar minskar modellens felantal, så att en modell som återhämtar sig
+mitt i tidsfönstret slutar eskalera (och spärren tas bort) innan timern skulle ha löpt ut. För ett lyckat
+kombinationsmål anropar `open-sse/services/combo.ts` `decayModelFailureCount()`
+(`open-sse/services/accountFallback.ts`), vilket **halverar** det lagrade
+`failureCount` (`Math.floor(failureCount / 2)`); när det når `0` tas spärrposten
+bort helt. Motsvarande `recordModelLockoutFailure()`
+ökar antalet (och eskalerar nedkylningen) vid fel inom
+eskaleringsfönstret. Denna avklingning vid framgång sker utöver vanligt timerförlopp —
 båda vägarna kan återaktivera en modell.
 
-**Tillstånd:** låsningarna lagras **i minnet** (`Map`-objekt per process med
-`ModelLockoutEntry` indexerade efter `provider:connectionId:model`), och sparas inte i
-databasen — de går förlorade vid omstart. _Inställningarna_ sparas; det aktiva
-_låsningstillståndet_ är tillfälligt.
+**Tillstånd:** spärrarna lagras **i minnet** (`Map`-objekt per process med
+`ModelLockoutEntry` som indexeras efter `provider:connectionId:model`, medan spärrar med exakt omfattning indexeras efter
+`provider:connectionId:exact:model`), och sparas inte i
+databasen — de försvinner vid omstart. _Inställningarna_ sparas permanent; det aktiva
+_spärrtillståndet_ är tillfälligt.
 
 ---
 
@@ -627,11 +628,12 @@ hastighetsbegränsning samma signal som en uttömd kvot. Faktiska begränsningar
 
 ## Felsökning
 
+- En viktad kombination returnerar `503 all_targets_cooling_down` (`Retry-After` är angivet och `diagnostics.excluded` listar varje mål med `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → poolen är konfigurerad och ansluten, men varje mål exkluderas av en resiliens-timer; varningen `[COMBO] Weighted selection: every target excluded before dispatch — …` anger orsakerna och antalet återstående sekunder. Ett `404 no_executable_targets` från samma kombination innebär att ingen resiliens-timer var inblandad (det finns inget att köra, eller så misslyckades tillgänglighetskontrollen för varje konto). Implementerat i `open-sse/services/combo/pinRecovery.ts` utifrån exkluderingarna som samlas in i `targetResolution.ts`.
 - Alla nycklar för en leverantör hoppas över → kontrollera både kretsbrytarens tillstånd OCH varje anslutnings `rateLimitedUntil`/`testStatus`.
-- Leverantören utesluts permanent efter återställningsfönstret → koden läser rått `state` i stället för `getStatus()`/`canExecute()`.
-- En nyckel misslyckas, men andra bör fungera → föredra nedkylning av anslutningen framför kretsbrytaren.
+- Leverantören exkluderas permanent efter återställningsfönstret → koden läser råvärdet `state` i stället för `getStatus()`/`canExecute()`.
+- En nyckel misslyckas, men de andra bör fungera → föredra nedkylning av anslutningen framför kretsbrytaren.
 - Endast en modell misslyckas → föredra modellspärr framför nedkylning av anslutningen.
-- Tillståndet bör återställas automatiskt men gör inte det → kontrollera om det finns en framtida tidsstämpel samt en lässökväg som uppdaterar utgångna tillstånd. Permanenta statusar kräver manuella ändringar.
+- Tillståndet bör återställas automatiskt men gör det inte → kontrollera om det finns en framtida tidsstämpel samt en lässökväg som uppdaterar utgånget tillstånd. Permanenta statusar kräver manuella ändringar.
 
 ---
 

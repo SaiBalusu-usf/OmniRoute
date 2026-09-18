@@ -70,9 +70,9 @@ Reqressiyadan qorunma testi: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
 **Əhatə dairəsi:** tək provayder bağlantısı/hesabı/açarı.
 
-**Məqsəd:** eyni provayder üçün digər bağlantılar xidmət göstərməyə davam edərkən problemli bir açarı ötürmək.
+**Məqsəd:** eyni provayderə aid digər bağlantılar xidmət göstərməyə davam edərkən bir problemli açarı ötürmək.
 
-**Reallaşdırma:**
+**Tətbiq:**
 
 - Əlçatmaz kimi işarələmə: `src/sse/services/auth.ts::markAccountUnavailable()`
 - Seçim: eyni fayldakı `getProviderCredentials*`
@@ -81,75 +81,59 @@ Reqressiyadan qorunma testi: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
 **Hər bağlantı üzrə sahələr:**
 
-- `rateLimitedUntil` — gözləmə müddəti bitənədək zaman nişanı
+- `rateLimitedUntil` — gözləmə müddəti bitənədək zaman damğası
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
 - `backoffLevel` — eksponensial geri çəkilmə sayğacı
 
-**Defolt gözləmə müddətləri:**
+**Standart gözləmə müddətləri:**
 
 - OAuth bazası: 5s
 - API açarı bazası: 3s
-- API açarı üçün 429: yuxarı səviyyədən gələn `Retry-After`/sıfırlama başlıqlarına/təhlil edilə bilən sıfırlama mətninə üstünlük verir
+- API açarı üçün 429: yuxarı axından gələn `Retry-After`/sıfırlama başlıqlarına/təhlil edilə bilən sıfırlama mətninə üstünlük verir
 - Geri çəkilmə: `baseCooldownMs * 2 ** failureIndex`
 
-**Kütləvi eyni vaxtlı sorğuya qarşı qoruma:** paralel xətaların gözləmə müddətini həddindən artıq uzatmasının və ya `backoffLevel` dəyərini iki dəfə artırmasının qarşısını alır.
+**Kütləvi eyni vaxtlı sorğu qoruyucusu:** paralel xətaların gözləmə müddətini həddindən artıq uzatmasının və ya `backoffLevel` dəyərini iki dəfə artırmasının qarşısını alır.
 
 **Terminal vəziyyətlər (gözləmə müddətləri DEYİL):**
 
-- `banned` — qadağan edilmiş açar söz / hesab qadağası aşkarlanması ilə təyin edilir (bax: [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (məhdud sayda təkrar cəhddən sonra terminal vəziyyətə keçir — `EXPIRED_RETRY_MAX = 3`, eksponensial geri çəkilmə ilə — beləliklə, müvəqqəti OAuth xətaları hesab həmişəlik deaktiv edilməzdən əvvəl öz-özünə düzələ bilər)
+- `banned` — qadağan olunmuş açar söz / hesab qadağası aşkarlanması ilə (bax: [BAN_DETECTION](../security/BAN_DETECTION.md)) və hər sorğu üzrə yuxarı axından ardıcıl üç imtina ilə (`request_rejected`, məsələn, Anthropic OAuth 403 "Sorğuya icazə verilmir" — `open-sse/services/requestRejectedStreak.ts`) təyin edilir; tək bir imtina yalnız bağlantını gözləmə vəziyyətinə keçirir
+- `expired` (məhdud sayda təkrar cəhddən sonra terminal vəziyyətə keçir — eksponensial geri çəkilmə ilə `EXPIRED_RETRY_MAX = 3` — beləliklə, keçici OAuth xətaları hesab həmişəlik deaktiv edilməzdən əvvəl öz-özünə bərpa oluna bilər)
 - `credits_exhausted`
 
-Bunlar etimadnamələr dəyişənə və ya operator onları sıfırlayana qədər qalır. Terminal vəziyyətlərin üzərinə müvəqqəti gözləmə vəziyyətini yazmayın.
+Bu vəziyyətlər giriş məlumatları dəyişənədək və ya operator onları sıfırlayanadək qalır. Terminal vəziyyətləri keçici gözləmə vəziyyəti ilə əvəz etməyin.
 
-**Tənbəl bərpa:** `rateLimitedUntil` keçdikdən sonra bağlantı yenidən uyğun olur. Uğurlu istifadə zamanı `clearAccountError()` bütün xəta sahələrini təmizləyir.
+**Tənbəl bərpa:** `rateLimitedUntil` keçdikdə bağlantı yenidən uyğun olur. Uğurlu istifadədən sonra `clearAccountError()` bütün xəta sahələrini təmizləyir.
 
-### Sessiya bağlılığı (#7274)
+### Sessiya yaxınlığı (#7274)
 
-**Əhatə dairəsi:** **istənilən** provayder üçün bir bağlantıya sabitlənmiş bir müştəri sessiyası (`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session` başlığı).
+**Əhatə dairəsi:** **istənilən** provayder üçün bir bağlantıya bərkidilmiş bir müştəri sessiyası (`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session` başlığı).
 
-**Məqsəd:** çoxaddımlı agenti (Claude Code, aider, fərdi agentlər) sorğular arasında eyni hesabda saxlamaqla hesablararası kontekst itkisini və hər hesab üzrə sessiya vəziyyətinə malik provayderlərdə təkrarlanan soyuq başlanğıc 429 xətalarını azaltmaq.
+**Məqsəd:** çoxgedişli agenti (Claude Code, aider, fərdi agentlər) sorğular arasında eyni hesabda saxlamaqla hesablararası kontekst itkisini və hesab üzrə sessiya vəziyyəti saxlayan provayderlərdə təkrarlanan soyuq başlanğıc 429 xətalarını azaltmaq.
 
-**Reallaşdırma:**
+**Tətbiq:**
 
 - TTL-in müəyyənləşdirilməsi: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
-- Sabitləmənin seçilməsi/yaradılması: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
+- Bərkitmənin seçilməsi/yaradılması: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
 - Başlığın çıxarılması (ümumi, istənilən provayder): `src/sse/services/auth.ts::extractSessionAffinityKey()`
-- Daimi saxlanılan sabitləmə cədvəli: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Parametr: `sessionAffinityTtlMs` (ms ilə qlobal TTL, `0` deaktiv edir) — `src/lib/db/settings.ts`. Yalnız Codex üçün olan `codexSessionAffinityTtlMs` adından `124_generic_session_affinity_ttl.sql` miqrasiyası ilə dəyişdirilib; bu miqrasiya əvvəllər konfiqurasiya edilmiş Codex TTL dəyərini yeni defolt kimi daşıyır.
+- Daimi bərkitmə cədvəli: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
+- Parametr: `sessionAffinityTtlMs` (ms ilə qlobal TTL, `0` deaktiv edir) — `src/lib/db/settings.ts`. Yalnız Codex üçün olan `codexSessionAffinityTtlMs` adından `124_generic_session_affinity_ttl.sql` miqrasiyası ilə dəyişdirilib; bu miqrasiya əvvəlcədən konfiqurasiya edilmiş istənilən Codex TTL-ni yeni standart dəyər kimi köçürür.
 
-#7274-dən əvvəl `resolveSessionAffinityTtlMs()`, `codex` istisna olmaqla hər bir provayder üçün dərhal `0` qaytarırdı, buna görə sabitləmə mexanizmi və başlıq çıxarılması artıq provayderdən asılı olmasa da, TTL parametrinin (və sessiya başlıqlarının) başqa heç bir yerdə təsiri yox idi. Düzəliş həmin erkən qayıdışı aradan qaldırdı; TTL qlobal olaraq `0`-dan yuxarı təyin edildikdən sonra bütün provayderlərə eyni qaydada tətbiq olunur.
+#7274-dən əvvəl `resolveSessionAffinityTtlMs()`, `codex` istisna olmaqla, hər provayder üçün dərhal `0` qaytarırdı, buna görə də bərkitmə mexanizmi və başlıqların çıxarılması artıq provayderdən asılı olmasa da, TTL parametrinin (və sessiya başlıqlarının) başqa heç bir yerdə təsiri yox idi. Düzəliş həmin erkən qayıdışı aradan qaldırdı; TTL qlobal olaraq `0`-dan yuxarı təyin edildikdən sonra bütün provayderlərə eyni qaydada tətbiq olunur.
 
-Sessiya bağlılığı üçün üç başlıq heç vaxt yuxarı axına ötürülmür — icraedicilər müştəri başlıqlarını olduğu kimi ötürmək əvəzinə öz yuxarı axın başlıqlarını sıfırdan qururlar, buna görə bu yalnız daxili korrelyasiya identifikatoru olaraq qalır.
+Üç sessiya yaxınlığı başlığı heç vaxt yuxarı axına ötürülmür — icraedicilər müştəri başlıqlarını olduğu kimi ötürmək əvəzinə öz yuxarı axın başlıqlarını sıfırdan yaradırlar, buna görə də bu, yalnız daxili korrelyasiya identifikatoru olaraq qalır.
 
 ### Eksklüziv idarə olunan sessiya bağlantısı icarələri
 
 **Əhatə dairəsi:** bir aktiv idarə olunan HTTP müştərisi/sessiyası bir uyğun OmniRoute bağlantısına sahib olur.
 
-**Məqsəd:** sorğular arasında sərt marşrutlaşdırma
-sərhədinə ehtiyac duyan müştərilər üçün davamlı eksklüziv bağlantı sahibliyi təmin etmək. Bu, yumşaq davamlılıq seçimi olan sessiya bağlılığından fərqlənir:
-eksklüziv icarə həyat dövrü vəziyyətini SQLite-da saxlayır, qlobal aktiv sahib və
-aktiv bağlantı unikallığını təmin edir və provayderə göndərilmədən əvvəl köhnəlmiş nəsli rədd edir.
+**Məqsəd:** sorğular arasında sərt marşrutlaşdırma sərhədinə ehtiyacı olan müştərilər üçün davamlı eksklüziv bağlantı sahibliyi təmin etmək. Bu, yumşaq davamlılıq üstünlüyü olan sessiya yaxınlığından fərqlənir: eksklüziv icarə həyat dövrü vəziyyətini SQLite-da saxlayır, qlobal aktiv sahib və aktiv bağlantı unikallığını tətbiq edir və provayderə göndərilməzdən əvvəl köhnəlmiş nəsli rədd edir.
 
-Funksiya hər API açarı üçün ayrıca aktivləşdirilir. İdarə olunan açar `lease:exclusive` əhatə dairəsinə və
-açıq şəkildə göstərilmiş, boş olmayan `allowedConnections` siyahısına malik olmalıdır. İstənilən HTTP müştərisi həyat dövrü son nöqtəsindən istifadə edə bilər; heç bir
-müştəri adı, istifadəçi agenti, provayder, OAuth metodu və ya model tələb olunmur. İcarə modelə deyil, bağlantıya sahib olur,
-buna görə bağlantı adi qaydada uyğun qaldığı müddətdə model dəyişikliyi bağlılığı qoruyur.
-Normal model, kvota, sağlamlıq, gözləmə müddəti və icazə siyahısı qaydaları əsas olaraq qalır və
-eyni nəsli başqa boş uyğun bağlantıya keçirə bilər.
+Bu funksiya hər API açarı üçün ayrıca aktivləşdirilir. İdarə olunan açar `lease:exclusive` əhatə dairəsinə və açıq şəkildə göstərilmiş boş olmayan `allowedConnections` siyahısına malik olmalıdır. İstənilən HTTP müştərisi həyat dövrü son nöqtəsindən istifadə edə bilər; müştəri adı, istifadəçi agenti, provayder, OAuth metodu və ya model tələb olunmur. İcarə modelə deyil, bağlantıya sahib olur, buna görə də bağlantı adi qaydada uyğun qaldığı müddətdə model dəyişikliyi bağlılığı qoruyur. Normal model, kvota, sağlamlıq, gözləmə müddəti və icazə siyahısı qaydaları əsas olaraq qalır və eyni nəsli başqa sərbəst uyğun bağlantıya keçirə bilər.
 
-Həyat dövrü `acquire`, `renew` və `release` JSON əməliyyatları ilə `POST /api/v1/session-leases` formasındadır.
-İdarə olunan inferensiya sorğuları qeyri-şəffaf `X-OmniRoute-Lease-Owner` dəyərini və dəqiq
-`X-OmniRoute-Lease-Generation` dəyərini təqdim edir. Sahib identifikatoru `vlo_` və ardınca 43 base64url simvolundan ibarətdir; yalnız
-onun SHA-256 heşi saxlanılır. Hər yekun göndəriş sərhədi həmçinin autentifikasiya olunmuş API açarı ID-sini və
-aktiv bağlantı ID-sini bağlayır. İcarə idarəetmə başlıqları jurnallardan, saxlanılan sorğu anlıq görüntülərindən və
-yuxarı axın icraedici başlıqlarından silinir.
+Həyat dövrü `acquire`, `renew` və `release` JSON əməliyyatları ilə `POST /api/v1/session-leases` şəklindədir. İdarə olunan nəticəçıxarma sorğuları qeyri-şəffaf `X-OmniRoute-Lease-Owner` dəyərini və dəqiq `X-OmniRoute-Lease-Generation` dəyərini təqdim edir. Sahib identifikatoru `vlo_` prefiksindən və ardınca gələn 43 base64url simvolundan ibarətdir; yalnız onun SHA-256 heşi saxlanılır. Hər yekun göndəriş sərhədi həmçinin autentifikasiya edilmiş API açarı ID-sini və aktiv bağlantı ID-sini əlaqələndirir. İcarə idarəetmə başlıqları jurnallardan, saxlanılan sorğu anlıq görüntülərindən və yuxarı axın icraedicisinin başlıqlarından silinir.
 
-Adi marşrutlaşdırmada uyğun idarə olunan namizədlər varsa, lakin hər bir boş namizəd xarici aktiv icarə tərəfindən tutulubsa,
-OmniRoute HTTP `429`, icarə tutumunun əlçatmazlığı kodu,
-tutum gözləmə vəziyyəti və ən erkən uyğun bitmə vaxtından hesablanan məhdud `Retry-After` qaytarır.
-Adi uyğunluq siyahısının boş olması icarə münaqişəsi sayılmır və mövcud marşrutlaşdırma xəta semantikasını qoruyur.
+Adi marşrutlaşdırmanın uyğun idarə olunan namizədləri varsa, lakin hər sərbəst namizəd xarici aktiv icarə tərəfindən tutulubsa, OmniRoute HTTP `429`, icarə tutumunun əlçatmazlığı kodu, tutum gözləmə vəziyyəti və ən erkən uyğun bitmə vaxtından hesablanan məhdud `Retry-After` qaytarır. Uyğunluğun adi qaydada boş olması icarə mübahisəsi deyil və mövcud marşrutlaşdırma xətası semantikasını qoruyur.
 
 Əlaqəli mexanizmlər ayrı qalır:
 
@@ -163,52 +147,89 @@ Adi uyğunluq siyahısının boş olması icarə münaqişəsi sayılmır və m�
 
 **Əhatə dairəsi:** provayder + bağlantı + model üçlüyü.
 
-**Məqsəd:** yalnız bir model əlçatmaz olduqda və ya kvota ilə məhdudlaşdırıldıqda bütün bağlantının deaktiv edilməsinin qarşısını almaq.
+**Statusa görə açar əhatəsi:** uğursuzluq statusu bloklanmanın hansı açara
+yazılacağını müəyyən edir (`open-sse/services/accountFallback/exactModelLock.ts`
+faylındakı `resolveLockoutScope()`):
+
+- `429` / `403` / `402` — kvota və ya istifadə hüququ siqnalı — **kvota ailəsini**
+  bloklayır: codex üçün bağlantının bütün `codex` / `spark` əhatəsi (hər bir
+  `gpt-5*` modeli), digər provayderlər üçün `getQuotaScopedModelForProvider()`.
+- `404` əsas modeli bloklayır (`getModelLockKey()` `not_found` əhatəsini daraldır).
+- İstənilən digər status — `5xx` nəqliyyat/server xətaları və keyfiyyət
+  yoxlaması nəticəsində OmniRoute-un özünün yaratdığı `502` — yalnız **dəqiq**
+  provayder/bağlantı/model üçlüyünü bloklayır. Bir modeldəki nasaz axın hesabın
+  kvotası barədə sübut deyil; bu qaydadan əvvəl `codex/gpt-5.6-luna` üçün bir boş
+  cavab həmin bağlantının bütün `gpt-5*` modellərini, kvota toxunulmaz qaldığı
+  halda, 2–30 dəqiqəlik (artan şəkildə) marşrutlaşdırmadan çıxarırdı.
+- Çağıranın açıq şəkildə göstərdiyi `scope` seçimi həmişə üstünlük təşkil edir
+  (Antigravity `"exact"` ötürür).
+
+**Məqsəd:** yalnız bir model əlçatan olmadıqda və ya kvota ilə məhdudlaşdırıldıqda bütöv bağlantının deaktiv edilməsinin qarşısını almaq.
 
 **Nümunələr:**
 
-- Hər model üçün ayrıca kvota tətbiq edən provayderlərin 429 qaytarması
-- Bir model mövcud olmadıqda lokal provayderlərin 404 qaytarması
+- Hər model üzrə kvota tətbiq edən və 429 qaytaran provayderlər
+- Bir çatışmayan model üçün 404 qaytaran lokal provayderlər
 - Provayderə xas rejim/model icazəsi xətaları (məsələn, Grok rejimləri)
 
-**Tətbiq:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
+**İcra:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
 ### Model Soyuma Müddətləri İdarəetmə Paneli (v3.8.0)
 
-İstifadəçi interfeysi: Parametrlər → Model Soyuma Müddətləri (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
+İnterfeys: Parametrlər → Model Soyuma Müddətləri (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
 Aktiv bloklanmaları bu məlumatlarla siyahıya alır: provayder, bağlantı, model, səbəb, expiresAt. Operatorlar kartdan modeli əl ilə yenidən aktivləşdirə bilərlər.
 
 **REST API:**
 
-- `GET /api/resilience/model-cooldowns` — aktiv bloklanmaları siyahıya alır
-- `DELETE /api/resilience/model-cooldowns` — əl ilə yenidən aktivləşdirmə. Gövdə: `{provider, connection, model}`. Avtorizasiya: idarəetmə.
+- `GET /api/resilience/model-cooldowns` — aktiv bloklanmaları siyahıya almaq
+- `DELETE /api/resilience/model-cooldowns` — əl ilə yenidən aktivləşdirmək. Sorğu gövdəsi: `{provider, connection, model}`. Avtorizasiya: idarəetmə.
 
-### Bloklanma parametrləri interfeysi + uğura əsaslanan tədrici bərpa (v3.8.23)
+### Bloklanma parametrləri interfeysi + uğurla azalma əsasında bərpa (v3.8.23)
 
-Model bloklanması həmişə aktiv olan, sərt kodlaşdırılmış davranışdan öz parametrlər kartına və özünü bərpa edən bərpa mexanizminə malik, tam konfiqurasiya edilə bilən, istifadəçinin özü tərəfindən aktivləşdirilən funksiyaya çevrildi.
+Model bloklanması həmişə aktiv olan, kodda sərt şəkildə müəyyənləşdirilmiş
+davranışdan ayrıca parametr kartına və özünü sağaldan bərpa yoluna malik, tam
+konfiqurasiya edilə bilən, könüllü aktivləşdirilən funksiyaya çevrildi.
 
 **Parametrlər kartı:** Parametrlər → Model Bloklanması
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-Bu, yuxarıdakı yalnız oxumaq üçün nəzərdə tutulmuş `ModelCooldownsCard` kartından (hansı ki, yalnız aktiv bloklanmaları _siyahıya alır_) **fərqlidir** — yeni kart _parametrləri konfiqurasiya edir_. Standart dəyərlər `DEFAULT_MODEL_LOCKOUT_SETTINGS`
-(`src/lib/resilience/modelLockoutSettings.ts`) daxilində yerləşir:
+Bu, yuxarıdakı yalnız oxumaq üçün olan `ModelCooldownsCard`-dan (yalnız aktiv
+bloklanmaları _siyahıya alır_) **fərqlidir** — yeni kart _parametrləri
+konfiqurasiya edir_. Standart dəyərlər `DEFAULT_MODEL_LOCKOUT_SETTINGS`
+(`src/lib/resilience/modelLockoutSettings.ts`) daxilindədir:
 
-| Parametr                | Standart dəyər                   | Mənası                                                                           |
-| ----------------------- | -------------------------------- | -------------------------------------------------------------------------------- |
-| `enabled`               | `false`                          | Əsas keçid — model bloklanması **standart olaraq söndürülüb**.                   |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Model səviyyəli xəta sayılan yuxarı axın statusları.                             |
-| `baseCooldownMs`        | `120_000` (120 san.)             | İlk xəta üçün ilkin bloklanma müddəti.                                           |
-| `maxCooldownMs`         | `1_800_000` (30 dəq.)            | Artırılmış soyuma müddətinin yuxarı həddi.                                       |
-| `maxBackoffSteps`       | `10`                             | Eksponensial geriçəkilmənin maksimum artım addımları.                            |
-| `useExponentialBackoff` | `true`                           | Təkrarlanan xətaların soyuma müddətini eksponensial şəkildə artırıb-artırmaması. |
+| Parametr                | Standart dəyər                   | Mənası                                                         |
+| ----------------------- | -------------------------------- | -------------------------------------------------------------- |
+| `enabled`               | `false`                          | Əsas keçid — model bloklanması **standart olaraq söndürülüb**. |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Model əhatəli xəta sayılan yuxarı axın statusları.             |
+| `baseCooldownMs`        | `120_000` (120 san.)             | İlk xəta üçün ilkin bloklanma müddəti.                         |
+| `maxCooldownMs`         | `1_800_000` (30 dəq.)            | Artırılmış soyuma müddətinin yuxarı həddi.                     |
+| `maxBackoffSteps`       | `10`                             | Eksponensial geriçəkilmə artımının maksimum addım sayı.        |
+| `useExponentialBackoff` | `true`                           | Təkrarlanan xətaların soyuma müddətini eksponensial artırması. |
 
-Parametrlər adi parametrlər anbarında saxlanılır və dayanıqlılıq parametrləri sxemi vasitəsilə yoxlanılır; kart `baseCooldownMs`/`maxCooldownMs`
-(`maxCooldownMs ≥ baseCooldownMs` şərti ilə) və `maxBackoffSteps` dəyərlərini icazə verilən hədlərlə məhdudlaşdırır.
+Parametrlər adi parametr yaddaşı vasitəsilə saxlanılır və dayanıqlılıq
+parametrləri sxemi ilə yoxlanılır; kart `baseCooldownMs`/`maxCooldownMs`
+(`maxCooldownMs ≥ baseCooldownMs` olmaqla) və `maxBackoffSteps` dəyərlərini
+icazə verilən hədlərdə saxlayır.
 
-**Uğura əsaslanan tədrici bərpa:** bərpa **yalnız** taymerin bitməsinə əsaslanmır. Sağlam cavab modelin xəta sayını tədricən azaldır, beləliklə, vaxt pəncərəsinin ortasında bərpa olunmuş modelin məhdudiyyəti taymer bitməzdən əvvəl artmağı dayandırır (və ləğv edilir). Kombinə edilmiş uğurlu hədəfdə `open-sse/services/combo.ts`, saxlanılan `failureCount` dəyərini (`Math.floor(failureCount / 2)`) **yarıya endirən** `decayModelFailureCount()`
-(`open-sse/services/accountFallback.ts`) funksiyasını çağırır; dəyər `0` olduqda bloklanma qeydi tamamilə silinir. Qarşılıq gələn `recordModelLockoutFailure()` funksiyası artım pəncərəsi daxilində xətalar baş verdikdə sayı artırır (və soyuma müddətini yüksəldir). Uğura əsaslanan bu tədrici azalma adi taymer bitməsinə əlavə olaraq tətbiq olunur — hər iki yol modeli yenidən aktivləşdirə bilər.
+**Uğurla azalma əsasında bərpa:** bərpa yalnız taymerin bitməsinə əsaslanmır.
+Sağlam cavab modelin xəta sayını mərhələli şəkildə azaldır, beləliklə müddətin
+ortasında bərpa olunan model taymer bitməzdən əvvəl artımı dayandırır (və
+bloklanmanı ləğv edir). Kombinasiya hədəfindən uğurlu cavab gəldikdə
+`open-sse/services/combo.ts`, `decayModelFailureCount()`
+(`open-sse/services/accountFallback.ts`) funksiyasını çağırır; bu funksiya
+saxlanılan `failureCount` dəyərini **yarıya endirir**
+(`Math.floor(failureCount / 2)`); dəyər `0` olduqda bloklanma qeydi tamamilə
+silinir. Bunun qarşılığı olan `recordModelLockoutFailure()` artım pəncərəsi
+daxilindəki xətalarda sayğacı artırır (və soyuma müddətini uzadır). Uğurla azalma
+mexanizmi sadə taymer bitməsinə əlavə olaraq işləyir — hər iki yol modeli yenidən
+aktivləşdirə bilər.
 
-**Vəziyyət:** bloklanmalar DB-də saxlanılmır, **yaddaşda** (`provider:connectionId:model` açarı ilə indekslənən prosesə məxsus `ModelLockoutEntry` tipli `Map` obyektlərində) tutulur — yenidən başladılma zamanı itirilir. _Parametrlər_ daimi saxlanılır; aktiv bloklanma _vəziyyəti_ isə müvəqqətidir.
+**Vəziyyət:** bloklanmalar verilənlər bazasında saxlanılmır, **yaddaşda**
+(`provider:connectionId:model` açarı ilə indekslənən prosesə aid `ModelLockoutEntry`
+`Map`-ləri, dəqiq əhatəli bloklanmalar üçün isə
+`provider:connectionId:exact:model`) saxlanılır — yenidən başlatma zamanı
+itir. _Parametrlər_ daimi saxlanılır; aktiv bloklanma _vəziyyəti_ müvəqqətidir.
 
 ---
 
@@ -526,13 +547,14 @@ reached") olan 429, `status_429` qaydasına çatmamışdan əvvəl kvota mətni 
 
 ---
 
-## Sazlamaların Araşdırılması
+## Sazlama
 
-- Provayderin bütün açarları ötürülür → həm avtomatik qoruyucunun vəziyyətini, HƏM DƏ hər bağlantının `rateLimitedUntil`/`testStatus` dəyərini yoxlayın.
-- Sıfırlama pəncərəsindən sonra provayder həmişəlik xaric edilir → kod `getStatus()`/`canExecute()` əvəzinə xam `state` dəyərini oxuyur.
-- Bir açar uğursuz olur, digərləri işləməlidir → avtomatik qoruyucu əvəzinə bağlantının gözləmə müddətinə üstünlük verin.
-- Yalnız bir model uğursuz olur → bağlantının gözləmə müddəti əvəzinə modelin bloklanmasına üstünlük verin.
-- Vəziyyət öz-özünə bərpa olunmalıdır, lakin olunmur → gələcək zaman damğasını və müddəti bitmiş vəziyyəti yeniləyən oxuma yolunu yoxlayın. Daimi statuslar əl ilə dəyişiklik tələb edir.
+- Çəkili kombinasiya `503 all_targets_cooling_down` cavabı verir (`Retry-After` təyin edilib, `diagnostics.excluded` isə hər bir hədəfi `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable` səbəbləri ilə sadalayır) → hovuz konfiqurasiya edilib və qoşulub, sadəcə hər bir hədəf dayanıqlılıq taymeri tərəfindən istisna edilib; `[COMBO] Weighted selection: every target excluded before dispatch — …` xəbərdarlığı səbəbləri və qalan saniyələri göstərir. Eyni kombinasiyadan gələn `404 no_executable_targets` cavabı heç bir dayanıqlılıq taymerinin işə düşmədiyini bildirir (icra ediləcək heç nə yoxdur və ya hər hesab əlçatanlıq yoxlamasından keçməyib). `targetResolution.ts` daxilində toplanmış istisnalar əsasında `open-sse/services/combo/pinRecovery.ts` daxilində yaradılıb.
+- Provayder üçün bütün açarlar ötürülüb → həm dövrəqıranın vəziyyətini, həm də hər bir bağlantının `rateLimitedUntil`/`testStatus` dəyərlərini yoxlayın.
+- Sıfırlama müddətindən sonra provayder həmişəlik istisna edilir → kod `getStatus()`/`canExecute()` əvəzinə birbaşa `state` oxuyur.
+- Bir açar uğursuz olur, digərləri işləməlidir → dövrəqıran əvəzinə bağlantının soyuma müddətinə üstünlük verin.
+- Yalnız bir model uğursuz olur → bağlantının soyuma müddəti əvəzinə model bloklanmasına üstünlük verin.
+- Vəziyyət öz-özünə bərpa olunmalıdır, lakin olunmur → gələcək zaman damğasının olub-olmadığını və vaxtı bitmiş vəziyyəti yeniləyən oxuma yolunu yoxlayın. Daimi statuslar əl ilə dəyişiklik tələb edir.
 
 ---
 

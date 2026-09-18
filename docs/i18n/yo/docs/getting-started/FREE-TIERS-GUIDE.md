@@ -4,7 +4,7 @@
 
 ---
 
-> **Ní ṣókí**: OmniRoute forúkọsílẹ̀ ID olùpèsè 352, pẹ̀lú **àwọn àkọsílẹ̀ 152 nínú àkójọ olùpèsè tí a sàmì sí `hasFree`**. Àkójọ awoṣe ọ̀fẹ́ tí a ṣàyẹ̀wò lábẹ́ òfin tó le koko ní **kọ́kọ́rọ́ adágún àsìkò-méjì 34 / àkọsílẹ̀ 443** (436 tó ń ṣiṣẹ́ + 7 tí a ti dáwọ́ dúró). So àwọn olùpèsè tó yẹ pọ̀ fún agbára àfidípò tó gbòòrò; gbogbo iye ìlò tó pọ̀jù, òfin ìfọwọ́sí, ìlànà àṣírí, àti ipò ìsanwó fún ìlò tó kọjá ààlà ṣì wúlò.
+> **Ní ṣókí**: OmniRoute forúkọsílẹ̀ àwọn ID olùpèsè 357, pẹ̀lú **àwọn àkọsílẹ̀ 152 nínú àkójọ olùpèsè tí a sàmì sí `hasFree`**. Àkójọ àwọn àwòṣe ọ̀fẹ́ tí a ṣàyẹ̀wò pẹkipẹki síi bo **àwọn kọ́kọ́rọ́ pool tó ń tún wáyé 35 / àkọsílẹ̀ 482** (475 tí ó ń ṣiṣẹ́ + 7 tí a ti dáwọ́ dúró). So ọ̀pọ̀ olùpèsè tó yẹ pọ̀ fún agbára ìpadàsẹ́yìn tó gbòòrò síi; gbogbo ìwọ̀n lílò, òfin ìfọwọ́sí, ìlànà àṣírí, àti ipò ìsanwó fún lílò tó kọjá iye tí a yàn ṣì wúlò.
 
 ---
 
@@ -160,18 +160,18 @@ Bí àwọn òfin olùpèsè bá gba ọ̀pọ̀ àkọọ́lẹ̀ tàbí ẹ̀r
 
 ## Ìṣírò Ìpele Ọ̀fẹ́
 
-Kátálọ́ọ̀gù tó ń ṣiṣẹ́ lọ́wọ́lọ́wọ́, tí a ti yọ àwọn àkójọpọ̀ tó tún ara wọn ṣe kúrò, ń ṣàfihàn:
+Kátálọ́ọ̀gù aláàyè tí a ti yọ àwọn àdáwòṣe àkójọpọ̀ rẹ̀ kúrò ń jabo lọ́wọ́lọ́wọ́ pé:
 
-| Òṣùwọ̀n                                                              |                                 Iye tí a ti ṣàyẹ̀wò lọ́wọ́lọ́wọ́ | Ìtumọ̀                                                                                                                                                                |
-| ------------------------------------------------------------------- | ----------------------------------------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ìpín tí a ṣe ìwọ̀n rẹ̀, tó sì ń tún wáyé                              |                                        **~1.47B tókìn/oṣù** | A ka àkójọpọ̀ tí a pín pọ̀ lẹ́ẹ̀kan ṣoṣo; a kò fi àwọn olupèsè tí kò ní òpin sí àpapọ̀ náà                                                                                |
-| Oṣù àkọ́kọ́ pẹ̀lú àwọn kírẹ́díìtì ìforúkọsílẹ̀                           |                                            **~2.07B tókìn** | Àpapọ̀ tó ń tún wáyé pẹ̀lú àwọn kírẹ́díìtì ẹ̀ẹ̀kan ṣoṣo àti àwọn tó ń tún wáyé                                                                                            |
-| Àkójọ àwọn módẹ́ẹ̀lì ọ̀fẹ́ tí a ti ṣàyẹ̀wò                               | **34 kọ́kọ́rọ́ àkójọpọ̀ tó ń tún wáyé / 443 àkọsílẹ̀ kátálọ́ọ̀gù** | 436 ló ń ṣiṣẹ́ + 7 ni a ti dáwọ́ dúró; èyí yàtọ̀ sí kátálọ́ọ̀gù olupèsè 352                                                                                               |
-| Àwọn olupèsè ọ̀fẹ́ títí láé tó ń tún wáyé/tí kò nílò kọ́kọ́rọ́ tí a ṣojú |                                                      **52** | Àwọn olupèsè aláìlẹ́ẹ̀kejì jákèjádò ojoojúmọ́/oṣooṣù/kírẹ́díìtì/aláìlópin tó ń tún wáyé àti àwọn irú kátálọ́ọ̀gù tí kò nílò kọ́kọ́rọ́; a yọ àwọn ìlà tí ẹ̀tọ́-lílo ń dí mọ́ kúrò |
-| Àwọn àkọsílẹ̀ kátálọ́ọ̀gù olupèsè tí a sàmì sí `hasFree`               |                                               **152 / 352** | Métádátà olupèsè tó gbòòrò sí i; kì í ṣe gbogbo wọn ló ní ìpín tó ń tún wáyé tí a lè ṣe ìwọ̀n rẹ̀                                                                      |
+| Ìwọ̀n                                                                     |                        Iye tí a ti yẹ̀wò lọ́wọ́lọ́wọ́ | Ìtumọ̀                                                                                                                                                                              |
+| ------------------------------------------------------------------------ | -----------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ìpèsè oníwọ̀n tí ń ṣẹlẹ̀ léraléra                                          |                            **~1.62B tokens/osù** | A ka àwọn àkójọpọ̀ tí a pín papọ̀ lẹ́ẹ̀kan ṣoṣo; a yọ àwọn olupèsè tí kò ní ààlà kúrò nínú àpapọ̀ náà                                                                                   |
+| Oṣù àkọ́kọ́ pẹ̀lú àwọn ìpèsè ìforúkọsílẹ̀                                    |                                **~2.22B tokens** | Àpapọ̀ ohun tí ń ṣẹlẹ̀ léraléra pẹ̀lú àwọn kírẹ́díìtì ẹ̀ẹ̀kan ṣoṣo àti àwọn kírẹ́díìtì tí ń ṣẹlẹ̀ léraléra                                                                                 |
+| Àkójọ àwọn módẹ́lì ọ̀fẹ́ tí a ti yẹ̀wò                                       | **35 recurring pool keys / 482 catalog entries** | 475 ń ṣiṣẹ́ + 7 ti dáwọ́ dúró; ó yàtọ̀ sí kátálọ́ọ̀gù olùpèsè 357                                                                                                                       |
+| Àwọn olupèsè ọ̀fẹ́-títí-láé tí ń ṣẹlẹ̀ léraléra/tí kò nílò kọ́kọ́rọ́ tí a ṣojú |                                           **53** | Àwọn olupèsè aláìlẹ́ẹ̀kejì káàkiri àwọn irú kátálọ́ọ̀gù ojoojúmọ́/oṣooṣù/kírẹ́díìtì/aláìní-ààlà tí ń ṣẹlẹ̀ léraléra àti tí kò nílò kọ́kọ́rọ́; a yọ àwọn ìlà tí àǹfààní yíyè wọn ní ààlà kúrò |
+| Àwọn àkọsílẹ̀ kátálọ́ọ̀gù olùpèsè tí a sàmì sí `hasFree`                    |                                    **152 / 357** | Métádátà olùpèsè tó gbòòrò sí i; kì í ṣe gbogbo wọn ló ní ìpín tí ń ṣẹlẹ̀ léraléra tí a lè díwọ̀n                                                                                    |
 
 A ṣe ìṣírò àwọn iye wọ̀nyí láti inú `open-sse/config/freeModelCatalog.ts`; wo
-[Ìtọ́kasí Àwọn Ìpele Ọ̀fẹ́](../reference/FREE_TIERS.md) fún yíyọ àwọn àkójọpọ̀ tó tún ara wọn ṣe kúrò, àwọn àsíá ToS,
+[Ìtọ́kasí Àwọn Ìpele Ọ̀fẹ́](../reference/FREE_TIERS.md) fún yíyọ àdáwòṣe àkójọpọ̀, àwọn àsìá ToS,
 àwọn àkọsílẹ̀ tí a ti dáwọ́ dúró, àti ọ̀nà ìṣírò kírẹ́díìtì ìforúkọsílẹ̀.
 
 ---

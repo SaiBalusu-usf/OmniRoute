@@ -6,48 +6,61 @@
 
 ## Přehled
 
-Příkazy OmniRoute CLI se vůči místnímu rozhraní API pro správu autentizují pomocí
+Příkazy OmniRoute CLI se vůči místnímu rozhraní API pro správu ověřují pomocí
 tokenu `HMAC-SHA256(machine-id, salt)` odesílaného v hlavičce požadavku
 `x-omniroute-cli-token`.
 
-Díky tomu mohou dílčí příkazy CLI (`omniroute status`, `omniroute providers` atd.)
+Díky tomu mohou podpříkazy CLI (`omniroute status`, `omniroute providers` atd.)
 volat koncové body pro správu, aniž by uživatel musel při každém spuštění zadávat
 JWT nebo heslo.
 
 ## Jak to funguje
 
-1. `getMachineTokenSync()` načte hardwarové ID zařízení prostřednictvím
-   `node-machine-id` (při selhání použije prázdný řetězec, čímž autentizaci CLI
-   deaktivuje).
-2. Vypočítá `HMAC-SHA256(machine_id, salt)` a vrátí úplný 64znakový hexadecimální
-   otisk — deterministický, nevratný token svázaný s tímto zařízením.
-3. CLI odesílá token jako `x-omniroute-cli-token` pouze tehdy, když je cílová
-   adresa vyhodnocena jako explicitní URL zpětné smyčky (`localhost`,
-   `127.0.0.0/8` nebo IPv6 zpětné smyčky). Požadavky obsahující token používají
-   `redirect: error`, takže jej místní přesměrování nemůže předat jinému zdroji.
-   Vzdálené kontexty místo toho používají přístupové tokeny s omezeným rozsahem.
-   Pokud odvození není dostupné, CLI hlavičku vynechá a `omniroute doctor`
-   nahlásí selhání, místo aby považoval prázdný token za platný.
+1. `getMachineTokenSync()` načte hardwarové ID počítače prostřednictvím
+   `node-machine-id` (při selhání použije prázdný řetězec, čímž ověřování CLI
+   zakáže).
+2. Vypočítá `HMAC-SHA256(machine_id, salt)` a vrátí celý 64znakový hexadecimální
+   otisk — deterministický, nevratný token svázaný s tímto počítačem.
+3. CLI odešle token jako `x-omniroute-cli-token` pouze tehdy, když je výsledným
+   cílem explicitní adresa URL zpětné smyčky (`localhost`, `127.0.0.0/8` nebo
+   IPv6 zpětné smyčky). Požadavky obsahující token používají `redirect: error`,
+   takže místní přesměrování jej nemůže předat jinému zdroji. Vzdálené kontexty
+   místo něj používají přístupové tokeny s omezeným rozsahem. Pokud token nelze
+   odvodit, CLI hlavičku vynechá a `omniroute doctor` nahlásí selhání namísto
+   toho, aby prázdný token považoval za platný.
 4. Server (`src/server/authz/policies/management.ts`) znovu vypočítá očekávaný
    token se stejnou solí a porovná jej pomocí `timingSafeEqual`, aby zabránil
-   jeho získání pomocí časových útoků.
+   jeho získání na základě časování.
 
 ## Bezpečnostní vlastnosti
 
-| Vlastnost                          | Podrobnosti                                                                                                                                                                                                                        |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Pouze zpětná smyčka**            | Přijímá se pouze tehdy, když důvěryhodné označení lokality protistrany na serveru (odvozené ze skutečné adresy TCP protistrany) uvádí zpětnou smyčku. Klientem ovládané hlavičce `Host` se nikdy nedůvěřuje při určování lokality. |
-| **Porovnání v konstantním čase**   | `crypto.timingSafeEqual` zabraňuje časovým útokům.                                                                                                                                                                                 |
-| **Nevratnost**                     | Z výstupu HMAC nelze obnovit ID zařízení.                                                                                                                                                                                          |
-| **Bez obcházení ochrany `always`** | `isAlwaysProtectedPath()` se vyhodnocuje před kontrolou tokenu CLI. `/api/shutdown` a `/api/settings/database` vždy vyžadují JWT.                                                                                                  |
-| **Neexportovatelnost**             | Token se nikdy nezapisuje na disk ani do protokolů.                                                                                                                                                                                |
+| Vlastnost                        | Podrobnosti                                                                                                                                                                                                                       |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pouze zpětná smyčka**          | Přijímá se pouze tehdy, když důvěryhodný serverový příznak lokality protistrany (odvozený ze skutečné adresy protistrany TCP) označuje zpětnou smyčku. Klientem řízené hlavičce `Host` se při určování lokality nikdy nedůvěřuje. |
+| **Porovnání v konstantním čase** | `crypto.timingSafeEqual` zabraňuje útokům založeným na časování.                                                                                                                                                                  |
+| **Nevratnost**                   | Z výstupu HMAC nelze zpětně získat ID počítače.                                                                                                                                                                                   |
+| **Bez obejití ochrany `always`** | `isAlwaysProtectedPath()` se vyhodnocuje před kontrolou tokenu CLI. `/api/shutdown` a `/api/settings/database` vždy vyžadují JWT.                                                                                                 |
+| **Neexportovatelnost**           | Token se nikdy nezapisuje na disk ani do protokolů.                                                                                                                                                                               |
+
+## Výchozí sůl (náhodná pro každou instalaci)
+
+Pokud není nastavena proměnná `OMNIROUTE_CLI_SALT`, použije se jako sůl náhodný
+64znakový hexadecimální řetězec, který se jednorázově vygeneruje a trvale uloží
+do `<DATA_DIR>/cli-token-salt.json` (režim `0600`) — nikoli literál
+`omniroute-cli-auth-v1` uložený v repozitáři. Funkce `getActiveSalt()` v
+`src/lib/machineToken.ts` i její protějšek v `bin/cli/utils/cliToken.mjs` čtou
+stejný soubor, takže server a každé spuštění CLI v této instalaci používají
+stejnou hodnotu; literál uložený v repozitáři se použije pouze jako krajní
+záložní možnost, pokud zatím nelze získat trvale uloženou sůl ani sůl z
+prostředí (například u nové instalace obsahující pouze CLI, před prvním spuštěním
+serveru). Tím se odstraňuje slabina dřívější pevně stanovené výchozí hodnoty:
+soubor `/etc/machine-id` je běžně čitelný všemi uživateli, takže by jinak mohl
+kterýkoli místní uživatel odvodit stejný token pro každou instalaci, v níž nikdy
+nebyla nastavena proměnná `OMNIROUTE_CLI_SALT`.
 
 ## Rotace soli
 
-Nastavením `OMNIROUTE_CLI_SALT` můžete odvozený token změnit bez úprav kódu.
-Po rotaci budou všechny procesy CLI na tomto zařízení automaticky používat nový
-token. To je užitečné po úniku seznamu procesů, který mohl odhalit předchozí
-odvozenou hodnotu.
+Nastavením `OMNIROUTE_CLI_SALT` můžete změnit odvozený token bez úprav kódu — tato hodnota má vždy přednost před uloženou solí specifickou pro danou instalaci. Po rotaci budou všechny procesy CLI na tomto počítači automaticky používat nový token. To je užitečné po úniku seznamu procesů, který mohl odhalit předchozí odvozenou hodnotu.
 
 ```bash
 # Trvalá rotace (přidejte do profilu shellu)
@@ -57,35 +70,31 @@ export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 omniroute status
 ```
 
-Výchozí sůl: `omniroute-cli-auth-v1`
-
 ## Starší formát (SHA-256, 32 znaků) — stále podporován
 
 Před zavedením výše uvedeného formátu HMAC odvozovalo CLI svůj token jako
-`SHA-256(machineId + salt).hex[0..32]` (32znakový prefix) v souboru
+`SHA-256(machineId + salt).hex[0..32]` (32znakový prefix) v
 `bin/cli/utils/cliToken.mjs` (`getLegacyCliTokenSync` v `src/lib/machineToken.ts`).
 
-Kvůli zpětné kompatibilitě server přijímá **oba** formáty: ověřovací mechanismus
-sestaví `expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]`
-a porovná příchozí hlavičku s každým z nich pomocí `timingSafeEqual`
+Kvůli zpětné kompatibilitě server přijímá **oba** formáty: ověřovací mechanismus sestaví
+`expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` a porovná
+příchozí hlavičku s každým z nich pomocí `timingSafeEqual`
 (`src/server/authz/policies/management.ts` a `src/lib/middleware/cliTokenAuth.ts`).
-Token je tedy platný, pokud odpovídá **buď** 64znakovému otisku HMAC, nebo
-32znakovému prefixu staršího formátu SHA-256.
+Token je tedy platný, pokud odpovídá **buď** 64znakovému otisku HMAC, nebo 32znakovému
+prefixu staršího formátu SHA-256.
 
-**Deaktivace:** nastavením `OMNIROUTE_DISABLE_CLI_TOKEN=true` (v prostředí nebo
-souboru `.env`) mechanismus tokenu CLI zcela deaktivujete; veškerý přístup pak
-vyžaduje explicitní klíč API. Na hostitelích s více uživateli je to doporučeno,
-protože `machine-id` je specifické pro zařízení (nikoli pro uživatele) a jiný
-uživatel na stejném hostiteli by mohl vypočítat stejný token.
+**Vypnutí:** nastavením `OMNIROUTE_DISABLE_CLI_TOKEN=true` (v prostředí nebo souboru `.env`) mechanismus tokenů CLI zcela vypnete; veškerý přístup pak vyžaduje explicitní klíč API. Na hostitelích s více uživateli se toto nastavení doporučuje, protože `machine-id` je specifický pro zařízení (nikoli pro uživatele) a jiný uživatel na stejném hostiteli by mohl vypočítat stejný token.
 
 ## Soubory
 
-| Soubor                                    | Účel                                                |
-| ----------------------------------------- | --------------------------------------------------- |
-| `src/lib/machineToken.ts`                 | Odvození tokenu (`getMachineTokenSync`)             |
-| `src/server/authz/headers.ts`             | Konstanta `CLI_TOKEN_HEADER`                        |
-| `src/server/authz/policies/management.ts` | Ověření na straně serveru                           |
-| `src/server/authz/routeGuard.ts`          | Kontrola hostitele zpětné smyčky (`isLoopbackHost`) |
+| Soubor                                    | Účel                                           |
+| ----------------------------------------- | ---------------------------------------------- |
+| `src/lib/machineToken.ts`                 | Odvození tokenu (`getMachineTokenSync`)        |
+| `bin/cli/utils/cliToken.mjs`              | Implementace stejného odvození na straně CLI   |
+| `<DATA_DIR>/cli-token-salt.json`          | Uložená náhodná sůl specifická pro instalaci   |
+| `src/server/authz/headers.ts`             | Konstanta `CLI_TOKEN_HEADER`                   |
+| `src/server/authz/policies/management.ts` | Ověření na straně serveru                      |
+| `src/server/authz/routeGuard.ts`          | Kontrola hostitele loopback (`isLoopbackHost`) |
 
 ## Viz také
 

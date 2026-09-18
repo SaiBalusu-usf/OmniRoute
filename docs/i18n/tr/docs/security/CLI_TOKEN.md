@@ -6,91 +6,103 @@
 
 ## Genel Bakış
 
-OmniRoute CLI komutları, `x-omniroute-cli-token` istek üstbilgisi aracılığıyla
+OmniRoute CLI komutları, `x-omniroute-cli-token` istek üstbilgisi üzerinden
 gönderilen bir `HMAC-SHA256(machine-id, salt)` belirteci kullanarak yerel yönetim
 API'sinde kimlik doğrulaması yapar.
 
-Bu, CLI alt komutlarının (`omniroute status`, `omniroute providers` vb.) kullanıcının
-her çağrıda JWT veya parola sağlamasını gerektirmeden yönetim uç noktalarını
-çağırmasına olanak tanır.
+Bu, CLI alt komutlarının (`omniroute status`, `omniroute providers` vb.) her
+çalıştırmada kullanıcının bir JWT veya parola sağlamasına gerek kalmadan yönetim
+uç noktalarını çağırmasına olanak tanır.
 
-## Nasıl çalışır
+## Nasıl çalışır?
 
-1. `getMachineTokenSync()`, donanım makine kimliğini `node-machine-id` aracılığıyla
-   okur (başarısızlık durumunda boş bir dizeye geri döner ve CLI kimlik doğrulamasını
-   devre dışı bırakır).
-2. `HMAC-SHA256(machine_id, salt)` değerini hesaplar ve 64 karakterlik tam hex
-   özetini döndürür — bu makineye bağlı, deterministik ve geri döndürülemez bir
-   belirteçtir.
-3. CLI, belirteci yalnızca çözümlenen hedef açık bir geri döngü URL'si olduğunda
-   (`localhost`, `127.0.0.0/8` veya geri döngü IPv6) `x-omniroute-cli-token`
-   olarak gönderir. Belirteci taşıyan istekler `redirect: error` kullanır; böylece
-   yerel bir yönlendirme belirteci başka bir kaynağa iletemez. Uzak bağlamlar bunun
-   yerine kapsamlı erişim belirteçleri kullanır. Türetme kullanılamıyorsa CLI
-   üstbilgiyi atlar ve `omniroute doctor`, boş bir belirteci geçerli kabul etmek
-   yerine hatayı bildirir.
-4. Sunucu (`src/server/authz/policies/management.ts`), aynı salt ile beklenen
-   belirteci yeniden hesaplar ve zamanlamaya dayalı çıkarımı önlemek için
-   `timingSafeEqual` aracılığıyla karşılaştırır.
+1. `getMachineTokenSync()`, `node-machine-id` aracılığıyla donanım makine
+   kimliğini okur (başarısızlık durumunda boş bir dizeye geri döner ve CLI kimlik
+   doğrulamasını devre dışı bırakır).
+2. `HMAC-SHA256(machine_id, salt)` değerini hesaplar ve bu makineye bağlı,
+   belirlenimsel ve geri döndürülemez bir belirteç olan 64 karakterlik tam onaltılık
+   özeti döndürür.
+3. CLI, belirteci yalnızca çözümlenen hedef açık bir geri döngü URL'si
+   (`localhost`, `127.0.0.0/8` veya geri döngü IPv6) olduğunda
+   `x-omniroute-cli-token` olarak gönderir. Belirteci taşıyan istekler
+   `redirect: error` kullanır; böylece yerel bir yönlendirme belirteci başka bir
+   kaynağa iletemez. Uzak bağlamlar bunun yerine kapsamlı erişim belirteçlerini
+   kullanır. Türetme kullanılamıyorsa CLI üstbilgiyi atlar ve `omniroute doctor`,
+   boş bir belirteci geçerli saymak yerine hatayı bildirir.
+4. Sunucu (`src/server/authz/policies/management.ts`), aynı salt değerini
+   kullanarak beklenen belirteci yeniden hesaplar ve zamanlamaya dayalı çıkarımı
+   önlemek için `timingSafeEqual` aracılığıyla karşılaştırır.
 
 ## Güvenlik özellikleri
 
-| Özellik                          | Ayrıntı                                                                                                                                                                                                          |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Yalnızca geri döngü**          | Yalnızca sunucunun güvenilir eş yerelliği damgası (gerçek TCP eş adresinden türetilir) geri döngüyü belirttiğinde kabul edilir. İstemci tarafından denetlenen `Host` üstbilgisine yerellik için asla güvenilmez. |
-| **Sabit zamanlı karşılaştırma**  | `crypto.timingSafeEqual`, zamanlama saldırılarını önler.                                                                                                                                                         |
-| **Geri döndürülemez**            | HMAC çıktısından machine-id geri elde edilemez.                                                                                                                                                                  |
-| **`always` korumalı atlama yok** | `isAlwaysProtectedPath()`, CLI belirteci denetiminden önce değerlendirilir. `/api/shutdown` ve `/api/settings/database` her zaman JWT gerektirir.                                                                |
-| **Dışa aktarılamaz**             | Belirteç hiçbir zaman diske yazılmaz veya günlüğe kaydedilmez.                                                                                                                                                   |
+| Özellik                          | Ayrıntı                                                                                                                                                                                                              |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Yalnızca geri döngü**          | Yalnızca sunucunun güvenilir eş yerelliği damgası (gerçek TCP eş adresinden türetilir) geri döngüyü gösterdiğinde kabul edilir. İstemci tarafından kontrol edilen `Host` üstbilgisine yerellik için asla güvenilmez. |
+| **Sabit zamanlı karşılaştırma**  | `crypto.timingSafeEqual`, zamanlama saldırılarını önler.                                                                                                                                                             |
+| **Geri döndürülemez**            | HMAC çıktısından makine kimliği elde edilemez.                                                                                                                                                                       |
+| **`always` korumasını aşma yok** | `isAlwaysProtectedPath()`, CLI belirteci kontrolünden önce değerlendirilir. `/api/shutdown` ve `/api/settings/database` her zaman JWT gerektirir.                                                                    |
+| **Dışa aktarılamaz**             | Belirteç hiçbir zaman diske yazılmaz veya günlüğe kaydedilmez.                                                                                                                                                       |
 
-## Salt döndürme
+## Varsayılan salt (kurulum başına rastgele)
 
-Türetilen belirteci kod değişikliği yapmadan döndürmek için
-`OMNIROUTE_CLI_SALT` değerini ayarlayın. Döndürme sonrasında bu makinedeki tüm
-CLI işlemleri yeni belirteci otomatik olarak kullanır. Önceki türetilmiş değeri
-açığa çıkarmış olabilecek bir işlem listesi sızıntısından sonra kullanışlıdır.
+`OMNIROUTE_CLI_SALT` ayarlanmadığında salt, bir kez oluşturulan ve
+`<DATA_DIR>/cli-token-salt.json` konumunda (`0600` moduyla) kalıcı olarak saklanan
+rastgele 64 karakterlik bir onaltılık dizedir; depoya eklenmiş sabit
+`omniroute-cli-auth-v1` değeri değildir. Hem `src/lib/machineToken.ts` içindeki
+`getActiveSalt()` hem de `bin/cli/utils/cliToken.mjs` içindeki karşılığı aynı
+dosyayı okur; böylece sunucu ve bu kurulumdaki her CLI çağrısı aynı değerde
+uzlaşır. Depoya eklenmiş sabit değer yalnızca henüz kalıcı veya ortam değişkeni
+tabanlı bir salt oluşturulamadığında son çare olarak kullanılır (örneğin, sunucu
+daha önce hiç çalıştırılmadan önceki yeni bir yalnızca-CLI kurulumu). Bu, eski
+sabit varsayılanın zayıflığını giderir: `/etc/machine-id` genellikle herkes
+tarafından okunabilir olduğundan, aksi takdirde herhangi bir yerel kullanıcı
+`OMNIROUTE_CLI_SALT` değerinin hiç ayarlanmadığı her kurulum için aynı belirteci
+türetebilirdi.
+
+## Salt rotasyonu
+
+Türetilmiş token'ı kod değişikliği yapmadan döndürmek için `OMNIROUTE_CLI_SALT` değerini ayarlayın — bu değer, kurulum başına kalıcı olarak saklanan salt değerine her zaman göre önceliklidir. Rotasyondan sonra bu makinedeki tüm CLI işlemleri yeni token'ı otomatik olarak kullanır. Önceki türetilmiş değeri açığa çıkarmış olabilecek bir işlem listesi sızıntısından sonra kullanışlıdır.
 
 ```bash
-# Kalıcı döndürme (kabuk profiline ekleyin)
+# Kalıcı rotasyon (kabuk profiline ekleyin)
 export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 
-# Yeni belirtecin kullanımda olduğunu doğrulayın
+# Yeni token'ın kullanıldığını doğrulayın
 omniroute status
 ```
 
-Varsayılan salt: `omniroute-cli-auth-v1`
+## Eski biçim (SHA-256, 32 karakter) — hâlâ kabul ediliyor
 
-## Eski biçim (SHA-256, 32 karakter) — hâlâ kabul edilir
-
-Yukarıdaki HMAC biçiminden önce CLI, belirtecini
+Yukarıdaki HMAC biçiminden önce CLI, token'ını
 `bin/cli/utils/cliToken.mjs` içinde (`src/lib/machineToken.ts` dosyasındaki
-`getLegacyCliTokenSync`) `SHA-256(machineId + salt).hex[0..32]` (32 karakterlik
-bir önek) olarak türetiyordu.
+`getLegacyCliTokenSync`) `SHA-256(machineId + salt).hex[0..32]` (32 karakterlik bir
+önek) olarak türetiyordu.
 
 Geriye dönük uyumluluk için sunucu **her iki** biçimi de kabul eder: doğrulayıcı
-`expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` değerini oluşturur
-ve gelen üstbilgiyi `timingSafeEqual` ile her biriyle karşılaştırır
+`expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` oluşturur ve gelen
+üstbilgiyi `timingSafeEqual` ile her biriyle karşılaştırır
 (`src/server/authz/policies/management.ts` ve `src/lib/middleware/cliTokenAuth.ts`).
-Dolayısıyla bir belirteç, 64 karakterlik HMAC özetiyle veya 32 karakterlik eski
-SHA-256 önekiyle eşleşiyorsa geçerlidir.
+Dolayısıyla bir token, 64 karakterlik HMAC özetiyle **veya** 32 karakterlik eski
+SHA-256 önekiyle eşleşirse geçerlidir.
 
-**Devre dışı bırakma:** CLI belirteci mekanizmasını tamamen devre dışı bırakmak için
-`OMNIROUTE_DISABLE_CLI_TOKEN=true` değerini ayarlayın (ortamda veya `.env` içinde);
-bundan sonra tüm erişimler açıkça belirtilen bir API anahtarı gerektirir. `machine-id`
-kullanıcı başına değil, cihaz başına olduğundan ve aynı ana makinedeki başka bir
-kullanıcı aynı belirteci hesaplayabileceğinden, çok kullanıcılı ana makinelerde bu
-önerilir.
+**Devre dışı bırakma:** CLI token mekanizmasını tamamen devre dışı bırakmak için
+`OMNIROUTE_DISABLE_CLI_TOKEN=true` değerini (`env` veya `.env` içinde) ayarlayın;
+bundan sonra tüm erişimler açıkça belirtilmiş bir API anahtarı gerektirir. Çok
+kullanıcılı ana makinelerde bu önerilir; çünkü `machine-id` kullanıcı başına değil,
+cihaz başınadır ve aynı ana makinedeki başka bir kullanıcı aynı token'ı hesaplayabilir.
 
 ## Dosyalar
 
 | Dosya                                     | Amaç                                              |
 | ----------------------------------------- | ------------------------------------------------- |
-| `src/lib/machineToken.ts`                 | Belirteç türetme (`getMachineTokenSync`)          |
+| `src/lib/machineToken.ts`                 | Token türetme (`getMachineTokenSync`)             |
+| `bin/cli/utils/cliToken.mjs`              | Aynı türetmenin CLI tarafındaki karşılığı         |
+| `<DATA_DIR>/cli-token-salt.json`          | Kurulum başına kalıcı rastgele salt               |
 | `src/server/authz/headers.ts`             | `CLI_TOKEN_HEADER` sabiti                         |
-| `src/server/authz/policies/management.ts` | Sunucu tarafında doğrulama                        |
+| `src/server/authz/policies/management.ts` | Sunucu tarafı doğrulama                           |
 | `src/server/authz/routeGuard.ts`          | Geri döngü ana makine denetimi (`isLoopbackHost`) |
 
 ## Ayrıca bkz.
 
 - `docs/security/ROUTE_GUARD_TIERS.md` — rota koruma katmanları
-- `docs/architecture/AUTHZ_GUIDE.md` — tam yetkilendirme işlem hattı
+- `docs/architecture/AUTHZ_GUIDE.md` — eksiksiz yetkilendirme işlem hattı

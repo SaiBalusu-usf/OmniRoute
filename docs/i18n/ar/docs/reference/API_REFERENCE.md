@@ -1610,19 +1610,19 @@ GET /.well-known/agent.json
 
 ## إدارة أدوات CLI
 
-إدارة أدوات CLI التي تتكامل مع OmniRoute (antigravity وchipotle وcommandCode و
-devin-cli وغيرها). راجع [مرجع المزودين](./PROVIDER_REFERENCE.md) للاطلاع على القائمة الكاملة.
+أدِر أدوات CLI التي تتكامل مع OmniRoute ‏(antigravity وcommandCode و
+devin-cli وغيرها). راجع [مرجع موفّري الخدمة](./PROVIDER_REFERENCE.md) للاطلاع على القائمة الكاملة.
 
-| الطريقة | المسار                                  | الوصف                                                                                                                                                       |
-| ------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET     | `/api/cli-tools/all-statuses`           | حالة جميع أدوات CLI (حالة التثبيت والإصدار وآخر ظهور)                                                                                                       |
-| GET     | `/api/cli-tools/status`                 | تفاصيل حالة أداة CLI واحدة (استعلام `?tool=`)                                                                                                               |
-| POST    | `/api/cli-tools/apply`                  | كتابة الإعدادات المُنشأة لأداة (`dryRun` للمعاينة؛ `422` + `containerEphemeralTarget` عند التشغيل داخل حاوية؛ تعرض `migration` ملاحظات حول Codex YAML قديم) |
-| GET     | `/api/cli-tools/backups`                | سرد النسخ الاحتياطية لإعدادات أدوات CLI                                                                                                                     |
-| POST    | `/api/cli-tools/backups`                | إنشاء نسخة احتياطية من إعدادات جميع أدوات CLI                                                                                                               |
-| POST    | `/api/cli-tools/backups`                | الاستعادة: تؤدي نقطة النهاية نفسها مع `{tool, backupId}` في النص إلى استعادة تلك النسخة الاحتياطية                                                          |
-| GET     | `/api/cli-tools/antigravity-mitm`       | حالة وكيل MITM الخاص بـ Antigravity (أداة CLI المسماة "antigravity-mitm")                                                                                   |
-| POST    | `/api/cli-tools/antigravity-mitm/alias` | تكوين الأسماء المستعارة لـ antigravity-mitm                                                                                                                 |
+| الطريقة | المسار                                  | الوصف                                                                                                                                                    |
+| ------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET     | `/api/cli-tools/all-statuses`           | حالة جميع أدوات CLI (التثبيت، الإصدار، وآخر ظهور)                                                                                                        |
+| GET     | `/api/cli-tools/status`                 | تفاصيل حالة أداة CLI واحدة (استعلام `?tool=`)                                                                                                            |
+| POST    | `/api/cli-tools/apply`                  | كتابة الإعداد المُنشأ لأداة (`dryRun` للمعاينة؛ `422` مع `containerEphemeralTarget` عند التشغيل داخل حاوية؛ وتوضّح `migration` وجود ملف Codex YAML قديم) |
+| GET     | `/api/cli-tools/backups`                | سرد النسخ الاحتياطية لإعدادات أدوات CLI                                                                                                                  |
+| POST    | `/api/cli-tools/backups`                | إنشاء نسخة احتياطية من إعدادات جميع أدوات CLI                                                                                                            |
+| POST    | `/api/cli-tools/backups`                | الاستعادة: تؤدي نقطة النهاية نفسها، مع `{tool, backupId}` في النص، إلى استعادة تلك النسخة الاحتياطية                                                     |
+| GET     | `/api/cli-tools/antigravity-mitm`       | حالة وكيل MITM لـ Antigravity (أداة CLI المسماة "antigravity-mitm")                                                                                      |
+| POST    | `/api/cli-tools/antigravity-mitm/alias` | إعداد الأسماء المستعارة لـ antigravity-mitm                                                                                                              |
 
 **المصادقة:** تتطلب جلسة إدارة.
 

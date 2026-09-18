@@ -4,7 +4,7 @@
 
 ---
 
-> **Ringkasnya**: OmniRoute mendaftarkan 352 ID penyedia, dengan **152 entri katalog penyedia ditandakan sebagai `hasFree`**. Katalog model percuma yang diaudit dengan lebih ketat merangkumi **34 kekunci kumpulan berulang / 443 entri** (436 aktif + 7 dihentikan). Sambungkan beberapa penyedia yang sesuai untuk kapasiti sandaran yang lebih luas; setiap kuota, peraturan kelulusan, dasar privasi dan syarat lebihan penggunaan berbayar masih terpakai.
+> **Ringkasnya**: OmniRoute mendaftarkan 357 ID penyedia, dengan **152 entri katalog penyedia ditandai sebagai `hasFree`**. Katalog model percuma yang diaudit dengan lebih ketat merangkumi **35 kunci kumpulan berulang / 482 entri** (475 aktif + 7 dihentikan). Sambungkan beberapa penyedia yang sesuai untuk kapasiti sandaran yang lebih luas; setiap kuota, peraturan kelulusan, dasar privasi dan syarat lebihan penggunaan berbayar masih terpakai.
 
 ---
 
@@ -160,19 +160,19 @@ kuota atau dasar akses penyedia.
 
 ## Pengiraan Peringkat Percuma
 
-Katalog langsung yang dinyahduplikasi mengikut kumpulan kini melaporkan:
+Katalog langsung yang dinyahpendua mengikut kumpulan pada masa ini melaporkan:
 
-| Metrik                                                             |                          Nilai semasa yang diaudit | Tafsiran                                                                                                                                               |
-| ------------------------------------------------------------------ | -------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Geran berulang yang boleh dikuantifikasikan                        |                             **~1.47B token/bulan** | Kumpulan dikongsi dikira sekali; penyedia tanpa had dikecualikan daripada jumlah tersebut                                                              |
-| Bulan pertama dengan geran pendaftaran                             |                                   **~2.07B token** | Jumlah berulang ditambah kredit sekali beri dan berulang                                                                                               |
-| Inventori model percuma yang diaudit                               | **34 kunci kumpulan berulang / 443 entri katalog** | 436 aktif + 7 dihentikan; berbeza daripada katalog 352 penyedia                                                                                        |
-| Penyedia percuma selama-lamanya berulang/tanpa kunci yang diwakili |                                             **52** | Penyedia unik merentas jenis katalog harian/bulanan/kredit/tanpa had yang berulang serta tanpa kunci; baris yang tertakluk pada kelayakan dikecualikan |
-| Entri katalog penyedia yang ditandai `hasFree`                     |                                      **152 / 352** | Metadata penyedia yang lebih luas; bukan semuanya mempunyai kuota berulang yang boleh dikuantifikasikan                                                |
+| Metrik                                                             |                               Nilai diaudit semasa | Tafsiran                                                                                                                                                |
+| ------------------------------------------------------------------ | -------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Peruntukan berulang yang dikuantifikasi                            |                             **~1.62B token/bulan** | Kumpulan dikongsi dikira sekali; penyedia tanpa had dikecualikan daripada jumlah                                                                        |
+| Bulan pertama dengan peruntukan pendaftaran                        |                                   **~2.22B token** | Jumlah berulang ditambah kredit sekali sahaja dan berulang                                                                                              |
+| Inventori model percuma yang diaudit                               | **35 kunci kumpulan berulang / 482 entri katalog** | 475 aktif + 7 dihentikan; berbeza daripada katalog 357 penyedia                                                                                         |
+| Penyedia percuma selama-lamanya berulang/tanpa kunci yang diwakili |                                             **53** | Penyedia unik merentas jenis katalog harian/bulanan/kredit/tanpa had yang berulang serta tanpa kunci, tidak termasuk baris yang dihadkan oleh kelayakan |
+| Entri katalog penyedia yang ditandai `hasFree`                     |                                      **152 / 357** | Metadata penyedia yang lebih luas; bukan semuanya mempunyai kuota berulang yang boleh dikuantifikasi                                                    |
 
-Nilai ini dikira daripada `open-sse/config/freeModelCatalog.ts`; lihat
-[Rujukan Peringkat Percuma](../reference/FREE_TIERS.md) untuk penyahduplikasian kumpulan, penanda ToS,
-entri yang dihentikan dan kaedah pengiraan kredit pendaftaran.
+Nilai-nilai ini dikira daripada `open-sse/config/freeModelCatalog.ts`; lihat
+[Rujukan Peringkat Percuma](../reference/FREE_TIERS.md) untuk penyahpenduaan kumpulan, penanda ToS,
+entri yang dihentikan dan metodologi kredit pendaftaran.
 
 ---
 

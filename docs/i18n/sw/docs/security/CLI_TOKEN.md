@@ -6,86 +6,100 @@
 
 ## Muhtasari
 
-Amri za OmniRoute CLI huthibitisha utambulisho dhidi ya API ya usimamizi ya ndani kwa kutumia tokeni ya
-`HMAC-SHA256(machine-id, salt)` inayotumwa kupitia kichwa cha ombi cha
+Amri za OmniRoute CLI huthibitisha utambulisho dhidi ya API ya usimamizi ya ndani kwa kutumia
+tokeni ya `HMAC-SHA256(machine-id, salt)` inayotumwa kupitia kichwa cha ombi cha
 `x-omniroute-cli-token`.
 
 Hii huruhusu amri ndogo za CLI (`omniroute status`, `omniroute providers`, n.k.)
 kuita sehemu za mwisho za usimamizi bila kumhitaji mtumiaji kutoa JWT au
-nenosiri kila zinapotekelezwa.
+nenosiri kila zinapoendeshwa.
 
 ## Jinsi inavyofanya kazi
 
 1. `getMachineTokenSync()` husoma kitambulisho cha maunzi cha mashine kupitia `node-machine-id`
-   (hurudi kwenye tungo tupu ikishindwa, na hivyo kuzima uthibitishaji wa CLI).
-2. Hukokotoa `HMAC-SHA256(machine_id, salt)` na kurudisha muhtasari kamili wa heksadesimali
-   wenye vibambo 64 — tokeni thabiti, isiyoweza kugeuzwa, inayohusishwa na mashine hii.
+   (hutumia tungo tupu ikishindwa, hali inayozima uthibitishaji wa CLI).
+2. Hukokotoa `HMAC-SHA256(machine_id, salt)` na kurejesha muhtasari kamili wa heksadesimali
+   wenye vibambo 64 — tokeni thabiti, isiyoweza kurejeshwa nyuma, iliyofungamanishwa na mashine hii.
 3. CLI hutuma tokeni kama `x-omniroute-cli-token` ikiwa tu lengwa lililotambuliwa
-   ni URL ya wazi ya loopback (`localhost`, `127.0.0.0/8`, au
-   loopback ya IPv6). Maombi yanayobeba tokeni hutumia `redirect: error`, ili uelekezaji upya
-   wa ndani usiweze kuituma kwa chanzo kingine. Miktadha ya mbali hutumia tokeni za ufikiaji
-   zenye upeo badala yake. Ikiwa uzalishaji wake haupatikani, CLI huacha kichwa hicho
+   ni URL bayana ya loopback (`localhost`, `127.0.0.0/8`, au
+   IPv6 ya loopback). Maombi yaliyo na tokeni hutumia `redirect: error`, ili uelekezaji
+   wa ndani usiweze kuipeleka kwa asili nyingine. Miktadha ya mbali hutumia tokeni za
+   ufikiaji zenye upeo badala yake. Ikiwa uzalishaji wa tokeni haupatikani, CLI huacha kichwa hicho
    na `omniroute doctor` huripoti hitilafu badala ya kuchukulia tokeni tupu
    kuwa halali.
 4. Seva (`src/server/authz/policies/management.ts`) hukokotoa upya
-   tokeni inayotarajiwa kwa kutumia salt ileile na kuilinganisha kupitia `timingSafeEqual` ili
-   kuzuia uchimbaji unaotegemea muda.
+   tokeni inayotarajiwa kwa chumvi ileile na kuilinganisha kupitia `timingSafeEqual` ili
+   kuzuia uchunguzi wa tokeni unaotegemea muda.
 
 ## Sifa za usalama
 
-| Sifa                                      | Maelezo                                                                                                                                                                                                        |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Loopback pekee**                        | Hukubaliwa tu wakati alama ya eneo la rika inayoaminika na seva (inayotokana na anwani halisi ya rika la TCP) inaonyesha loopback. Kichwa cha `Host` kinachodhibitiwa na mteja hakiaminiki kamwe kubaini eneo. |
-| **Ulinganisho wa muda thabiti**           | `crypto.timingSafeEqual` huzuia mashambulizi ya muda.                                                                                                                                                          |
-| **Haiwezi kugeuzwa**                      | Tokeo la HMAC haliwezi kurejesha machine-id.                                                                                                                                                                   |
-| **Hakuna ukwepaji wa ulinzi wa `always`** | `isAlwaysProtectedPath()` hutathminiwa kabla ya ukaguzi wa tokeni ya CLI. `/api/shutdown` na `/api/settings/database` huhitaji JWT kila wakati.                                                                |
-| **Haiwezi kuhamishwa**                    | Tokeni haiandikwi kamwe kwenye diski wala kurekodiwa kwenye kumbukumbu.                                                                                                                                        |
+| Sifa                                          | Maelezo                                                                                                                                                                                                             |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Loopback pekee**                            | Hukubaliwa tu ikiwa muhuri unaoaminika wa seva kuhusu eneo la rika (unaotokana na anwani halisi ya rika la TCP) unaonyesha loopback. Kichwa cha `Host` kinachodhibitiwa na mteja hakiaminiki kamwe kubainisha eneo. |
+| **Ulinganishaji wa muda thabiti**             | `crypto.timingSafeEqual` huzuia mashambulizi ya muda.                                                                                                                                                               |
+| **Haiwezi kurejeshwa nyuma**                  | Tokeo la HMAC haliwezi kutumika kurejesha kitambulisho cha mashine.                                                                                                                                                 |
+| **Hakuna njia ya kukwepa ulinzi wa `always`** | `isAlwaysProtectedPath()` hutathminiwa kabla ya ukaguzi wa tokeni ya CLI. `/api/shutdown` na `/api/settings/database` huhitaji JWT kila wakati.                                                                     |
+| **Haiwezi kuhamishwa**                        | Tokeni haiandikwi kamwe kwenye diski wala kurekodiwa kwenye kumbukumbu.                                                                                                                                             |
 
-## Kubadilisha salt
+## Chumvi chaguomsingi (nasibu kwa kila usakinishaji)
 
-Weka `OMNIROUTE_CLI_SALT` ili kubadilisha tokeni inayozalishwa bila kubadilisha msimbo.
-Baada ya mabadiliko, michakato yote ya CLI kwenye mashine hii itatumia tokeni mpya
-kiotomatiki. Hii ni muhimu baada ya uvujaji wa orodha ya michakato ambao huenda umefichua
-thamani iliyozalishwa hapo awali.
+Wakati `OMNIROUTE_CLI_SALT` haijawekwa, chumvi huwa tungo nasibu ya heksadesimali yenye vibambo 64
+inayozalishwa mara moja na kuhifadhiwa katika `<DATA_DIR>/cli-token-salt.json` (hali `0600`) —
+si thamani halisi `omniroute-cli-auth-v1` iliyohifadhiwa kwenye msimbo. `getActiveSalt()` katika
+`src/lib/machineToken.ts` na nakala yake katika `bin/cli/utils/cliToken.mjs` husoma
+faili lilelile, ili seva na kila uendeshaji wa CLI katika usakinishaji huu zitumie
+thamani ileile; thamani halisi iliyohifadhiwa kwenye msimbo hutumiwa tu kama mbadala wa mwisho wakati hakuna
+chumvi iliyohifadhiwa au ya mazingira inayoweza kupatikana bado (kwa mfano usakinishaji mpya wa CLI pekee
+kabla ya seva kuwahi kuendeshwa). Hii hufunga udhaifu wa thamani ya zamani chaguomsingi isiyobadilika:
+`/etc/machine-id` kwa kawaida inaweza kusomwa na watumiaji wote, kwa hivyo mtumiaji yeyote wa ndani angeweza
+vinginevyo kuzalisha tokeni ileile kwa kila usakinishaji ambao haujawahi kuweka
+`OMNIROUTE_CLI_SALT`.
+
+## Ubadilishaji wa salt
+
+Weka `OMNIROUTE_CLI_SALT` ili kubadilisha tokeni inayozalishwa bila kubadilisha msimbo — kila
+wakati hupewa kipaumbele dhidi ya salt iliyohifadhiwa ya kila usakinishaji. Baada ya kubadilisha,
+michakato yote ya CLI kwenye mashine hii itatumia tokeni mpya kiotomatiki. Hii ni muhimu baada ya
+kuvuja kwa orodha ya michakato ambako huenda kulifichua thamani ya awali iliyozalishwa.
 
 ```bash
-# Mabadiliko ya kudumu (ongeza kwenye wasifu wa shell)
+# Ubadilishaji wa kudumu (ongeza kwenye wasifu wa shell)
 export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 
 # Thibitisha kuwa tokeni mpya inatumika
 omniroute status
 ```
 
-Salt chaguomsingi: `omniroute-cli-auth-v1`
+## Umbizo la zamani (SHA-256, herufi 32) — bado linakubalika
 
-## Muundo wa zamani (SHA-256, vibambo 32) — bado unakubaliwa
-
-Kabla ya muundo wa HMAC ulio hapo juu, CLI ilizalisha tokeni yake kama
-`SHA-256(machineId + salt).hex[0..32]` (kiambishi awali cha vibambo 32) katika
+Kabla ya umbizo la HMAC lililo hapo juu, CLI ilizalisha tokeni yake kama
+`SHA-256(machineId + salt).hex[0..32]` (kiambishi awali cha herufi 32) katika
 `bin/cli/utils/cliToken.mjs` (`getLegacyCliTokenSync` katika `src/lib/machineToken.ts`).
 
-Kwa utangamano wa nyuma, seva hukubali miundo **yote miwili**: kithibitishaji huunda
+Kwa uoanifu wa nyuma, seva inakubali miundo **yote miwili**: kithibitishaji huunda
 `expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` na kulinganisha
 kichwa kinachoingia dhidi ya kila moja kwa kutumia `timingSafeEqual`
 (`src/server/authz/policies/management.ts` na `src/lib/middleware/cliTokenAuth.ts`).
-Kwa hivyo, tokeni ni halali ikiwa inalingana na **ama** muhtasari wa HMAC wa vibambo 64 au
-kiambishi awali cha zamani cha SHA-256 cha vibambo 32.
+Kwa hivyo, tokeni ni halali ikiwa inalingana na **ama** muhtasari wa HMAC wa herufi 64 au
+kiambishi awali cha zamani cha SHA-256 cha herufi 32.
 
-**Kujiondoa:** weka `OMNIROUTE_DISABLE_CLI_TOKEN=true` (mazingira au `.env`) ili kuzima kabisa
-utaratibu wa tokeni ya CLI; ufikiaji wote kisha huhitaji ufunguo wa API ulio wazi. Kwenye seva
-zenye watumiaji wengi, hili linapendekezwa kwa sababu `machine-id` ni ya kila kifaa (si ya kila
-mtumiaji), na mtumiaji mwingine kwenye seva hiyo hiyo anaweza kukokotoa tokeni ileile.
+**Kujiondoa:** weka `OMNIROUTE_DISABLE_CLI_TOKEN=true` (katika mazingira au `.env`) ili kulemaza
+kabisa utaratibu wa tokeni ya CLI; ufikiaji wote kisha utahitaji ufunguo bayana wa API. Kwenye seva
+zenye watumiaji wengi, hili linapendekezwa, kwa kuwa `machine-id` ni ya kila kifaa (si ya kila mtumiaji)
+na mtumiaji mwingine kwenye seva hiyo hiyo anaweza kukokotoa tokeni hiyo hiyo.
 
 ## Faili
 
-| Faili                                     | Kusudi                                         |
-| ----------------------------------------- | ---------------------------------------------- |
-| `src/lib/machineToken.ts`                 | Uzalishaji wa tokeni (`getMachineTokenSync`)   |
-| `src/server/authz/headers.ts`             | Konstanti ya `CLI_TOKEN_HEADER`                |
-| `src/server/authz/policies/management.ts` | Uthibitishaji wa upande wa seva                |
-| `src/server/authz/routeGuard.ts`          | Ukaguzi wa seva ya loopback (`isLoopbackHost`) |
+| Faili                                     | Madhumuni                                        |
+| ----------------------------------------- | ------------------------------------------------ |
+| `src/lib/machineToken.ts`                 | Uzalishaji wa tokeni (`getMachineTokenSync`)     |
+| `bin/cli/utils/cliToken.mjs`              | Nakala ya upande wa CLI ya uzalishaji huo huo    |
+| `<DATA_DIR>/cli-token-salt.json`          | Salt nasibu iliyohifadhiwa kwa kila usakinishaji |
+| `src/server/authz/headers.ts`             | Konstanti ya `CLI_TOKEN_HEADER`                  |
+| `src/server/authz/policies/management.ts` | Uthibitishaji wa upande wa seva                  |
+| `src/server/authz/routeGuard.ts`          | Ukaguzi wa seva ya loopback (`isLoopbackHost`)   |
 
-## Angalia pia
+## Tazama pia
 
 - `docs/security/ROUTE_GUARD_TIERS.md` — viwango vya ulinzi wa njia
 - `docs/architecture/AUTHZ_GUIDE.md` — mchakato kamili wa uidhinishaji

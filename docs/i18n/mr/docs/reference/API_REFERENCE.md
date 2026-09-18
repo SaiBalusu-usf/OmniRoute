@@ -1602,19 +1602,19 @@ GET /.well-known/agent.json
 
 ## CLI साधनांचे व्यवस्थापन
 
-OmniRoute सोबत एकात्मीकृत होणारी CLI साधने (antigravity, chipotle, commandCode,
+OmniRoute सोबत एकत्रित होणारी CLI साधने (antigravity, commandCode,
 devin-cli इ.) व्यवस्थापित करा. संपूर्ण यादीसाठी [प्रदाता संदर्भ](./PROVIDER_REFERENCE.md) पहा.
 
-| पद्धत | पथ                                      | वर्णन                                                                                                                                                                     |
-| ----- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET   | `/api/cli-tools/all-statuses`           | सर्व CLI साधनांची स्थिती (स्थापित, आवृत्ती, शेवटचे आढळले तेव्हाची वेळ)                                                                                                    |
-| GET   | `/api/cli-tools/status`                 | एका CLI साधनासाठी स्थितीचा तपशील (`?tool=` क्वेरी)                                                                                                                        |
-| POST  | `/api/cli-tools/apply`                  | साधनाचे व्युत्पन्न केलेले कॉन्फिगरेशन लिहा (`dryRun` पूर्वावलोकन करते; कंटेनरमध्ये असल्यास `422` + `containerEphemeralTarget`; `migration` लेगसी Codex YAML ची नोंद करते) |
-| GET   | `/api/cli-tools/backups`                | CLI साधनांच्या कॉन्फिगरेशन बॅकअपची यादी करा                                                                                                                               |
-| POST  | `/api/cli-tools/backups`                | सर्व CLI साधनांच्या कॉन्फिगरेशनचा बॅकअप तयार करा                                                                                                                          |
-| POST  | `/api/cli-tools/backups`                | पुनर्संचयित करा: बॉडीमध्ये `{tool, backupId}` देऊन त्याच एंडपॉइंटद्वारे तो बॅकअप पुनर्संचयित केला जातो                                                                    |
-| GET   | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM प्रॉक्सीची स्थिती ("antigravity-mitm" CLI साधन)                                                                                                          |
-| POST  | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm उपनाम कॉन्फिगर करा                                                                                                                                       |
+| पद्धत | पथ                                      | वर्णन                                                                                                                                                       |
+| ----- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET   | `/api/cli-tools/all-statuses`           | सर्व CLI साधनांची स्थिती (स्थापित, आवृत्ती, शेवटचे आढळलेले)                                                                                                 |
+| GET   | `/api/cli-tools/status`                 | एका CLI साधनाच्या स्थितीचा तपशील (`?tool=` क्वेरी)                                                                                                          |
+| POST  | `/api/cli-tools/apply`                  | साधनाचे व्युत्पन्न कॉन्फिगरेशन लिहा (`dryRun` पूर्वावलोकन करते; कंटेनरीकृत असताना `422` + `containerEphemeralTarget`; `migration` लेगसी Codex YAML नोंदवते) |
+| GET   | `/api/cli-tools/backups`                | CLI साधनांच्या कॉन्फिगरेशन बॅकअपची यादी करा                                                                                                                 |
+| POST  | `/api/cli-tools/backups`                | सर्व CLI साधनांच्या कॉन्फिगरेशनचा बॅकअप तयार करा                                                                                                            |
+| POST  | `/api/cli-tools/backups`                | पुनर्संचयित करा: बॉडीमध्ये `{tool, backupId}` असलेला हाच एंडपॉइंट तो बॅकअप पुनर्संचयित करतो                                                                 |
+| GET   | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM प्रॉक्सीची स्थिती ("antigravity-mitm" CLI साधन)                                                                                            |
+| POST  | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm उपनावे कॉन्फिगर करा                                                                                                                        |
 
 **प्रमाणीकरण:** व्यवस्थापन सत्र आवश्यक आहे.
 

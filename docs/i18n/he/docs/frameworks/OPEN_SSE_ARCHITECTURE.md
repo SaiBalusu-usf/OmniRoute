@@ -165,14 +165,14 @@ needsTranslation(source, target): boolean
 
 ---
 
-## ניתוח מעמיק של קבצים מרכזיים
+## צלילה לעומק בקבצים מרכזיים
 
 ### chatCore.ts (5977 שורות)
 
-**המטפל הראשי בבקשות**. למרות גודלו, יש לו מבנה ברור:
+**מטפל הבקשות הראשי**. למרות גודלו, יש לו מבנה ברור:
 
 ```ts
-// מבנה מדומה של chatCore.ts
+// מבנה פסאודו של chatCore.ts
 export async function handleChat(request: NextRequest) {
   // 1. אימות + CORS
   await authenticateRequest(request);
@@ -181,14 +181,14 @@ export async function handleChat(request: NextRequest) {
   // 2. אימות גוף הבקשה
   const body = await parseRequestBody(request);
 
-  // 3. זיהוי פורמט + המרה
+  // 3. זיהוי פורמט + תרגום
   const sourceFormat = detectFormat(request);
   const targetFormat = getTargetFormat(providerId);
   if (needsTranslation(sourceFormat, targetFormat)) {
     body = translateRequest(body, sourceFormat, targetFormat);
   }
 
-  // 4. ניתוב משולב
+  // 4. ניתוב קומבו
   const targets = await resolveComboTargets(comboId, body);
   for (const target of targets) {
     try {
@@ -207,9 +207,9 @@ export async function handleChat(request: NextRequest) {
 
 למרות שמדובר בפונקציה ענקית אחת, היא מאורגנת ב**מקטעים עם הערות** התואמים לצינור העיבוד בן 5 השלבים.
 
-### combo.ts (4456 שורות קוד)
+### combo.ts (4456 LOC)
 
-**מנוע הניתוב** שממיר שילוב לרשימת יעדים ממוינת.
+**מנוע הניתוב** שפותר קומבו לרשימת יעדים מסודרת.
 
 ```ts
 // services/combo.ts
@@ -226,46 +226,46 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
 }
 ```
 
-תומך ב-**19 אסטרטגיות ניתוב** (ראו `src/shared/constants/routingStrategies.ts`):
+תומך ב־**19 אסטרטגיות ניתוב** (ראו `src/shared/constants/routingStrategies.ts`):
 
-| אסטרטגיה            | התנהגות                                                        |
-| ------------------- | -------------------------------------------------------------- |
-| `priority`          | רשימה ממוינת שבה היעד הראשון מקבל עדיפות                       |
-| `weighted`          | בחירה הסתברותית לפי המשקל של כל יעד                            |
-| `round-robin`       | מעבר מחזורי בין היעדים לפי הסדר                                |
-| `context-relay`     | העברת ההקשר בין יעדים                                          |
-| `fill-first`        | מילוי המכסה לפני מעבר ליעד הבא                                 |
-| `p2c`               | הכוח של שתי אפשרויות                                           |
-| `random`            | בחירה אקראית אחידה                                             |
-| `least-used`        | בחירת היעד עם מספר השימושים האחרונים הנמוך ביותר               |
-| `cost-optimized`    | היעד התקין הזול ביותר נבחר ראשון                               |
-| `reset-aware`       | התחשבות בחלונות האיפוס של הספק                                 |
-| `reset-window`      | ניתוב המבוסס על חלון האיפוס                                    |
-| `headroom`          | היעד עם יתרת המכסה הגדולה ביותר נבחר ראשון                     |
-| `strict-random`     | אחידות אמיתית (ללא שקלול איכות)                                |
-| `auto`              | שימוש בניקוד המבוסס על 16 גורמים (`autoCombo/`)                |
-| `lkgp`              | הספק התקין האחרון הידוע נבחר ראשון                             |
-| `context-optimized` | המתאים ביותר לבקשות עם הקשר ארוך                               |
-| `fusion`            | הפצה במקביל לפאנל, ולאחר מכן סינתזה באמצעות שופט (`fusion.ts`) |
+| אסטרטגיה            | התנהגות                                                         |
+| ------------------- | --------------------------------------------------------------- |
+| `priority`          | רשימה מסודרת שבה היעד הראשון מקבל עדיפות                        |
+| `weighted`          | בחירה הסתברותית לפי המשקל של כל יעד                             |
+| `round-robin`       | מעבר מחזורי בין היעדים לפי הסדר                                 |
+| `context-relay`     | העברת ההקשר בין יעדים                                           |
+| `fill-first`        | מילוי המכסה לפני מעבר ליעד הבא                                  |
+| `p2c`               | כוחן של שתי בחירות                                              |
+| `random`            | בחירה אקראית אחידה                                              |
+| `least-used`        | בחירת היעד עם מספר השימושים האחרונים הנמוך ביותר                |
+| `cost-optimized`    | היעד התקין הזול ביותר ראשון                                     |
+| `reset-aware`       | התחשבות בחלונות האיפוס של הספק                                  |
+| `reset-window`      | ניתוב המבוסס על חלון האיפוס                                     |
+| `headroom`          | היעד עם מרווח המכסה הנותר הגדול ביותר ראשון                     |
+| `strict-random`     | אחידות אמיתית (ללא שקלול איכות)                                 |
+| `auto`              | שימוש בניקוד המבוסס על 16 גורמים (`autoCombo/`)                 |
+| `lkgp`              | הספק התקין האחרון הידוע ראשון                                   |
+| `context-optimized` | האפשרות הטובה ביותר לבקשות בעלות הקשר ארוך                      |
+| `fusion`            | פיצול במקביל לפאנל, ולאחר מכן סינתזה באמצעות שופט (`fusion.ts`) |
 
-### base.ts (1170 שורות קוד)
+### base.ts (1170 LOC)
 
-**מפעיל מופשט** שכל 101 המפעילים יורשים ממנו. הוא מכיל:
+**המבצע המופשט** שכל 107 המבצעים יורשים ממנו. הוא מכיל:
 
-- `buildUrl()` — בניית URL כברירת מחדל (מחלקות־משנה דורסות עבור התאמות אישיות)
+- `buildUrl()` — בניית URL כברירת מחדל (מחלקות משנה דורסות זאת לצורך התאמה אישית)
 - `buildHeaders()` — כותרות ברירת מחדל (אימות, סוג תוכן)
 - `transformRequest()` — העברה ללא שינוי כברירת מחדל
-- `execute()` — לולאת ה-HTTP הראשית עם ניסיונות חוזרים/השהיה מדורגת/מפסק
+- `execute()` — לולאת ה־HTTP הראשית עם ניסיון חוזר/השהיה הדרגתית/מפסק
 
 ```ts
 // open-sse/executors/default.ts
 export class DefaultExecutor extends BaseExecutor {
-  // מטפל בכל הספקים התואמים ל-OpenAI/Anthropic
-  // ספקים רושמים תצורות (URL, אימות, כותרות), אך חולקים את לוגיקת המפעיל
+  // מטפל בכל הספקים התואמים ל־OpenAI/Anthropic
+  // ספקים רושמים תצורות (URL, אימות, כותרות), אך חולקים את לוגיקת המבצע
 }
 ```
 
-התנהגות ייחודית לספק (כותרות אימות, כתובת URL בסיסית, כותרות גרסה) מוגדרת באמצעות רישום הספקים, ולא באמצעות מחלקות מפעיל נפרדות.
+התנהגות ייחודית לספק (כותרות אימות, כתובת URL בסיסית, כותרות גרסה) מוגדרת באמצעות מרשם הספקים, ולא באמצעות מחלקות מבצע נפרדות.
 
 ````
 
@@ -273,14 +273,14 @@ export class DefaultExecutor extends BaseExecutor {
 
 ## שירותים (117 מודולים)
 
-שירותים הם **מודולים ממוקדים בעלי מטרה יחידה** שהמטפלים מרכיבים יחד. הקטגוריות העיקריות:
+שירותים הם **מודולים ממוקדים בעלי מטרה יחידה** שמטפלים מרכיבים יחד. הקטגוריות העיקריות:
 
 ### ניתוב ושילוב
 
-- `combo.ts` — נקודת כניסה לבקשות המנותבות בשילוב
+- `combo.ts` — נקודת כניסה לבקשות המנותבות באמצעות שילוב
 - `services/autoCombo/` — ניקוד לפי 16 גורמים, 8 אסטרטגיות ניתוב אוטומטיות
 - `wildcardRouter.ts` — התאמת נתיבים עם תווים כלליים (`gpt-*`)
-- `modelFamilyFallback.ts` — מעבר חלופי בתוך משפחת T5
+- `modelFamilyFallback.ts` — מעבר גיבוי בתוך משפחת T5
 
 ### הגבלת קצב ומכסות
 
@@ -290,28 +290,28 @@ export class DefaultExecutor extends BaseExecutor {
 
 ### חשבונות ואסימונים
 
-- `tokenRefresh.ts` — רענון OAuth בתגובת 401
+- `tokenRefresh.ts` — רענון OAuth בעת 401
 - `accountFallback.ts` — מעבר לחשבון חלופי
-- `sessionManager.ts` — מצב סשן רב-סבבי
+- `sessionManager.ts` — מצב הפעלה מרובת תורות
 
 ### תבונה
 
 - `intentClassifier.ts` — סיווג כוונת הבקשה
-- `taskAwareRouter.ts` — ניתוב לפי סוג המשימה
+- `taskAwareRouter.ts` — ניתוב לפי סוג משימה
 - `thinkingBudget.ts` — הקצאת אסימוני חשיבה
 - `contextManager.ts` — הזרקת הקשר ניתוב
 
 ### עמידות
 
-- `resilience.ts` — תזמור ניסיונות חוזרים, השהיה מדורגת ומפסק
-- `emergencyFallback.ts` — מעבר חלופי כמוצא אחרון
-- `modelDeprecation.ts` — ניתוב אוטומטי למודלים ממשיכים
+- `resilience.ts` — תזמור ניסיונות חוזרים, השהיה הדרגתית ומפסק מעגל
+- `emergencyFallback.ts` — מעבר גיבוי כמוצא אחרון
+- `modelDeprecation.ts` — ניתוב אוטומטי למודלים יורשים
 
 ### מצב
 
-- `signatureCache.ts` — מניעת כפילויות לפי חתימת הבקשה
-- `volumeDetector.ts` — הפחתת עומסים
-- `contextHandoff.ts` — סריאליזציה של סשן
+- `signatureCache.ts` — מניעת כפילויות לפי חתימת בקשה
+- `volumeDetector.ts` — הפחתת עומס
+- `contextHandoff.ts` — סריאליזציה של הפעלה
 
 ### דחיסה
 
@@ -334,7 +334,7 @@ export class DefaultExecutor extends BaseExecutor {
 
 ### תבניות נפוצות
 
-הספקים מזוהים באמצעות `getExecutor(providerId)`, שמחזירה את המבצע המוגדר. ספקים תואמי OpenAI/Anthropic משתמשים ב-`DefaultExecutor` (`executors/default.ts`). התנהגות ייחודית לספק (כתובת URL בסיסית, כותרות אימות, גרסת API) מוגדרת ב-`open-sse/config/providers/`, בעוד שהתמרות גוף הבקשה מטופלות ב-`open-sse/translator/`.
+ספקים מזוהים באמצעות `getExecutor(providerId)`, שמחזירה את המבצע שהוגדר. ספקים תואמי OpenAI/Anthropic משתמשים ב-`DefaultExecutor` (`executors/default.ts`). התנהגות ייחודית לספק (כתובת URL בסיסית, כותרות אימות, גרסת API) מוגדרת ב-`open-sse/config/providers/`, ואילו התמרות גוף הבקשה מטופלות ב-`open-sse/translator/`.
 
 **כתובת URL מותאמת אישית** מוגדרת באמצעות תצורת הספק:
 
@@ -348,7 +348,7 @@ export default {
 
 **אימות מותאם אישית** מטופל באמצעות תצורת האימות של מרשם הספקים (מפתח API,‏ OAuth, פרופילי כותרות).
 
-התמרות **גוף בקשה מותאם אישית** (לדוגמה, ההפרדה של Anthropic בין `system` ל-`messages`) נרשמות לכל ספק בנפרד ב-`open-sse/translator/`.
+התמרות **מותאמות אישית של גוף הבקשה** (לדוגמה, ההפרדה של Anthropic בין `system` לבין `messages`) נרשמות לכל ספק ב-`open-sse/translator/`.
 
 ````
 
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-הזיהוי מתבצע דרך `ExecutorRegistry` (`executors/registry.ts`): כל מבצע ייעודי מוכרז בטבלה המובנית של `executors/index.ts` ונרשם באמצעות `registerExecutor(alias, instance)` בעת טעינת המודול; `getExecutor()` פונה למרשם, ואם אין רשומה ייעודית עבור ספק כלשהו, חוזרת ל-`DefaultExecutor` שנשמר בזיכרון. מיפוי הכינוי → מבצע המלא מאופיין באמצעות בדיקת הזהב `tests/unit/executor-map-golden.test.ts`.
+הזיהוי עובר דרך `ExecutorRegistry` (`executors/registry.ts`): כל מבצע ייעודי מוצהר בטבלה המובנית של `executors/index.ts` ונרשם באמצעות `registerExecutor(alias, instance)` בעת טעינת המודול; `getExecutor()` פונה למרשם, ואם אין רשומה ייעודית לספק, חוזרת ל-`DefaultExecutor` שנשמר במטמון. מיפוי הכינוי המלא → מבצע מאופיין באמצעות בדיקת הזהב `tests/unit/executor-map-golden.test.ts`.
 
 ---
 

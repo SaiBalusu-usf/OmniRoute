@@ -1601,19 +1601,19 @@ Endpointi za wasimamizi pekee kwa ajili ya usimamizi wa kiutendaji.
 
 ## Usimamizi wa Zana za CLI
 
-Dhibiti zana za CLI zinazounganishwa na OmniRoute (antigravity, chipotle, commandCode,
-devin-cli, n.k.). Tazama [Rejeleo la Watoa Huduma](./PROVIDER_REFERENCE.md) kwa orodha kamili.
+Dhibiti zana za CLI zinazounganishwa na OmniRoute (antigravity, commandCode,
+devin-cli, n.k.). Tazama [Rejea ya Watoa Huduma](./PROVIDER_REFERENCE.md) kwa orodha kamili.
 
-| Mbinu | Njia                                    | Maelezo                                                                                                                                                                                  |
-| ----- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET   | `/api/cli-tools/all-statuses`           | Hali ya zana zote za CLI (imesakinishwa, toleo, mara ya mwisho kuonekana)                                                                                                                |
-| GET   | `/api/cli-tools/status`                 | Maelezo ya hali ya zana moja ya CLI (hoja ya utafutaji ya `?tool=`)                                                                                                                      |
-| POST  | `/api/cli-tools/apply`                  | Andika usanidi uliotengenezwa wa zana (`dryRun` huonyesha hakikisho; `422` + `containerEphemeralTarget` inapotekelezwa ndani ya kontena; `migration` hubainisha YAML ya zamani ya Codex) |
-| GET   | `/api/cli-tools/backups`                | Orodhesha nakala rudufu za usanidi wa zana za CLI                                                                                                                                        |
-| POST  | `/api/cli-tools/backups`                | Unda nakala rudufu ya usanidi wote wa zana za CLI                                                                                                                                        |
-| POST  | `/api/cli-tools/backups`                | Rejesha: endpointi hiyo hiyo ikiwa na `{tool, backupId}` kwenye mwili hurejesha nakala hiyo rudufu                                                                                       |
-| GET   | `/api/cli-tools/antigravity-mitm`       | Hali ya proksi ya MITM ya Antigravity (zana ya CLI ya "antigravity-mitm")                                                                                                                |
-| POST  | `/api/cli-tools/antigravity-mitm/alias` | Sanidi lakabu za antigravity-mitm                                                                                                                                                        |
+| Mbinu | Njia                                    | Maelezo                                                                                                                                                                         |
+| ----- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET   | `/api/cli-tools/all-statuses`           | Hali ya zana zote za CLI (imesakinishwa, toleo, mara ya mwisho kuonekana)                                                                                                       |
+| GET   | `/api/cli-tools/status`                 | Maelezo ya hali ya zana moja ya CLI (hoja ya swali ya `?tool=`)                                                                                                                 |
+| POST  | `/api/cli-tools/apply`                  | Andika usanidi uliozalishwa wa zana (`dryRun` huonyesha hakikisho; `422` + `containerEphemeralTarget` ikiwa iko kwenye kontena; `migration` hubainisha YAML ya zamani ya Codex) |
+| GET   | `/api/cli-tools/backups`                | Orodhesha nakala rudufu za usanidi wa zana za CLI                                                                                                                               |
+| POST  | `/api/cli-tools/backups`                | Unda nakala rudufu ya usanidi wote wa zana za CLI                                                                                                                               |
+| POST  | `/api/cli-tools/backups`                | Rejesha: endpointi hiyo hiyo ikiwa na `{tool, backupId}` kwenye kiini cha ombi hurejesha nakala hiyo rudufu                                                                     |
+| GET   | `/api/cli-tools/antigravity-mitm`       | Hali ya proksi ya MITM ya Antigravity (zana ya CLI ya "antigravity-mitm")                                                                                                       |
+| POST  | `/api/cli-tools/antigravity-mitm/alias` | Sanidi lakabu za antigravity-mitm                                                                                                                                               |
 
 **Uthibitishaji:** Inahitaji kipindi cha usimamizi.
 

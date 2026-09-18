@@ -4,7 +4,7 @@
 
 ---
 
-> **In breve**: OmniRoute registra 352 ID di provider, con **152 voci del catalogo dei provider contrassegnate come `hasFree`**. Il catalogo dei modelli gratuiti, sottoposto a controlli più rigorosi, comprende **34 chiavi di pool ricorrenti / 443 voci** (436 attive + 7 non più disponibili). Collega diversi provider adatti per ampliare la capacità di fallback; continuano ad applicarsi tutte le quote, le regole di approvazione, le informative sulla privacy e le condizioni relative agli addebiti per il superamento dei limiti.
+> **In breve**: OmniRoute registra 357 ID di provider, con **152 voci del catalogo dei provider contrassegnate come `hasFree`**. Il catalogo dei modelli gratuiti, sottoposto a controlli più rigorosi, comprende **35 chiavi di pool ricorrenti / 482 voci** (475 attive + 7 non più disponibili). Collega diversi provider adatti per ampliare la capacità di fallback; continuano ad applicarsi tutte le quote, le regole di approvazione, le informative sulla privacy e le condizioni relative agli addebiti per il superamento dei limiti.
 
 ---
 
@@ -160,18 +160,18 @@ la quota o i criteri di accesso di un provider.
 
 ## Calcolo del piano gratuito
 
-Il catalogo attivo, con deduplicazione dei pool, attualmente riporta:
+Il catalogo live, con deduplicazione dei pool, riporta attualmente:
 
-| Metrica                                                            |                               Valore attuale verificato | Interpretazione                                                                                                                                                        |
+| Metrica                                                            |                              Valore corrente verificato | Interpretazione                                                                                                                                                        |
 | ------------------------------------------------------------------ | ------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Quota ricorrente quantificata                                      |                             **~1,47 mld di token/mese** | I pool condivisi vengono conteggiati una sola volta; i provider senza limiti massimi sono esclusi dalla somma                                                          |
-| Primo mese con crediti di registrazione                            |                                  **~2,07 mld di token** | Totale ricorrente più crediti una tantum e ricorrenti                                                                                                                  |
-| Inventario verificato dei modelli gratuiti                         | **34 chiavi di pool ricorrenti / 443 voci di catalogo** | 436 attive + 7 non più disponibili; distinto dal catalogo di 352 provider                                                                                              |
-| Provider ricorrenti/senza chiave gratuiti per sempre rappresentati |                                                  **52** | Provider unici nelle tipologie di catalogo ricorrenti giornaliere/mensili, con crediti, senza limiti e senza chiave; escluse le righe soggette a requisiti di idoneità |
-| Voci del catalogo dei provider contrassegnate con `hasFree`        |                                           **152 / 352** | Metadati più ampi sui provider; non tutti dispongono di una quota ricorrente quantificabile                                                                            |
+| Assegnazione ricorrente quantificata                               |                             **~1,62 mld di token/mese** | I pool condivisi vengono conteggiati una sola volta; i provider senza limiti sono esclusi dalla somma                                                                  |
+| Primo mese con assegnazioni alla registrazione                     |                                  **~2,22 mld di token** | Totale ricorrente più crediti una tantum e ricorrenti                                                                                                                  |
+| Inventario verificato dei modelli gratuiti                         | **35 chiavi di pool ricorrenti / 482 voci di catalogo** | 475 attive + 7 non più disponibili; distinto dal catalogo di 357 provider                                                                                              |
+| Provider gratuiti permanenti ricorrenti/senza chiave rappresentati |                                                  **53** | Provider univoci tra i tipi di catalogo ricorrenti giornalieri/mensili, basati su crediti, senza limiti e senza chiave; righe soggette a requisiti di idoneità escluse |
+| Voci del catalogo dei provider contrassegnate con `hasFree`        |                                           **152 / 357** | Metadati più ampi sui provider; non tutti dispongono di una quota ricorrente quantificabile                                                                            |
 
-Questi valori sono calcolati a partire da `open-sse/config/freeModelCatalog.ts`; consulta il
-[Riferimento sui piani gratuiti](../reference/FREE_TIERS.md) per la deduplicazione dei pool, gli indicatori dei termini di servizio,
+Questi valori sono calcolati da `open-sse/config/freeModelCatalog.ts`; consulta il
+[Riferimento sui piani gratuiti](../reference/FREE_TIERS.md) per la deduplicazione dei pool, gli indicatori dei ToS,
 le voci non più disponibili e la metodologia relativa ai crediti di registrazione.
 
 ---

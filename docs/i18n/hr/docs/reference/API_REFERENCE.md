@@ -1592,21 +1592,21 @@ Endpointi dostupni samo administratorima za operativno upravljanje.
 
 ## Upravljanje CLI alatima
 
-Upravljanje CLI alatima koji se integriraju s OmniRoute (antigravity, chipotle, commandCode,
-devin-cli, itd.). Pogledajte [Referencu pružatelja usluga](./PROVIDER_REFERENCE.md) za potpuni popis.
+Upravljajte CLI alatima koji se integriraju s OmniRouteom (antigravity, commandCode,
+devin-cli itd.). Potpuni popis potražite u [Referenci pružatelja usluga](./PROVIDER_REFERENCE.md).
 
-| Metoda | Putanja                                 | Opis                                                                                                                                                                             |
-| ------ | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | Status svih CLI alata (instaliranost, verzija, zadnje viđen)                                                                                                                     |
-| GET    | `/api/cli-tools/status`                 | Detaljan status za jedan CLI alat (upit `?tool=`)                                                                                                                                |
-| POST   | `/api/cli-tools/apply`                  | Zapisivanje generirane konfiguracije alata (`dryRun` prikazuje pregled; `422` + `containerEphemeralTarget` kada je kontejnerizirano; `migration` označava zastarjeli Codex YAML) |
-| GET    | `/api/cli-tools/backups`                | Popis sigurnosnih kopija konfiguracije CLI alata                                                                                                                                 |
-| POST   | `/api/cli-tools/backups`                | Kreiranje sigurnosne kopije svih konfiguracija CLI alata                                                                                                                         |
-| POST   | `/api/cli-tools/backups`                | Vraćanje: isti endpoint s `{tool, backupId}` u tijelu vraća tu sigurnosnu kopiju                                                                                                 |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Status Antigravity MITM proxy-a (CLI alat "antigravity-mitm")                                                                                                                    |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | Konfiguracija aliasa za antigravity-mitm                                                                                                                                         |
+| Metoda | Putanja                                 | Opis                                                                                                                                                                               |
+| ------ | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/cli-tools/all-statuses`           | Status svih CLI alata (instaliranost, verzija, posljednja aktivnost)                                                                                                               |
+| GET    | `/api/cli-tools/status`                 | Pojedinosti o statusu jednog CLI alata (upit `?tool=`)                                                                                                                             |
+| POST   | `/api/cli-tools/apply`                  | Zapisuje generiranu konfiguraciju alata (`dryRun` prikazuje pretpregled; `422` + `containerEphemeralTarget` kada se izvodi u spremniku; `migration` navodi naslijeđeni Codex YAML) |
+| GET    | `/api/cli-tools/backups`                | Navodi sigurnosne kopije konfiguracija CLI alata                                                                                                                                   |
+| POST   | `/api/cli-tools/backups`                | Stvara sigurnosnu kopiju konfiguracija svih CLI alata                                                                                                                              |
+| POST   | `/api/cli-tools/backups`                | Vraćanje: ista krajnja točka s `{tool, backupId}` u tijelu zahtjeva vraća tu sigurnosnu kopiju                                                                                     |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Status MITM proxyja Antigravity (CLI alat "antigravity-mitm")                                                                                                                      |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | Konfigurira pseudonime za antigravity-mitm                                                                                                                                         |
 
-**Autentikacija:** Zahtijeva upravljačku sesiju.
+**Autorizacija:** Potrebna je sesija za upravljanje.
 
 ---
 

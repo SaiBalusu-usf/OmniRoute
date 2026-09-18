@@ -1613,21 +1613,21 @@ Wuraren haɗi na admin kawai don gudanar da ayyuka.
 
 ## Gudanar da Kayan Aikin CLI
 
-Gudanar da kayan aikin CLI da ke haɗuwa da OmniRoute (antigravity, chipotle, commandCode,
-devin-cli, da sauransu). Duba [Manazartar Masu Samarwa](./PROVIDER_REFERENCE.md) don cikakken jerin.
+Gudanar da kayan aikin CLI da ke haɗuwa da OmniRoute (antigravity, commandCode,
+devin-cli, da sauransu). Duba [Manazartar Mai Bayarwa](./PROVIDER_REFERENCE.md) don cikakken jerin.
 
-| Hanya | Path                                    | Bayani                                                                                                                                                                            |
-| ----- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET   | `/api/cli-tools/all-statuses`           | Matsayin duk kayan aikin CLI (an girka, sigar, lokacin ƙarshe da aka gani)                                                                                                        |
-| GET   | `/api/cli-tools/status`                 | Cikakken matsayin kayan aikin CLI guda ɗaya (tambayar `?tool=`)                                                                                                                   |
-| POST  | `/api/cli-tools/apply`                  | Rubuta config da aka samar na wani kayan aiki (`dryRun` yana nuna samfoti; `422` + `containerEphemeralTarget` idan yana cikin container; `migration` yana nuna tsohon Codex YAML) |
-| GET   | `/api/cli-tools/backups`                | Jera ajiyayyun kwafin saitunan kayan aikin CLI                                                                                                                                    |
-| POST  | `/api/cli-tools/backups`                | Ƙirƙiri ajiyayyen kwafin duk saitunan kayan aikin CLI                                                                                                                             |
-| POST  | `/api/cli-tools/backups`                | Mayarwa: wannan endpoint ɗin tare da `{tool, backupId}` a cikin body yana mayar da wannan ajiyayyen kwafin                                                                        |
-| GET   | `/api/cli-tools/antigravity-mitm`       | Matsayin proxy na Antigravity MITM (kayan aikin CLI na "antigravity-mitm")                                                                                                        |
-| POST  | `/api/cli-tools/antigravity-mitm/alias` | Saita aliases na antigravity-mitm                                                                                                                                                 |
+| Hanya | Path                                    | Bayani                                                                                                                                                                              |
+| ----- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET   | `/api/cli-tools/all-statuses`           | Matsayin duk kayan aikin CLI (an shigar, siga, lokacin da aka gani na ƙarshe)                                                                                                       |
+| GET   | `/api/cli-tools/status`                 | Cikakken matsayin kayan aikin CLI guda ɗaya (tambayar `?tool=`)                                                                                                                     |
+| POST  | `/api/cli-tools/apply`                  | Rubuta saitin da aka samar na kayan aiki (`dryRun` yana nuna samfoti; `422` + `containerEphemeralTarget` idan yana cikin kwantena; `migration` yana nuna bayanin tsohon Codex YAML) |
+| GET   | `/api/cli-tools/backups`                | Jera kwafin ajiyar saitunan kayan aikin CLI                                                                                                                                         |
+| POST  | `/api/cli-tools/backups`                | Ƙirƙiri kwafin ajiyar duk saitunan kayan aikin CLI                                                                                                                                  |
+| POST  | `/api/cli-tools/backups`                | Maidowa: wannan endpoint ɗin tare da `{tool, backupId}` a cikin body yana maido da wannan kwafin ajiyar                                                                             |
+| GET   | `/api/cli-tools/antigravity-mitm`       | Matsayin proxy na Antigravity MITM (kayan aikin CLI na "antigravity-mitm")                                                                                                          |
+| POST  | `/api/cli-tools/antigravity-mitm/alias` | Saita aliases na antigravity-mitm                                                                                                                                                   |
 
-**Tabbatar da izini:** Ana buƙatar zaman gudanarwa.
+**Tabbatar da Shaida:** Yana buƙatar zaman gudanarwa.
 
 ---
 

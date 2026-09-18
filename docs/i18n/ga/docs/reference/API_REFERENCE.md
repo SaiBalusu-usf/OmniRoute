@@ -1555,20 +1555,21 @@ Deireannaí ar nósanna riarachána amháin le haghaidh bainistíochta oibríoch
 
 ## Bainistíocht Uirlisí CLI
 
-Bainistigh uirlisí CLI a chomhtháthaíonn le OmniRoute (antigravity, chiplete, commandCode, devin-cli, srl.). Féach [Tagairt Soláthraí](./PROVIDER_REFERENCE.md) le haghaidh an liosta iomlán.
+Bainistigh uirlisí CLI a chomhtháthaíonn le OmniRoute (antigravity, commandCode,
+devin-cli, srl.). Féach [Tagairt Soláthraithe](./PROVIDER_REFERENCE.md) chun an liosta iomlán a fháil.
 
-| Modh | Conair                                  | Cur Síos                                                                                                                                                                  |
-| ---- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET  | `/api/cli-tools/all-statuses`           | Stádas gach uirlisí CLI (suiteáilte, leagan, feicthe go deireanach)                                                                                                       |
-| GET  | `/api/cli-tools/status`                 | Mionsonraí stádais d'uirlis CLI amháin (iarratais `?tool=`)                                                                                                               |
-| POST | `/api/cli-tools/apply`                  | Scríobh cumraíocht ghinmheánach uirlis (`dryRun` réamhamharcanna; `422` + `containerEphemeralTarget` nuair atá i gcoimeádán; `migration` nótaíonn sé YAML Codex sean-nós) |
-| GET  | `/api/cli-tools/backups`                | Liosta cúltacaí cumraíochta uirlisí CLI                                                                                                                                   |
-| POST | `/api/cli-tools/backups`                | Cruthaigh cúltaca de gach cumraíocht uirlisí CLI                                                                                                                          |
-| POST | `/api/cli-tools/backups`                | Athchóirigh: an chéanna le pointe deiridh agus `{tool, backupId}` sa chomhlacht athchóiríonn an cúltaca sin                                                               |
-| GET  | `/api/cli-tools/antigravity-mitm`       | Stádas seachbhreithe MITM antigravity (uirlis CLI "antigravity-mitm")                                                                                                     |
-| POST | `/api/cli-tools/antigravity-mitm/alias` | Cumraigh ailiasanna antigravity-mitm                                                                                                                                      |
+| Modh | Conair                                  | Cur Síos                                                                                                                                                                          |
+| ---- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET  | `/api/cli-tools/all-statuses`           | Stádas gach uirlise CLI (suiteáilte, leagan, an uair dheireanach a chonacthas í)                                                                                                  |
+| GET  | `/api/cli-tools/status`                 | Sonraí stádais d'uirlis CLI amháin (iarratas `?tool=`)                                                                                                                            |
+| POST | `/api/cli-tools/apply`                  | Scríobh cumraíocht ghinte uirlise (réamhamharcann `dryRun`; `422` + `containerEphemeralTarget` nuair atá sí coimeádánaithe; tugann `migration` faoi deara YAML Codex oidhreachta) |
+| GET  | `/api/cli-tools/backups`                | Liostaigh cúltacaí cumraíochta uirlisí CLI                                                                                                                                        |
+| POST | `/api/cli-tools/backups`                | Cruthaigh cúltaca de chumraíochtaí uile na n-uirlisí CLI                                                                                                                          |
+| POST | `/api/cli-tools/backups`                | Athchóirigh: athchóiríonn an críochphointe céanna an cúltaca sin le `{tool, backupId}` sa chorp                                                                                   |
+| GET  | `/api/cli-tools/antigravity-mitm`       | Stádas seachfhreastalaí MITM Antigravity (an uirlis CLI "antigravity-mitm")                                                                                                       |
+| POST | `/api/cli-tools/antigravity-mitm/alias` | Cumraigh ailiasanna antigravity-mitm                                                                                                                                              |
 
-**Údarú:** Éilíonn sé seisiún bainistíochta.
+**Fíordheimhniú:** Teastaíonn seisiún bainistíochta.
 
 ---
 

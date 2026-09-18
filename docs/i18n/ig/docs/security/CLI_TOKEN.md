@@ -6,48 +6,60 @@
 
 ## Nchịkọta
 
-Iwu OmniRoute CLI na-eme nkwenye njirimara megide API njikwa mpaghara site n'iji token
-`HMAC-SHA256(machine-id, salt)` nke a na-eziga site na nkụnye eji isi mee arịrịọ
+Iwu OmniRoute CLI na-eme nkwenye njirimara megide API njikwa mpaghara site na iji
+token `HMAC-SHA256(machine-id, salt)` nke a na-eziga site na nkụnye isi arịrịọ
 `x-omniroute-cli-token`.
 
 Nke a na-enye obere iwu CLI (`omniroute status`, `omniroute providers`, wdg.)
-ohere ịkpọ endpoint njikwa na-enweghị ịmanye onye ọrụ ịnye JWT ma ọ bụ
-okwuntughe oge ọ bụla a kpọrọ iwu.
+ohere ịkpọ endpoint njikwa na-achọghị ka onye ọrụ nye JWT ma ọ bụ
+okwuntughe mgbe ọ bụla a kpọrọ iwu.
 
 ## Otu o si arụ ọrụ
 
 1. `getMachineTokenSync()` na-agụ ID ngwaike nke igwe site na `node-machine-id`
-   (ọ bụrụ na nke a ada, ọ na-eji eriri efu, nke na-agbanyụ nkwenye njirimara CLI).
-2. Ọ na-agbakọ `HMAC-SHA256(machine_id, salt)` ma weghachi digest hex zuru ezu nwere
-   mkpụrụedemede 64 — token a na-enweta otu ihe mgbe niile, nke a na-apụghị ịtụgharị
-   azụ, ma jikọtara ya na igwe a.
-3. CLI na-eziga token ahụ dịka `x-omniroute-cli-token` naanị mgbe ebe njedebe
-   a chọpụtara bụ URL loopback doro anya (`localhost`, `127.0.0.0/8`, ma ọ bụ
-   loopback IPv6). Arịrịọ ndị bu token ahụ na-eji `redirect: error`, ya mere
-   ntụgharị mpaghara agaghị eziga ya n'ebe mmalite ọzọ. Context ndị dị anya
-   na-eji token nnweta nwere oke kama. Ọ bụrụ na enweghị ike ịmepụta token ahụ,
-   CLI agaghị etinye nkụnye eji isi mee ahụ, `omniroute doctor` ga-akọkwa ọdịda ahụ
-   kama ile token efu anya dịka nke ziri ezi.
-4. Sava (`src/server/authz/policies/management.ts`) na-eji otu salt ahụ gbakọọ
-   token a tụrụ anya ya ọzọ ma jiri `timingSafeEqual` tụnyere ha iji gbochie
-   iwepụta token site na nyocha oge.
+   (ọ bụrụ na nke a daa, ọ na-eji eriri efu, nke na-eme ka nkwenye njirimara CLI kwụsị ịrụ ọrụ).
+2. Ọ na-agbakọ `HMAC-SHA256(machine_id, salt)` ma weghachite hex digest zuru ezu
+   nwere mkpụrụedemede 64 — token a na-agbanwe agbanweghị, nke a na-apụghị iweghachi azụ ma jikọta ya na igwe a.
+3. CLI na-eziga token ahụ dị ka `x-omniroute-cli-token` naanị mgbe ebe
+   njedebe a chọpụtara bụ URL loopback akọwapụtara kpọmkwem (`localhost`, `127.0.0.0/8`, ma ọ bụ
+   loopback IPv6). Arịrịọ ndị bu token ahụ na-eji `redirect: error`, ka ntụgharị
+   mpaghara ghara ibuga ya na origin ọzọ. Context ndị dị anya na-eji token
+   nnweta nwere oke kama. Ọ bụrụ na enweghị ike ịmepụta token ahụ, CLI na-ahapụ nkụnye isi ahụ,
+   `omniroute doctor` na-akọkwa ọdịda ahụ kama ile token efu anya dị ka nke ziri ezi.
+4. Sava ahụ (`src/server/authz/policies/management.ts`) na-eji otu salt ahụ gbakọọ
+   token a tụrụ anya ya ọzọ ma jiri `timingSafeEqual` tụnyere ha iji
+   gbochie iwepụta token dabere na oge.
 
 ## Njirimara nchekwa
 
-| Njirimara                          | Nkọwa                                                                                                                                                                                                                     |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Naanị loopback**                 | A na-anabata ya naanị mgbe akara mpaghara-peer nke sava tụkwasịrị obi (nke sitere na adreesị ezigbo TCP peer) gosiri loopback. A naghị atụkwasị nkụnye eji isi mee `Host` nke client na-achịkwa obi iji chọpụta mpaghara. |
-| **Ntụnyere na-ewe otu oge**        | `crypto.timingSafeEqual` na-egbochi mwakpo dabere n'ịtụ oge.                                                                                                                                                              |
-| **A pụghị ịtụgharị ya azụ**        | Enweghị ike iji mmepụta HMAC weghachite machine-id.                                                                                                                                                                       |
-| **Enweghị ngafe nchekwa `always`** | A na-enyocha `isAlwaysProtectedPath()` tupu nyocha token CLI. `/api/shutdown` na `/api/settings/database` na-achọ JWT mgbe niile.                                                                                         |
-| **A pụghị ibupụ ya**               | A naghị ede token ahụ na diski ma ọ bụ dekọọ ya na log.                                                                                                                                                                   |
+| Njirimara                             | Nkọwa                                                                                                                                                                                                                                 |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Naanị loopback**                    | A na-anabata ya naanị mgbe akara ọnọdụ peer mpaghara nke sava tụkwasịrị obi (nke e si na adreesị ezigbo TCP peer nweta) gosiri loopback. A naghị atụkwasị nkụnye isi `Host` nke klayịntị na-achịkwa obi maka ịchọpụta ọnọdụ mpaghara. |
+| **Ntụnyere nwere oge na-agbanweghi**  | `crypto.timingSafeEqual` na-egbochi mwakpo dabere na oge.                                                                                                                                                                             |
+| **A pụghị iweghachi ya azụ**          | Enweghị ike iji mmepụta HMAC nwetaghachi machine-id.                                                                                                                                                                                  |
+| **Enweghị ụzọ ịgafe nchedo `always`** | A na-enyocha `isAlwaysProtectedPath()` tupu nyocha token CLI. `/api/shutdown` na `/api/settings/database` na-achọ JWT mgbe niile.                                                                                                     |
+| **A pụghị ibupụ ya**                  | A naghị ede token ahụ na diski ma ọ bụ tinye ya na ndekọ.                                                                                                                                                                             |
 
-## Ịgbanwe salt
+## Salt ndabara (nke a na-emepụta na-enweghị usoro maka nrụnye ọ bụla)
 
-Tọọ `OMNIROUTE_CLI_SALT` iji gbanwee token a na-emepụta na-enweghị mgbanwe
-na koodu. Mgbe mgbanwe ahụ gasịrị, usoro CLI niile dị n'igwe a ga-eji token
-ọhụrụ ahụ na-akpaghị aka. Nke a bara uru mgbe ọdịpụ ozi sitere na ndepụta usoro
-nwere ike ikpughe uru e mepụtara na mbụ.
+Mgbe edoghị `OMNIROUTE_CLI_SALT`, salt ahụ bụ eriri hex mkpụrụedemede 64
+a na-emepụta otu ugboro na-enweghị usoro ma chekwaa na `<DATA_DIR>/cli-token-salt.json` (mode `0600`) —
+ọ bụghị literal `omniroute-cli-auth-v1` echekwara n'ime repository. Ma `getActiveSalt()` dị na
+`src/lib/machineToken.ts` na oyiri ya dị na `bin/cli/utils/cliToken.mjs` na-agụ otu
+faịlụ ahụ, ya mere sava na oku CLI ọ bụla na nrụnye a na-eji otu
+uru ahụ; a na-eji literal dị na repository naanị dịka nhọrọ ikpeazụ mgbe enweghị
+salt echekwara ma ọ bụ nke env a pụrụ ịmepụta n'oge ahụ (dịka ọmụmaatụ, nrụnye ọhụrụ
+nwere naanị CLI tupu sava ahụ agba ọsọ ọbụna otu ugboro). Nke a na-emechi adịghị ike dị na literal
+ndabara ochie nke anaghị agbanwe agbanwe: `/etc/machine-id` na-abụkarị faịlụ onye ọ bụla nwere ike ịgụ, ya mere onye ọrụ mpaghara ọ bụla
+gaara enwe ike ịmepụta otu token ahụ maka nrụnye ọ bụla na-edobeghị
+`OMNIROUTE_CLI_SALT`.
+
+## Mgbanwe salt
+
+Tọọ `OMNIROUTE_CLI_SALT` iji gbanwee token ewepụtara na-enweghị mgbanwe koodu — ọ
+na-ebute ụzọ mgbe niile karịa salt nke echekwara maka nrụnye ọ bụla. Mgbe mgbanwe ahụ gasịrị, usoro CLI
+niile dị na kọmputa a ga-eji token ọhụrụ ahụ na-akpaghị aka. Ọ bara uru mgbe
+ndepụta usoro pụrụ ikpughe uru ewepụtara na mbụ.
 
 ```bash
 # Mgbanwe na-adịgide adịgide (tinye na profaịlụ shell)
@@ -57,37 +69,36 @@ export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 omniroute status
 ```
 
-Salt ndabara: `omniroute-cli-auth-v1`
+## Usoro ochie (SHA-256, mkpụrụedemede 32) — a ka na-anabata ya
 
-## Ọdịdị ochie (SHA-256, mkpụrụedemede 32) — a ka na-anabata ya
-
-Tupu ọdịdị HMAC dị n'elu, CLI na-emepụta token ya dịka
-`SHA-256(machineId + salt).hex[0..32]` (prefix nwere mkpụrụedemede 32) n'ime
+Tupu usoro HMAC dị n'elu, CLI na-ewepụta token ya dịka
+`SHA-256(machineId + salt).hex[0..32]` (nganiihu nwere mkpụrụedemede 32) n'ime
 `bin/cli/utils/cliToken.mjs` (`getLegacyCliTokenSync` n'ime `src/lib/machineToken.ts`).
 
-Maka ndakọrịta na ụdị ndị gara aga, sava na-anabata ọdịdị **abụọ ahụ**: verifier na-emepụta
-`expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` ma jiri
-`timingSafeEqual` tụnyere nkụnye eji isi mee batara na nke ọ bụla
+Maka ndakọrịta na ụdị ochie, sava na-anabata usoro **abụọ ahụ**: onye nyocha na-emepụta
+`expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` ma jiri `timingSafeEqual`
+tụnyere header batara na nke ọ bụla
 (`src/server/authz/policies/management.ts` na `src/lib/middleware/cliTokenAuth.ts`).
-Ya mere, token ziri ezi ma ọ bụrụ na ọ dakọtara na **nke ọ bụla** n'ime digest HMAC nwere
-mkpụrụedemede 64 ma ọ bụ prefix SHA-256 ochie nwere mkpụrụedemede 32.
+Ya mere, token bara uru ma ọ bụrụ na ọ dabara na **otu n'ime** digest HMAC nwere mkpụrụedemede 64 ma ọ bụ
+nganiihu SHA-256 ochie nwere mkpụrụedemede 32.
 
-**Ịjụ iji ya:** tọọ `OMNIROUTE_DISABLE_CLI_TOKEN=true` (env ma ọ bụ `.env`) iji gbanyụọ
-usoro token CLI kpamkpam; mgbe ahụ, nnweta niile ga-achọ API key doro anya. N'igwe
-nwere ọtụtụ ndị ọrụ, a na-atụ aro nke a, n'ihi na `machine-id` bụ nke ngwaọrụ
-dum (ọ bụghị nke onye ọrụ ọ bụla), onye ọrụ ọzọ nọ n'otu igwe ahụ nwekwara ike
-ịgbakọ otu token ahụ.
+**Ịkwụsị iji ya:** tọọ `OMNIROUTE_DISABLE_CLI_TOKEN=true` (env ma ọ bụ `.env`) iji gbanyụọ usoro
+token CLI kpamkpam; mgbe ahụ, ohere niile ga-achọ API key e nyere n'ụzọ doro anya. N'igwe
+ndị ọtụtụ mmadụ na-eji, a na-atụ aro nke a, ebe ọ bụ na `machine-id` bụ nke ngwaọrụ ọ bụla (ọ bụghị nke onye ọrụ ọ bụla), onye ọrụ ọzọ
+n'otu igwe ahụ nwekwara ike ịgbakọ otu token ahụ.
 
 ## Faịlụ
 
-| Faịlụ                                     | Ebumnuche                                |
-| ----------------------------------------- | ---------------------------------------- |
-| `src/lib/machineToken.ts`                 | Mmepụta token (`getMachineTokenSync`)    |
-| `src/server/authz/headers.ts`             | Constant `CLI_TOKEN_HEADER`              |
-| `src/server/authz/policies/management.ts` | Nnyocha n'akụkụ sava                     |
-| `src/server/authz/routeGuard.ts`          | Nnyocha host loopback (`isLoopbackHost`) |
+| Faịlụ                                     | Ebumnuche                                       |
+| ----------------------------------------- | ----------------------------------------------- |
+| `src/lib/machineToken.ts`                 | Iwepụta token (`getMachineTokenSync`)           |
+| `bin/cli/utils/cliToken.mjs`              | Oyiri nke otu usoro iwepụta ahụ n'akụkụ CLI     |
+| `<DATA_DIR>/cli-token-salt.json`          | Salt enweghị usoro echekwara maka nrụnye ọ bụla |
+| `src/server/authz/headers.ts`             | Konstan `CLI_TOKEN_HEADER`                      |
+| `src/server/authz/policies/management.ts` | Nnyocha n'akụkụ sava                            |
+| `src/server/authz/routeGuard.ts`          | Nnyocha host loopback (`isLoopbackHost`)        |
 
-## Leekwa
+## Hụkwa
 
 - `docs/security/ROUTE_GUARD_TIERS.md` — ọkwa nchekwa route
 - `docs/architecture/AUTHZ_GUIDE.md` — usoro authorization zuru ezu

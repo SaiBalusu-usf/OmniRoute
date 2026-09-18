@@ -1576,21 +1576,21 @@ GET /.well-known/agent.json
 
 ## CLI సాధనాల నిర్వహణ
 
-OmniRouteతో అనుసంధానమయ్యే CLI సాధనాలను (antigravity, chipotle, commandCode,
+OmniRouteతో ఏకీకృతమయ్యే CLI సాధనాలను (antigravity, commandCode,
 devin-cli మొదలైనవి) నిర్వహించండి. పూర్తి జాబితా కోసం [ప్రొవైడర్ సూచన](./PROVIDER_REFERENCE.md) చూడండి.
 
-| పద్ధతి | మార్గం                                  | వివరణ                                                                                                                                                            |
-| ------ | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | అన్ని CLI సాధనాల స్థితి (ఇన్స్టాల్ చేయబడిందా, వెర్షన్, చివరిగా కనిపించిన సమయం)                                                                                   |
-| GET    | `/api/cli-tools/status`                 | ఒక CLI సాధనం కోసం స్థితి వివరాలు (`?tool=` క్వెరీ)                                                                                                               |
-| POST   | `/api/cli-tools/apply`                  | సాధనం రూపొందించిన కాన్ఫిగ్ను వ్రాయండి (`dryRun` ప్రివ్యూలు; కంటైనర్లో ఉన్నప్పుడు `422` + `containerEphemeralTarget`; లెగసీ Codex YAMLను `migration` సూచిస్తుంది) |
-| GET    | `/api/cli-tools/backups`                | CLI సాధన కాన్ఫిగరేషన్ బ్యాకప్లను జాబితా చేయండి                                                                                                                   |
-| POST   | `/api/cli-tools/backups`                | అన్ని CLI సాధన కాన్ఫిగరేషన్ల బ్యాకప్ను సృష్టించండి                                                                                                               |
-| POST   | `/api/cli-tools/backups`                | పునరుద్ధరణ: బాడీలో `{tool, backupId}`తో ఇదే ఎండ్పాయింట్ను ఉపయోగిస్తే ఆ బ్యాకప్ పునరుద్ధరించబడుతుంది                                                              |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM ప్రాక్సీ స్థితి ("antigravity-mitm" CLI సాధనం)                                                                                                  |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm అలియాస్లను కాన్ఫిగర్ చేయండి                                                                                                                     |
+| పద్ధతి | మార్గం                                  | వివరణ                                                                                                                                                                               |
+| ------ | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/cli-tools/all-statuses`           | అన్ని CLI సాధనాల స్థితి (ఇన్స్టాల్ చేయబడిందా, వెర్షన్, చివరిగా కనిపించిన సమయం)                                                                                                      |
+| GET    | `/api/cli-tools/status`                 | ఒక CLI సాధనం కోసం స్థితి వివరాలు (`?tool=` క్వెరీ)                                                                                                                                  |
+| POST   | `/api/cli-tools/apply`                  | సాధనం రూపొందించిన కాన్ఫిగరేషన్ను వ్రాస్తుంది (`dryRun` ప్రివ్యూలను చూపుతుంది; కంటైనరైజ్ చేసినప్పుడు `422` + `containerEphemeralTarget`; `migration` లెగసీ Codex YAMLను సూచిస్తుంది) |
+| GET    | `/api/cli-tools/backups`                | CLI సాధన కాన్ఫిగరేషన్ బ్యాకప్లను జాబితా చేస్తుంది                                                                                                                                   |
+| POST   | `/api/cli-tools/backups`                | అన్ని CLI సాధన కాన్ఫిగరేషన్ల బ్యాకప్ను సృష్టిస్తుంది                                                                                                                                |
+| POST   | `/api/cli-tools/backups`                | పునరుద్ధరణ: బాడీలో `{tool, backupId}`తో ఇదే ఎండ్పాయింట్ ఆ బ్యాకప్ను పునరుద్ధరిస్తుంది                                                                                               |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM ప్రాక్సీ స్థితి ("antigravity-mitm" CLI సాధనం)                                                                                                                     |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm అలియాస్లను కాన్ఫిగర్ చేస్తుంది                                                                                                                                     |
 
-**ప్రమాణీకరణ:** నిర్వహణ సెషన్ అవసరం.
+**ప్రామాణీకరణ:** నిర్వహణ సెషన్ అవసరం.
 
 ---
 

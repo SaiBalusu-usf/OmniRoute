@@ -165,30 +165,30 @@ needsTranslation(source, target): boolean
 
 ---
 
-## ቁልፍ ፋይሎች ጥልቅ ምርመራ
+## የቁልፍ ፋይሎች ጥልቅ ትንተና
 
 ### chatCore.ts (5977 መስመሮች)
 
 **ዋናው የጥያቄ አስተናጋጅ**። መጠኑ ትልቅ ቢሆንም፣ ግልጽ መዋቅር አለው፦
 
 ```ts
-// የchatCore.ts ሐሳባዊ መዋቅር
+// የchatCore.ts አስመሳይ መዋቅር
 export async function handleChat(request: NextRequest) {
   // 1. ማረጋገጫ + CORS
   await authenticateRequest(request);
   applyCorsHeaders(response);
 
-  // 2. የይዘት ማረጋገጫ
+  // 2. የbody ማረጋገጫ
   const body = await parseRequestBody(request);
 
-  // 3. የቅርጸት ማወቂያ + ትርጉም
+  // 3. ቅርጸትን መለየት + መተርጎም
   const sourceFormat = detectFormat(request);
   const targetFormat = getTargetFormat(providerId);
   if (needsTranslation(sourceFormat, targetFormat)) {
     body = translateRequest(body, sourceFormat, targetFormat);
   }
 
-  // 4. የኮምቦ ማዘዋወር
+  // 4. የcombo ማዞሪያ
   const targets = await resolveComboTargets(comboId, body);
   for (const target of targets) {
     try {
@@ -196,7 +196,7 @@ export async function handleChat(request: NextRequest) {
       await recordUsage(result);
       return result;
     } catch (err) {
-      // ወደ ቀጣዩ ዒላማ ቀጥል
+      // ወደሚቀጥለው target ቀጥል
     }
   }
 
@@ -205,11 +205,11 @@ export async function handleChat(request: NextRequest) {
 }
 ```
 
-አንድ ግዙፍ ፋንክሽን ቢሆንም፣ ከ5-ደረጃው የሂደት ቅደም ተከተል ጋር በሚዛመዱ **አስተያየት በተጨመረባቸው ክፍሎች** ተደራጅቷል።
+አንድ ግዙፍ function ቢሆንም፣ ከ5-ደረጃው pipeline ጋር በሚዛመዱ **አስተያየት በተጨመረባቸው ክፍሎች** የተደራጀ ነው።
 
 ### combo.ts (4456 LOC)
 
-ኮምቦን ወደ ቅደም ተከተል ያላቸው ዒላማዎች የሚፈታው **የማዘዋወሪያ ሞተር**።
+አንድ combo ወደ ቅደም ተከተል የተደረደሩ targets እንዲፈታ የሚያደርገው **የማዞሪያ ሞተር**።
 
 ```ts
 // services/combo.ts
@@ -226,46 +226,46 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
 }
 ```
 
-**19 የማዘዋወሪያ ስልቶችን** ይደግፋል (`src/shared/constants/routingStrategies.ts` ይመልከቱ)፦
+**19 የማዞሪያ ስልቶችን** ይደግፋል (`src/shared/constants/routingStrategies.ts`ን ይመልከቱ)፦
 
-| ስልት                 | ባህሪ                                                    |
-| ------------------- | ------------------------------------------------------ |
-| `priority`          | የመጀመሪያውን ዒላማ ቅድሚያ የሚሰጥ የተደረደረ ዝርዝር                     |
-| `weighted`          | በእያንዳንዱ ዒላማ ክብደት መሠረት የሚደረግ ዕድላዊ ምርጫ                   |
-| `round-robin`       | ዒላማዎችን በቅደም ተከተል በዙር ማለፍ                               |
-| `context-relay`     | አውድን በዒላማዎች መካከል ማስተላለፍ                                |
-| `fill-first`        | ወደ ቀጣዩ ከመሄድ በፊት ኮታውን መሙላት                              |
-| `p2c`               | ከሁለት ምርጫዎች አንዱን የመምረጥ ኃይል                              |
-| `random`            | ወጥ የዘፈቀደ ምርጫ                                           |
-| `least-used`        | በቅርብ ጊዜ አነስተኛው የአጠቃቀም ብዛት ያለውን መምረጥ                    |
-| `cost-optimized`    | መጀመሪያ ዝቅተኛ ወጪ ያለውንና ጤናማውን ዒላማ መምረጥ                     |
-| `reset-aware`       | የአቅራቢውን የዳግም ማስጀመሪያ መስኮቶች ከግምት ያስገባ                    |
-| `reset-window`      | በዳግም ማስጀመሪያ መስኮት ላይ የተመሠረተ ማዘዋወር                       |
-| `headroom`          | መጀመሪያ ከፍተኛውን ቀሪ የኮታ አቅም ያለውን መምረጥ                      |
-| `strict-random`     | በእውነት ወጥ የሆነ ምርጫ (የጥራት ክብደት የሌለው)                      |
-| `auto`              | የ16-ምክንያቶች ውጤት አሰጣጥን መጠቀም (`autoCombo/`)               |
-| `lkgp`              | መጀመሪያ የመጨረሻውን የታወቀ ጥሩ አቅራቢ መጠቀም                        |
-| `context-optimized` | ረጅም አውድ ላላቸው ጥያቄዎች በጣም ተስማሚውን መምረጥ                     |
-| `fusion`            | ወደ ቡድን በትይዩ ማሰራጨት፣ ከዚያም በዳኛ አማካኝነት ማቀናጀት (`fusion.ts`) |
+| ስልት                 | ባህሪ                                                           |
+| ------------------- | ------------------------------------------------------------- |
+| `priority`          | የመጀመሪያውን target ቅድሚያ የሚሰጥ የተደረደረ ዝርዝር                         |
+| `weighted`          | በእያንዳንዱ target ክብደት ላይ የተመሠረተ የዕድል ስሌት                        |
+| `round-robin`       | targetsን በቅደም ተከተል በዙር ማለፍ                                    |
+| `context-relay`     | contextን በtargets መካከል ማስተላለፍ                                 |
+| `fill-first`        | ወደሚቀጥለው ከመሄድ በፊት quotaን መሙላት                                  |
+| `p2c`               | ከሁለት ምርጫዎች የተሻለውን መምረጥ                                        |
+| `random`            | ወጥ የሆነ የዘፈቀደ ምርጫ                                              |
+| `least-used`        | በቅርብ ጊዜ በትንሹ ጥቅም ላይ የዋለውን መምረጥ                                |
+| `cost-optimized`    | በመጀመሪያ በጣም ርካሹንና ጤናማውን target መምረጥ                            |
+| `reset-aware`       | የprovider reset windowsን ከግምት ውስጥ የሚያስገባ                      |
+| `reset-window`      | በreset window ላይ የተመሠረተ ማዞሪያ                                  |
+| `headroom`          | ከፍተኛው ቀሪ የquota headroom ያለውን ቅድሚያ መስጠት                       |
+| `strict-random`     | በእውነት ወጥ የሆነ ምርጫ (የጥራት ክብደት የሌለው)                             |
+| `auto`              | ባለ16-ምክንያት ውጤት አሰጣጥን መጠቀም (`autoCombo/`)                      |
+| `lkgp`              | በመጨረሻ ጥሩ እንደሆነ የታወቀውን provider ቅድሚያ መስጠት                      |
+| `context-optimized` | ረጅም context ላላቸው ጥያቄዎች ምርጥ                                    |
+| `fusion`            | በትይዩ ወደ panel በስፋት መላክ፣ ከዚያም በjudge አማካይነት ማዋሃድ (`fusion.ts`) |
 
 ### base.ts (1170 LOC)
 
-ሁሉም 101 አስፈጻሚዎች የሚወርሱት **ረቂቅ አስፈጻሚ**። የሚከተሉትን ይዟል፦
+ሁሉም 107 executors የሚወርሱት **abstract executor**። የሚከተሉትን ይዟል፦
 
-- `buildUrl()` — ነባሪ የURL ግንባታ (ንዑስ ክፍሎች ለብጁ አጠቃቀም ይተኩታል)
-- `buildHeaders()` — ነባሪ ራስጌዎች (ማረጋገጫ፣ የይዘት ዓይነት)
-- `transformRequest()` — በነባሪነት ሳይቀየር ያስተላልፋል
-- `execute()` — ዳግም ሙከራ፣ የጊዜ ማራዘሚያ እና ሰባሪ ያለው ዋናው የHTTP ዑደት
+- `buildUrl()` — ነባሪ የURL ግንባታ (subclasses ለብጁ አጠቃቀም override ያደርጉታል)
+- `buildHeaders()` — ነባሪ headers (auth፣ content-type)
+- `transformRequest()` — በነባሪ ሳይቀየር ያስተላልፋል
+- `execute()` — retry/backoff/breaker ያለው ዋናው የHTTP loop
 
 ```ts
 // open-sse/executors/default.ts
 export class DefaultExecutor extends BaseExecutor {
-  // ሁሉንም ከOpenAI/Anthropic ጋር ተኳኋኝ የሆኑ አቅራቢዎችን ያስተናግዳል
-  // አቅራቢዎች ውቅሮችን (URL፣ ማረጋገጫ፣ ራስጌዎች) ይመዘግባሉ፣ ነገር ግን የአስፈጻሚውን ሎጂክ በጋራ ይጠቀማሉ
+  // ሁሉንም ከOpenAI/Anthropic ጋር ተኳኋኝ የሆኑ providers ያስተናግዳል
+  // Providers configurationsን (URL፣ auth፣ headers) ይመዘግባሉ፣ ነገር ግን የexecutor logicን ይጋራሉ
 }
 ```
 
-የአቅራቢ-ተኮር ባህሪ (የማረጋገጫ ራስጌዎች፣ መሠረታዊ URL፣ የስሪት ራስጌዎች) በተለዩ የአስፈጻሚ ክፍሎች ሳይሆን በአቅራቢው መዝገብ በኩል ይዋቀራል።
+ለprovider የተለየ ባህሪ (auth headers፣ base URL፣ version headers) በተለያዩ executor classes ሳይሆን በprovider registry በኩል ይዋቀራል።
 
 ````
 
@@ -273,45 +273,45 @@ export class DefaultExecutor extends BaseExecutor {
 
 ## አገልግሎቶች (117 ሞጁሎች)
 
-አገልግሎቶች handlers በማቀናጀት የሚጠቀሙባቸው **በአንድ ዓላማ ላይ ያተኮሩ ሞጁሎች** ናቸው። ዋናዎቹ ምድቦች፦
+አገልግሎቶች handlers በማጣመር የሚጠቀሙባቸው **በአንድ ዓላማ ላይ ያተኮሩ ሞጁሎች** ናቸው። ዋናዎቹ ምድቦች፦
 
-### ማስተላለፍ እና Combo
+### ማዘዋወር እና Combo
 
-- `combo.ts` — በcombo ለሚተላለፉ ጥያቄዎች መግቢያ ነጥብ
-- `services/autoCombo/` — ባለ16-መስፈርት የውጤት አሰጣጥ፣ 8 ራስ-ሰር የማስተላለፍ ስትራቴጂዎች
-- `wildcardRouter.ts` — wildcard routes (`gpt-*`) ያዛምዳል
+- `combo.ts` — በcombo ለሚዘዋወሩ ጥያቄዎች የመግቢያ ነጥብ
+- `services/autoCombo/` — ባለ16-ምክንያት ነጥብ አሰጣጥ፣ 8 ራስ-ሰር የማዘዋወር ስልቶች
+- `wildcardRouter.ts` — የwildcard መንገዶችን (`gpt-*`) ያዛምዳል
 - `modelFamilyFallback.ts` — በT5 ቤተሰብ ውስጥ fallback
 
 ### የፍጥነት ገደብ እና ኮታ
 
 - `rateLimitManager.ts` — ለእያንዳንዱ key+provider የtoken bucket
 - `usage.ts` — የአጠቃቀም መመዝገቢያ
-- `quotaCache.ts` — በማህደረ ትውስታ ውስጥ የሚቀመጡ የኮታ ቅጽበታዊ ገጽታዎች
+- `quotaCache.ts` — በማህደረ ትውስታ ውስጥ ያሉ የኮታ ቅጽበታዊ ቅጂዎች
 
 ### መለያ እና Token
 
-- `tokenRefresh.ts` — 401 ሲመለስ OAuth ማደስ
+- `tokenRefresh.ts` — በ401 ላይ OAuth ማደስ
 - `accountFallback.ts` — ወደ አማራጭ መለያ መቀየር
 - `sessionManager.ts` — የባለብዙ-ዙር session ሁኔታ
 
 ### ብልህነት
 
 - `intentClassifier.ts` — የጥያቄውን ዓላማ መመደብ
-- `taskAwareRouter.ts` — በተግባር ዓይነት መሠረት ማስተላለፍ
+- `taskAwareRouter.ts` — በተግባር ዓይነት ማዘዋወር
 - `thinkingBudget.ts` — የአስተሳሰብ tokens መመደብ
-- `contextManager.ts` — የማስተላለፊያ ዐውድ ማስገባት
+- `contextManager.ts` — የማዘዋወር context ማስገባት
 
 ### የመቋቋም ችሎታ
 
-- `resilience.ts` — የድጋሚ ሙከራ፣ backoff እና breaker ቅንብር
+- `resilience.ts` — ዳግም ሙከራ፣ backoff እና breaker ማስተባበር
 - `emergencyFallback.ts` — የመጨረሻ አማራጭ fallback
-- `modelDeprecation.ts` — ወደ ተተኪ models ራስ-ሰር ማስተላለፍ
+- `modelDeprecation.ts` — ወደ ተተኪ models ራስ-ሰር ማዘዋወር
 
 ### ሁኔታ
 
-- `signatureCache.ts` — በጥያቄ signature መሠረት ተደጋጋሚዎችን ማስወገድ
-- `volumeDetector.ts` — የጭነት ቅነሳ
-- `contextHandoff.ts` — የsession ተከታታይ ውክልና
+- `signatureCache.ts` — በጥያቄ signature ድግግሞሽን ማስወገድ
+- `volumeDetector.ts` — ጫናን መቀነስ
+- `contextHandoff.ts` — session serialization
 
 ### መጭመቅ
 
@@ -320,41 +320,41 @@ export class DefaultExecutor extends BaseExecutor {
 
 ### ክህሎቶች
 
-- (በ[SKILLS.md](./SKILLS.md) ተሸፍኗል)
+- (በ[SKILLS.md](./SKILLS.md) ውስጥ ተሸፍኗል)
 
 ### ማህደረ ትውስታ
 
-- (በ[MEMORY.md](./MEMORY.md) ተሸፍኗል)
+- (በ[MEMORY.md](./MEMORY.md) ውስጥ ተሸፍኗል)
 
 ---
 
-## አስፈጻሚዎች (75+ ፋይሎች)
+## Executors (75+ ፋይሎች)
 
-ለእያንዳንዱ provider አንድ ፋይል አለ። ሁሉም `BaseExecutor`ን ያስፋፋሉ እና የሚለያዩትን ይተካሉ።
+ለእያንዳንዱ provider አንድ ፋይል አለ። ሁሉም `BaseExecutor`ን ያራዝማሉ እና ልዩነት ያለውን ይተካሉ።
 
 ### የተለመዱ ንድፎች
 
-Providers በ`getExecutor(providerId)` አማካይነት ይወሰናሉ፤ ይህም የተዋቀረውን executor ይመልሳል። ከOpenAI/Anthropic ጋር ተኳኋኝ የሆኑ providers `DefaultExecutor` (`executors/default.ts`) ይጠቀማሉ። ለprovider የተለየ ባህሪ (base URL፣ auth headers፣ API version) በ`open-sse/config/providers/` ውስጥ ይዋቀራል፤ የጥያቄ body ለውጦች ደግሞ በ`open-sse/translator/` ውስጥ ይከናወናሉ።
+Providers የሚፈቱት በ`getExecutor(providerId)` ሲሆን፣ የተዋቀረውን executor ይመልሳል። ከOpenAI/Anthropic ጋር ተኳኋኝ የሆኑ providers `DefaultExecutor`ን (`executors/default.ts`) ይጠቀማሉ። ለprovider የተለዩ ባህሪያት (base URL፣ auth headers፣ API version) በ`open-sse/config/providers/` ውስጥ ይዋቀራሉ፤ የrequest body ለውጦች ግን በ`open-sse/translator/` ውስጥ ይከናወናሉ።
 
-**ብጁ URL** በprovider ውቅር በኩል ይዘጋጃል፦
+**ብጁ URL** በprovider ውቅር በኩል ይቀናበራል፦
 
 ```ts
-// በopen-sse/config/providers/ ውስጥ ያለ የprovider ውቅር
+// በopen-sse/config/providers/ ውስጥ ያለ የProvider ውቅር
 export default {
   id: "together",
   baseURL: "https://api.together.xyz/v1/chat/completions",
 }
 ````
 
-**ብጁ auth** በprovider registry auth ውቅር (API key፣ OAuth፣ header profiles) አማካይነት ይከናወናል።
+**ብጁ auth** በprovider registry የauth ውቅር (API key፣ OAuth፣ header profiles) በኩል ይስተናገዳል።
 
-**ብጁ የጥያቄ body** ለውጦች (ለምሳሌ፣ Anthropic `system`ን ከ`messages` መለየቱ) በ`open-sse/translator/` ውስጥ ለእያንዳንዱ provider ይመዘገባሉ።
+**ብጁ request body** ለውጦች (ለምሳሌ፣ Anthropic `system`ን ከ`messages` መለየቱ) ለእያንዳንዱ provider በ`open-sse/translator/` ውስጥ ይመዘገባሉ።
 
 ````
 
-### የExecutor ፋብሪካ
+### የExecutor Factory
 
-`executors/index.ts` `getExecutor(providerId)`ን ወደ ውጭ ይልካል፦
+`executors/index.ts` `getExecutor(providerId)`ን export ያደርጋል፦
 
 ```ts
 import { getExecutor } from "@omniroute/open-sse/executors";
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-መፍታቱ በ`ExecutorRegistry` (`executors/registry.ts`) በኩል ያልፋል፦ እያንዳንዱ ልዩ executor በ`executors/index.ts` ውስጥ ባለው አብሮ-የተሰራ ሰንጠረዥ ውስጥ ይገለጻል እና module ሲጫን በ`registerExecutor(alias, instance)` አማካይነት ይመዘገባል፤ `getExecutor()` registryውን ያማክራል እና ልዩ ግቤት ለሌለው ማንኛውም provider ወደ memoized `DefaultExecutor` fallback ያደርጋል። ሙሉው የalias → executor ካርታ በgolden test `tests/unit/executor-map-golden.test.ts` ተለይቶ ተወስኗል።
+መፍታቱ በ`ExecutorRegistry` (`executors/registry.ts`) በኩል ያልፋል፦ እያንዳንዱ ልዩ executor በ`executors/index.ts` አብሮገነብ ሰንጠረዥ ውስጥ ይገለጻል እና module በሚጫንበት ጊዜ በ`registerExecutor(alias, instance)` ይመዘገባል፤ `getExecutor()` registryውን ይፈትሻል እና ልዩ ግቤት ለሌለው ማንኛውም provider ወደ memoized `DefaultExecutor` fallback ያደርጋል። ሙሉው alias → executor ማዛመጃ በgolden test `tests/unit/executor-map-golden.test.ts` ተዘርዝሯል።
 
 ---
 

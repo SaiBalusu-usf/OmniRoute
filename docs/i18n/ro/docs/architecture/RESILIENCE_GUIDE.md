@@ -68,110 +68,126 @@ Test de protecție împotriva regresiilor: `tests/unit/provider-cooldown-window-
 
 ## 2. Perioada de așteptare a conexiunii
 
-**Domeniu:** o singură conexiune/un singur cont/o singură cheie a furnizorului.
+**Domeniu de aplicare:** o singură conexiune/un singur cont/o singură cheie de furnizor.
 
-**Scop:** omiterea unei chei problematice, în timp ce celelalte conexiuni ale aceluiași furnizor continuă să deservească cereri.
+**Scop:** omiterea unei chei nefuncționale, în timp ce alte conexiuni pentru același furnizor continuă să deservească solicitări.
 
 **Implementare:**
 
 - Marcare ca indisponibilă: `src/sse/services/auth.ts::markAccountUnavailable()`
 - Selectare: `getProviderCredentials*` în același fișier
-- Calculul perioadei de așteptare: `open-sse/services/accountFallback.ts::checkFallbackError()`
+- Calcularea perioadei de așteptare: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Setări: `src/lib/resilience/settings.ts`
 
-**Câmpuri pentru fiecare conexiune:**
+**Câmpuri per conexiune:**
 
 - `rateLimitedUntil` — marcaj temporal până la expirarea perioadei de așteptare
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
-- `backoffLevel` — contor pentru retragerea exponențială
+- `backoffLevel` — contor pentru temporizarea exponențială
 
 **Perioade de așteptare implicite:**
 
 - Bază OAuth: 5s
 - Bază pentru cheia API: 3s
-- Răspuns 429 pentru cheia API: preferă antetele `Retry-After`/de resetare din amonte sau textul de resetare care poate fi analizat
-- Retragere: `baseCooldownMs * 2 ** failureIndex`
+- 429 pentru cheia API: preferă antetele din amonte `Retry-After`/de resetare/textul de resetare care poate fi analizat
+- Temporizare: `baseCooldownMs * 2 ** failureIndex`
 
-**Protecție împotriva efectului de turmă:** împiedică erorile concurente să prelungească excesiv perioada de așteptare sau să incrementeze de două ori `backoffLevel`.
+**Mecanism de protecție împotriva efectului de turmă:** împiedică erorile concurente să extindă excesiv perioada de așteptare sau să incrementeze de două ori `backoffLevel`.
 
 **Stări terminale (NU perioade de așteptare):**
 
-- `banned` — setată prin detectarea cuvintelor-cheie asociate interdicției/detectarea interdicției contului (consultați [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (trece în starea terminală după un număr limitat de reîncercări — `EXPIRED_RETRY_MAX = 3`, cu retragere exponențială — astfel încât erorile OAuth tranzitorii să se poată remedia automat înainte de dezactivarea permanentă a contului)
+- `banned` — setată prin detectarea cuvintelor-cheie asociate interdicției/detectarea interdicției contului (consultați [BAN_DETECTION](../security/BAN_DETECTION.md)) și prin trei refuzuri consecutive din amonte pentru fiecare solicitare (`request_rejected`, de exemplu, răspunsul OAuth 403 „Request not allowed” de la Anthropic — `open-sse/services/requestRejectedStreak.ts`); un singur refuz doar trece conexiunea în perioada de așteptare
+- `expired` (trece în starea terminală după un număr limitat de reîncercări — `EXPIRED_RETRY_MAX = 3` cu temporizare exponențială — astfel încât erorile OAuth tranzitorii se pot remedia automat înainte ca acel cont să fie dezactivat permanent)
 - `credits_exhausted`
 
-Acestea persistă până când datele de autentificare se schimbă sau până când un operator le resetează. Nu suprascrieți stările terminale cu starea tranzitorie de așteptare.
+Acestea persistă până la modificarea acreditărilor sau până când un operator le resetează. Nu suprascrieți stările terminale cu starea tranzitorie a perioadei de așteptare.
 
-**Recuperare întârziată:** când `rateLimitedUntil` a trecut, conexiunea devine din nou eligibilă. După utilizarea cu succes, `clearAccountError()` șterge toate câmpurile de eroare.
+**Recuperare întârziată:** când `rateLimitedUntil` este în trecut, conexiunea devine din nou eligibilă. După utilizarea cu succes, `clearAccountError()` elimină toate câmpurile de eroare.
 
 ### Afinitatea sesiunii (#7274)
 
-**Domeniu:** o sesiune de client (antetul `X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`) fixată la o singură conexiune, pentru **orice** furnizor.
+**Domeniu de aplicare:** o sesiune de client (antetul `X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`) fixată la o conexiune, pentru **orice** furnizor.
 
-**Scop:** menținerea unui agent cu mai multe schimburi (Claude Code, aider, agenți personalizați) pe același cont de-a lungul cererilor, reducând pierderea contextului între conturi și răspunsurile 429 repetate la pornirea la rece pentru furnizorii cu stare de sesiune per cont.
+**Scop:** menținerea unui agent cu mai multe interacțiuni (Claude Code, aider, agenți personalizați) pe același cont între solicitări, reducând pierderea contextului între conturi și răspunsurile 429 repetate la pornirea la rece în cazul furnizorilor cu stare de sesiune per cont.
 
 **Implementare:**
 
 - Rezolvarea TTL: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Selectarea/crearea fixării: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
 - Extragerea antetului (generică, pentru orice furnizor): `src/sse/services/auth.ts::extractSessionAffinityKey()`
-- Tabelul persistent al fixărilor: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Setare: `sessionAffinityTtlMs` (TTL global în ms, `0` îl dezactivează) — `src/lib/db/settings.ts`. Redenumit din `codexSessionAffinityTtlMs`, specific doar pentru Codex, prin migrarea `124_generic_session_affinity_ttl.sql`, care transferă orice TTL Codex configurat anterior drept noua valoare implicită.
+- Tabel de fixări persistente: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
+- Setare: `sessionAffinityTtlMs` (TTL global în ms, `0` îl dezactivează) — `src/lib/db/settings.ts`. Redenumită din `codexSessionAffinityTtlMs`, specifică exclusiv Codex, prin migrarea `124_generic_session_affinity_ttl.sql`, care transferă orice TTL Codex configurat anterior ca nouă valoare implicită.
 
-Înainte de #7274, `resolveSessionAffinityTtlMs()` returna imediat `0` pentru fiecare furnizor în afară de `codex`, astfel încât setarea TTL (și antetele de sesiune) nu produceau niciun efect în altă parte, deși mecanismul de fixare și extragerea antetelor erau deja independente de furnizor. Remedierea a eliminat această returnare anticipată; acum, TTL se aplică uniform fiecărui furnizor după ce este setat global la o valoare mai mare decât `0`.
+Înainte de #7274, `resolveSessionAffinityTtlMs()` returna imediat `0` pentru fiecare furnizor, cu excepția `codex`, astfel încât setarea TTL (și antetele de sesiune) nu aveau niciun efect în altă parte, chiar dacă mecanismul de fixare și extragerea antetelor erau deja independente de furnizor. Remedierea a eliminat acea returnare anticipată; acum, TTL se aplică uniform fiecărui furnizor după ce este setat global la o valoare mai mare decât `0`.
 
-Cele trei antete pentru afinitatea sesiunii nu sunt niciodată transmise în amonte — executorii își construiesc propriile antete din amonte de la zero, în loc să transmită antetele clientului, astfel încât acestea rămân doar identificatori interni de corelare.
+Cele trei antete pentru afinitatea sesiunii nu sunt redirecționate niciodată în amonte — executorii își construiesc propriile antete din amonte de la zero, în loc să transmită antetele clientului, astfel încât acestea rămân doar identificatori interni de corelare.
 
 ### Închirieri exclusive de conexiuni pentru sesiuni gestionate
 
-**Domeniu:** un client/o sesiune HTTP gestionată activă deține o conexiune OmniRoute eligibilă.
+**Domeniu de aplicare:** un client/o sesiune HTTP gestionată activă deține o conexiune OmniRoute eligibilă.
 
-**Scop:** furnizarea dreptului exclusiv și persistent de utilizare a conexiunii pentru clienții care necesită o barieră strictă de rutare între cereri. Acest lucru diferă de afinitatea sesiunii, care este o preferință flexibilă de continuitate: o închiriere exclusivă păstrează starea ciclului de viață în SQLite, impune unicitatea globală a proprietarului activ și a conexiunii active și respinge o generație perimată înainte de expedierea către furnizor.
+**Scop:** asigurarea deținerii exclusive și persistente a conexiunii pentru clienții care necesită o barieră strictă de rutare între solicitări. Aceasta diferă de afinitatea sesiunii, care reprezintă o preferință flexibilă pentru continuitate: o închiriere exclusivă persistă starea ciclului de viață în SQLite, impune unicitatea globală a proprietarului activ și a conexiunii active și respinge o generație expirată înainte de trimiterea către furnizor.
 
-Funcționalitatea este opțională pentru fiecare cheie API. O cheie gestionată trebuie să aibă domeniul de aplicare `lease:exclusive` și o listă `allowedConnections` explicită și nevidă. Orice client HTTP poate utiliza endpointul ciclului de viață; nu sunt necesare numele clientului, agentul utilizatorului, furnizorul, metoda OAuth sau modelul. Închirierea deține o conexiune, nu un model, astfel încât schimbarea modelului păstrează asocierea atât timp cât conexiunea rămâne eligibilă în mod normal. Regulile obișnuite privind modelul, cota, starea de funcționare, perioada de așteptare și lista de permisiuni rămân autoritare și pot muta aceeași generație la o altă conexiune liberă și eligibilă.
+Funcționalitatea este opțională pentru fiecare cheie API. O cheie gestionată trebuie să aibă domeniul `lease:exclusive` și o listă `allowedConnections` explicită și nevidă. Orice client HTTP poate utiliza endpointul ciclului de viață; nu este necesar niciun nume de client, agent utilizator, furnizor, metodă OAuth sau model. Închirierea deține o conexiune, nu un model, astfel încât schimbarea modelului păstrează asocierea atât timp cât conexiunea rămâne eligibilă în mod normal. Regulile normale privind modelul, cota, starea de funcționare, perioada de așteptare și lista de permisiuni rămân autoritare și pot transfera aceeași generație către o altă conexiune eligibilă și liberă.
 
-Ciclul de viață este `POST /api/v1/session-leases`, cu acțiunile JSON `acquire`, `renew` și `release`. Cererile de inferență gestionate prezintă valoarea opacă `X-OmniRoute-Lease-Owner` și valoarea exactă `X-OmniRoute-Lease-Generation`. Identificatorul proprietarului utilizează prefixul `vlo_` urmat de 43 de caractere base64url; este stocat numai hashul său SHA-256. Fiecare barieră finală de expediere asociază, de asemenea, ID-ul cheii API autentificate și ID-ul conexiunii active. Antetele de control ale închirierii sunt eliminate din jurnale, din instantaneele păstrate ale cererilor și din antetele executorilor din amonte.
+Ciclul de viață este `POST /api/v1/session-leases`, cu acțiunile JSON `acquire`, `renew` și `release`. Solicitările de inferență gestionate prezintă valoarea opacă `X-OmniRoute-Lease-Owner` și valoarea exactă `X-OmniRoute-Lease-Generation`. Proprietarul utilizează prefixul `vlo_`, urmat de 43 de caractere base64url; este stocat doar hashul SHA-256 al acestuia. Fiecare barieră finală de trimitere asociază, de asemenea, ID-ul cheii API autentificate și ID-ul conexiunii active. Antetele de control ale închirierii sunt eliminate din jurnale, instantaneele păstrate ale solicitărilor și antetele executorilor din amonte.
 
-Dacă rutarea obișnuită are candidați gestionați eligibili, dar fiecare candidat liber este ocupat de o închiriere activă străină, OmniRoute returnează HTTP `429`, codul de indisponibilitate a capacității de închiriere, o stare de așteptare a capacității și un antet `Retry-After` limitat, derivat din cea mai apropiată expirare relevantă. Absența obișnuită a eligibilității nu reprezintă o dispută pentru închiriere și își păstrează semantica existentă a erorilor de rutare.
+Dacă rutarea obișnuită are candidați gestionați eligibili, dar fiecare candidat liber este ocupat de o închiriere activă străină, OmniRoute returnează HTTP `429`, codul de indisponibilitate a capacității de închiriere, o stare de așteptare a capacității și un `Retry-After` limitat, derivat din cea mai apropiată expirare relevantă. Lipsa obișnuită a eligibilității nu reprezintă o dispută pentru închiriere și își păstrează semantica existentă pentru erorile de rutare.
 
-Mecanismele conexe rămân separate:
+Mecanismele asociate rămân separate:
 
 - Ocuparea sesiunii OAuth reprezintă o distribuire flexibilă, locală procesului, pentru conturile OAuth.
-- Semafoarele conturilor acordă permisiuni pentru concurența cererilor, care expiră la finalizarea unei cereri.
-- Închirierile exclusive pentru sesiuni gestionate reprezintă drepturi persistente asupra ciclului de viață, cu o barieră de generație.
+- Semafoarele contului acordă permisiuni pentru concurența solicitărilor și se încheie la finalizarea unei solicitări.
+- Închirierile exclusive pentru sesiunile gestionate reprezintă o deținere persistentă pe durata ciclului de viață, cu o barieră de generație.
 
 ---
 
 ## 3. Blocarea modelului
 
-**Domeniu:** tripletul furnizor + conexiune + model.
+**Domeniu:** tripleta furnizor + conexiune + model.
 
-**Scop:** evitarea dezactivării unei conexiuni întregi atunci când doar un model este indisponibil sau limitat de cotă.
+**Domeniul cheii în funcție de stare:** starea care indică eroarea determină cheia pentru care este scrisă o blocare
+(`resolveLockoutScope()` din `open-sse/services/accountFallback/exactModelLock.ts`):
+
+- `429` / `403` / `402` — un semnal privind cota sau drepturile de acces — blochează **familia de cote**:
+  pentru codex, întregul domeniu `codex` / `spark` (fiecare model `gpt-5*` al
+  conexiunii), iar pentru alți furnizori, `getQuotaScopedModelForProvider()`.
+- `404` blochează modelul propriu-zis (`getModelLockKey()` restrânge `not_found`).
+- Orice altă stare — erori de transport/server `5xx` și răspunsul `502` sintetizat
+  chiar de OmniRoute în urma validării calității — blochează numai tuplul **exact**
+  furnizor/conexiune/model. Un flux defect pentru un model nu reprezintă o dovadă
+  privind cota contului; înaintea acestei reguli, un singur răspuns gol de la
+  `codex/gpt-5.6-luna` elimina de la rutare fiecare model `gpt-5*` al conexiunii
+  timp de 2–30 min (cu escaladare), deși cota sa nu fusese afectată.
+- Opțiunea explicită `scope` a apelantului are întotdeauna prioritate (Antigravity transmite `"exact"`).
+
+**Scop:** evitarea dezactivării unei conexiuni întregi atunci când numai un model este indisponibil sau limitat de cotă.
 
 **Exemple:**
 
 - Furnizori cu cote per model care returnează 429
-- Furnizori locali care returnează 404 pentru un model care lipsește
+- Furnizori locali care returnează 404 pentru un singur model absent
 - Erori de permisiune specifice furnizorului pentru mod/model (de exemplu, modurile Grok)
 
 **Implementare:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
-### Panoul perioadelor de așteptare ale modelelor (v3.8.0)
+### Panoul perioadelor de suspendare a modelelor (v3.8.0)
 
-Interfață: Setări → Perioade de așteptare ale modelelor (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
+Interfață: Setări → Perioade de suspendare a modelelor (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-Listează blocările active cu: furnizor, conexiune, model, motiv, expiresAt. Operatorii pot reactiva manual un model din card.
+Listează blocările active împreună cu: furnizorul, conexiunea, modelul, reason, expiresAt. Operatorii pot reactiva manual un model din card.
 
 **API REST:**
 
 - `GET /api/resilience/model-cooldowns` — listează blocările active
 - `DELETE /api/resilience/model-cooldowns` — reactivare manuală. Corp: `{provider, connection, model}`. Autentificare: administrare.
 
-### Interfața setărilor de blocare + recuperarea prin reducere la succes (v3.8.23)
+### Interfața pentru setările de blocare + recuperarea prin atenuare la succes (v3.8.23)
 
-Blocarea modelului a trecut de la un comportament codificat fix, activ permanent, la o funcționalitate complet configurabilă,
-opțională, cu propriul card de setări și un mecanism de recuperare automată.
+Blocarea modelelor a trecut de la un comportament codificat rigid și permanent activ la o
+funcționalitate complet configurabilă, opțională, cu propriul card de setări și o cale
+de recuperare cu autoremediere.
 
 **Card de setări:** Setări → Blocarea modelului
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
@@ -180,32 +196,33 @@ _listează_ blocările active) — noul card _configurează parametrii_. Valoril
 se află în `DEFAULT_MODEL_LOCKOUT_SETTINGS`
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
-| Setare                  | Valoare implicită                | Semnificație                                                                   |
-| ----------------------- | -------------------------------- | ------------------------------------------------------------------------------ |
-| `enabled`               | `false`                          | Comutator principal — blocarea modelului este **dezactivată în mod implicit**. |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Stările din amonte care sunt considerate erori la nivel de model.              |
-| `baseCooldownMs`        | `120_000` (120 s)                | Durata inițială a blocării pentru prima eroare.                                |
-| `maxCooldownMs`         | `1_800_000` (30 min)             | Limita maximă pentru perioada de așteptare crescută.                           |
-| `maxBackoffSteps`       | `10`                             | Numărul maxim de pași de creștere exponențială a întârzierii.                  |
-| `useExponentialBackoff` | `true`                           | Stabilește dacă erorile repetate cresc exponențial perioada de așteptare.      |
+| Setare                  | Valoare implicită                | Semnificație                                                            |
+| ----------------------- | -------------------------------- | ----------------------------------------------------------------------- |
+| `enabled`               | `false`                          | Comutator principal — blocarea modelelor este **dezactivată implicit**. |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Stări din amonte care sunt considerate erori la nivel de model.         |
+| `baseCooldownMs`        | `120_000` (120 s)                | Durata inițială a blocării pentru prima eroare.                         |
+| `maxCooldownMs`         | `1_800_000` (30 min)             | Limita superioară a perioadei de suspendare escalate.                   |
+| `maxBackoffSteps`       | `10`                             | Numărul maxim de pași de escaladare prin temporizare exponențială.      |
+| `useExponentialBackoff` | `true`                           | Dacă erorile repetate escaladează exponențial perioada de suspendare.   |
 
-Setările sunt păstrate prin intermediul stocării obișnuite a setărilor și sunt validate prin
+Setările sunt persistate prin mecanismul obișnuit de stocare a setărilor și validate prin
 schema setărilor de reziliență; cardul limitează `baseCooldownMs`/`maxCooldownMs`
 (cu `maxCooldownMs ≥ baseCooldownMs`) și `maxBackoffSteps`.
 
-**Recuperare prin reducere la succes:** recuperarea **nu** se bazează exclusiv pe expirarea temporizatorului. Un răspuns
-valid reduce treptat numărul de erori al modelului, astfel încât un model care și-a revenit
-în timpul intervalului încetează să escaladeze (și este deblocat) înainte de expirarea temporizatorului. Pentru o țintă
-combinată reușită, `open-sse/services/combo.ts` apelează `decayModelFailureCount()`
-(`open-sse/services/accountFallback.ts`), care **înjumătățește** valoarea `failureCount`
-stocată (`Math.floor(failureCount / 2)`); când aceasta ajunge la `0`, intrarea de blocare
+**Recuperare prin atenuare la succes:** recuperarea **nu** se bazează exclusiv pe expirarea temporizatorului. Un răspuns
+valid reduce treptat numărul de erori ale modelului, astfel încât un model care s-a recuperat
+în timpul intervalului să nu mai escaladeze (și să fie deblocat) înainte de expirarea temporizatorului. Pentru o țintă
+combinată care a reușit, `open-sse/services/combo.ts` apelează `decayModelFailureCount()`
+(`open-sse/services/accountFallback.ts`), care **înjumătățește** valoarea stocată
+`failureCount` (`Math.floor(failureCount / 2)`); când aceasta ajunge la `0`, intrarea de blocare
 este ștearsă complet. Funcția corespondentă `recordModelLockoutFailure()`
-incrementează numărul (și crește perioada de așteptare) pentru erorile survenite în
-intervalul de escaladare. Această reducere la succes se adaugă expirării obișnuite a temporizatorului —
-oricare dintre cele două mecanisme poate reactiva un model.
+incrementează contorul (și escaladează perioada de suspendare) pentru erorile produse în
+intervalul de escaladare. Această atenuare la succes se adaugă expirării obișnuite a temporizatorului —
+oricare dintre cele două căi poate reactiva un model.
 
 **Stare:** blocările sunt păstrate **în memorie** (`Map`-uri per proces cu
-`ModelLockoutEntry`, indexate după `provider:connectionId:model`), nu sunt persistate în
+`ModelLockoutEntry`, indexate după `provider:connectionId:model`, iar blocările cu domeniu exact după
+`provider:connectionId:exact:model`), fără a fi persistate în
 baza de date — se pierd la repornire. _Setările_ sunt persistate; _starea_ blocărilor
 active este efemeră.
 
@@ -609,11 +626,12 @@ a frecvenței grupată după IP reprezintă același semnal ca o cotă epuizată
 
 ## Depanare
 
+- Combinația ponderată răspunde cu `503 all_targets_cooling_down` (antetul `Retry-After` este setat, iar `diagnostics.excluded` enumeră fiecare țintă cu `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → grupul este configurat și conectat, însă fiecare țintă este exclusă de un temporizator de reziliență; avertismentul `[COMBO] Weighted selection: every target excluded before dispatch — …` indică motivele și secundele rămase. Un răspuns `404 no_executable_targets` de la aceeași combinație înseamnă că nu a fost implicat niciun temporizator de reziliență (nu există nimic de executat sau verificarea disponibilității a eșuat pentru fiecare cont). Funcționalitate integrată în `open-sse/services/combo/pinRecovery.ts` pe baza excluderilor colectate în `targetResolution.ts`.
 - Toate cheile unui furnizor sunt omise → verificați atât starea întrerupătorului de circuit, cât ȘI valorile `rateLimitedUntil`/`testStatus` ale fiecărei conexiuni.
-- Furnizor exclus permanent după fereastra de resetare → codul citește direct valoarea `state` în loc să utilizeze `getStatus()`/`canExecute()`.
-- O cheie eșuează, iar celelalte ar trebui să funcționeze → preferați perioada de așteptare a conexiunii în locul întrerupătorului de circuit.
-- Eșuează un singur model → preferați blocarea modelului în locul perioadei de așteptare a conexiunii.
-- Starea ar trebui să se recupereze automat, dar nu o face → verificați existența unui marcaj temporal din viitor și a unei căi de citire care reîmprospătează starea expirată. Stările permanente necesită modificări manuale.
+- Furnizor exclus permanent după fereastra de resetare → codul citește direct `state` în loc să utilizeze `getStatus()`/`canExecute()`.
+- O cheie eșuează, dar celelalte ar trebui să funcționeze → preferați perioada de așteptare a conexiunii în locul întrerupătorului de circuit.
+- Doar un model eșuează → preferați blocarea modelului în locul perioadei de așteptare a conexiunii.
+- Starea ar trebui să se restabilească automat, dar nu o face → verificați dacă există un marcaj temporal din viitor și o cale de citire care reîmprospătează starea expirată. Stările permanente necesită modificări manuale.
 
 ---
 

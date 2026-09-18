@@ -1616,21 +1616,21 @@ Endpoint សម្រាប់តែអ្នកគ្រប់គ្រង ដ�
 
 ## ការគ្រប់គ្រងឧបករណ៍ CLI
 
-គ្រប់គ្រងឧបករណ៍ CLI ដែលរួមបញ្ចូលជាមួយ OmniRoute (antigravity, chipotle, commandCode,
-devin-cli ជាដើម)។ សូមមើល [ឯកសារយោងអំពី Provider](./PROVIDER_REFERENCE.md) សម្រាប់បញ្ជីពេញលេញ។
+គ្រប់គ្រងឧបករណ៍ CLI ដែលរួមបញ្ចូលជាមួយ OmniRoute (antigravity, commandCode,
+devin-cli ជាដើម)។ សូមមើល [ឯកសារយោងអ្នកផ្តល់សេវា](./PROVIDER_REFERENCE.md) សម្រាប់បញ្ជីពេញលេញ។
 
-| វិធីសាស្ត្រ | Path                                    | ការពិពណ៌នា                                                                                                                                                              |
-| ----------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET         | `/api/cli-tools/all-statuses`           | ស្ថានភាពឧបករណ៍ CLI ទាំងអស់ (បានដំឡើង កំណែ និងពេលបានឃើញចុងក្រោយ)                                                                                                         |
-| GET         | `/api/cli-tools/status`                 | ព័ត៌មានលម្អិតអំពីស្ថានភាពរបស់ឧបករណ៍ CLI មួយ (`?tool=` query)                                                                                                            |
-| POST        | `/api/cli-tools/apply`                  | សរសេរ config ដែលបានបង្កើតរបស់ឧបករណ៍ (`dryRun` បង្ហាញជាមុន; `422` + `containerEphemeralTarget` នៅពេលដំណើរការក្នុង container; `migration` កត់សម្គាល់អំពី Codex YAML ចាស់) |
-| GET         | `/api/cli-tools/backups`                | រាយបញ្ជី backup នៃ configuration របស់ឧបករណ៍ CLI                                                                                                                         |
-| POST        | `/api/cli-tools/backups`                | បង្កើត backup នៃ configuration របស់ឧបករណ៍ CLI ទាំងអស់                                                                                                                   |
-| POST        | `/api/cli-tools/backups`                | ស្ដារឡើងវិញ៖ endpoint ដូចគ្នាដែលមាន `{tool, backupId}` ក្នុង body នឹងស្ដារ backup នោះ                                                                                   |
-| GET         | `/api/cli-tools/antigravity-mitm`       | ស្ថានភាព proxy Antigravity MITM (ឧបករណ៍ CLI "antigravity-mitm")                                                                                                         |
-| POST        | `/api/cli-tools/antigravity-mitm/alias` | កំណត់រចនាសម្ព័ន្ធ alias របស់ antigravity-mitm                                                                                                                           |
+| វិធីសាស្ត្រ | ផ្លូវ                                   | ការពិពណ៌នា                                                                                                                                                                              |
+| ----------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET         | `/api/cli-tools/all-statuses`           | ស្ថានភាពនៃឧបករណ៍ CLI ទាំងអស់ (បានដំឡើង កំណែ និងពេលបានឃើញចុងក្រោយ)                                                                                                                       |
+| GET         | `/api/cli-tools/status`                 | ព័ត៌មានលម្អិតអំពីស្ថានភាពសម្រាប់ឧបករណ៍ CLI មួយ (`?tool=` query)                                                                                                                         |
+| POST        | `/api/cli-tools/apply`                  | សរសេរការកំណត់រចនាសម្ព័ន្ធដែលបានបង្កើតរបស់ឧបករណ៍ (`dryRun` សម្រាប់មើលជាមុន; `422` + `containerEphemeralTarget` នៅពេលដំណើរការក្នុង container; `migration` កត់សម្គាល់អំពី Codex YAML ចាស់) |
+| GET         | `/api/cli-tools/backups`                | រាយបញ្ជីការបម្រុងទុកការកំណត់រចនាសម្ព័ន្ធឧបករណ៍ CLI                                                                                                                                      |
+| POST        | `/api/cli-tools/backups`                | បង្កើតការបម្រុងទុកការកំណត់រចនាសម្ព័ន្ធឧបករណ៍ CLI ទាំងអស់                                                                                                                                |
+| POST        | `/api/cli-tools/backups`                | ស្ដារឡើងវិញ៖ endpoint ដូចគ្នាជាមួយ `{tool, backupId}` នៅក្នុង body នឹងស្ដារការបម្រុងទុកនោះឡើងវិញ                                                                                        |
+| GET         | `/api/cli-tools/antigravity-mitm`       | ស្ថានភាព proxy MITM របស់ Antigravity (ឧបករណ៍ CLI "antigravity-mitm")                                                                                                                    |
+| POST        | `/api/cli-tools/antigravity-mitm/alias` | កំណត់រចនាសម្ព័ន្ធ alias របស់ antigravity-mitm                                                                                                                                           |
 
-**ការផ្ទៀងផ្ទាត់អត្តសញ្ញាណ:** តម្រូវឱ្យមាន management session។
+**ការផ្ទៀងផ្ទាត់អត្តសញ្ញាណ៖** ទាមទារ session គ្រប់គ្រង។
 
 ---
 

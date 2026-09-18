@@ -4,7 +4,7 @@
 
 ---
 
-> **Na kratko**: OmniRoute registrira 352 ID-jev ponudnikov, pri čemer je **152 vnosov v katalogu ponudnikov označenih z `hasFree`**. Strožji, revidirani katalog brezplačnih modelov zajema **34 ključev ponavljajočih se skladov / 443 vnosov** (436 aktivnih + 7 ukinjenih). Za večjo nadomestno zmogljivost povežite več primernih ponudnikov; še vedno veljajo vse kvote, pravila odobritve, pravilniki o zasebnosti in pogoji za plačljivo prekoračitev.
+> **Na kratko**: OmniRoute registrira 357 ID-jev ponudnikov, pri čemer je **152 vnosov v katalogu ponudnikov označenih z `hasFree`**. Strožji, revidirani katalog brezplačnih modelov zajema **35 ponavljajočih se ključev nabora / 482 vnosov** (475 aktivnih + 7 ukinjenih). Povežite več ustreznih ponudnikov za večjo nadomestno zmogljivost; še vedno veljajo vse kvote, pravila odobritve, pravilniki o zasebnosti in pogoji za plačljivo prekoračitev.
 
 ---
 
@@ -160,18 +160,18 @@ ponudnikovi kvoti ali pravilniku o dostopu.
 
 ## Izračun brezplačne ravni
 
-Aktualni katalog z odstranjevanjem podvojenih skupnih kvot trenutno navaja:
+Trenutni katalog z združenimi in dedupliciranimi viri poroča:
 
-| Metrika                                                                                  |                                         Trenutna revidirana vrednost | Razlaga                                                                                                                                                                                 |
-| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ponavljajoča se količinsko opredeljena kvota                                             |                                         **~1,47 mrd. žetonov/mesec** | Skupne kvote so štete enkrat; ponudniki brez omejitev niso vključeni v seštevek                                                                                                         |
-| Prvi mesec z dobroimetji ob registraciji                                                 |                                               **~2,07 mrd. žetonov** | Ponavljajoča se skupna količina skupaj z enkratnimi in ponavljajočimi se dobroimetji                                                                                                    |
-| Revidirani nabor brezplačnih modelov                                                     | **34 ključev ponavljajočih se skupnih kvot / 443 vnosov v katalogu** | 436 aktivnih + 7 ukinjenih; razlikuje se od kataloga 352 ponudnikov                                                                                                                     |
-| Zastopani ponudniki z brezplačno trajno uporabo brez ključev ali s ponavljajočo se kvoto |                                                               **52** | Edinstveni ponudniki v ponavljajočih se dnevnih/mesečnih kvotah, dobroimetjih, ponudbah brez omejitev in vrstah kataloga brez ključev; vrstice z omejitvami upravičenosti so izključene |
-| Vnosi v katalogu ponudnikov, označeni z `hasFree`                                        |                                                        **152 / 352** | Širši metapodatki ponudnikov; nimajo vsi količinsko opredeljive ponavljajoče se kvote                                                                                                   |
+| Metrika                                                                    |                                          Trenutna preverjena vrednost | Razlaga                                                                                                                                                                       |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ponavljajoča se količinsko opredeljena dodelitev                           |                                          **~1,62 mrd. žetonov/mesec** | Skupni viri so šteti enkrat; ponudniki brez omejitev niso vključeni v vsoto                                                                                                   |
+| Prvi mesec z dodelitvami ob registraciji                                   |                                                **~2,22 mrd. žetonov** | Ponavljajoči se skupni znesek ter enkratni in ponavljajoči se dobropisi                                                                                                       |
+| Preverjen inventar brezplačnih modelov                                     | **35 ključev ponavljajočih se skupnih virov / 482 vnosov v katalogu** | 475 aktivnih + 7 ukinjenih; ločeno od kataloga 357 ponudnikov                                                                                                                 |
+| Zastopani ponudniki, ki so ponavljajoče se/brez ključa brezplačni za vedno |                                                                **53** | Edinstveni ponudniki v ponavljajočih se dnevnih/mesečnih/dobropisnih/neomejenih vrstah kataloga in vrstah brez ključa; vrstice, omejene s pogoji upravičenosti, so izključene |
+| Vnosi v katalogu ponudnikov, označeni z `hasFree`                          |                                                         **152 / 357** | Širši metapodatki ponudnikov; vsi nimajo količinsko opredeljive ponavljajoče se kvote                                                                                         |
 
-Te vrednosti so izračunane iz `open-sse/config/freeModelCatalog.ts`; za odstranjevanje podvojenih skupnih kvot, oznake pogojev uporabe,
-ukinjene vnose in metodologijo dobroimetij ob registraciji glejte
+Te vrednosti so izračunane iz `open-sse/config/freeModelCatalog.ts`; za deduplikacijo
+skupnih virov, oznake ToS, ukinjene vnose in metodologijo dobropisov ob registraciji glejte
 [Referenco brezplačnih ravni](../reference/FREE_TIERS.md).
 
 ---

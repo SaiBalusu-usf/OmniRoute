@@ -165,20 +165,20 @@ Ana rubuta fayilolin rajistar kira (idan an kunna su) zuwa `${DATA_DIR}/call_log
 
 ---
 
-## Zurfafa Nazarin Muhimman Fayiloli
+## Zurfafa Cikin Muhimman Fayiloli
 
 ### chatCore.ts (layuka 5977)
 
-**Babban mai sarrafa buƙata**. Duk da girmansa, yana da tsari bayyananne:
+**Babban mai sarrafa buƙata**. Duk da girmansa, yana da tsari mai sauƙin fahimta:
 
 ```ts
-// Tsarin-kwaikwayo na chatCore.ts
+// Kwaikwayon tsarin chatCore.ts
 export async function handleChat(request: NextRequest) {
-  // 1. Tantancewa + CORS
+  // 1. Tabbatar da izini + CORS
   await authenticateRequest(request);
   applyCorsHeaders(response);
 
-  // 2. Tabbatar da ingancin jiki
+  // 2. Tabbatar da ingancin jikin buƙata
   const body = await parseRequestBody(request);
 
   // 3. Gano tsari + fassara
@@ -188,7 +188,7 @@ export async function handleChat(request: NextRequest) {
     body = translateRequest(body, sourceFormat, targetFormat);
   }
 
-  // 4. Tura combo
+  // 4. Zaɓin hanyar combo
   const targets = await resolveComboTargets(comboId, body);
   for (const target of targets) {
     try {
@@ -205,11 +205,11 @@ export async function handleChat(request: NextRequest) {
 }
 ```
 
-Duk da kasancewarsa babban aiki guda ɗaya, an tsara shi zuwa **sassan da ke da tsokaci** waɗanda suka yi daidai da tsarin matakai 5.
+Duk da kasancewarsa babban function guda ɗaya, an tsara shi zuwa **sassa masu tsokaci** waɗanda suka dace da tsarin matakai 5.
 
-### combo.ts (layukan lamba 4456)
+### combo.ts (4456 LOC)
 
-**Injin turawa** wanda ke warware combo zuwa jerin manufofi masu tsari.
+**Injin zaɓin hanya** wanda ke warware combo zuwa jerin manufofi da aka tsara.
 
 ```ts
 // services/combo.ts
@@ -226,97 +226,97 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
 }
 ```
 
-Yana goyon bayan **dabarun turawa 19** (duba `src/shared/constants/routingStrategies.ts`):
+Yana tallafa wa **dabarun zaɓin hanya guda 19** (duba `src/shared/constants/routingStrategies.ts`):
 
-| Dabara              | Halayya                                                                              |
-| ------------------- | ------------------------------------------------------------------------------------ |
-| `priority`          | Jerin da aka tsara bisa manufa ta farko                                              |
-| `weighted`          | Bisa yiwuwar da nauyin kowace manufa ya ƙayyade                                      |
-| `round-robin`       | Zagayawa cikin manufofi bisa tsari                                                   |
-| `context-relay`     | Miƙa mahalli tsakanin manufofi                                                       |
-| `fill-first`        | Cika ƙayyadadden kaso kafin matsawa zuwa na gaba                                     |
-| `p2c`               | Ƙarfin zaɓuɓɓuka biyu                                                                |
-| `random`            | Zaɓin bazuwar daidai                                                                 |
-| `least-used`        | Zaɓi wanda aka fi ƙarancin amfani da shi kwanan nan                                  |
-| `cost-optimized`    | Manufa mafi araha kuma lafiyayya da farko                                            |
-| `reset-aware`       | Yana la'akari da lokutan sake saitin mai bayarwa                                     |
-| `reset-window`      | Turawa bisa lokacin sake saiti                                                       |
-| `headroom`          | Wanda ya fi samun ragowar sararin ƙayyadadden kaso da farko                          |
-| `strict-random`     | Bazuwar gaske daidai (ba tare da auna inganci ba)                                    |
-| `auto`              | Yi amfani da ƙididdigar abubuwa 16 (`autoCombo/`)                                    |
-| `lkgp`              | Mai bayarwa na ƙarshe da aka sani yana aiki da kyau da farko                         |
-| `context-optimized` | Mafi dacewa da buƙatun dogon mahalli                                                 |
-| `fusion`            | Aika ga rukunin manufofi a lokaci guda, sannan a haɗa ta hanyar alkali (`fusion.ts`) |
+| Dabara              | Halayya                                                                                |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| `priority`          | Jerin da aka tsara bisa fara da manufa ta farko                                        |
+| `weighted`          | Zaɓi bisa yiwuwar da nauyin kowace manufa ya ƙayyade                                   |
+| `round-robin`       | Zagayawa cikin manufofi bi-da-bi                                                       |
+| `context-relay`     | Miƙa mahallin bayanai tsakanin manufofi                                                |
+| `fill-first`        | Cika ƙayyadadden kaso kafin matsawa zuwa na gaba                                       |
+| `p2c`               | Ƙarfin zaɓuɓɓuka biyu                                                                  |
+| `random`            | Zaɓin bazuwar da ya yi daidai                                                          |
+| `least-used`        | Zaɓi wanda aka fi ƙarancin amfani da shi kwanan nan                                    |
+| `cost-optimized`    | Fara da manufa mafi arha da ke aiki lafiya                                             |
+| `reset-aware`       | La'akari da lokutan sake saita mai samarwa                                             |
+| `reset-window`      | Zaɓin hanya bisa lokacin sake saiti                                                    |
+| `headroom`          | Fara da wanda ya fi samun ragowar sararin ƙayyadadden kaso                             |
+| `strict-random`     | Bazuwar gaske (ba tare da auna inganci ba)                                             |
+| `auto`              | Yi amfani da ƙididdigar abubuwa 16 (`autoCombo/`)                                      |
+| `lkgp`              | Fara da mai samarwa na ƙarshe da aka san yana aiki                                     |
+| `context-optimized` | Mafi dacewa da buƙatun mahalli masu tsawo                                              |
+| `fusion`            | Aika zuwa rukuni a lokaci guda, sannan a haɗa sakamakon ta hanyar alƙali (`fusion.ts`) |
 
-### base.ts (layukan lamba 1170)
+### base.ts (1170 LOC)
 
-**Mai aiwatarwa na abstract** wanda duk masu aiwatarwa 101 suke gajewa. Ya ƙunshi:
+**Mai aiwatarwa na abstract** wanda duk masu aiwatarwa guda 107 ke faɗaɗawa. Ya ƙunshi:
 
-- `buildUrl()` — gina URL na tsoho (ƙananan ajin suna maye gurbinsa don keɓancewa)
-- `buildHeaders()` — headers na tsoho (tantancewa, nau'in abun ciki)
-- `transformRequest()` — wucewa kai tsaye ta tsohuwa
-- `execute()` — babban zagayen HTTP mai sake gwadawa/jinkirin ƙaruwa/mai katsewa
+- `buildUrl()` — gina URL na asali (subclasses suna maye gurbinsa don keɓancewa)
+- `buildHeaders()` — headers na asali (auth, content-type)
+- `transformRequest()` — wucewa kai tsaye a matsayin tsoho
+- `execute()` — babban zagayen HTTP tare da sake gwadawa/jinkiri/breaker
 
 ```ts
 // open-sse/executors/default.ts
 export class DefaultExecutor extends BaseExecutor {
-  // Yana sarrafa duk masu bayarwa masu dacewa da OpenAI/Anthropic
-  // Masu bayarwa suna rajistar saituna (URL, tantancewa, headers) amma suna amfani da dabarar mai aiwatarwa guda ɗaya
+  // Yana sarrafa duk masu samarwa masu dacewa da OpenAI/Anthropic
+  // Masu samarwa suna rajistar saituna (URL, auth, headers) amma suna amfani da dabarar aiwatarwa guda
 }
 ```
 
-Halayen da suka keɓanta ga mai bayarwa (headers na tantancewa, URL na tushe, headers na siga) ana saita su ta wurin rajistar masu bayarwa, ba ta hanyar azuzuwan masu aiwatarwa daban-daban ba.
+Ana saita halayen da suka keɓanta ga mai samarwa (auth headers, base URL, version headers) ta hanyar rajistar masu samarwa, ba ta azuzuwan masu aiwatarwa daban-daban ba.
 
 ````
 
 ---
 
-## Sabis (modul 117)
+## Sabis (modula 117)
 
-Sabis su ne **modul masu mayar da hankali kan aiki guda tak** waɗanda masu sarrafawa ke haɗawa. Manyan rukunonin su ne:
+Sabis su ne **modula masu mayar da hankali kan manufa guda** waɗanda handlers ke haɗawa. Manyan rukunonin su ne:
 
-### Tsara Hanya & Haɗawa
+### Routing & Combo
 
-- `combo.ts` — wurin shigar buƙatun da aka tsara hanyarsu ta haɗawa
-- `services/autoCombo/` — ƙididdiga bisa abubuwa 16, dabarun tsara hanya ta atomatik guda 8
+- `combo.ts` — mashigar buƙatun da ake routing ta combo
+- `services/autoCombo/` — ƙididdigar abubuwa 16, dabarun auto routing guda 8
 - `wildcardRouter.ts` — yana daidaita hanyoyin wildcard (`gpt-*`)
-- `modelFamilyFallback.ts` — koma-baya tsakanin samfura na iyalin T5
+- `modelFamilyFallback.ts` — T5 fallback a cikin iyali ɗaya
 
-### Iyakance Yawan Buƙata & Kaso
+### Iyakance Sauri & Quota
 
-- `rateLimitManager.ts` — bokitin token ga kowane key+provider
+- `rateLimitManager.ts` — token bucket ga kowane key+provider
 - `usage.ts` — rikodin amfani
-- `quotaCache.ts` — hotunan halin kaso a cikin ƙwaƙwalwa
+- `quotaCache.ts` — hotunan quota na cikin ƙwaƙwalwa
 
-### Asusun & Token
+### Account & Token
 
 - `tokenRefresh.ts` — sabunta OAuth idan an samu 401
-- `accountFallback.ts` — sauyawa zuwa wani asusun madadin
-- `sessionManager.ts` — yanayin zaman tattaunawa mai matakai da yawa
+- `accountFallback.ts` — sauyawa zuwa wani account na madadin
+- `sessionManager.ts` — yanayin session mai zagaye da yawa
 
 ### Basira
 
 - `intentClassifier.ts` — rarraba manufar buƙata
-- `taskAwareRouter.ts` — tsara hanya bisa nau'in aiki
-- `thinkingBudget.ts` — ware token na tunani
-- `contextManager.ts` — saka mahallin tsara hanya
+- `taskAwareRouter.ts` — yin routing bisa nau'in aiki
+- `thinkingBudget.ts` — ware tokens na tunani
+- `contextManager.ts` — saka context na routing
 
 ### Juriya
 
-- `resilience.ts` — tsara sake-gwaji, jinkirin gwaji, da breaker
-- `emergencyFallback.ts` — koma-baya na ƙarshe
-- `modelDeprecation.ts` — tsara hanya ta atomatik zuwa samfuran da suka gaje su
+- `resilience.ts` — tsara retry, backoff, da breaker
+- `emergencyFallback.ts` — fallback na mafita ta ƙarshe
+- `modelDeprecation.ts` — yin auto-route zuwa samfuran da suka gaje su
 
 ### Yanayi
 
-- `signatureCache.ts` — cire maimaituwa bisa sa hannun buƙata
-- `volumeDetector.ts` — rage nauyin aiki
-- `contextHandoff.ts` — jere-jeren bayanan zama
+- `signatureCache.ts` — cire maimaitawa bisa signature na buƙata
+- `volumeDetector.ts` — rage nauyi
+- `contextHandoff.ts` — serialization na session
 
-### Matsewa
+### Matse Bayanai
 
-- `compression/` (ƙaramin kundin adireshi) — cikakken tsarin matsewa
-- fayiloli 39 da suka ƙunshi injuna, tarin ƙa'idoji, da adapters
+- `compression/` (ƙaramin kundin adireshi) — cikakken tsarin compression
+- Fayiloli 39 da suka ƙunshi engines, rule packs, da adapters
 
 ### Ƙwarewa
 
@@ -328,31 +328,31 @@ Sabis su ne **modul masu mayar da hankali kan aiki guda tak** waɗanda masu sarr
 
 ---
 
-## Masu Aiwatarwa (fayiloli 75+)
+## Executors (fayiloli 75+)
 
-Fayil guda ɗaya ga kowane mai samarwa. Dukkansu suna faɗaɗa `BaseExecutor` kuma suna sake ayyana abin da ya bambanta.
+Fayil guda ɗaya ga kowane provider. Dukkansu suna faɗaɗa `BaseExecutor` kuma suna override abin da ya bambanta.
 
-### Tsarukan da Aka Saba Amfani da Su
+### Tsarukan da Aka Fi Amfani da Su
 
-Ana tantance masu samarwa ta hanyar `getExecutor(providerId)`, wanda ke mayar da mai aiwatarwar da aka saita. Masu samarwa masu dacewa da OpenAI/Anthropic suna amfani da `DefaultExecutor` (`executors/default.ts`). Ana saita halayen da suka keɓanta ga mai samarwa (tushen URL, kanun tabbatar da izini, sigar API) a cikin `open-sse/config/providers/`, yayin da ake sarrafa sauye-sauyen jikin buƙata a cikin `open-sse/translator/`.
+Ana tantance providers ta hanyar `getExecutor(providerId)`, wanda ke mayar da executor da aka saita. Providers masu dacewa da OpenAI/Anthropic suna amfani da `DefaultExecutor` (`executors/default.ts`). Ana saita halayen da suka keɓanta ga provider (base URL, auth headers, API version) a cikin `open-sse/config/providers/`, yayin da ake sarrafa sauye-sauyen request body a cikin `open-sse/translator/`.
 
-Ana saita **URL na musamman** ta hanyar saitunan mai samarwa:
+Ana saita **Custom URL** ta hanyar saitin provider:
 
 ```ts
-// Saitin mai samarwa a cikin open-sse/config/providers/
+// Saitin provider a cikin open-sse/config/providers/
 export default {
   id: "together",
   baseURL: "https://api.together.xyz/v1/chat/completions",
 }
 ````
 
-Ana sarrafa **tabbatar da izini na musamman** ta hanyar saitunan tabbatar da izini na rajistar mai samarwa (API key, OAuth, bayanan martabar kanun bayanai).
+Ana sarrafa **Custom auth** ta hanyar saitin auth na registry ɗin provider (API key, OAuth, header profiles).
 
-Ana yi wa sauye-sauyen **jikin buƙata na musamman** (misali, yadda Anthropic ke ware `system` daga `messages`) rajista ga kowane mai samarwa a cikin `open-sse/translator/`.
+Ana rajistar sauye-sauyen **Custom request body** (misali, yadda Anthropic ke ware `system` daga `messages`) ga kowane provider a cikin `open-sse/translator/`.
 
 ````
 
-### Masana'antar Mai Aiwatarwa
+### Factory na Executor
 
 `executors/index.ts` yana fitar da `getExecutor(providerId)`:
 
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-Ana bi ta cikin `ExecutorRegistry` (`executors/registry.ts`) wajen tantancewa: ana bayyana kowane mai aiwatarwa na musamman a cikin ginannen jadawalin `executors/index.ts`, sannan a yi masa rajista ta hanyar `registerExecutor(alias, instance)` lokacin loda modul; `getExecutor()` yana duba rajistar kuma yana komawa zuwa `DefaultExecutor` da aka adana sakamakonsa ga duk wani mai samarwa da ba shi da shigarwa ta musamman. Cikakken daidaitawar alias → executor yana bayyana ta hanyar gwajin ma'auni `tests/unit/executor-map-golden.test.ts`.
+Tantancewa yana bi ta `ExecutorRegistry` (`executors/registry.ts`): ana bayyana kowane executor na musamman a cikin ginannen jadawalin `executors/index.ts`, sannan a yi masa rajista ta hanyar `registerExecutor(alias, instance)` lokacin load ɗin module; `getExecutor()` yana duba registry kuma yana komawa zuwa `DefaultExecutor` da aka memoize ga duk provider da ba shi da keɓaɓɓen entry. Ana bayyana cikakken taswirar alias → executor ta golden test `tests/unit/executor-map-golden.test.ts`.
 
 ---
 

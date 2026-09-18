@@ -4,7 +4,7 @@
 
 ---
 
-> **TL;DR**: Az OmniRoute 352 szolgáltatói azonosítót regisztrál, és a **szolgáltatói katalógus 152 bejegyzése van `hasFree` jelöléssel ellátva**. A szigorúbban auditált ingyenesmodell-katalógus **34 ismétlődő készletkulcsot / 443 bejegyzést** tartalmaz (436 aktív + 7 megszüntetett). A szélesebb tartalékkapacitás érdekében csatlakoztasson több megfelelő szolgáltatót; továbbra is minden kvóta, jóváhagyási szabály, adatvédelmi szabályzat és fizetős kerettúllépési feltétel érvényes.
+> **TL;DR**: Az OmniRoute 357 szolgáltatói azonosítót regisztrál, amelyek közül **152 szolgáltatókatalógus-bejegyzés `hasFree` jelölésű**. A szigorúbban auditált ingyenesmodell-katalógus **35 ismétlődő készletkulcsot / 482 bejegyzést** tartalmaz (475 aktív + 7 megszűnt). A szélesebb tartalékkapacitás érdekében csatlakoztasson több megfelelő szolgáltatót; továbbra is minden kvóta, jóváhagyási szabály, adatvédelmi irányelv és fizetős túlhasználati feltétel érvényes.
 
 ---
 
@@ -157,19 +157,20 @@ kvótájának vagy hozzáférési szabályzatának megkerülésére.
 
 ---
 
-## Ingyenes csomagok számításai
+## Az ingyenes csomagok számítása
 
-Az éles, készletenként deduplikált katalógus jelenleg a következőket jelenti:
+Az élő, készlet szerint deduplikált katalógus jelenleg a következőket jelzi:
 
 | Mérőszám                                                        |                               Jelenlegi auditált érték | Értelmezés                                                                                                                                  |
 | --------------------------------------------------------------- | -----------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ismétlődő, számszerűsített keret                                |                                 **~1.47B token/hónap** | A megosztott készletek egyszer számítanak; a korlátlan szolgáltatók nem szerepelnek az összegben                                            |
-| Első hónap regisztrációs keretekkel                             |                                       **~2.07B token** | Az ismétlődő összeg, valamint az egyszeri és ismétlődő kreditek                                                                             |
-| Auditált ingyenesmodell-készlet                                 | **34 ismétlődő készletkulcs / 443 katalógusbejegyzés** | 436 aktív + 7 megszüntetett; nem azonos a 352 szolgáltatót tartalmazó katalógussal                                                          |
-| Ismétlődő/kulcs nélküli, örökre ingyenes képviselt szolgáltatók |                                                 **52** | Egyedi szolgáltatók az ismétlődő napi/havi/kreditalapú/korlátlan és kulcs nélküli katalógustípusokban, a jogosultsághoz kötött sorok nélkül |
-| `hasFree` jelölésű szolgáltatói katalógusbejegyzések            |                                          **152 / 352** | Tágabb szolgáltatói metaadatok; nem mindegyik rendelkezik számszerűsíthető ismétlődő kvótával                                               |
+| Ismétlődő, számszerűsített keret                                |                                 **~1,62B token/hónap** | A megosztott készletek egyszer vannak számítva; a korlátlan szolgáltatók nem szerepelnek az összegben                                       |
+| Első hónap regisztrációs keretekkel                             |                                       **~2,22B token** | Ismétlődő összeg, valamint egyszeri és ismétlődő kreditek                                                                                   |
+| Auditált ingyenesmodell-készlet                                 | **35 ismétlődő készletkulcs / 482 katalógusbejegyzés** | 475 aktív + 7 megszüntetett; elkülönül a 357 szolgáltatót tartalmazó katalógustól                                                           |
+| Képviselt ismétlődő/kulcs nélküli, örökre ingyenes szolgáltatók |                                                 **53** | Egyedi szolgáltatók az ismétlődő napi/havi/kreditalapú/korlátlan és kulcs nélküli katalógustípusokban; a jogosultsághoz kötött sorok nélkül |
+| `hasFree` jelölésű szolgáltatói katalógusbejegyzések            |                                          **152 / 357** | Tágabb szolgáltatói metaadatok; nem mindegyik rendelkezik számszerűsíthető ismétlődő kvótával                                               |
 
-Ezek az értékek az `open-sse/config/freeModelCatalog.ts` fájlból származnak; a készletdeduplikációval, a felhasználási feltételekre vonatkozó jelölésekkel, a megszüntetett bejegyzésekkel és a regisztrációs kreditek módszertanával kapcsolatban lásd az
+Ezeket az értékeket az `open-sse/config/freeModelCatalog.ts` alapján számítjuk; a készletek deduplikálásával, az ÁSZF-jelölésekkel,
+a megszüntetett bejegyzésekkel és a regisztrációs kreditek módszertanával kapcsolatban lásd az
 [Ingyenes csomagok referenciáját](../reference/FREE_TIERS.md).
 
 ---

@@ -5,22 +5,22 @@
 ---
 
 > **Nguồn chính xác:** `src/lib/cloudAgent/` và `src/app/api/v1/agents/tasks/`
-> **Cập nhật lần cuối:** 2026-06-28 — v3.8.40 (làm mới frontmatter; 4 tác nhân, bao gồm cursor-cloud)
+> **Cập nhật lần cuối:** 2026-06-28 — v3.8.40 (làm mới frontmatter; 4 agent, bao gồm cursor-cloud)
 
-OmniRoute điều phối các tác nhân lập trình được lưu trữ trên đám mây của bên thứ ba (Codex Cloud, Cursor,
-Devin, Jules) dưới dạng các tác vụ chạy dài hạn. Mỗi tác nhân được bao bọc bởi một giao diện thống nhất để
-máy khách có thể gửi một lời nhắc + URL kho mã nguồn và nhận kết quả mà không cần xử lý
+OmniRoute điều phối các agent lập trình được lưu trữ trên đám mây của bên thứ ba (Codex Cloud, Cursor,
+Devin, Jules) dưới dạng các tác vụ chạy dài hạn. Mỗi agent được đóng gói phía sau một giao diện thống nhất để
+client có thể gửi prompt + URL kho mã nguồn và nhận kết quả mà không cần xử lý
 các API riêng của từng nhà cung cấp.
 
-Một tác vụ Cloud Agent **không phải** là một yêu cầu hoàn thành hội thoại thông thường. Đây là một
-đơn vị công việc bền vững, gồm nhiều bước, có thể mất từ vài phút đến vài giờ, có thể tạo ra một Pull Request làm
-sản phẩm đầu ra, đồng thời hỗ trợ các tin nhắn tiếp theo và (ở một số nhà cung cấp) các cổng phê duyệt kế hoạch.
+Tác vụ Cloud Agent **không phải** là một lượt hoàn thành trò chuyện thông thường. Đây là một
+đơn vị công việc bền vững, gồm nhiều bước, có thể mất từ vài phút đến vài giờ, có thể tạo ra Pull Request làm
+artifact và hỗ trợ các thông báo tiếp nối cũng như (ở một số nhà cung cấp) các bước phê duyệt kế hoạch.
 
 ![Vòng đời tác vụ Cloud Agent](../diagrams/exported/cloud-agent-flow.svg)
 
 > Nguồn: [diagrams/cloud-agent-flow.mmd](../diagrams/cloud-agent-flow.mmd)
 
-## Các tác nhân được hỗ trợ
+## Các agent được hỗ trợ
 
 | ID nhà cung cấp | Lớp                | Nguồn                                 | URL cơ sở thượng nguồn                  | Phê duyệt kế hoạch |
 | --------------- | ------------------ | ------------------------------------- | --------------------------------------- | ------------------ |
@@ -29,20 +29,20 @@ sản phẩm đầu ra, đồng thời hỗ trợ các tin nhắn tiếp theo v�
 | `codex-cloud`   | `CodexCloudAgent`  | `src/lib/cloudAgent/agents/codex.ts`  | `https://api.openai.com/v1/codex/cloud` | Không (tự động)    |
 | `cursor-cloud`  | `CursorCloudAgent` | `src/lib/cloudAgent/agents/cursor.ts` | `https://api.cursor.com/v0`             | Không (tự động)    |
 
-Sổ đăng ký: `src/lib/cloudAgent/registry.ts` — xuất `getAgent(providerId)`,
-`getAvailableAgents()` và `isCloudAgentProvider(providerId)`. Sổ đăng ký là một
+Registry: `src/lib/cloudAgent/registry.ts` — xuất `getAgent(providerId)`,
+`getAvailableAgents()` và `isCloudAgentProvider(providerId)`. Registry là một
 `Record<string, CloudAgentBase>` thuần túy trong bộ nhớ, được điền dữ liệu khi mô-đun được tải.
 
 ## Kiến trúc
 
 ```
-Máy khách (Bảng điều khiển / CLI / API)
+Client (Dashboard / CLI / API)
   → POST /api/v1/agents/tasks (yêu cầu xác thực quản lý)
     → xác thực CreateCloudAgentTaskSchema (Zod)
     → registry.getAgent(providerId)
     → getCloudAgentCredentials(providerId)
       └─ lấy từ getProviderConnections({ provider, isActive: true })
-         (apiKey trước, dự phòng bằng accessToken)
+         (ưu tiên apiKey, dự phòng bằng accessToken)
     → agent.createTask({ prompt, source, options }, credentials)
       └─ HTTP POST đến API của nhà cung cấp thượng nguồn
       └─ trả về CloudAgentTask với id nội bộ + externalId
@@ -53,17 +53,17 @@ Thăm dò (đồng bộ lười khi đọc):
     → getCloudAgentTaskById(id)
     → agent.getStatus(externalId, credentials)  // làm mới trạng thái + hoạt động
     → updateCloudAgentTask(...) với trạng thái, kết quả, completed_at mới
-    → trả về tác vụ đã tuần tự hóa
+    → trả về tác vụ đã được tuần tự hóa
 
 Tương tác:
-  POST /api/v1/agents/tasks/[id]  phần thân: { action: "approve" | "message" | "cancel" }
+  POST /api/v1/agents/tasks/[id]  body: { action: "approve" | "message" | "cancel" }
     → agent.approvePlan(externalId, credentials)        cho "approve"
     → agent.sendMessage(externalId, message, credentials) cho "message"
     → trạng thái chuyển thành "cancelled"               cho "cancel" (chỉ cục bộ)
 ```
 
-Quá trình đồng bộ là **lười**: trạng thái được làm mới từ hệ thống thượng nguồn sau mỗi yêu cầu `GET /tasks/[id]`.
-Không có trình thăm dò nền. Các bảng điều khiển cần trạng thái mới nên thăm dò điểm cuối GET
+Quá trình đồng bộ là **lười**: trạng thái được làm mới từ hệ thống thượng nguồn trong mỗi yêu cầu `GET /tasks/[id]`.
+Không có trình thăm dò chạy nền. Các dashboard cần trạng thái mới nhất nên thăm dò endpoint GET
 theo một khoảng thời gian hợp lý.
 
 ## Giao diện `CloudAgentBase`
@@ -110,24 +110,24 @@ export abstract class CloudAgentBase {
     c: AgentCredentials
   ): Promise<{ name: string; url: string; branch?: string }[]>;
 
-  protected mapStatus(raw: string): CloudAgentStatus; // chuỗi thô từ upstream → enum theo phương pháp heuristic
+  protected mapStatus(raw: string): CloudAgentStatus; // chuỗi ngược dòng theo phương pháp heuristic → enum
   protected generateTaskId(): string; // `task_<ts>_<rand>`
   protected generateActivityId(): string; // `act_<ts>_<rand>`
 }
 ```
 
-`CodexCloudAgent.approvePlan` chủ ý phát sinh ngoại lệ — Codex Cloud tự động lập kế hoạch và
+`CodexCloudAgent.approvePlan` chủ ý ném lỗi — Codex Cloud tự động lập kế hoạch và
 không có cổng phê duyệt. `CodexCloudAgent.listSources` trả về `[]`.
 
-`CursorCloudAgent` điều khiển Background / Cloud Agents của Cursor thông qua REST
-API chính thức (`api.cursor.com/v0`) bằng **khóa API của người dùng hoặc tài khoản dịch vụ** — giải pháp
+`CursorCloudAgent` điều khiển các Background / Cloud Agents của Cursor thông qua REST
+API chính thức (`api.cursor.com/v0`) bằng **khóa API của người dùng hoặc tài khoản dịch vụ** — phương án
 bên thứ nhất an toàn hơn so với việc tái sử dụng phiên OAuth của Cursor IDE (nhà cung cấp `cursor`,
-vốn đi kèm cảnh báo về nguy cơ bị cấm). Đây là một bộ điều hợp REST thuần túy (không có phần phụ thuộc gốc
-`@cursor/sdk`). `approvePlan` phát sinh ngoại lệ (các agent Cursor hoạt động tự động); `listSources` liệt kê
-các kho lưu trữ mà khóa có thể truy cập. Cursor trả về các enum trạng thái viết HOA
+có kèm cảnh báo về nguy cơ bị cấm). Đây là một bộ điều hợp REST thuần túy (không có phần phụ thuộc gốc
+`@cursor/sdk`). `approvePlan` ném lỗi (các agent Cursor chạy tự động); `listSources` liệt kê
+các kho lưu trữ mà khóa có thể truy cập. Cursor trả về các enum trạng thái viết hoa
 (`CREATING`/`RUNNING`/`FINISHED`/`ERROR`), được ánh xạ rõ ràng sang
-`CloudAgentStatus` dùng chung. `baseUrl` có thể được ghi đè theo từng thông tin xác thực để phiên bản/đường dẫn API có thể
-được sửa mà không cần thay đổi mã nguồn.
+`CloudAgentStatus` dùng chung. `baseUrl` có thể được ghi đè theo từng thông tin xác thực để phiên bản/đường dẫn API
+có thể được sửa mà không cần thay đổi mã.
 
 ## Các kiểu miền
 
@@ -170,7 +170,7 @@ export interface CloudAgentActivity {
 export interface CloudAgentTask {
   id: string; // id nội bộ `task_...`
   providerId: "jules" | "devin" | "codex-cloud" | "cursor-cloud";
-  externalId?: string; // id của nhà cung cấp upstream
+  externalId?: string; // id của nhà cung cấp ngược dòng
   status: CloudAgentStatus;
   prompt: string; // 1..10000 ký tự
   source: CloudAgentSource;
@@ -195,7 +195,7 @@ xuất cùng với các kiểu và được các trình xử lý tuyến sử d�
 
 Nguồn: `src/lib/cloudAgent/db.ts` — bảng được tạo theo cơ chế lazy thông qua
 `createCloudAgentTaskTable()` (cũng được gọi từ `src/lib/cloudAgent/index.ts` khi
-import mô-đun).
+nhập mô-đun).
 
 ```sql
 CREATE TABLE IF NOT EXISTS cloud_agent_tasks (
@@ -218,27 +218,27 @@ CREATE INDEX IF NOT EXISTS idx_cloud_agent_tasks_status   ON cloud_agent_tasks(s
 CREATE INDEX IF NOT EXISTS idx_cloud_agent_tasks_created  ON cloud_agent_tasks(created_at DESC);
 ```
 
-`updateCloudAgentTask` áp dụng một **danh sách cho phép đối với các cột** để ngăn chặn SQL injection:
+`updateCloudAgentTask` áp dụng **danh sách cho phép của các cột** để ngăn chặn SQL injection:
 `status`, `prompt`, `source`, `options`, `result`, `activities`, `error`,
-`completed_at`. Mọi khóa khác trong bản cập nhật từng phần đều bị loại bỏ mà không có thông báo.
+`completed_at`. Mọi khóa khác trong bản cập nhật một phần đều bị loại bỏ mà không có thông báo.
 
 ## REST API — Vòng đời tác vụ
 
 **Xác thực:** Tất cả endpoint `/api/v1/agents/tasks*` đều yêu cầu **xác thực quản trị**
 (`requireCloudAgentManagementAuth` bao bọc `requireManagementAuth` từ
-`src/lib/api/requireManagementAuth`). Yêu cầu này được thực thi kể từ commit `588a0333`
-(_"fix(auth): yêu cầu xác thực quản trị cho các API agent và cooldown"_).
+`src/lib/api/requireManagementAuth`). Yêu cầu này được thực thi sau commit `588a0333`
+(_"fix(auth): yêu cầu xác thực quản trị cho API agent và cooldown"_).
 
-| Phương thức | Đường dẫn                     | Mục đích                                                     |
-| ----------- | ----------------------------- | ------------------------------------------------------------ |
-| OPTIONS     | `/api/v1/agents/tasks`        | Kiểm tra trước CORS                                          |
-| GET         | `/api/v1/agents/tasks`        | Liệt kê tác vụ (bộ lọc: `provider`, `status`, `limit≤500`)   |
-| POST        | `/api/v1/agents/tasks`        | Tạo tác vụ (gửi đến upstream + lưu trữ)                      |
-| DELETE      | `/api/v1/agents/tasks?id=...` | Xóa tác vụ theo query id (**không** hủy tác vụ ở upstream)   |
-| OPTIONS     | `/api/v1/agents/tasks/[id]`   | Kiểm tra trước CORS                                          |
-| GET         | `/api/v1/agents/tasks/[id]`   | Đọc tác vụ + đồng bộ trạng thái từ upstream theo cơ chế lazy |
-| POST        | `/api/v1/agents/tasks/[id]`   | Hành động: `approve` / `message` / `cancel`                  |
-| DELETE      | `/api/v1/agents/tasks/[id]`   | Xóa tác vụ theo path id                                      |
+| Phương thức | Đường dẫn                     | Mục đích                                                   |
+| ----------- | ----------------------------- | ---------------------------------------------------------- |
+| OPTIONS     | `/api/v1/agents/tasks`        | Kiểm tra trước CORS                                        |
+| GET         | `/api/v1/agents/tasks`        | Liệt kê tác vụ (bộ lọc: `provider`, `status`, `limit≤500`) |
+| POST        | `/api/v1/agents/tasks`        | Tạo tác vụ (gửi đến dịch vụ thượng nguồn + lưu trữ)        |
+| DELETE      | `/api/v1/agents/tasks?id=...` | Xóa tác vụ theo query id (**không** hủy ở thượng nguồn)    |
+| OPTIONS     | `/api/v1/agents/tasks/[id]`   | Kiểm tra trước CORS                                        |
+| GET         | `/api/v1/agents/tasks/[id]`   | Đọc tác vụ + đồng bộ lazy trạng thái từ thượng nguồn       |
+| POST        | `/api/v1/agents/tasks/[id]`   | Hành động: `approve` / `message` / `cancel`                |
+| DELETE      | `/api/v1/agents/tasks/[id]`   | Xóa tác vụ theo path id                                    |
 
 ### Tạo tác vụ
 
@@ -248,7 +248,7 @@ curl -X POST http://localhost:20128/api/v1/agents/tasks \
   -H "Content-Type: application/json" \
   -d '{
     "providerId": "devin",
-    "prompt": "Fix the bug in src/foo.ts where the parser returns null",
+    "prompt": "Sửa lỗi trong src/foo.ts khiến trình phân tích cú pháp trả về null",
     "source": {
       "repoName": "user/repo",
       "repoUrl": "https://github.com/user/repo",
@@ -291,30 +291,30 @@ curl -X POST http://localhost:20128/api/v1/agents/tasks/<id> \
 
 ```bash
 curl -X POST http://localhost:20128/api/v1/agents/tasks/<id> \
-  -d '{"action":"message","message":"Also add a unit test for the parser"}'
+  -d '{"action":"message","message":"Đồng thời thêm một unit test cho trình phân tích cú pháp"}'
 ```
 
-### Hủy (chỉ thay đổi trạng thái cục bộ)
+### Hủy (chỉ áp dụng cho trạng thái cục bộ)
 
 ```bash
 curl -X POST http://localhost:20128/api/v1/agents/tasks/<id> \
   -d '{"action":"cancel"}'
 ```
 
-`cancel` chuyển `status` thành `"cancelled"` trong cơ sở dữ liệu cục bộ nhưng **không** gọi
-nhà cung cấp upstream — `CloudAgentBase` không có abort RPC. Để dừng việc tính phí
-ở upstream, hãy chấm dứt tác vụ trong bảng điều khiển riêng của nhà cung cấp.
+`cancel` chuyển `status` thành `"cancelled"` trong DB cục bộ nhưng **không** gọi
+nhà cung cấp thượng nguồn — không có RPC hủy bỏ trong `CloudAgentBase`. Để dừng tính phí
+ở thượng nguồn, hãy chấm dứt tác vụ trong bảng điều khiển riêng của nhà cung cấp.
 
 ## REST API — Hạ tầng Nhà cung cấp Đám mây
 
-Các endpoint phụ trợ trong `src/app/api/cloud/` được các client từ xa
-(CLI, ứng dụng Electron hoặc các worker đồng bộ) sử dụng để đọc metadata kết nối
-của nhà cung cấp và phân giải bí danh mô hình. Chúng được xác thực bằng **API key thông thường**
+Các endpoint phụ trợ này trong `src/app/api/cloud/` được các máy khách từ xa
+(CLI, ứng dụng Electron hoặc các worker đồng bộ) sử dụng để đọc siêu dữ liệu kết nối của nhà cung cấp
+và phân giải bí danh mô hình. Chúng được xác thực bằng **API key thông thường**
 (thông qua `validateApiKey`), không phải cơ chế xác thực quản trị được các endpoint tác vụ sử dụng.
 
 | Phương thức | Đường dẫn                       | Mục đích                                                               |
 | ----------- | ------------------------------- | ---------------------------------------------------------------------- |
-| POST        | `/api/cloud/auth`               | Xác thực API key, trả về metadata kết nối đã che + các bí danh mô hình |
+| POST        | `/api/cloud/auth`               | Xác thực API key, trả về siêu dữ liệu kết nối đã che + bí danh mô hình |
 | PUT         | `/api/cloud/credentials/update` | Làm mới `accessToken` / `refreshToken` / `expiresAt`                   |
 | POST        | `/api/cloud/model/resolve`      | Phân giải bí danh mô hình thành `{ provider, model }`                  |
 | GET         | `/api/cloud/models/alias`       | Liệt kê tất cả bí danh mô hình                                         |
@@ -329,44 +329,44 @@ trả về `hasApiKey`, `hasAccessToken`, `hasRefreshToken` và bản xem trư�
 `getCloudAgentCredentials(providerId)` trong `src/lib/cloudAgent/api.ts`:
 
 1. Tải các kết nối nhà cung cấp đang hoạt động thông qua `getProviderConnections({ provider: providerId, isActive: true })`.
-2. Với mỗi kết nối, ưu tiên `apiKey` (đã loại bỏ khoảng trắng thừa). Nếu không có, dùng `accessToken`.
-3. Trả về token không rỗng đầu tiên dưới dạng `{ apiKey: token }`.
-4. Trả về `null` nếu không tìm thấy token có thể sử dụng — API phản hồi `400` với
-   `"Không có thông tin xác thực đang hoạt động nào được cấu hình cho nhà cung cấp cloud agent: <id>"`.
+2. Với mỗi kết nối, ưu tiên `apiKey` (đã loại bỏ khoảng trắng thừa). Nếu không có thì dùng `accessToken`.
+3. Trả về token không rỗng đầu tiên được bao bọc dưới dạng `{ apiKey: token }`.
+4. Trả về `null` nếu không tìm thấy token khả dụng — API phản hồi `400` với
+   `"Không có thông tin xác thực đang hoạt động nào được cấu hình cho nhà cung cấp tác tử đám mây: <id>"`.
 
-Điều này có nghĩa là Cloud Agents sử dụng lại cùng bảng Provider Connection như các nhà cung cấp LLM
+Điều này có nghĩa là Cloud Agents dùng lại cùng bảng Provider Connection như các nhà cung cấp LLM
 thông thường. Để bật Jules, hãy tạo một kết nối đang hoạt động với `provider: "jules"`
 và `apiKey` đã được điền.
 
 ## Bảng điều khiển
 
-Nguồn: `src/app/(dashboard)/dashboard/cloud-agents/page.tsx`
+Mã nguồn: `src/app/(dashboard)/dashboard/cloud-agents/page.tsx`
 
 Một trang React `"use client"` có chức năng:
 
 - Liệt kê các tác vụ (được thăm dò qua `GET /api/v1/agents/tasks`).
-- Gửi tác vụ mới qua biểu mẫu ánh xạ tới `CreateCloudAgentTaskSchema`.
+- Gửi tác vụ mới thông qua biểu mẫu ánh xạ tới `CreateCloudAgentTaskSchema`.
 - Hiển thị huy hiệu trạng thái (`queued`, `running`, `awaiting_approval`, `completed`,
   `failed`, `cancelled`) và kết xuất dòng thời gian `activities[]`.
 - Hiển thị `result.prUrl` / `commitMessage` / `summary` khi `status === "completed"`.
 
 ## Tích hợp với A2A
 
-Cloud Agents có thể được cung cấp dưới dạng các kỹ năng A2A bằng cách đăng ký một kỹ năng A2A ủy quyền
-trình xử lý `tasks/send` của nó cho `getAgent(...).createTask(...)` và chuyển đổi các sự kiện trạng thái
-tác vụ A2A sang giao thức JSON-RPC 2.0. Xem [A2A-SERVER.md](./A2A-SERVER.md).
+Cloud Agents có thể được cung cấp dưới dạng các kỹ năng A2A bằng cách đăng ký một kỹ năng A2A để ủy quyền
+trình xử lý `tasks/send` của nó cho `getAgent(...).createTask(...)` và chuyển đổi các sự kiện trạng thái tác vụ A2A
+sang giao thức JSON-RPC 2.0. Xem [A2A-SERVER.md](./A2A-SERVER.md).
 
-## Thêm một Cloud Agent Mới
+## Thêm Cloud Agent Mới
 
 1. Tạo `src/lib/cloudAgent/agents/<name>.ts` mở rộng `CloudAgentBase`.
 2. Triển khai `createTask`, `getStatus`, `approvePlan` (hoặc ném lỗi nếu không áp dụng),
    `sendMessage`, `listSources`. Sử dụng `this.mapStatus(...)` để chuẩn hóa trạng thái.
-3. Đăng ký trong `src/lib/cloudAgent/registry.ts` bằng một `providerId` ổn định.
-4. Mở rộng kiểu hợp literal `providerId` trong `src/lib/cloudAgent/types.ts`
+3. Đăng ký trong `src/lib/cloudAgent/registry.ts` với một `providerId` ổn định.
+4. Mở rộng hợp kiểu literal `providerId` trong `src/lib/cloudAgent/types.ts`
    (`CloudAgentTask.providerId` và `CreateCloudAgentTaskSchema`).
-5. Thêm nhà cung cấp vào `src/shared/constants/providers.ts` nếu cần một bản ghi kết nối.
+5. Thêm nhà cung cấp vào `src/shared/constants/providers.ts` nếu cần bản ghi kết nối.
    Các nhà cung cấp dựa trên OAuth cũng cần `src/lib/oauth/providers/`.
-6. Thêm các bài kiểm thử trong `tests/unit/cloud-agent-*.test.ts`.
+6. Thêm kiểm thử trong `tests/unit/cloud-agent-*.test.ts`.
 7. Cập nhật tài liệu này và hằng số `CLOUD_AGENTS` của bảng điều khiển.
 
 ## Cấu hình
@@ -377,7 +377,7 @@ tác vụ A2A sang giao thức JSON-RPC 2.0. Xem [A2A-SERVER.md](./A2A-SERVER.md
 | `JWT_SECRET`     | Bắt buộc để xác thực quản trị trên các endpoint tác vụ                 |
 | `API_KEY_SECRET` | Bắt buộc để mã hóa thông tin xác thực kết nối nhà cung cấp khi lưu trữ |
 
-Hiện không có biến môi trường nào dành riêng cho Cloud-Agent — mọi thông tin bí mật đều nằm trong bảng
+Hiện tại không có biến môi trường dành riêng cho Cloud-Agent — mọi khóa bí mật đều nằm trong bảng
 `provider_connections`.
 
 ## Xem thêm

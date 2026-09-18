@@ -1610,21 +1610,21 @@ Ebe njedebe ndị naanị onye nchịkwa nwere ike iji maka njikwa ọrụ.
 
 ## Njikwa Ngwaọrụ CLI
 
-Jikwaa ngwaọrụ CLI ndị na-ejikọta na OmniRoute (antigravity, chipotle, commandCode,
-devin-cli, wdg.). Lee [Ntụaka Onye Na-eweta](./PROVIDER_REFERENCE.md) maka ndepụta zuru ezu.
+Jikwaa ngwaọrụ CLI ndị na-arụkọ ọrụ na OmniRoute (antigravity, commandCode,
+devin-cli, wdg.). Hụ [Ntụaka Ndị Na-eweta Ọrụ](./PROVIDER_REFERENCE.md) maka ndepụta zuru ezu.
 
 | Usoro | Ụzọ                                     | Nkọwa                                                                                                                                                                 |
 | ----- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GET   | `/api/cli-tools/all-statuses`           | Ọnọdụ ngwaọrụ CLI niile (arụnyere, ụdị, oge ikpeazụ a hụrụ ya)                                                                                                        |
 | GET   | `/api/cli-tools/status`                 | Nkọwa ọnọdụ maka otu ngwaọrụ CLI (ajụjụ `?tool=`)                                                                                                                     |
-| POST  | `/api/cli-tools/apply`                  | Dee config e mepụtara maka ngwaọrụ (`dryRun` na-egosi ihe ga-apụta; `422` + `containerEphemeralTarget` mgbe ọ nọ na container; `migration` na-akọwa Codex YAML ochie) |
-| GET   | `/api/cli-tools/backups`                | Depụta nkwado ndabere config ngwaọrụ CLI                                                                                                                              |
-| POST  | `/api/cli-tools/backups`                | Mepụta nkwado ndabere nke config ngwaọrụ CLI niile                                                                                                                    |
-| POST  | `/api/cli-tools/backups`                | Weghachite: otu ebe njedebe ahụ nwere `{tool, backupId}` n'ahụ na-eweghachite nkwado ndabere ahụ                                                                      |
-| GET   | `/api/cli-tools/antigravity-mitm`       | Ọnọdụ proxy Antigravity MITM (ngwaọrụ CLI "antigravity-mitm")                                                                                                         |
-| POST  | `/api/cli-tools/antigravity-mitm/alias` | Hazie aha nnọchi antigravity-mitm                                                                                                                                     |
+| POST  | `/api/cli-tools/apply`                  | Dee nhazi emepụtara nke ngwaọrụ (`dryRun` na-egosi ihe ga-apụta; `422` + `containerEphemeralTarget` mgbe ọ dị n'ime container; `migration` na-akọwa Codex YAML ochie) |
+| GET   | `/api/cli-tools/backups`                | Depụta ndabere nhazi ngwaọrụ CLI                                                                                                                                      |
+| POST  | `/api/cli-tools/backups`                | Mepụta ndabere nke nhazi ngwaọrụ CLI niile                                                                                                                            |
+| POST  | `/api/cli-tools/backups`                | Weghachite: otu endpoint ahụ nwere `{tool, backupId}` n'ime body na-eweghachite ndabere ahụ                                                                           |
+| GET   | `/api/cli-tools/antigravity-mitm`       | Ọnọdụ proxy MITM nke Antigravity (ngwaọrụ CLI "antigravity-mitm")                                                                                                     |
+| POST  | `/api/cli-tools/antigravity-mitm/alias` | Hazie alias nke antigravity-mitm                                                                                                                                      |
 
-**Nyocha ikike:** Chọrọ nnọkọ njikwa.
+**Nyocha ikike:** Chọrọ session njikwa.
 
 ---
 

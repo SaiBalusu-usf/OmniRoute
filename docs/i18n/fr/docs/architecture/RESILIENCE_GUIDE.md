@@ -67,39 +67,39 @@ le délai exponentiel `minRetryCooldownMs → maxRetryCooldownMs`. Surcharges :
 `OMNIROUTE_PROVIDER_BREAKER_{OAUTH,API_KEY}_{FAILURE_THRESHOLD,FAILURE_WINDOW_MS,COOLDOWN_MS}`.
 Protection contre les régressions : `tests/unit/provider-cooldown-window-gate.test.ts`.
 
-## 2. Délai de récupération de connexion
+## 2. Période de récupération de connexion
 
-**Portée :** une seule connexion/un seul compte/une seule clé de fournisseur.
+**Portée :** connexion/compte/clé d’un seul fournisseur.
 
-**Objectif :** ignorer une clé défaillante tout en laissant les autres connexions du même fournisseur continuer à traiter les requêtes.
+**Objectif :** ignorer une clé défaillante tout en permettant aux autres connexions du même fournisseur de continuer à traiter les requêtes.
 
 **Implémentation :**
 
 - Marquage comme indisponible : `src/sse/services/auth.ts::markAccountUnavailable()`
 - Sélection : `getProviderCredentials*` dans le même fichier
-- Calcul du délai de récupération : `open-sse/services/accountFallback.ts::checkFallbackError()`
+- Calcul de la période de récupération : `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Paramètres : `src/lib/resilience/settings.ts`
 
 **Champs par connexion :**
 
-- `rateLimitedUntil` — horodatage jusqu’à l’expiration du délai de récupération
+- `rateLimitedUntil` — horodatage jusqu’à l’expiration de la période de récupération
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
 - `backoffLevel` — compteur de temporisation exponentielle
 
-**Délais de récupération par défaut :**
+**Périodes de récupération par défaut :**
 
 - Base OAuth : 5 s
 - Base pour les clés API : 3 s
-- Erreur 429 pour une clé API : privilégie les en-têtes en amont `Retry-After`/de réinitialisation ou un texte de réinitialisation analysable
+- Erreur 429 pour une clé API : privilégie les en-têtes `Retry-After`/de réinitialisation en amont ou un texte de réinitialisation analysable
 - Temporisation : `baseCooldownMs * 2 ** failureIndex`
 
-**Protection contre les afflux simultanés :** empêche les échecs simultanés de prolonger excessivement le délai de récupération ou d’incrémenter deux fois `backoffLevel`.
+**Protection contre les effets de troupeau :** empêche les échecs simultanés de prolonger excessivement la période de récupération ou d’incrémenter deux fois `backoffLevel`.
 
-**États terminaux (PAS des délais de récupération) :**
+**États terminaux (PAS des périodes de récupération) :**
 
-- `banned` — défini par la détection de mots-clés de bannissement/de bannissement de compte (voir [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (passe à l’état terminal après un nombre limité de nouvelles tentatives — `EXPIRED_RETRY_MAX = 3` avec temporisation exponentielle — afin que les erreurs OAuth transitoires puissent se résoudre d’elles-mêmes avant la désactivation définitive du compte)
+- `banned` — défini par la détection de mots-clés de bannissement / de bannissement de compte (voir [BAN_DETECTION](../security/BAN_DETECTION.md)), ainsi que par trois refus consécutifs en amont par requête (`request_rejected`, par ex. l’erreur OAuth Anthropic 403 « Request not allowed » — `open-sse/services/requestRejectedStreak.ts`) ; un seul refus place uniquement la connexion en période de récupération
+- `expired` (passe à l’état terminal après un nombre limité de nouvelles tentatives — `EXPIRED_RETRY_MAX = 3` avec temporisation exponentielle — afin que les erreurs OAuth transitoires puissent se résoudre automatiquement avant la désactivation définitive du compte)
 - `credits_exhausted`
 
 Ces états persistent jusqu’à ce que les identifiants changent ou qu’un opérateur les réinitialise. Ne remplacez pas les états terminaux par un état de récupération transitoire.
@@ -108,38 +108,38 @@ Ces états persistent jusqu’à ce que les identifiants changent ou qu’un op�
 
 ### Affinité de session (#7274)
 
-**Portée :** une session cliente (`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session` header) épinglée à une connexion, pour **n’importe quel** fournisseur.
+**Portée :** une session cliente (en-tête `X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`) épinglée à une connexion, pour **n’importe quel** fournisseur.
 
-**Objectif :** maintenir un agent multitour (Claude Code, aider, agents personnalisés) sur le même compte d’une requête à l’autre, afin de réduire la perte de contexte entre comptes et les erreurs 429 répétées lors des démarrages à froid chez les fournisseurs dont l’état de session est propre à chaque compte.
+**Objectif :** maintenir un agent multitour (Claude Code, aider, agents personnalisés) sur le même compte d’une requête à l’autre, afin de réduire la perte de contexte entre comptes et les erreurs 429 répétées de démarrage à froid chez les fournisseurs dont l’état de session est propre à chaque compte.
 
 **Implémentation :**
 
-- Résolution du TTL : `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
+- Résolution de la durée de vie : `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Sélection/création de l’épinglage : `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
 - Extraction de l’en-tête (générique, tout fournisseur) : `src/sse/services/auth.ts::extractSessionAffinityKey()`
 - Table d’épinglage persistante : `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Paramètre : `sessionAffinityTtlMs` (TTL global en ms, `0` le désactive) — `src/lib/db/settings.ts`. Renommé depuis le paramètre propre à Codex `codexSessionAffinityTtlMs` par la migration `124_generic_session_affinity_ttl.sql`, qui reporte tout TTL Codex précédemment configuré comme nouvelle valeur par défaut.
+- Paramètre : `sessionAffinityTtlMs` (durée de vie globale en ms, `0` désactive la fonctionnalité) — `src/lib/db/settings.ts`. Renommé depuis le paramètre propre à Codex `codexSessionAffinityTtlMs` par la migration `124_generic_session_affinity_ttl.sql`, qui reprend toute durée de vie Codex précédemment configurée comme nouvelle valeur par défaut.
 
-Avant #7274, `resolveSessionAffinityTtlMs()` renvoyait immédiatement `0` pour tous les fournisseurs sauf `codex`. Le paramètre TTL (et les en-têtes de session) n’avait donc aucun effet ailleurs, alors même que le mécanisme d’épinglage et l’extraction des en-têtes étaient déjà indépendants du fournisseur. Le correctif a supprimé ce retour anticipé ; le TTL s’applique désormais uniformément à tous les fournisseurs dès qu’il est défini globalement à une valeur supérieure à `0`.
+Avant #7274, `resolveSessionAffinityTtlMs()` renvoyait immédiatement `0` pour tous les fournisseurs sauf `codex`. Le paramètre de durée de vie (et les en-têtes de session) n’avait donc aucun effet ailleurs, même si le mécanisme d’épinglage et l’extraction des en-têtes étaient déjà indépendants du fournisseur. Le correctif a supprimé ce retour anticipé ; la durée de vie s’applique désormais uniformément à tous les fournisseurs dès qu’elle est définie globalement à une valeur supérieure à `0`.
 
-Les trois en-têtes d’affinité de session ne sont jamais transmis en amont — les exécuteurs construisent leurs propres en-têtes en amont à partir de zéro au lieu de transmettre les en-têtes du client ; ils restent donc uniquement des identifiants de corrélation internes.
+Les trois en-têtes d’affinité de session ne sont jamais transmis en amont — les exécuteurs construisent leurs propres en-têtes en amont de zéro au lieu de transmettre les en-têtes du client, de sorte qu’ils restent uniquement des identifiants de corrélation internes.
 
 ### Baux exclusifs de connexion pour les sessions gérées
 
 **Portée :** un client/une session HTTP géré actif possède une connexion OmniRoute éligible.
 
-**Objectif :** fournir une propriété exclusive et durable de la connexion aux clients qui ont besoin d’une barrière de routage stricte entre les requêtes. Ce mécanisme diffère de l’affinité de session, qui constitue une préférence souple de continuité : un bail exclusif conserve l’état du cycle de vie dans SQLite, impose l’unicité globale du propriétaire actif et de la connexion active, et rejette une génération obsolète avant l’envoi au fournisseur.
+**Objectif :** fournir aux clients qui ont besoin d’une barrière de routage stricte entre les requêtes une propriété exclusive et durable de la connexion. Cela diffère de l’affinité de session, qui constitue une préférence souple de continuité : un bail exclusif conserve son état de cycle de vie dans SQLite, impose l’unicité globale du propriétaire actif et de la connexion active, et rejette une génération obsolète avant l’envoi au fournisseur.
 
-Cette fonctionnalité doit être activée explicitement pour chaque clé API. Une clé gérée doit disposer de la portée `lease:exclusive` et d’une liste `allowedConnections` explicitement non vide. Tout client HTTP peut utiliser le point de terminaison du cycle de vie ; aucun nom de client, agent utilisateur, fournisseur, méthode OAuth ou modèle n’est requis. Le bail porte sur une connexion, et non sur un modèle : un changement de modèle conserve donc la liaison tant que la connexion reste normalement éligible. Les règles habituelles relatives au modèle, au quota, à l’état de santé, au délai de récupération et à la liste d’autorisation restent prépondérantes et peuvent faire passer la même génération à une autre connexion libre et éligible.
+Cette fonctionnalité est activée explicitement pour chaque clé API. Une clé gérée doit disposer de la portée `lease:exclusive` et d’une liste `allowedConnections` explicite et non vide. Tout client HTTP peut utiliser le point de terminaison de cycle de vie ; aucun nom de client, agent utilisateur, fournisseur, méthode OAuth ou modèle n’est requis. Le bail porte sur une connexion, et non sur un modèle ; un changement de modèle conserve donc la liaison tant que la connexion reste normalement éligible. Les règles habituelles relatives au modèle, au quota, à l’intégrité, à la période de récupération et à la liste d’autorisation restent prioritaires et peuvent faire basculer la même génération vers une autre connexion libre et éligible.
 
-Le cycle de vie utilise `POST /api/v1/session-leases` avec les actions JSON `acquire`, `renew` et `release`. Les requêtes d’inférence gérées présentent la valeur opaque `X-OmniRoute-Lease-Owner` et la valeur exacte `X-OmniRoute-Lease-Generation`. L’identifiant du propriétaire utilise le préfixe `vlo_` suivi de 43 caractères base64url ; seul son hachage SHA-256 est stocké. Chaque barrière d’envoi finale lie également l’ID de la clé API authentifiée et l’ID de la connexion active. Les en-têtes de contrôle du bail sont supprimés des journaux, des instantanés de requêtes conservés et des en-têtes des exécuteurs en amont.
+Le cycle de vie utilise `POST /api/v1/session-leases` avec les actions JSON `acquire`, `renew` et `release`. Les requêtes d’inférence gérées présentent la valeur opaque `X-OmniRoute-Lease-Owner` et la valeur exacte `X-OmniRoute-Lease-Generation`. Le propriétaire utilise le préfixe `vlo_` suivi de 43 caractères base64url ; seul son hachage SHA-256 est stocké. Chaque barrière finale d’envoi associe également l’ID de la clé API authentifiée et l’ID de la connexion active. Les en-têtes de contrôle du bail sont supprimés des journaux, des instantanés de requête conservés et des en-têtes des exécuteurs en amont.
 
-Si le routage ordinaire dispose de candidats gérés éligibles, mais que chaque candidat libre est occupé par un bail actif appartenant à un tiers, OmniRoute renvoie le code HTTP `429`, un code indiquant l’indisponibilité de la capacité de bail, un état d’attente de capacité et un en-tête `Retry-After` borné, calculé à partir de la première expiration pertinente. Une absence ordinaire d’éligibilité ne constitue pas un conflit de bail et conserve la sémantique d’erreur de routage existante.
+Si le routage ordinaire dispose de candidats gérés éligibles, mais que tous les candidats libres sont occupés par un bail actif tiers, OmniRoute renvoie une réponse HTTP `429`, un code indiquant l’indisponibilité de la capacité de bail, un état d’attente de capacité et un en-tête `Retry-After` borné, calculé à partir de la première expiration pertinente. Une absence ordinaire d’éligibilité ne constitue pas un conflit de bail et conserve la sémantique existante des erreurs de routage.
 
-Les mécanismes associés restent distincts :
+Les mécanismes connexes restent distincts :
 
-- L’occupation des sessions OAuth est une distribution souple, locale au processus, pour les comptes OAuth.
-- Les sémaphores de compte accordent des autorisations de concurrence des requêtes qui prennent fin à l’achèvement d’une requête.
+- L’occupation de session OAuth est une distribution souple propre au processus pour les comptes OAuth.
+- Les sémaphores de compte accordent des autorisations de concurrence des requêtes et prennent fin lorsqu’une requête se termine.
 - Les baux exclusifs de connexion pour les sessions gérées constituent une propriété durable du cycle de vie avec une barrière de génération.
 
 ---
@@ -148,21 +148,37 @@ Les mécanismes associés restent distincts :
 
 **Portée :** triplet fournisseur + connexion + modèle.
 
-**Objectif :** éviter de désactiver une connexion entière lorsqu’un seul modèle est indisponible ou limité par un quota.
+**Portée de la clé selon le statut :** le statut de l’échec détermine la clé dans laquelle un verrouillage est enregistré
+(`resolveLockoutScope()` dans `open-sse/services/accountFallback/exactModelLock.ts`) :
+
+- `429` / `403` / `402` — un signal de quota ou de droits d’accès — verrouillent la **famille de quotas** :
+  pour codex, toute la portée `codex` / `spark` (chaque modèle `gpt-5*` de la
+  connexion) ; pour les autres fournisseurs, `getQuotaScopedModelForProvider()`.
+- `404` verrouille le modèle seul (`getModelLockKey()` restreint `not_found`).
+- Tout autre statut — les échecs de transport/serveur `5xx` et le `502` synthétisé
+  par OmniRoute à la suite de la validation de la qualité — verrouille uniquement
+  le triplet **exact** fournisseur/connexion/modèle. Un flux défectueux sur un
+  modèle ne constitue pas une preuve concernant le quota du compte ; avant cette
+  règle, une seule réponse vide sur `codex/gpt-5.6-luna` retirait du routage tous
+  les modèles `gpt-5*` de cette connexion pendant 2 à 30 min (avec escalade),
+  alors que son quota n’était pas affecté.
+- L’option `scope` explicite d’un appelant est toujours prioritaire (Antigravity transmet `"exact"`).
+
+**Objectif :** éviter de désactiver toute une connexion lorsqu’un seul modèle est indisponible ou limité par un quota.
 
 **Exemples :**
 
-- Fournisseurs appliquant des quotas par modèle et renvoyant un code 429
-- Fournisseurs locaux renvoyant un code 404 lorsqu’un modèle est manquant
-- Échecs d’autorisation propres au fournisseur pour un mode ou un modèle (par exemple, les modes Grok)
+- Fournisseurs avec quota par modèle renvoyant 429
+- Fournisseurs locaux renvoyant 404 pour un modèle manquant
+- Échecs d’autorisation propres au fournisseur pour un mode/modèle (par ex., les modes Grok)
 
 **Implémentation :** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
-### Tableau de bord des délais de récupération des modèles (v3.8.0)
+### Tableau de bord des périodes de récupération des modèles (v3.8.0)
 
-Interface : Paramètres → Délais de récupération des modèles (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
+Interface utilisateur : Paramètres → Périodes de récupération des modèles (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-Répertorie les verrouillages actifs avec : fournisseur, connexion, modèle, raison, expiresAt. Les opérateurs peuvent réactiver manuellement un modèle depuis la carte.
+Répertorie les verrouillages actifs avec : fournisseur, connexion, modèle, motif, expiresAt. Les opérateurs peuvent réactiver manuellement un modèle depuis la carte.
 
 **API REST :**
 
@@ -171,43 +187,49 @@ Répertorie les verrouillages actifs avec : fournisseur, connexion, modèle, rai
 
 ### Interface des paramètres de verrouillage + récupération par décroissance après succès (v3.8.23)
 
-Le verrouillage de modèle est passé d’un comportement codé en dur et toujours actif à une fonctionnalité entièrement configurable,
-facultative, dotée de sa propre carte de paramètres et d’un mécanisme de récupération autoréparateur.
+Le verrouillage de modèle est passé d’un comportement codé en dur et toujours actif
+à une fonctionnalité entièrement configurable, facultative et dotée de son propre
+mécanisme de récupération autoréparateur.
 
 **Carte des paramètres :** Paramètres → Verrouillage de modèle
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-Elle est **distincte** de la carte en lecture seule `ModelCooldownsCard` ci-dessus (qui se contente de
-_répertorier_ les verrouillages actifs) — la nouvelle carte _configure les paramètres_. Les valeurs par défaut
-se trouvent dans `DEFAULT_MODEL_LOCKOUT_SETTINGS`
+Elle est **distincte** de la carte `ModelCooldownsCard` en lecture seule ci-dessus
+(qui se contente de _répertorier_ les verrouillages actifs) — la nouvelle carte
+_configure les paramètres_. Les valeurs par défaut se trouvent dans
+`DEFAULT_MODEL_LOCKOUT_SETTINGS`
 (`src/lib/resilience/modelLockoutSettings.ts`) :
 
-| Paramètre               | Valeur par défaut                | Signification                                                                        |
-| ----------------------- | -------------------------------- | ------------------------------------------------------------------------------------ |
-| `enabled`               | `false`                          | Interrupteur principal — le verrouillage de modèle est **désactivé par défaut**.     |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Statuts en amont considérés comme un échec propre au modèle.                         |
-| `baseCooldownMs`        | `120_000` (120 s)                | Durée initiale du verrouillage lors du premier échec.                                |
-| `maxCooldownMs`         | `1_800_000` (30 min)             | Plafond du délai de récupération après augmentation.                                 |
-| `maxBackoffSteps`       | `10`                             | Nombre maximal d’étapes d’augmentation exponentielle du délai.                       |
-| `useExponentialBackoff` | `true`                           | Indique si les échecs répétés augmentent exponentiellement le délai de récupération. |
+| Paramètre               | Valeur par défaut                | Signification                                                                          |
+| ----------------------- | -------------------------------- | -------------------------------------------------------------------------------------- |
+| `enabled`               | `false`                          | Interrupteur principal — le verrouillage de modèle est **désactivé par défaut**.       |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Statuts en amont comptabilisés comme des échecs propres au modèle.                     |
+| `baseCooldownMs`        | `120_000` (120 s)                | Durée initiale du verrouillage après le premier échec.                                 |
+| `maxCooldownMs`         | `1_800_000` (30 min)             | Plafond de la période de récupération après escalade.                                  |
+| `maxBackoffSteps`       | `10`                             | Nombre maximal d’étapes d’escalade du délai exponentiel.                               |
+| `useExponentialBackoff` | `true`                           | Indique si les échecs répétés augmentent exponentiellement la période de récupération. |
 
-Les paramètres sont conservés dans le magasin de paramètres habituel et validés au moyen du
-schéma des paramètres de résilience ; la carte limite `baseCooldownMs`/`maxCooldownMs`
+Les paramètres sont conservés dans le magasin de paramètres habituel et validés
+par le schéma des paramètres de résilience ; la carte borne `baseCooldownMs`/`maxCooldownMs`
 (avec `maxCooldownMs ≥ baseCooldownMs`) ainsi que `maxBackoffSteps`.
 
-**Récupération par décroissance après succès :** la récupération ne repose **pas** uniquement sur l’expiration du délai. Une réponse
-saine réduit progressivement le nombre d’échecs du modèle, afin qu’un modèle ayant récupéré
-pendant la fenêtre cesse de subir une augmentation du délai (et soit déverrouillé) avant l’expiration de celui-ci. Lorsqu’une
+**Récupération par décroissance après succès :** la récupération ne repose **pas**
+uniquement sur l’expiration d’un minuteur. Une réponse saine réduit progressivement
+le nombre d’échecs du modèle, de sorte qu’un modèle rétabli pendant la fenêtre cesse
+son escalade (et soit déverrouillé) avant l’expiration prévue de son minuteur. Lorsqu’une
 cible de combinaison réussit, `open-sse/services/combo.ts` appelle `decayModelFailureCount()`
-(`open-sse/services/accountFallback.ts`), qui **divise par deux** le
-`failureCount` enregistré (`Math.floor(failureCount / 2)`) ; lorsqu’il atteint `0`, l’entrée de
-verrouillage est entièrement supprimée. La fonction correspondante `recordModelLockoutFailure()`
-incrémente le compteur (et augmente le délai de récupération) lors d’échecs survenant pendant la
-fenêtre d’augmentation. Cette décroissance après succès s’ajoute à la simple expiration du délai —
-chacun de ces mécanismes peut réactiver un modèle.
+(`open-sse/services/accountFallback.ts`), qui **divise par deux** la valeur
+`failureCount` stockée (`Math.floor(failureCount / 2)`) ; lorsqu’elle atteint `0`,
+l’entrée de verrouillage est entièrement supprimée. La fonction complémentaire
+`recordModelLockoutFailure()` incrémente le compteur (et augmente la période de
+récupération) lors d’échecs survenant dans la fenêtre d’escalade. Cette décroissance
+après succès s’ajoute à la simple expiration du minuteur — l’un ou l’autre de ces
+mécanismes peut réactiver un modèle.
 
-**État :** les verrouillages sont conservés **en mémoire** (des `Map`s par processus contenant des
-`ModelLockoutEntry` indexées par `provider:connectionId:model`) et ne sont pas enregistrés dans
-la base de données — ils sont perdus au redémarrage. Les _paramètres_ sont persistants ; l’_état_
+**État :** les verrouillages sont conservés **en mémoire** (des `Map` propres à
+chaque processus contenant des `ModelLockoutEntry`, indexées par
+`provider:connectionId:model`, et des verrouillages de portée exacte indexés par
+`provider:connectionId:exact:model`), et non persistés dans
+la DB — ils sont perdus au redémarrage. Les _paramètres_ sont persistés ; l’_état_
 des verrouillages actifs est éphémère.
 
 ---
@@ -642,11 +664,12 @@ limitation de débit regroupée par IP constitue le même signal qu’un quota
 
 ## Débogage
 
-- Toutes les clés d'un fournisseur sont ignorées → vérifiez à la fois l'état du disjoncteur ET les propriétés `rateLimitedUntil`/`testStatus` de chaque connexion.
-- Fournisseur définitivement exclu après la fenêtre de réinitialisation → le code lit directement `state` au lieu de `getStatus()`/`canExecute()`.
+- Les réponses du combo pondéré `503 all_targets_cooling_down` (`Retry-After` défini, `diagnostics.excluded` répertorie chaque cible avec `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → le pool est configuré et connecté, mais chaque cible est exclue par un minuteur de résilience ; l’avertissement `[COMBO] Weighted selection: every target excluded before dispatch — …` indique les raisons et le nombre de secondes restantes. Une erreur `404 no_executable_targets` provenant du même combo signifie qu’aucun minuteur de résilience n’est intervenu (rien à exécuter, ou chaque compte a échoué à la vérification de disponibilité). Implémenté dans `open-sse/services/combo/pinRecovery.ts` à partir des exclusions recueillies dans `targetResolution.ts`.
+- Toutes les clés d’un fournisseur sont ignorées → vérifiez à la fois l’état du disjoncteur ET les valeurs `rateLimitedUntil`/`testStatus` de chaque connexion.
+- Fournisseur exclu définitivement après la fenêtre de réinitialisation → le code lit directement `state` au lieu d’utiliser `getStatus()`/`canExecute()`.
 - Une clé échoue, les autres devraient fonctionner → privilégiez le délai de récupération de la connexion plutôt que le disjoncteur.
 - Un seul modèle échoue → privilégiez le verrouillage du modèle plutôt que le délai de récupération de la connexion.
-- L'état devrait se rétablir automatiquement, mais ne le fait pas → recherchez un horodatage futur et un chemin de lecture qui actualise l'état expiré. Les statuts permanents nécessitent des modifications manuelles.
+- L’état devrait se rétablir automatiquement, mais ne le fait pas → vérifiez la présence d’un horodatage futur ainsi que le chemin de lecture qui actualise l’état expiré. Les statuts permanents nécessitent des modifications manuelles.
 
 ---
 

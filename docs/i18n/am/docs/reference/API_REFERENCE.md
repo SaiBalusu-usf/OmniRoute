@@ -1148,7 +1148,7 @@ Content-Type: application/json
 }
 ```
 
-> **የስኪማ ማስታወሻዎች** (`setBudgetSchema`)፦ `apiKeyId` ያስፈልጋል፤ ከ`dailyLimitUsd`፣ `weeklyLimitUsd` ወይም `monthlyLimitUsd` ቢያንስ አንዱ ከዜሮ የሚበልጥ መሆን አለበት። አማራጭ መስኮች፦ `warningThreshold` (0–1)፣ `resetInterval` (`daily` | `weekly` | `monthly`)፣ `resetTime` (`HH:MM`)። የቀድሞው `{keyId, limit, period}` ቅርጽ `400 Bad Request`ን ይመልሳል።
+> **የSchema ማስታወሻዎች** (`setBudgetSchema`)፦ `apiKeyId` ያስፈልጋል፤ ከ`dailyLimitUsd`፣ `weeklyLimitUsd` ወይም `monthlyLimitUsd` ቢያንስ አንዱ ከዜሮ መብለጥ አለበት። አማራጭ መስኮች፦ `warningThreshold` (0–1)፣ `resetInterval` (`daily` | `weekly` | `monthly`)፣ `resetTime` (`HH:MM`)። የቀድሞው `{keyId, limit, period}` ቅርጽ `400 Bad Request` ይመልሳል።
 
 ## የቶከን ገደቦች
 
@@ -1608,19 +1608,19 @@ GET /.well-known/agent.json
 
 ## የCLI መሣሪያዎች አስተዳደር
 
-ከOmniRoute ጋር የሚዋሃዱ የCLI መሣሪያዎችን (antigravity፣ chipotle፣ commandCode፣
-devin-cli፣ ወዘተ) ያስተዳድሩ። ሙሉውን ዝርዝር ለማየት [የአቅራቢዎች ማጣቀሻ](./PROVIDER_REFERENCE.md)ን ይመልከቱ።
+ከOmniRoute ጋር የሚዋሃዱ CLI መሣሪያዎችን (antigravity፣ commandCode፣
+devin-cli፣ ወዘተ) ያስተዳድሩ። ሙሉውን ዝርዝር ለማየት [የአቅራቢ ማጣቀሻ](./PROVIDER_REFERENCE.md)ን ይመልከቱ።
 
-| ዘዴ   | ዱካ                                      | መግለጫ                                                                                                                                |
-| ---- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| GET  | `/api/cli-tools/all-statuses`           | የሁሉም የCLI መሣሪያዎች ሁኔታ (የተጫነ፣ ስሪት፣ ለመጨረሻ ጊዜ የታየበት)                                                                                    |
-| GET  | `/api/cli-tools/status`                 | የአንድ የCLI መሣሪያ ዝርዝር ሁኔታ (`?tool=` መጠይቅ)                                                                                             |
-| POST | `/api/cli-tools/apply`                  | በመሣሪያው የተፈጠረውን ውቅር ይጻፉ (`dryRun` ቅድመ ዕይታ ያሳያል፤ በኮንቴይነር ሲከናወን `422` + `containerEphemeralTarget`፤ `migration` የቆየ Codex YAMLን ይጠቅሳል) |
-| GET  | `/api/cli-tools/backups`                | የCLI መሣሪያ ውቅር ምትኬዎችን ይዘርዝሩ                                                                                                          |
-| POST | `/api/cli-tools/backups`                | የሁሉም የCLI መሣሪያ ውቅሮች ምትኬ ይፍጠሩ                                                                                                        |
-| POST | `/api/cli-tools/backups`                | መልስ፦ በጥያቄው ይዘት ውስጥ `{tool, backupId}` በመጠቀም ያው መጨረሻ ነጥብ ያንን ምትኬ ይመልሳል                                                               |
-| GET  | `/api/cli-tools/antigravity-mitm`       | የAntigravity MITM ተኪ ሁኔታ (የ"antigravity-mitm" CLI መሣሪያ)                                                                             |
-| POST | `/api/cli-tools/antigravity-mitm/alias` | የantigravity-mitm ቅጽል ስሞችን ያዋቅሩ                                                                                                     |
+| ዘዴ   | ዱካ                                      | መግለጫ                                                                                                                                     |
+| ---- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| GET  | `/api/cli-tools/all-statuses`           | የሁሉም CLI መሣሪያዎች ሁኔታ (የተጫነ፣ ስሪት፣ ለመጨረሻ ጊዜ የታየበት)                                                                                          |
+| GET  | `/api/cli-tools/status`                 | የአንድ CLI መሣሪያ ዝርዝር ሁኔታ (`?tool=` መጠይቅ)                                                                                                   |
+| POST | `/api/cli-tools/apply`                  | የመሣሪያውን የተፈጠረ ውቅር ይጽፋል (`dryRun` ቅድመ ዕይታዎች፤ በኮንቴይነር ውስጥ ሲሆን `422` + `containerEphemeralTarget`፤ `migration` ስለ ቆየ Codex YAML ማስታወሻ ይሰጣል) |
+| GET  | `/api/cli-tools/backups`                | የCLI መሣሪያ ውቅር ምትኬዎችን ይዘረዝራል                                                                                                              |
+| POST | `/api/cli-tools/backups`                | የሁሉም CLI መሣሪያ ውቅሮች ምትኬ ይፈጥራል                                                                                                             |
+| POST | `/api/cli-tools/backups`                | መልሶ ማግኘት፦ በጥያቄው አካል ውስጥ `{tool, backupId}` በመጠቀም ተመሳሳዩ መግቢያ ነጥብ ያንን ምትኬ ይመልሳል                                                            |
+| GET  | `/api/cli-tools/antigravity-mitm`       | የAntigravity MITM ፕሮክሲ ሁኔታ (የ"antigravity-mitm" CLI መሣሪያ)                                                                                |
+| POST | `/api/cli-tools/antigravity-mitm/alias` | የantigravity-mitm ተለዋጭ ስሞችን ያዋቅራል                                                                                                        |
 
 **ማረጋገጫ፦** የአስተዳደር ክፍለ ጊዜ ያስፈልጋል።
 

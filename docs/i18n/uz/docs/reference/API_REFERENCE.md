@@ -1584,21 +1584,21 @@ Operatsion boshqaruv uchun faqat administratorlarga moʻljallangan endpointlar.
 
 ## CLI vositalarini boshqarish
 
-OmniRoute bilan integratsiyalashadigan CLI vositalarini (antigravity, chipotle, commandCode,
+OmniRoute bilan integratsiyalashadigan CLI vositalarini (antigravity, commandCode,
 devin-cli va boshqalar) boshqaring. Toʻliq roʻyxat uchun [Provayder maʼlumotnomasi](./PROVIDER_REFERENCE.md)ga qarang.
 
-| Metod | Yoʻl                                    | Tavsif                                                                                                                                                                                    |
-| ----- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET   | `/api/cli-tools/all-statuses`           | Barcha CLI vositalarining holati (oʻrnatilganligi, versiyasi, oxirgi faollik vaqti)                                                                                                       |
-| GET   | `/api/cli-tools/status`                 | Bitta CLI vositasi holati tafsilotlari (`?tool=` soʻrovi)                                                                                                                                 |
-| POST  | `/api/cli-tools/apply`                  | Vosita uchun yaratilgan konfiguratsiyani yozish (`dryRun` oldindan koʻrsatadi; konteynerlashtirilganda `422` + `containerEphemeralTarget`; `migration` eski Codex YAML haqida qayd etadi) |
-| GET   | `/api/cli-tools/backups`                | CLI vositalari konfiguratsiyasi zaxira nusxalarini roʻyxatlash                                                                                                                            |
-| POST  | `/api/cli-tools/backups`                | Barcha CLI vositalari konfiguratsiyalarining zaxira nusxasini yaratish                                                                                                                    |
-| POST  | `/api/cli-tools/backups`                | Tiklash: tanada `{tool, backupId}` bilan ayni endpoint ushbu zaxira nusxasini tiklaydi                                                                                                    |
-| GET   | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM proksi holati (`antigravity-mitm` CLI vositasi)                                                                                                                          |
-| POST  | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm taxalluslarini sozlash                                                                                                                                                   |
+| Metod | Yoʻl                                    | Tavsif                                                                                                                                                                                   |
+| ----- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET   | `/api/cli-tools/all-statuses`           | Barcha CLI vositalarining holati (oʻrnatilganligi, versiyasi, oxirgi aniqlangan vaqti)                                                                                                   |
+| GET   | `/api/cli-tools/status`                 | Bitta CLI vositasi uchun batafsil holat (`?tool=` soʻrovi)                                                                                                                               |
+| POST  | `/api/cli-tools/apply`                  | Vosita uchun yaratilgan konfiguratsiyani yozish (`dryRun` — oldindan koʻrish; konteynerlashtirilganda `422` + `containerEphemeralTarget`; `migration` eski Codex YAML haqida qayd etadi) |
+| GET   | `/api/cli-tools/backups`                | CLI vositalari konfiguratsiyasi zaxira nusxalarini roʻyxatlash                                                                                                                           |
+| POST  | `/api/cli-tools/backups`                | Barcha CLI vositalari konfiguratsiyalarining zaxira nusxasini yaratish                                                                                                                   |
+| POST  | `/api/cli-tools/backups`                | Tiklash: soʻrov tanasida `{tool, backupId}` bilan ayni endpoint ushbu zaxira nusxasini tiklaydi                                                                                          |
+| GET   | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM proksisi holati (`antigravity-mitm` CLI vositasi)                                                                                                                       |
+| POST  | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm taxalluslarini sozlash                                                                                                                                                  |
 
-**Autentifikatsiya:** Boshqaruv seansi talab qilinadi.
+**Autentifikatsiya:** Boshqaruv sessiyasi talab qilinadi.
 
 ---
 

@@ -4,7 +4,7 @@
 
 ---
 
-> **TL;DR**: OmniRoute registrira 352 ID-a pružatelja usluga, uz **152 unosa u katalogu pružatelja označena s `hasFree`**. Stroži, revidirani katalog besplatnih modela obuhvaća **34 ključa ponavljajućih skupova / 443 unosa** (436 aktivnih + 7 ukinutih). Povežite nekoliko prikladnih pružatelja radi većeg zamjenskog kapaciteta; i dalje vrijede sve kvote, pravila odobravanja, pravila privatnosti i uvjeti naplate prekoračenja.
+> **Ukratko**: OmniRoute registrira 357 ID-ova pružatelja usluga, pri čemu su **152 unosa u katalogu pružatelja označena kao `hasFree`**. Stroži, revidirani katalog besplatnih modela obuhvaća **35 ključeva ponavljajućih skupova / 482 unosa** (475 aktivnih + 7 ukinutih). Povežite nekoliko odgovarajućih pružatelja radi većeg kapaciteta za prebacivanje u slučaju poteškoća; i dalje se primjenjuju sve kvote, pravila odobravanja, pravila privatnosti i uvjeti prekoračenja koji se naplaćuju.
 
 ---
 
@@ -160,18 +160,18 @@ kvotu ili pravila pristupa pružatelja.
 
 ## Izračun besplatne razine
 
-Aktualni katalog s dedupliciranim zajedničkim kvotama trenutačno navodi:
+Aktualni katalog s dedupliciranim skupovima trenutačno navodi:
 
-| Metrika                                                                    |                        Trenutačna provjerena vrijednost | Tumačenje                                                                                                                                                                                  |
-| -------------------------------------------------------------------------- | ------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Ponavljajuća kvantificirana kvota                                          |                              **~1.47B tokena/mjesečno** | Zajedničke kvote broje se jednom; pružatelji bez ograničenja nisu uključeni u zbroj                                                                                                        |
-| Prvi mjesec s kvotama za registraciju                                      |                                       **~2.07B tokena** | Ponavljajući ukupni iznos uvećan za jednokratne i ponavljajuće kredite                                                                                                                     |
-| Provjereni inventar besplatnih modela                                      | **34 ključa ponavljajućih kvota / 443 stavke kataloga** | 436 aktivnih + 7 ukinutih; razlikuje se od kataloga s 352 pružatelja                                                                                                                       |
-| Zastupljeni trajno besplatni pružatelji s ponavljajućim kvotama/bez ključa |                                                  **52** | Jedinstveni pružatelji u kategorijama kataloga s ponavljajućim dnevnim/mjesečnim kvotama, kreditima, bez ograničenja i bez ključa; retci uvjetovani ispunjavanjem kriterija nisu uključeni |
-| Stavke kataloga pružatelja označene s `hasFree`                            |                                           **152 / 352** | Širi metapodaci o pružateljima; nemaju svi mjerljivu ponavljajuću kvotu                                                                                                                    |
+| Metrika                                                                         |                          Trenutačna provjerena vrijednost | Tumačenje                                                                                                                                                                              |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Kvantificirana periodična kvota                                                 |                           **~1,62 mlrd. tokena/mjesečno** | Zajednički skupovi broje se samo jednom; pružatelji bez ograničenja isključeni su iz zbroja                                                                                            |
+| Prvi mjesec s kvotama za registraciju                                           |                                    **~2,22 mlrd. tokena** | Periodični ukupni iznos plus jednokratni i periodični krediti                                                                                                                          |
+| Provjereni inventar besplatnih modela                                           | **35 ključeva periodičnih skupova / 482 stavke kataloga** | 475 aktivnih + 7 ukinutih; razlikuje se od kataloga s 357 pružatelja                                                                                                                   |
+| Zastupljeni pružatelji s periodičnim ili trajno besplatnim pristupom bez ključa |                                                    **53** | Jedinstveni pružatelji obuhvaćeni periodičnim dnevnim/mjesečnim/kreditnim/neograničenim vrstama kataloga i vrstama bez ključa; retci uvjetovani ispunjavanjem kriterija nisu uključeni |
+| Stavke kataloga pružatelja označene s `hasFree`                                 |                                             **152 / 357** | Širi metapodaci o pružateljima; nemaju svi mjerljivu periodičnu kvotu                                                                                                                  |
 
-Te se vrijednosti izračunavaju iz `open-sse/config/freeModelCatalog.ts`; pogledajte
-[Referencu besplatnih razina](../reference/FREE_TIERS.md) za deduplikaciju zajedničkih kvota, oznake uvjeta korištenja,
+Te su vrijednosti izračunate iz datoteke `open-sse/config/freeModelCatalog.ts`; pogledajte
+[Referencu besplatnih razina](../reference/FREE_TIERS.md) za deduplikaciju skupova, oznake uvjeta pružanja usluge,
 ukinute stavke i metodologiju kredita za registraciju.
 
 ---

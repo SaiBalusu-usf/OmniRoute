@@ -169,7 +169,7 @@ needsTranslation(source, target): boolean
 
 ### chatCore.ts（5977 行）
 
-**主要請求處理器**。儘管檔案很大，但結構相當清晰：
+**主要請求處理器**。儘管檔案很大，但結構清晰：
 
 ```ts
 // chatCore.ts 的虛擬結構
@@ -205,9 +205,9 @@ export async function handleChat(request: NextRequest) {
 }
 ```
 
-儘管它是一個巨型函式，但已組織為對應五階段管線的**帶註解區段**。
+儘管它是一個巨型函式，但已整理為多個**附有註解的區段**，分別對應五階段管線。
 
-### combo.ts（4456 行程式碼）
+### combo.ts（4456 LOC）
 
 將組合解析為有序目標的**路由引擎**。
 
@@ -219,40 +219,40 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
     try {
       return await handleSingleModel(target, body);
     } catch (err) {
-      log.warn("目標失敗，正在嘗試下一個", { target, err });
+      log.warn("target failed, trying next", { target, err });
     }
   }
-  throw new ComboExhaustedError("所有目標均失敗");
+  throw new ComboExhaustedError("All targets failed");
 }
 ```
 
 支援 **19 種路由策略**（請參閱 `src/shared/constants/routingStrategies.ts`）：
 
-| 策略                | 行為                                                    |
-| ------------------- | ------------------------------------------------------- |
-| `priority`          | 以第一個目標為優先的有序清單                            |
-| `weighted`          | 根據各目標的權重以機率方式選擇                          |
-| `round-robin`       | 依序循環使用各個目標                                    |
-| `context-relay`     | 在不同目標間傳遞上下文                                  |
-| `fill-first`        | 先用滿配額，再移至下一個目標                            |
-| `p2c`               | 二選一策略                                              |
-| `random`            | 均勻隨機選擇                                            |
-| `least-used`        | 選擇近期使用次數最少的目標                              |
-| `cost-optimized`    | 優先選擇成本最低且狀態正常的目標                        |
-| `reset-aware`       | 考量提供者的重設時段                                    |
-| `reset-window`      | 以重設時段為基礎的路由                                  |
-| `headroom`          | 優先選擇剩餘配額空間最多的目標                          |
-| `strict-random`     | 真正均勻隨機（不進行品質加權）                          |
-| `auto`              | 使用 16 因子評分（`autoCombo/`）                        |
-| `lkgp`              | 優先選擇最近已知可用的提供者                            |
-| `context-optimized` | 最適合長上下文請求                                      |
-| `fusion`            | 平行分派至一組目標，再由評判模型合成結果（`fusion.ts`） |
+| 策略                | 行為                                                      |
+| ------------------- | --------------------------------------------------------- |
+| `priority`          | 優先選擇第一個目標的有序清單                              |
+| `weighted`          | 依各目標權重進行機率式選擇                                |
+| `round-robin`       | 依序循環選擇目標                                          |
+| `context-relay`     | 在各目標之間交接上下文                                    |
+| `fill-first`        | 用滿配額後再移至下一個目標                                |
+| `p2c`               | 兩個選擇的冪次法                                          |
+| `random`            | 均勻隨機選擇                                              |
+| `least-used`        | 選擇近期使用次數最少的目標                                |
+| `cost-optimized`    | 優先選擇成本最低且健康的目標                              |
+| `reset-aware`       | 考量提供者的重設時間窗                                    |
+| `reset-window`      | 基於重設時間窗的路由                                      |
+| `headroom`          | 優先選擇剩餘配額餘裕最多的目標                            |
+| `strict-random`     | 真正均勻的隨機選擇（不套用品質權重）                      |
+| `auto`              | 使用 16 因子評分（`autoCombo/`）                          |
+| `lkgp`              | 優先選擇最近已知運作正常的提供者                          |
+| `context-optimized` | 最適合長上下文請求                                        |
+| `fusion`            | 同時平行分派給一組目標，再透過裁判進行綜合（`fusion.ts`） |
 
-### base.ts（1170 行程式碼）
+### base.ts（1170 LOC）
 
-所有 101 個執行器均繼承的**抽象執行器**。它包含：
+所有 107 個執行器都會擴充的**抽象執行器**。其中包含：
 
-- `buildUrl()` — 預設 URL 建構（子類別可針對自訂需求覆寫）
+- `buildUrl()` — 預設 URL 建構方式（子類別可針對自訂需求覆寫）
 - `buildHeaders()` — 預設標頭（驗證、內容類型）
 - `transformRequest()` — 預設直接傳遞
 - `execute()` — 具備重試、退避與斷路器機制的主要 HTTP 迴圈
@@ -261,11 +261,11 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
 // open-sse/executors/default.ts
 export class DefaultExecutor extends BaseExecutor {
   // 處理所有與 OpenAI/Anthropic 相容的提供者
-  // 提供者會註冊設定（URL、驗證、標頭），但共用執行器邏輯
+  // 提供者會註冊組態（URL、驗證、標頭），但共用執行器邏輯
 }
 ```
 
-提供者特定行為（驗證標頭、基礎 URL、版本標頭）是透過提供者登錄檔進行設定，而不是使用個別的執行器類別。
+提供者特定的行為（驗證標頭、基礎 URL、版本標頭）是透過提供者登錄檔設定，而非使用個別的執行器類別。
 
 ````
 
@@ -273,20 +273,20 @@ export class DefaultExecutor extends BaseExecutor {
 
 ## 服務（117 個模組）
 
-服務是由處理常式組合而成、**專注於單一用途的模組**。主要類別包括：
+服務是處理器所組合的**專注、單一用途模組**。主要類別如下：
 
 ### 路由與組合
 
 - `combo.ts` — 組合路由請求的進入點
-- `services/autoCombo/` — 16 因素評分、8 種自動路由策略
+- `services/autoCombo/` — 16 因子評分、8 種自動路由策略
 - `wildcardRouter.ts` — 比對萬用字元路由（`gpt-*`）
-- `modelFamilyFallback.ts` — T5 家族內部備援
+- `modelFamilyFallback.ts` — T5 系列內部備援
 
 ### 速率限制與配額
 
 - `rateLimitManager.ts` — 每個金鑰與提供者組合的權杖桶
 - `usage.ts` — 使用量記錄
-- `quotaCache.ts` — 記憶體內的配額快照
+- `quotaCache.ts` — 記憶體內配額快照
 
 ### 帳戶與權杖
 
@@ -297,9 +297,9 @@ export class DefaultExecutor extends BaseExecutor {
 ### 智慧功能
 
 - `intentClassifier.ts` — 分類請求意圖
-- `taskAwareRouter.ts` — 依任務類型進行路由
-- `thinkingBudget.ts` — 分配思考權杖
-- `contextManager.ts` — 注入路由上下文
+- `taskAwareRouter.ts` — 依工作類型進行路由
+- `thinkingBudget.ts` — 配置思考權杖
+- `contextManager.ts` — 注入路由情境
 
 ### 韌性
 
@@ -309,7 +309,7 @@ export class DefaultExecutor extends BaseExecutor {
 
 ### 狀態
 
-- `signatureCache.ts` — 依請求簽章進行重複資料刪除
+- `signatureCache.ts` — 依請求簽章去除重複項目
 - `volumeDetector.ts` — 負載卸除
 - `contextHandoff.ts` — 工作階段序列化
 
@@ -320,11 +320,11 @@ export class DefaultExecutor extends BaseExecutor {
 
 ### 技能
 
-- （詳見 [SKILLS.md](./SKILLS.md)）
+- （請參閱 [SKILLS.md](./SKILLS.md)）
 
 ### 記憶體
 
-- （詳見 [MEMORY.md](./MEMORY.md)）
+- （請參閱 [MEMORY.md](./MEMORY.md)）
 
 ---
 
@@ -334,21 +334,21 @@ export class DefaultExecutor extends BaseExecutor {
 
 ### 常見模式
 
-提供者透過 `getExecutor(providerId)` 解析，該函式會傳回已設定的執行器。與 OpenAI/Anthropic 相容的提供者使用 `DefaultExecutor`（`executors/default.ts`）。提供者特定的行為（基底 URL、驗證標頭、API 版本）會在 `open-sse/config/providers/` 中設定，而請求主體轉換則由 `open-sse/translator/` 處理。
+提供者透過 `getExecutor(providerId)` 解析，該函式會傳回已設定的執行器。與 OpenAI/Anthropic 相容的提供者使用 `DefaultExecutor`（`executors/default.ts`）。提供者特定行為（基礎 URL、驗證標頭、API 版本）於 `open-sse/config/providers/` 中設定，而請求主體轉換則於 `open-sse/translator/` 中處理。
 
-**自訂 URL** 透過提供者設定來設定：
+**自訂 URL** 透過提供者設定指定：
 
 ```ts
-// 位於 open-sse/config/providers/ 的提供者設定
+// open-sse/config/providers/ 中的提供者設定
 export default {
   id: "together",
   baseURL: "https://api.together.xyz/v1/chat/completions",
 }
 ````
 
-**自訂驗證** 透過提供者登錄中的驗證設定（API 金鑰、OAuth、標頭設定檔）來處理。
+**自訂驗證** 透過提供者登錄檔的驗證設定（API 金鑰、OAuth、標頭設定檔）處理。
 
-**自訂請求主體**轉換（例如 Anthropic 將 `system` 與 `messages` 分開）會在 `open-sse/translator/` 中依提供者註冊。
+**自訂請求主體**轉換（例如 Anthropic 將 `system` 與 `messages` 分開）會依提供者註冊於 `open-sse/translator/` 中。
 
 ````
 
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-解析會透過 `ExecutorRegistry`（`executors/registry.ts`）進行：每個特化執行器都會在 `executors/index.ts` 的內建表格中宣告，並於模組載入時透過 `registerExecutor(alias, instance)` 註冊；`getExecutor()` 會查詢該登錄，對於任何沒有特化項目的提供者，則退回使用已記憶化的 `DefaultExecutor`。完整的別名 → 執行器對應關係由黃金測試 `tests/unit/executor-map-golden.test.ts` 描述。
+解析會經由 `ExecutorRegistry`（`executors/registry.ts`）進行：每個專用執行器都宣告於 `executors/index.ts` 的內建表格中，並在模組載入時透過 `registerExecutor(alias, instance)` 註冊；`getExecutor()` 會查詢登錄檔，對於任何沒有專用項目的提供者，則退回使用已記憶化的 `DefaultExecutor`。完整的別名 → 執行器對應關係由黃金測試 `tests/unit/executor-map-golden.test.ts` 描述。
 
 ---
 

@@ -6,8 +6,8 @@
 
 ## Ikhtisar
 
-Perintah OmniRoute CLI melakukan autentikasi terhadap API manajemen lokal menggunakan
-token `HMAC-SHA256(machine-id, salt)` yang dikirim melalui header permintaan
+Perintah OmniRoute CLI melakukan autentikasi terhadap API manajemen lokal menggunakan token
+`HMAC-SHA256(machine-id, salt)` yang dikirim melalui header permintaan
 `x-omniroute-cli-token`.
 
 Hal ini memungkinkan subperintah CLI (`omniroute status`, `omniroute providers`, dll.)
@@ -16,38 +16,54 @@ kata sandi pada setiap pemanggilan.
 
 ## Cara kerjanya
 
-1. `getMachineTokenSync()` membaca ID perangkat keras mesin melalui `node-machine-id`
-   (menggunakan string kosong sebagai fallback jika gagal, sehingga autentikasi CLI dinonaktifkan).
+1. `getMachineTokenSync()` membaca ID mesin perangkat keras melalui `node-machine-id`
+   (kembali ke string kosong jika gagal, sehingga menonaktifkan autentikasi CLI).
 2. Fungsi tersebut menghitung `HMAC-SHA256(machine_id, salt)` dan mengembalikan digest
-   heksadesimal lengkap sepanjang 64 karakter — token deterministik dan tidak dapat dibalik
-   yang terikat ke mesin ini.
-3. CLI mengirimkan token sebagai `x-omniroute-cli-token` hanya ketika tujuan yang
+   heksadesimal 64 karakter penuh — token deterministik yang tidak dapat dibalik dan
+   terikat pada mesin ini.
+3. CLI mengirim token sebagai `x-omniroute-cli-token` hanya ketika tujuan yang
    dihasilkan adalah URL loopback eksplisit (`localhost`, `127.0.0.0/8`, atau
-   IPv6 loopback). Permintaan yang membawa token menggunakan `redirect: error`, sehingga
-   pengalihan lokal tidak dapat meneruskannya ke origin lain. Konteks jarak jauh menggunakan
-   token akses terbatas sebagai gantinya. Jika derivasi tidak tersedia, CLI menghilangkan
-   header tersebut dan `omniroute doctor` melaporkan kegagalan alih-alih menganggap token
-   kosong sebagai valid.
+   IPv6 loopback). Permintaan yang membawa token menggunakan `redirect: error`,
+   sehingga pengalihan lokal tidak dapat meneruskannya ke origin lain. Konteks jarak
+   jauh menggunakan token akses dengan cakupan terbatas. Jika derivasi tidak tersedia,
+   CLI menghilangkan header tersebut dan `omniroute doctor` melaporkan kegagalan alih-alih
+   menganggap token kosong sebagai valid.
 4. Server (`src/server/authz/policies/management.ts`) menghitung ulang token yang
-   diharapkan dengan salt yang sama dan membandingkannya melalui `timingSafeEqual` untuk
-   mencegah ekstraksi berbasis waktu.
+   diharapkan dengan salt yang sama dan membandingkannya melalui `timingSafeEqual`
+   untuk mencegah ekstraksi berbasis waktu.
 
 ## Properti keamanan
 
 | Properti                                 | Detail                                                                                                                                                                                                                              |
 | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Hanya loopback**                       | Diterima hanya ketika penanda lokalitas peer tepercaya milik server (yang diperoleh dari alamat peer TCP sebenarnya) menunjukkan loopback. Header `Host` yang dikendalikan klien tidak pernah dipercaya untuk menentukan lokalitas. |
-| **Perbandingan waktu konstan**           | `crypto.timingSafeEqual` mencegah serangan berbasis waktu.                                                                                                                                                                          |
+| **Perbandingan waktu konstan**           | `crypto.timingSafeEqual` mencegah serangan pewaktuan.                                                                                                                                                                               |
 | **Tidak dapat dibalik**                  | Output HMAC tidak dapat digunakan untuk mendapatkan kembali machine-id.                                                                                                                                                             |
 | **Tidak melewati perlindungan `always`** | `isAlwaysProtectedPath()` dievaluasi sebelum pemeriksaan token CLI. `/api/shutdown` dan `/api/settings/database` selalu memerlukan JWT.                                                                                             |
 | **Tidak dapat diekspor**                 | Token tidak pernah ditulis ke disk atau dicatat dalam log.                                                                                                                                                                          |
 
+## Salt default (acak untuk setiap instalasi)
+
+Ketika `OMNIROUTE_CLI_SALT` tidak ditetapkan, salt berupa string heksadesimal acak
+64 karakter yang dibuat sekali dan disimpan di `<DATA_DIR>/cli-token-salt.json`
+(mode `0600`) — bukan literal `omniroute-cli-auth-v1` yang disertakan dalam
+repositori. Baik `getActiveSalt()` di `src/lib/machineToken.ts` maupun cerminannya
+di `bin/cli/utils/cliToken.mjs` membaca file yang sama, sehingga server dan setiap
+pemanggilan CLI pada instalasi ini menggunakan nilai yang sama; literal yang
+disertakan dalam repositori hanya digunakan sebagai fallback terakhir ketika salt
+yang disimpan atau salt dari lingkungan belum dapat ditetapkan (misalnya instalasi
+baru yang hanya berisi CLI sebelum server pernah dijalankan). Hal ini menutup
+kelemahan dari default literal tetap sebelumnya: `/etc/machine-id` umumnya dapat
+dibaca oleh semua pengguna, sehingga pengguna lokal mana pun dapat memperoleh
+token yang sama untuk setiap instalasi yang tidak pernah menetapkan
+`OMNIROUTE_CLI_SALT`.
+
 ## Rotasi salt
 
-Tetapkan `OMNIROUTE_CLI_SALT` untuk merotasi token turunan tanpa perubahan kode.
-Setelah rotasi, semua proses CLI pada mesin ini akan menggunakan token baru
-secara otomatis. Berguna setelah kebocoran daftar proses yang mungkin telah mengekspos
-nilai turunan sebelumnya.
+Atur `OMNIROUTE_CLI_SALT` untuk merotasi token turunan tanpa perubahan kode — variabel ini
+selalu diprioritaskan daripada salt per instalasi yang disimpan. Setelah rotasi, semua proses CLI
+pada mesin ini akan otomatis menggunakan token baru. Berguna setelah kebocoran daftar proses
+yang mungkin telah mengekspos nilai turunan sebelumnya.
 
 ```bash
 # Rotasi persisten (tambahkan ke profil shell)
@@ -56,8 +72,6 @@ export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 # Verifikasi bahwa token baru sedang digunakan
 omniroute status
 ```
-
-Salt default: `omniroute-cli-auth-v1`
 
 ## Format lama (SHA-256, 32 karakter) — masih diterima
 
@@ -69,25 +83,26 @@ Untuk kompatibilitas mundur, server menerima **kedua** format: pemverifikasi mem
 `expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` dan membandingkan
 header yang masuk dengan masing-masing token menggunakan `timingSafeEqual`
 (`src/server/authz/policies/management.ts` dan `src/lib/middleware/cliTokenAuth.ts`).
-Dengan demikian, token dianggap valid jika cocok dengan **salah satu** dari digest HMAC
-64 karakter atau prefiks SHA-256 lama sepanjang 32 karakter.
+Jadi, token valid jika cocok dengan **salah satu** dari digest HMAC 64 karakter atau prefiks
+SHA-256 lama 32 karakter.
 
-**Penonaktifan:** tetapkan `OMNIROUTE_DISABLE_CLI_TOKEN=true` (env atau `.env`) untuk
-menonaktifkan mekanisme token CLI sepenuhnya; setelah itu, semua akses memerlukan kunci
-API eksplisit. Pada host multi-pengguna, hal ini direkomendasikan karena `machine-id`
-berlaku per perangkat (bukan per pengguna), dan pengguna lain pada host yang sama dapat
-menghitung token yang sama.
+**Menonaktifkan:** atur `OMNIROUTE_DISABLE_CLI_TOKEN=true` (env atau `.env`) untuk menonaktifkan
+mekanisme token CLI sepenuhnya; setelah itu, semua akses memerlukan kunci API eksplisit. Pada host
+multi-pengguna, hal ini direkomendasikan karena `machine-id` bersifat per perangkat (bukan per pengguna)
+dan pengguna lain pada host yang sama dapat menghitung token yang sama.
 
-## Berkas
+## File
 
-| Berkas                                    | Tujuan                                       |
-| ----------------------------------------- | -------------------------------------------- |
-| `src/lib/machineToken.ts`                 | Derivasi token (`getMachineTokenSync`)       |
-| `src/server/authz/headers.ts`             | Konstanta `CLI_TOKEN_HEADER`                 |
-| `src/server/authz/policies/management.ts` | Verifikasi sisi server                       |
-| `src/server/authz/routeGuard.ts`          | Pemeriksaan host loopback (`isLoopbackHost`) |
+| File                                      | Tujuan                                           |
+| ----------------------------------------- | ------------------------------------------------ |
+| `src/lib/machineToken.ts`                 | Derivasi token (`getMachineTokenSync`)           |
+| `bin/cli/utils/cliToken.mjs`              | Implementasi CLI yang mencerminkan derivasi sama |
+| `<DATA_DIR>/cli-token-salt.json`          | Salt acak per instalasi yang disimpan            |
+| `src/server/authz/headers.ts`             | Konstanta `CLI_TOKEN_HEADER`                     |
+| `src/server/authz/policies/management.ts` | Verifikasi sisi server                           |
+| `src/server/authz/routeGuard.ts`          | Pemeriksaan host loopback (`isLoopbackHost`)     |
 
 ## Lihat juga
 
-- `docs/security/ROUTE_GUARD_TIERS.md` — tingkat perlindungan rute
+- `docs/security/ROUTE_GUARD_TIERS.md` — tingkatan perlindungan rute
 - `docs/architecture/AUTHZ_GUIDE.md` — alur otorisasi lengkap

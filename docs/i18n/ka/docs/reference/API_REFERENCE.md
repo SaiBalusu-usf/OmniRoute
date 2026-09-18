@@ -1571,21 +1571,21 @@ GET /.well-known/agent.json
 
 ## CLI ინსტრუმენტების მართვა
 
-მართეთ CLI ინსტრუმენტები, რომლებიც OmniRoute-თან ინტეგრირდება (antigravity, chipotle, commandCode,
-devin-cli და სხვ.). სრული სიისთვის იხილეთ [პროვაიდერის ცნობარი](./PROVIDER_REFERENCE.md).
+მართეთ CLI ინსტრუმენტები, რომლებიც ინტეგრირებულია OmniRoute-თან (antigravity, commandCode,
+devin-cli და სხვ.). სრული სიისთვის იხილეთ [პროვაიდერების ცნობარი](./PROVIDER_REFERENCE.md).
 
-| მეთოდი | გზა                                     | აღწერა                                                                                                                                                                                          |
+| მეთოდი | მისამართი                               | აღწერა                                                                                                                                                                                          |
 | ------ | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | ყველა CLI ინსტრუმენტის სტატუსი (დაინსტალირებული მდგომარეობა, ვერსია, ბოლო გამოჩენა)                                                                                                             |
-| GET    | `/api/cli-tools/status`                 | ერთი CLI ინსტრუმენტის სტატუსის დეტალები (`?tool=` query)                                                                                                                                        |
+| GET    | `/api/cli-tools/all-statuses`           | ყველა CLI ინსტრუმენტის სტატუსი (დაინსტალირებული მდგომარეობა, ვერსია, ბოლოს დაფიქსირების დრო)                                                                                                    |
+| GET    | `/api/cli-tools/status`                 | ერთი CLI ინსტრუმენტის სტატუსის დეტალები (`?tool=` მოთხოვნის პარამეტრი)                                                                                                                          |
 | POST   | `/api/cli-tools/apply`                  | ინსტრუმენტის გენერირებული კონფიგურაციის ჩაწერა (`dryRun` აჩვენებს წინასწარ შედეგს; კონტეინერში გაშვებისას — `422` + `containerEphemeralTarget`; `migration` მიუთითებს მოძველებულ Codex YAML-ზე) |
-| GET    | `/api/cli-tools/backups`                | CLI ინსტრუმენტების კონფიგურაციის სარეზერვო ასლების ჩამონათვალი                                                                                                                                  |
+| GET    | `/api/cli-tools/backups`                | CLI ინსტრუმენტების კონფიგურაციის სარეზერვო ასლების სია                                                                                                                                          |
 | POST   | `/api/cli-tools/backups`                | ყველა CLI ინსტრუმენტის კონფიგურაციის სარეზერვო ასლის შექმნა                                                                                                                                     |
-| POST   | `/api/cli-tools/backups`                | აღდგენა: იგივე endpoint body-ში `{tool, backupId}`-ით აღადგენს შესაბამის სარეზერვო ასლს                                                                                                         |
+| POST   | `/api/cli-tools/backups`                | აღდგენა: იგივე საბოლოო წერტილი, სადაც მოთხოვნის სხეულში `{tool, backupId}` აღადგენს შესაბამის სარეზერვო ასლს                                                                                    |
 | GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM პროქსის სტატუსი (`antigravity-mitm` CLI ინსტრუმენტი)                                                                                                                           |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm-ის alias-ების კონფიგურაცია                                                                                                                                                     |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm-ის ფსევდონიმების კონფიგურაცია                                                                                                                                                  |
 
-**ავტორიზაცია:** საჭიროა მართვის სესია.
+**ავთენტიფიკაცია:** საჭიროა მართვის სესია.
 
 ---
 

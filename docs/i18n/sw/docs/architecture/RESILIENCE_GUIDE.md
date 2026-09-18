@@ -71,11 +71,11 @@ Kinga dhidi ya kurudi kwa hitilafu: `tests/unit/provider-cooldown-window-gate.te
 
 **Upeo:** muunganisho/akaunti/ufunguo mmoja wa mtoa huduma.
 
-**Madhumuni:** kuruka ufunguo mmoja wenye tatizo huku miunganisho mingine ya mtoa huduma huyo ikiendelea kuhudumia.
+**Lengo:** kuruka ufunguo mmoja wenye hitilafu huku miunganisho mingine ya mtoa huduma huyo ikiendelea kuhudumia.
 
 **Utekelezaji:**
 
-- Weka kuwa haupatikani: `src/sse/services/auth.ts::markAccountUnavailable()`
+- Kuweka alama kuwa haupatikani: `src/sse/services/auth.ts::markAccountUnavailable()`
 - Uteuzi: `getProviderCredentials*` katika faili hiyo hiyo
 - Ukokotoaji wa kipindi cha kusubiri: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Mipangilio: `src/lib/resilience/settings.ts`
@@ -85,92 +85,107 @@ Kinga dhidi ya kurudi kwa hitilafu: `tests/unit/provider-cooldown-window-gate.te
 - `rateLimitedUntil` — muhuri wa muda hadi kipindi cha kusubiri kiishe
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
-- `backoffLevel` — kihesabu cha ongezeko la muda wa kusubiri kwa mtindo wa kipeo
+- `backoffLevel` — kihesabu cha ongezeko la muda wa kusubiri
 
 **Vipindi chaguo-msingi vya kusubiri:**
 
 - Msingi wa OAuth: sekunde 5
 - Msingi wa ufunguo wa API: sekunde 3
-- Ufunguo wa API unapopata 429: hupendelea `Retry-After`/vichwa vya kuweka upya kutoka kwa huduma ya juu/maandishi ya muda wa kuweka upya yanayoweza kuchanganuliwa
+- Ufunguo wa API 429: hutanguliza `Retry-After` ya mfumo wa juu/vichwa vya kuweka upya/maandishi ya muda wa kuweka upya yanayoweza kuchanganuliwa
 - Ongezeko la muda wa kusubiri: `baseCooldownMs * 2 ** failureIndex`
 
-**Kinga dhidi ya msongamano wa maombi ya wakati mmoja:** huzuia hitilafu zinazotokea kwa wakati mmoja kuongeza kupita kiasi kipindi cha kusubiri au kuongeza `backoffLevel` mara mbili.
+**Kinga dhidi ya msongamano wa maombi ya wakati mmoja:** huzuia hitilafu zinazotokea kwa wakati mmoja kuongeza kipindi cha kusubiri kupita kiasi au kuongeza `backoffLevel` mara mbili.
 
 **Hali za mwisho (SI vipindi vya kusubiri):**
 
-- `banned` — huwekwa na utambuzi wa neno lililopigwa marufuku / kufungiwa kwa akaunti (tazama [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (hubadilika kuwa hali ya mwisho baada ya idadi iliyowekewa kikomo ya majaribio — `EXPIRED_RETRY_MAX = 3` pamoja na ongezeko la muda wa kusubiri kwa mtindo wa kipeo — ili hitilafu za muda za OAuth ziweze kujirekebisha kabla akaunti haijazimwa kabisa)
+- `banned` — huwekwa na ugunduzi wa neno muhimu lililopigwa marufuku / kupigwa marufuku kwa akaunti (tazama [BAN_DETECTION](../security/BAN_DETECTION.md)), na kwa kukataliwa mara tatu mfululizo na mfumo wa juu kwa kila ombi (`request_rejected`, kwa mfano, Anthropic OAuth 403 "Request not allowed" — `open-sse/services/requestRejectedStreak.ts`); kukataliwa mara moja huweka muunganisho katika kipindi cha kusubiri tu
+- `expired` (hubadilika kuwa hali ya mwisho baada ya majaribio yenye kikomo — `EXPIRED_RETRY_MAX = 3` pamoja na ongezeko la muda wa kusubiri — ili hitilafu za muda za OAuth ziweze kujirekebisha kabla akaunti haijazimwa kabisa)
 - `credits_exhausted`
 
-Hali hizi hudumu hadi vitambulisho vibadilike au mwendeshaji avirekebishe. Usibadilishe hali za mwisho kwa hali ya muda ya kusubiri.
+Hali hizi hudumu hadi vitambulisho vibadilike au msimamizi aziweke upya. Usibadilishe hali za mwisho kwa hali ya muda ya kusubiri.
 
-**Urejeshaji wa uvivu:** `rateLimitedUntil` inapopita, muunganisho unastahiki tena. Baada ya matumizi yenye mafanikio, `clearAccountError()` huondoa sehemu zote za hitilafu.
+**Urejeshaji wa uvivu:** `rateLimitedUntil` inapokuwa imepita, muunganisho unastahiki tena. Baada ya matumizi yaliyofanikiwa, `clearAccountError()` huondoa sehemu zote za hitilafu.
 
-### Uhusiano wa kipindi (#7274)
+### Uhusishaji wa kipindi (#7274)
 
-**Upeo:** kipindi kimoja cha mteja (kichwa cha `X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`) kilichofungamanishwa na muunganisho mmoja, kwa mtoa huduma **yeyote**.
+**Upeo:** kipindi kimoja cha mteja (kichwa cha `X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`) kinachofungamanishwa na muunganisho mmoja, kwa mtoa huduma **yeyote**.
 
-**Madhumuni:** kuweka ajenti yenye mizunguko mingi (Claude Code, aider, ajenti maalum) kwenye akaunti hiyo hiyo katika maombi yote, kupunguza upotevu wa muktadha kati ya akaunti na hitilafu za 429 zinazorudiwa wakati wa kuanza kutoka hali baridi kwa watoa huduma wenye hali ya kipindi kwa kila akaunti.
+**Lengo:** kuweka ajenti ya mazungumzo ya hatua nyingi (Claude Code, aider, ajenti maalum) kwenye akaunti ileile katika maombi yote, hivyo kupunguza upotevu wa muktadha kati ya akaunti na hitilafu za 429 za kuanza upya zinazojirudia kwa watoa huduma wenye hali ya kipindi kwa kila akaunti.
 
 **Utekelezaji:**
 
-- Uamuzi wa TTL: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
-- Uteuzi/uundaji wa mfungamano: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
-- Utoaji wa kichwa (wa jumla, mtoa huduma yeyote): `src/sse/services/auth.ts::extractSessionAffinityKey()`
-- Jedwali la mfungamano linalohifadhiwa: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Mpangilio: `sessionAffinityTtlMs` (TTL ya kimataifa katika ms, `0` huzima) — `src/lib/db/settings.ts`. Ulibadilishwa jina kutoka `codexSessionAffinityTtlMs` iliyokuwa ya Codex pekee kupitia uhamishaji `124_generic_session_affinity_ttl.sql`, ambao huhamisha TTL yoyote ya Codex iliyosanidiwa awali kuwa chaguo-msingi jipya.
+- Utatuzi wa TTL: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
+- Uteuzi/uundaji wa kifungamanisho: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
+- Uchukuaji wa kichwa (wa jumla, kwa mtoa huduma yeyote): `src/sse/services/auth.ts::extractSessionAffinityKey()`
+- Jedwali la vifungamanisho linalohifadhiwa: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
+- Mpangilio: `sessionAffinityTtlMs` (TTL ya jumla katika ms, `0` huizima) — `src/lib/db/settings.ts`. Jina lilibadilishwa kutoka `codexSessionAffinityTtlMs` iliyokuwa ya Codex pekee kupitia uhamishaji `124_generic_session_affinity_ttl.sql`, ambao huhamisha TTL yoyote ya Codex iliyokuwa imesanidiwa awali na kuitumia kama chaguo-msingi jipya.
 
-Kabla ya #7274, `resolveSessionAffinityTtlMs()` ilisitisha mara moja kwa kurejesha `0` kwa kila mtoa huduma isipokuwa `codex`, kwa hivyo mpangilio wa TTL (na vichwa vya kipindi) haukuwa na athari mahali pengine popote, ingawa utaratibu wa kufungamanisha na utoaji wa vichwa tayari havikutegemea mtoa huduma mahususi. Marekebisho yaliondoa urejeshaji huo wa mapema; sasa TTL inatumika kwa usawa kwa kila mtoa huduma mara inapowekwa kimataifa kuwa zaidi ya `0`.
+Kabla ya #7274, `resolveSessionAffinityTtlMs()` ilirudisha `0` mara moja kwa kila mtoa huduma isipokuwa `codex`, kwa hivyo mpangilio wa TTL (na vichwa vya kipindi) haukuwa na athari mahali pengine popote, ingawa utaratibu wa kufungamanisha na uchukuaji wa vichwa tayari haukutegemea mtoa huduma maalum. Marekebisho yaliondoa urejeshaji huo wa mapema; sasa TTL inatumika kwa usawa kwa kila mtoa huduma mara inapowekwa kimataifa kuwa zaidi ya `0`.
 
-Vichwa hivyo vitatu vya uhusiano wa kipindi havitumwi kamwe kwa huduma ya juu — vitekelezaji huunda vichwa vyao wenyewe vya huduma ya juu kutoka mwanzo badala ya kupitisha vichwa vya mteja, kwa hivyo hii hubaki kuwa kitambulisho cha ndani cha uhusianishaji pekee.
+Vichwa hivyo vitatu vya uhusishaji wa kipindi havitumwi kamwe kwa mfumo wa juu — vitekelezaji huunda vichwa vyao vya mfumo wa juu kutoka mwanzo badala ya kupitisha vichwa vya mteja, kwa hivyo hiki hubaki kuwa kitambulisho cha ndani cha uhusiano pekee.
 
 ### Ukodishaji wa kipekee wa miunganisho ya vipindi vinavyodhibitiwa
 
-**Upeo:** mteja/kipindi kimoja amilifu cha HTTP kinachodhibitiwa humiliki muunganisho mmoja wa OmniRoute unaostahiki.
+**Upeo:** mteja/kipindi kimoja amilifu cha HTTP kinachodhibitiwa humiliki muunganisho mmoja unaostahiki wa OmniRoute.
 
-**Madhumuni:** kutoa umiliki wa kudumu na wa kipekee wa muunganisho kwa wateja wanaohitaji mpaka madhubuti wa uelekezaji
-katika maombi yote. Hii ni tofauti na uhusiano wa kipindi, ambao ni mapendeleo laini ya mwendelezo:
-ukodishaji wa kipekee huhifadhi hali ya mzunguko wa maisha katika SQLite, hulazimisha upekee wa kimataifa wa mmiliki
-amilifu na muunganisho amilifu, na hukataa kizazi kilichopitwa na wakati kabla ya kutuma kwa mtoa huduma.
+**Lengo:** kutoa umiliki wa kudumu na wa kipekee wa muunganisho kwa wateja wanaohitaji mpaka thabiti wa uelekezaji
+katika maombi yote. Hii ni tofauti na uhusishaji wa kipindi, ambao ni mapendeleo laini ya mwendelezo:
+ukodishaji wa kipekee huhifadhi hali ya mzunguko wa maisha katika SQLite, hutekeleza upekee wa kimataifa wa mmiliki amilifu na
+muunganisho amilifu, na hukataa kizazi kilichopitwa na wakati kabla ya kutumwa kwa mtoa huduma.
 
-Kipengele hiki huchaguliwa kwa kila ufunguo wa API. Ufunguo unaodhibitiwa lazima uwe na upeo wa `lease:exclusive` na
-orodha bayana isiyo tupu ya `allowedConnections`. Mteja yeyote wa HTTP anaweza kutumia sehemu-tumizi ya mzunguko wa maisha; hakuna
+Kipengele hiki huwashwa kwa hiari kwa kila ufunguo wa API. Ufunguo unaodhibitiwa lazima uwe na upeo wa `lease:exclusive` na
+orodha ya wazi ya `allowedConnections` isiyo tupu. Mteja yeyote wa HTTP anaweza kutumia endpoint ya mzunguko wa maisha; hakuna
 jina la mteja, user-agent, mtoa huduma, mbinu ya OAuth, au modeli inayohitajika. Ukodishaji humiliki muunganisho,
-si modeli, kwa hivyo kubadilisha modeli hudumisha uhusiano huo mradi muunganisho unaendelea
-kustahiki kwa kawaida. Kanuni za kawaida za modeli, mgao, afya, kipindi cha kusubiri, na orodha ya ruhusa zinaendelea kuwa
-na mamlaka na zinaweza kuhamisha kizazi hicho hicho hadi kwenye muunganisho mwingine huru unaostahiki.
+si modeli, kwa hivyo kubadilisha modeli hudumisha kifungo mradi muunganisho uendelee
+kustahiki kwa kawaida. Kanuni za kawaida za modeli, mgao, afya, kipindi cha kusubiri, na orodha ya ruhusa huendelea kuwa na mamlaka na zinaweza
+kuhamishia kizazi hicho hicho kwenye muunganisho mwingine huru unaostahiki.
 
 Mzunguko wa maisha ni `POST /api/v1/session-leases` wenye vitendo vya JSON `acquire`, `renew`, na `release`.
-Maombi ya utabiri yanayodhibitiwa huwasilisha thamani fiche ya `X-OmniRoute-Lease-Owner` na thamani halisi ya
-`X-OmniRoute-Lease-Generation`. Mmiliki hutumia `vlo_` ikifuatiwa na herufi 43 za base64url; ni
-hashi yake ya SHA-256 pekee inayohifadhiwa. Kila mpaka wa mwisho wa utumaji pia hufungamanisha kitambulisho cha ufunguo wa API uliothibitishwa na
-kitambulisho cha muunganisho amilifu. Vichwa vya udhibiti wa ukodishaji huondolewa kwenye kumbukumbu, nakala za maombi zilizohifadhiwa, na
-vichwa vya kitekelezaji cha huduma ya juu.
+Maombi ya uinferensi yanayodhibitiwa huwasilisha thamani fiche ya `X-OmniRoute-Lease-Owner` na
+`X-OmniRoute-Lease-Generation` halisi. Mmiliki hutumia `vlo_` ikifuatiwa na herufi 43 za base64url; ni
+hashi yake ya SHA-256 pekee inayohifadhiwa. Kizuizi cha mwisho cha utumaji pia hufungamanisha kitambulisho cha ufunguo wa API uliothibitishwa na
+kitambulisho cha muunganisho amilifu. Vichwa vya udhibiti wa ukodishaji huondolewa kwenye kumbukumbu, picha za maombi zilizohifadhiwa, na
+vichwa vya vitekelezaji vya mfumo wa juu.
 
-Ikiwa uelekezaji wa kawaida una wagombea wanaostahiki wanaodhibitiwa lakini kila mgombea aliye huru anamilikiwa na
-ukodishaji amilifu wa kigeni, OmniRoute hurejesha HTTP `429`, msimbo wa kutopatikana kwa uwezo wa ukodishaji,
-hali ya kusubiri uwezo, na `Retry-After` iliyowekewa kikomo inayotokana na muda wa mapema zaidi unaohusika wa kuisha.
-Kutokuwepo kwa kawaida kwa wagombea wanaostahiki si mgongano wa ukodishaji na hudumisha maana zilizopo za hitilafu za uelekezaji.
+Ikiwa uelekezaji wa kawaida una wagombea wanaostahiki wanaodhibitiwa lakini kila mgombea huru amekaliwa na
+ukodishaji amilifu wa nje, OmniRoute hurudisha HTTP `429`, msimbo wa lease-capacity-unavailable,
+hali ya kusubiri nafasi ipatikane, na `Retry-After` yenye kikomo inayotokana na muda wa mapema zaidi unaohusika wa kuisha.
+Kutokuwepo kwa ustahiki katika uelekezaji wa kawaida si mgongano wa ukodishaji na huhifadhi semantiki zake zilizopo za hitilafu za uelekezaji.
 
 Taratibu zinazohusiana hubaki tofauti:
 
-- Uwepo katika kipindi cha OAuth ni usambazaji laini wa ndani ya mchakato kwa akaunti za OAuth.
-- Semafo za akaunti hutoa ruhusa za maombi yanayotekelezwa kwa wakati mmoja na huisha ombi linapokamilika.
-- Ukodishaji wa kipekee wa vipindi vinavyodhibitiwa ni umiliki wa kudumu wa mzunguko wa maisha wenye mpaka wa kizazi.
+- Ukaliaji wa kipindi cha OAuth ni usambazaji laini wa ndani ya mchakato kwa akaunti za OAuth.
+- Semaphore za akaunti hutoa ruhusa za maombi yanayotekelezwa kwa wakati mmoja na huisha ombi linapokamilika.
+- Ukodishaji wa kipekee wa vipindi vinavyodhibitiwa ni umiliki wa kudumu wa mzunguko wa maisha wenye kizuizi cha kizazi.
 
 ---
 
 ## 3. Kufungiwa kwa Modeli
 
-**Upeo:** mtoa huduma + muunganisho + utatu wa modeli.
+**Upeo:** muungano wa mtoa huduma + muunganisho + modeli.
 
-**Lengo:** kuepuka kuzima muunganisho mzima wakati modeli moja tu haipatikani au imewekewa kikomo cha mgawo.
+**Upeo wa ufunguo kulingana na hali:** hali inayosababisha hitilafu huamua ni ufunguo upi ambao kufungiwa huandikiwa
+(`resolveLockoutScope()` katika `open-sse/services/accountFallback/exactModelLock.ts`):
+
+- `429` / `403` / `402` — ishara ya kiwango cha matumizi au haki ya ufikiaji — hufunga **familia ya kiwango cha matumizi**:
+  kwa codex, upeo mzima wa `codex` / `spark` (kila modeli ya `gpt-5*` ya
+  muunganisho huo), na kwa watoa huduma wengine `getQuotaScopedModelForProvider()`.
+- `404` hufunga modeli husika pekee (`getModelLockKey()` hupunguza upeo wa `not_found`).
+- Hali nyingine yoyote — hitilafu za usafirishaji/seva za `5xx` na `502`
+  inayoundwa na OmniRoute yenyewe kutokana na uthibitishaji wa ubora — hufunga tu
+  muungano **mahususi** wa mtoa huduma/muunganisho/modeli. Mtiririko mbovu kwenye modeli moja si ushahidi
+  kuhusu kiwango cha matumizi cha akaunti; kabla ya kanuni hii, jibu moja tupu kwenye
+  `codex/gpt-5.6-luna` liliondoa kila modeli ya `gpt-5*` ya muunganisho huo kutoka
+  kwenye uelekezaji kwa dakika 2–30 (zikiongezeka hatua kwa hatua), ingawa kiwango chake cha matumizi hakikuwa kimeathiriwa.
+- Chaguo bayana la `scope` la mwitaji hupewa kipaumbele kila wakati (Antigravity hupitisha `"exact"`).
+
+**Kusudi:** kuepuka kuzima muunganisho mzima wakati modeli moja tu haipatikani au imewekewa kikomo cha matumizi.
 
 **Mifano:**
 
-- Watoa huduma wenye mgawo kwa kila modeli wanaorudisha 429
+- Watoa huduma wenye kiwango cha matumizi kwa kila modeli wanaorudisha 429
 - Watoa huduma wa ndani wanaorudisha 404 kwa modeli moja inayokosekana
-- Hitilafu za ruhusa za modi/modeli zinazohusiana na mtoa huduma mahususi (k.m., modi za Grok)
+- Hitilafu za ruhusa za modi/modeli zinazomhusu mtoa huduma mahususi (kwa mfano, modi za Grok)
 
 **Utekelezaji:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
@@ -178,51 +193,52 @@ Taratibu zinazohusiana hubaki tofauti:
 
 UI: Mipangilio → Vipindi vya Kusubiri vya Modeli (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-Huorodhesha ufungiaji unaotumika pamoja na: mtoa huduma, muunganisho, modeli, sababu, expiresAt. Waendeshaji wanaweza kuwasha tena modeli kutoka kwenye kadi.
+Huorodhesha ufungiaji unaotumika pamoja na: mtoa huduma, muunganisho, modeli, sababu, expiresAt. Waendeshaji wanaweza kuwezesha tena modeli wenyewe kutoka kwenye kadi.
 
 **REST API:**
 
 - `GET /api/resilience/model-cooldowns` — orodhesha ufungiaji unaotumika
-- `DELETE /api/resilience/model-cooldowns` — kuwasha tena kwa mikono. Mwili: `{provider, connection, model}`. Uthibitishaji: usimamizi.
+- `DELETE /api/resilience/model-cooldowns` — kuwezesha tena mwenyewe. Mwili: `{provider, connection, model}`. Uthibitishaji: usimamizi.
 
-### UI ya mipangilio ya ufungiaji + urejeshaji kwa upunguzaji baada ya mafanikio (v3.8.23)
+### UI ya mipangilio ya ufungiaji + urejeshaji kwa kupunguza baada ya mafanikio (v3.8.23)
 
-Ufungiaji wa modeli ulibadilika kutoka tabia iliyowekwa moja kwa moja na inayowashwa kila wakati hadi kipengele kinachoweza kusanidiwa kikamilifu,
-kinachohitaji kuwashwa kwa hiari, chenye kadi yake ya mipangilio na njia ya urejeshaji inayojirekebisha.
+Ufungiaji wa modeli ulibadilishwa kutoka tabia iliyowekwa moja kwa moja na inayotumika kila wakati hadi kuwa kipengele
+kinachoweza kusanidiwa kikamilifu, kinachohitaji kuwezeshwa kwa hiari, chenye kadi yake ya mipangilio na njia ya urejeshaji inayojirekebisha.
 
 **Kadi ya mipangilio:** Mipangilio → Ufungiaji wa Modeli
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-Hii ni **tofauti** na `ModelCooldownsCard` ya kusoma pekee hapo juu (ambayo
-_huorodhesha_ tu ufungiaji unaotumika) — kadi mpya _husanidi vigezo_. Chaguo-msingi
-yanapatikana katika `DEFAULT_MODEL_LOCKOUT_SETTINGS`
+Hii ni **tofauti** na `ModelCooldownsCard` ya kusoma tu iliyo hapo juu (ambayo
+_huorodhesha_ tu ufungiaji unaotumika) — kadi mpya _husanidi vigezo_. Thamani chaguo-msingi
+zipo katika `DEFAULT_MODEL_LOCKOUT_SETTINGS`
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
 | Mpangilio               | Chaguo-msingi                    | Maana                                                                 |
 | ----------------------- | -------------------------------- | --------------------------------------------------------------------- |
 | `enabled`               | `false`                          | Swichi kuu — ufungiaji wa modeli **umezimwa kwa chaguo-msingi**.      |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Hali za mfumo wa juu zinazohesabiwa kama hitilafu inayohusu modeli.   |
-| `baseCooldownMs`        | `120_000` (sekunde 120)          | Muda wa awali wa kufungia baada ya hitilafu ya kwanza.                |
-| `maxCooldownMs`         | `1_800_000` (dakika 30)          | Kikomo cha muda wa kusubiri ulioongezwa.                              |
-| `maxBackoffSteps`       | `10`                             | Idadi ya juu ya hatua za ongezeko la usubiri wa kielelezo.            |
-| `useExponentialBackoff` | `true`                           | Iwapo hitilafu zinazojirudia ziongeze muda wa kusubiri kwa kielelezo. |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Hali za mfumo wa juu zinazohesabiwa kama hitilafu ya upeo wa modeli.  |
+| `baseCooldownMs`        | `120_000` (sekunde 120)          | Muda wa awali wa kufungiwa kwa hitilafu ya kwanza.                    |
+| `maxCooldownMs`         | `1_800_000` (dakika 30)          | Kikomo cha kipindi cha kusubiri kilichoongezwa.                       |
+| `maxBackoffSteps`       | `10`                             | Idadi ya juu ya hatua za ongezeko la kusubiri kwa kipeo.              |
+| `useExponentialBackoff` | `true`                           | Ikiwa hitilafu zinazojirudia ziongeze kipindi cha kusubiri kwa kipeo. |
 
-Mipangilio hudumu kupitia hifadhi ya kawaida ya mipangilio na huthibitishwa kupitia
-skima ya mipangilio ya ustahimilivu; kadi huweka mipaka kwa `baseCooldownMs`/`maxCooldownMs`
+Mipangilio huhifadhiwa kupitia hifadhi ya kawaida ya mipangilio na kuthibitishwa kupitia
+skima ya mipangilio ya ustahimilivu; kadi huwekea mipaka `baseCooldownMs`/`maxCooldownMs`
 (huku `maxCooldownMs ≥ baseCooldownMs`) na `maxBackoffSteps`.
 
-**Urejeshaji kwa upunguzaji baada ya mafanikio:** urejeshaji **hautegemei** kuisha kwa kipima muda pekee. Jibu
-lenye afya hupunguza idadi ya hitilafu za modeli hatua kwa hatua ili modeli iliyorejea
-katikati ya kipindi isiendelee kuongezeka (na ufungiaji wake uondolewe) kabla ya kipima muda kuisha. Kwenye
-lengo la mchanganyiko lililofanikiwa, `open-sse/services/combo.ts` huita `decayModelFailureCount()`
-(`open-sse/services/accountFallback.ts`), ambayo **hupunguza kwa nusu** `failureCount`
+**Urejeshaji kwa kupunguza baada ya mafanikio:** urejeshaji **hautegemei** tu kuisha kwa kipima muda. Jibu
+lenye afya hupunguza hatua kwa hatua idadi ya hitilafu za modeli ili modeli iliyorejea katika hali nzuri
+katikati ya kipindi iache kuongezeka (na iondolewe) kabla ya kipima muda chake kuisha. Kwa lengo la
+mchanganyiko lililofaulu, `open-sse/services/combo.ts` huita `decayModelFailureCount()`
+(`open-sse/services/accountFallback.ts`), ambayo **hugawanya kwa mbili** `failureCount`
 iliyohifadhiwa (`Math.floor(failureCount / 2)`); inapofikia `0`, ingizo la ufungiaji
-hufutwa kabisa. `recordModelLockoutFailure()` inayolingana nayo
-huongeza idadi (na kuongeza muda wa kusubiri) kwa hitilafu zinazotokea ndani ya
-kipindi cha ongezeko. Upunguzaji huu baada ya mafanikio ni nyongeza kwa kuisha kwa kawaida kwa kipima muda —
-njia yoyote inaweza kuwasha modeli tena.
+hufutwa kabisa. Kitendakazi kinacholingana cha `recordModelLockoutFailure()`
+huongeza idadi hiyo (na kuongeza kipindi cha kusubiri) kwa hitilafu zinazotokea ndani ya
+dirisha la ongezeko. Upunguzaji huu baada ya mafanikio ni nyongeza ya kuisha kwa kawaida kwa kipima muda —
+njia yoyote kati ya hizo inaweza kuwezesha tena modeli.
 
 **Hali:** ufungiaji huhifadhiwa **kwenye kumbukumbu** (`Map` za kila mchakato za
-`ModelLockoutEntry` zenye funguo za `provider:connectionId:model`), wala hauhifadhiwi kwenye
+`ModelLockoutEntry` zenye funguo za `provider:connectionId:model`, na ufungiaji wa upeo mahususi wenye
+`provider:connectionId:exact:model`), hauhifadhiwi kwenye
 DB — hupotea mfumo unapoanzishwa upya. _Mipangilio_ huhifadhiwa; _hali_ ya ufungiaji
 unaotumika ni ya muda mfupi.
 
@@ -615,13 +631,14 @@ uliowekwa katika makundi kwa IP ni ishara sawa na kiasi kilichoisha. Mipaka ya w
 
 ---
 
-## Utatuzi wa Hitilafu
+## Utatuzi
 
-- Funguo zote za mtoa huduma zimerukwa → angalia hali ya kivunja mzunguko PAMOJA NA `rateLimitedUntil`/`testStatus` ya kila muunganisho.
-- Mtoa huduma ametengwa kabisa baada ya dirisha la uwekaji upya → msimbo unasoma `state` ghafi badala ya `getStatus()`/`canExecute()`.
-- Ufunguo mmoja unashindwa, mingine inapaswa kufanya kazi → pendelea kipindi cha kusubiri cha muunganisho kuliko kivunja mzunguko.
-- Muundo mmoja tu unashindwa → pendelea kufungia muundo kuliko kipindi cha kusubiri cha muunganisho.
-- Hali inapaswa kujirekebisha lakini haifanyi hivyo → angalia muhuri wa wakati wa baadaye + njia ya usomaji inayosasisha hali iliyoisha muda. Hali za kudumu zinahitaji mabadiliko ya mikono.
+- Majibu ya mchanganyiko wenye uzani ni `503 all_targets_cooling_down` (`Retry-After` imewekwa, na `diagnostics.excluded` huorodhesha kila lengo lenye `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → mkusanyiko umesanidiwa na kuunganishwa, lakini kila lengo limetengwa na kipima muda cha ustahimilivu; onyo la `[COMBO] Weighted selection: every target excluded before dispatch — …` hutaja sababu na sekunde zilizosalia. `404 no_executable_targets` kutoka kwenye mchanganyiko huohuo humaanisha kuwa hakuna kipima muda cha ustahimilivu kilichohusika (hakuna cha kuendesha, au kila akaunti ilishindwa katika ukaguzi wa upatikanaji). Imeundwa katika `open-sse/services/combo/pinRecovery.ts` kutokana na vizuizi vilivyokusanywa katika `targetResolution.ts`.
+- Funguo zote za mtoa huduma zimerukwa → angalia hali ya kizuia hitilafu NA `rateLimitedUntil`/`testStatus` ya kila muunganisho.
+- Mtoa huduma ametengwa kabisa baada ya dirisha la kuweka upya → msimbo unasoma `state` ghafi badala ya `getStatus()`/`canExecute()`.
+- Ufunguo mmoja unashindwa, mingine inapaswa kufanya kazi → pendelea muda wa kusubiri wa muunganisho kuliko kizuia hitilafu.
+- Muundo mmoja pekee unashindwa → pendelea kufungiwa kwa muundo kuliko muda wa kusubiri wa muunganisho.
+- Hali inapaswa kujirekebisha lakini haifanyi hivyo → angalia muhuri wa muda wa baadaye + njia ya usomaji inayosasisha hali iliyokwisha muda. Hali za kudumu zinahitaji mabadiliko ya mikono.
 
 ---
 

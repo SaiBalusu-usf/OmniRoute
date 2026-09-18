@@ -4,32 +4,32 @@
 
 ---
 
-> **Tóm tắt**: ACP cho phép OmniRoute khởi chạy các tác tử CLI (như Claude Code, Codex) dưới dạng tiến trình con thay vì sử dụng API HTTP. Điều này mang lại cơ chế truyền tải "CLI làm backend".
+> **Tóm tắt**: ACP cho phép OmniRoute khởi chạy các tác nhân CLI (như Claude Code, Codex) dưới dạng tiến trình con thay vì sử dụng API HTTP. Điều này cung cấp cho bạn cơ chế truyền tải "CLI làm backend".
 
 ---
 
-## ACP Là Gì?
+## ACP là gì?
 
-ACP (Agent Client Protocol) là một cơ chế truyền tải **"CLI làm backend"** dành cho OmniRoute. Thay vì chặn các lệnh gọi API HTTP đến những nhà cung cấp AI, ACP **khởi chạy các tác tử CLI dưới dạng tiến trình con** và gửi lời nhắc thông qua giao diện gốc của chúng.
+ACP (Agent Client Protocol) là một cơ chế truyền tải **"CLI làm backend"** dành cho OmniRoute. Thay vì chặn các lệnh gọi API HTTP đến nhà cung cấp AI, ACP **khởi chạy các tác nhân CLI dưới dạng tiến trình con** và chuyển lời nhắc qua giao diện gốc của chúng.
 
-### Tại Sao Nên Sử Dụng ACP?
+### Tại sao nên sử dụng ACP?
 
-| Lợi ích                    | Mô tả                                                   |
-| -------------------------- | ------------------------------------------------------- |
-| **Không cần khóa API**     | Sử dụng thông tin xác thực CLI hiện có của bạn          |
-| **Giao thức gốc**          | Sử dụng định dạng đầu vào/đầu ra gốc của từng CLI       |
-| **Tự động phát hiện**      | Phát hiện các CLI đã được cài đặt trên hệ thống của bạn |
-| **15 tác tử tích hợp sẵn** | Được cấu hình sẵn cho các công cụ CLI phổ biến          |
-| **Tác tử tùy chỉnh**       | Thêm công cụ CLI của riêng bạn thông qua phần cài đặt   |
-| **Quản lý tiến trình**     | Xử lý vòng đời tiến trình (khởi chạy, gửi, kết thúc)    |
+| Lợi ích                      | Mô tả                                              |
+| ---------------------------- | -------------------------------------------------- |
+| **Không cần khóa API**       | Sử dụng thông tin xác thực CLI hiện có của bạn     |
+| **Giao thức gốc**            | Sử dụng định dạng đầu vào/đầu ra gốc của từng CLI  |
+| **Tự động phát hiện**        | Phát hiện các CLI đã cài đặt trên hệ thống của bạn |
+| **15 tác nhân tích hợp sẵn** | Được cấu hình sẵn cho các công cụ CLI phổ biến     |
+| **Tác nhân tùy chỉnh**       | Thêm công cụ CLI của riêng bạn thông qua cài đặt   |
+| **Quản lý tiến trình**       | Xử lý vòng đời (khởi chạy, gửi, kết thúc)          |
 
 ---
 
-## Các Tác Tử CLI Được Hỗ Trợ
+## Các tác nhân CLI được hỗ trợ
 
-ACP hỗ trợ sẵn **15 tác tử CLI tích hợp**:
+ACP hỗ trợ sẵn **15 tác nhân CLI tích hợp**:
 
-| ID tác tử     | Tên hiển thị       | Tệp thực thi  | Giao thức |
+| ID tác nhân   | Tên hiển thị       | Tệp thực thi  | Giao thức |
 | ------------- | ------------------ | ------------- | --------- |
 | `codex`       | OpenAI Codex CLI   | `codex`       | stdio     |
 | `claude`      | Claude Code CLI    | `claude`      | stdio     |
@@ -47,37 +47,37 @@ ACP hỗ trợ sẵn **15 tác tử CLI tích hợp**:
 | `gemini`      | Gemini CLI         | `gemini`      | stdio     |
 | `zcode`       | ZCode              | `zcode`       | stdio     |
 
-### Tác Tử Tùy Chỉnh
+### Tác nhân tùy chỉnh
 
-Bạn có thể thêm các tác tử CLI của riêng mình thông qua phần cài đặt. Các tác tử tùy chỉnh hỗ trợ những tính năng tương tự như tác tử tích hợp sẵn.
+Bạn có thể thêm các tác nhân CLI của riêng mình thông qua phần cài đặt. Các tác nhân tùy chỉnh hỗ trợ những tính năng tương tự như tác nhân tích hợp sẵn.
 
 ---
 
-## Bắt Đầu Nhanh
+## Bắt đầu nhanh
 
-### Bước 1: Cài Đặt Một Tác Tử CLI
+### Bước 1: Cài đặt một tác nhân CLI
 
 ```bash
 # Ví dụ: Cài đặt Claude Code CLI
 npm install -g @anthropic-ai/claude-code
 
-# Xác minh quá trình cài đặt
+# Xác minh cài đặt
 claude --version
 ```
 
-### Bước 2: ACP Tự Động Phát Hiện
+### Bước 2: ACP tự động phát hiện
 
-ACP tự động phát hiện các tác tử CLI đã được cài đặt trên hệ thống của bạn. Không cần cấu hình!
+ACP tự động phát hiện các tác nhân CLI đã cài đặt trên hệ thống của bạn. Không cần cấu hình!
 
-### Bước 3: Sử Dụng Cơ Chế Truyền Tải ACP
+### Bước 3: Sử dụng cơ chế truyền tải ACP
 
 Sau khi được phát hiện, ACP có thể được sử dụng làm cơ chế truyền tải cho bất kỳ nhà cung cấp nào được hỗ trợ. OmniRoute sẽ tự động sử dụng ACP khi CLI khả dụng.
 
 ---
 
-## Cách ACP Hoạt Động
+## Cách ACP hoạt động
 
-### Kiến Trúc
+### Kiến trúc
 
 ```
 ┌─────────────────┐
@@ -89,7 +89,7 @@ Sau khi được phát hiện, ACP có thể được sử dụng làm cơ chế
          ▼
 ┌─────────────────┐
 │  Tiến trình con │
-│  (Tác tử CLI)   │
+│  (Tác nhân CLI) │
 │                 │
 │  stdin  ◄──────┤  Gửi lời nhắc
 │  stdout ──────►│  Nhận phản hồi
@@ -97,20 +97,20 @@ Sau khi được phát hiện, ACP có thể được sử dụng làm cơ chế
 └─────────────────┘
 ```
 
-### Vòng Đời Tiến Trình
+### Vòng đời tiến trình
 
-1. **Khởi chạy** — ACP tạo một tiến trình con cho tác tử CLI
-2. **Gửi** — ACP ghi các lời nhắc vào stdin của tiến trình
-3. **Nhận** — ACP đọc các phản hồi từ stdout/stderr
-4. **Phát hiện trạng thái chờ** — ACP đợi 2 giây không có hoạt động trước khi coi phản hồi là hoàn tất
-5. **Kết thúc** — ACP kết thúc tiến trình (SIGTERM, sau đó là SIGKILL sau 5 giây)
+1. **Khởi chạy** — ACP tạo một tiến trình con cho tác nhân CLI
+2. **Gửi** — ACP ghi lời nhắc vào stdin của tiến trình
+3. **Nhận** — ACP đọc phản hồi từ stdout/stderr
+4. **Phát hiện trạng thái nhàn rỗi** — ACP chờ 2 giây không có hoạt động trước khi coi phản hồi là hoàn tất
+5. **Kết thúc** — ACP chấm dứt tiến trình (SIGTERM, sau đó là SIGKILL sau 5 giây)
 
-### Giao Thức Giao Tiếp
+### Giao thức giao tiếp
 
-ACP sử dụng **stdio** (đầu vào/đầu ra tiêu chuẩn) để giao tiếp với các tác tử CLI. Giao thức như sau:
+ACP sử dụng **stdio** (đầu vào/đầu ra tiêu chuẩn) để giao tiếp với các tác nhân CLI. Giao thức như sau:
 
 1. **Gửi lời nhắc** — Ghi vào stdin kèm theo một ký tự xuống dòng
-2. **Chờ phản hồi** — Đọc từ stdout cho đến khi không có hoạt động (không có đầu ra trong 2 giây)
+2. **Chờ phản hồi** — Đọc từ stdout cho đến khi không còn hoạt động (không có đầu ra trong 2 giây)
 3. **Thời gian chờ** — Mặc định là 120 giây (có thể cấu hình)
 
 ---
@@ -121,7 +121,7 @@ ACP sử dụng **stdio** (đầu vào/đầu ra tiêu chuẩn) để giao tiế
 
 #### `detectInstalledAgents()`
 
-Phát hiện tất cả tác nhân CLI đã cài đặt trên hệ thống. Kết quả được lưu vào bộ nhớ đệm trong 60 giây.
+Phát hiện tất cả CLI agent đã cài đặt trên hệ thống. Kết quả được lưu vào bộ nhớ đệm trong 60 giây.
 
 ```typescript
 import { detectInstalledAgents } from "@/lib/acp";
@@ -132,31 +132,31 @@ const agents = detectInstalledAgents();
 interface CliAgentInfo {
   id: string; // ví dụ: "codex", "claude"
   name: string; // Tên hiển thị
-  binary: string; // Tên tệp nhị phân sẽ được khởi chạy
+  binary: string; // Tên tệp thực thi sẽ được khởi chạy
   versionCommand: string; // Lệnh phát hiện phiên bản
   version: string | null; // Phiên bản được phát hiện (null nếu chưa cài đặt)
-  installed: boolean; // Tác nhân đã được cài đặt hay chưa
+  installed: boolean; // Agent có được cài đặt hay không
   providerAlias: string; // ID nhà cung cấp trong OmniRoute
-  spawnArgs: string[]; // Các đối số được truyền khi khởi chạy
-  protocol: "stdio" | "http"; // Giao thức truyền thông
-  isCustom?: boolean; // Đây có phải là tác nhân tùy chỉnh do người dùng định nghĩa hay không
+  spawnArgs: string[]; // Các đối số sẽ truyền khi khởi chạy
+  protocol: "stdio" | "http"; // Giao thức giao tiếp
+  isCustom?: boolean; // Đây có phải là agent tùy chỉnh do người dùng định nghĩa hay không
 }
 ```
 
 #### `getAvailableAgents()`
 
-Chỉ lấy các tác nhân đã được cài đặt và khả dụng cho ACP.
+Chỉ lấy các agent đã được cài đặt và có sẵn cho ACP.
 
 ```typescript
 import { getAvailableAgents } from "@/lib/acp";
 
 const available = getAvailableAgents();
-// Trả về: CliAgentInfo[] (chỉ các tác nhân đã cài đặt)
+// Trả về: CliAgentInfo[] (chỉ các agent đã cài đặt)
 ```
 
 #### `getAgentById(id)`
 
-Lấy một tác nhân cụ thể theo ID.
+Lấy một agent cụ thể theo ID.
 
 ```typescript
 import { getAgentById } from "@/lib/acp";
@@ -167,7 +167,7 @@ const agent = getAgentById("claude");
 
 #### `setCustomAgents(agents)`
 
-Thiết lập các định nghĩa tác nhân tùy chỉnh từ phần cài đặt.
+Thiết lập các định nghĩa agent tùy chỉnh từ phần cài đặt.
 
 ```typescript
 import { setCustomAgents } from "@/lib/acp";
@@ -189,7 +189,7 @@ setCustomAgents([
 
 #### `acpManager.spawn(agentId, binary, args, env)`
 
-Khởi chạy một tiến trình tác nhân CLI mới.
+Khởi chạy một tiến trình CLI agent mới.
 
 ```typescript
 import { acpManager } from "@/lib/acp";
@@ -200,11 +200,11 @@ const session = acpManager.spawn("claude", "claude", ["--print", "--output-forma
 // Trả về: AcpSession
 ```
 
-**Các ID tác nhân được phép**: `["claude", "codex", "gemini", "qwen"]`
+**Các ID agent được phép**: `["claude", "codex", "gemini", "qwen"]`
 
 #### `acpManager.sendPrompt(sessionId, prompt, timeoutMs)`
 
-Gửi một lời nhắc đến tác nhân CLI và thu thập phản hồi.
+Gửi một prompt đến CLI agent và thu thập phản hồi.
 
 ```typescript
 import { acpManager } from "@/lib/acp";
@@ -219,7 +219,7 @@ const response = await acpManager.sendPrompt(
 
 #### `acpManager.kill(sessionId)`
 
-Dừng một phiên và thực hiện dọn dẹp.
+Dừng một phiên và dọn dẹp tài nguyên.
 
 ```typescript
 import { acpManager } from "@/lib/acp";
@@ -249,12 +249,12 @@ import { acpManager } from "@/lib/acp";
 acpManager.killAll();
 ```
 
-### Giao diện Session
+### Interface phiên
 
 ```typescript
 interface AcpSession {
   id: string; // ID phiên duy nhất
-  agentId: string; // ID tác nhân (ví dụ: "claude")
+  agentId: string; // ID agent (ví dụ: "claude")
   process: ChildProcess; // Handle của tiến trình con
   alive: boolean; // Tiến trình có đang hoạt động hay không
   stdoutBuffer: string; // Bộ đệm stdout được tích lũy
@@ -269,7 +269,7 @@ interface AcpSession {
 
 #### `stdout`
 
-Được phát ra khi tác nhân CLI ghi vào stdout.
+Được phát ra khi CLI agent ghi vào stdout.
 
 ```typescript
 acpManager.on("stdout", ({ sessionId, data }) => {
@@ -279,7 +279,7 @@ acpManager.on("stdout", ({ sessionId, data }) => {
 
 #### `stderr`
 
-Được phát ra khi tác nhân CLI ghi vào stderr.
+Được phát ra khi CLI agent ghi vào stderr.
 
 ```typescript
 acpManager.on("stderr", ({ sessionId, data }) => {
@@ -289,7 +289,7 @@ acpManager.on("stderr", ({ sessionId, data }) => {
 
 #### `exit`
 
-Được phát ra khi tiến trình tác nhân CLI thoát.
+Được phát ra khi tiến trình CLI agent thoát.
 
 ```typescript
 acpManager.on("exit", ({ sessionId, code, signal }) => {
@@ -299,7 +299,7 @@ acpManager.on("exit", ({ sessionId, code, signal }) => {
 
 #### `error`
 
-Được phát ra khi tiến trình tác nhân CLI gặp lỗi.
+Được phát ra khi tiến trình CLI agent gặp lỗi.
 
 ```typescript
 acpManager.on("error", ({ sessionId, error }) => {
@@ -340,7 +340,7 @@ await acpManager.sendPrompt(sessionId, prompt, 300000); // 5 phút
 
 ### Bộ nhớ đệm phát hiện
 
-Kết quả phát hiện agent được lưu vào bộ nhớ đệm trong **60 giây** để tránh việc quét hệ thống tệp tốn kém. Để buộc làm mới:
+Kết quả phát hiện agent được lưu vào bộ nhớ đệm trong **60 giây** để tránh các lần quét hệ thống tệp tốn kém. Buộc làm mới:
 
 ```typescript
 import { refreshAgentCache } from "@/lib/acp";
@@ -363,11 +363,11 @@ const DISALLOWED_VERSION_COMMAND_CHARS = /[;&|<>`$\r\n]/;
 Các lệnh kiểm tra phiên bản chứa những ký tự sau sẽ bị từ chối:
 
 - `;` — Dấu phân cách lệnh
-- `&` — Tiến trình chạy nền
+- `&` — Tiến trình nền
 - `|` — Đường ống
 - `<`, `>` — Chuyển hướng
 - `` ` `` — Thay thế lệnh
-- `$` — Khai triển biến
+- `$` — Mở rộng biến
 - `\r`, `\n` — Ngắt dòng
 
 ### Xác thực tên tệp nhị phân
@@ -376,24 +376,24 @@ ACP xác thực rằng tệp nhị phân trong lệnh kiểm tra phiên bản kh
 
 ### Cô lập tiến trình
 
-Mỗi phiên ACP chạy trong tiến trình con riêng. Tiến trình sẽ bị kết thúc khi phiên kết thúc hoặc hết thời gian chờ.
+Mỗi phiên ACP chạy trong một tiến trình con riêng. Tiến trình sẽ bị kết thúc khi phiên kết thúc hoặc hết thời gian chờ.
 
 ---
 
-## Hiệu năng
+## Hiệu suất
 
-### Hiệu năng phát hiện
+### Hiệu suất phát hiện
 
 - **Lần gọi đầu tiên**: ~50-200ms (chạy lệnh `version` cho từng agent)
 - **Các lần gọi được lưu vào bộ nhớ đệm**: <1ms (trả về từ bộ nhớ đệm)
 - **TTL của bộ nhớ đệm**: 60 giây
 
-### Hiệu năng xử lý prompt
+### Hiệu suất xử lý prompt
 
 - **Khởi chạy**: ~50-100ms
 - **Gửi prompt**: ~10-50ms
-- **Chờ phản hồi**: Phụ thuộc vào CLI agent (thường là 1-30 giây)
-- **Kết thúc tiến trình**: ~5 giây (SIGTERM) + ngay lập tức (SIGKILL)
+- **Chờ phản hồi**: Phụ thuộc vào CLI agent (thường từ 1-30 giây)
+- **Kết thúc**: ~5 giây (SIGTERM) + ngay lập tức (SIGKILL)
 
 ### Mức sử dụng tài nguyên
 
@@ -416,7 +416,7 @@ Mỗi phiên ACP chạy trong tiến trình con riêng. Tiến trình sẽ bị 
 - `gemini`
 - `qwen`
 
-Các agent khác phải được khởi chạy thủ công hoặc thông qua định nghĩa agent tùy chỉnh.
+Các agent khác phải được khởi chạy thủ công hoặc thông qua các định nghĩa agent tùy chỉnh.
 
 ### Lỗi "Session not alive"
 
@@ -450,16 +450,16 @@ await acpManager.sendPrompt(sessionId, prompt, 300000); // 5 phút
 
 1. **Kiểm tra PATH**: Đảm bảo CLI nằm trong PATH của hệ thống
 2. **Kiểm tra lệnh phiên bản**: Chạy thủ công `claude --version`
-3. **Kiểm tra quyền**: Đảm bảo CLI có thể thực thi được
-4. **Agent tùy chỉnh**: Thêm định nghĩa agent tùy chỉnh cho các CLI không theo tiêu chuẩn
+3. **Kiểm tra quyền**: Đảm bảo CLI có thể thực thi
+4. **Agent tùy chỉnh**: Thêm định nghĩa agent tùy chỉnh cho các CLI không tiêu chuẩn
 
-### Quyền truy cập bị từ chối
+### Quyền bị từ chối
 
 **Vấn đề**: ACP không thể thực thi CLI
 
 **Giải pháp**:
 
-1. **Kiểm tra quyền của tệp**: `chmod +x /usr/local/bin/claude`
+1. **Kiểm tra quyền tệp**: `chmod +x /usr/local/bin/claude`
 2. **Kiểm tra quyền sở hữu**: Đảm bảo OmniRoute có quyền đọc/thực thi
 3. **Kiểm tra SELinux/AppArmor**: Có thể chặn việc khởi chạy tiến trình
 
@@ -472,7 +472,7 @@ await acpManager.sendPrompt(sessionId, prompt, 300000); // 5 phút
 ```typescript
 import { acpManager, detectInstalledAgents } from "@/lib/acp";
 
-// Phát hiện các tác tử đã cài đặt
+// Phát hiện các agent đã cài đặt
 const agents = detectInstalledAgents();
 const claude = agents.find((a) => a.id === "claude");
 
@@ -480,7 +480,7 @@ if (claude?.installed) {
   // Khởi chạy một phiên mới
   const session = acpManager.spawn("claude", claude.binary, ["--print", "--output-format", "json"]);
 
-  // Gửi một lời nhắc
+  // Gửi một prompt
   const response = await acpManager.sendPrompt(
     session.id,
     "Explain quantum computing in 100 words"
@@ -518,12 +518,12 @@ const response = await acpManager.sendPrompt(session.id, "Hello!");
 acpManager.kill(session.id);
 ```
 
-### Ví dụ 3: Tác tử tùy chỉnh
+### Ví dụ 3: Agent tùy chỉnh
 
 ```typescript
 import { setCustomAgents, detectInstalledAgents } from "@/lib/acp";
 
-// Đăng ký một tác tử CLI tùy chỉnh
+// Đăng ký một agent CLI tùy chỉnh
 setCustomAgents([
   {
     id: "my-llm-cli",
@@ -544,11 +544,11 @@ const agents = detectInstalledAgents();
 
 ## Tiếp theo là gì?
 
-- **[Tài liệu tham khảo API](../reference/API_REFERENCE.md)** — Các điểm cuối REST API
+- **[Tài liệu tham khảo API](../reference/API_REFERENCE.md)** — Các endpoint REST API
 - **[Tài liệu tham khảo nhà cung cấp](../reference/PROVIDER_REFERENCE.md)** — Toàn bộ 352 nhà cung cấp
 - **[Máy chủ MCP](./MCP-SERVER.md)** — Tích hợp Model Context Protocol
 - **[Máy chủ A2A](./A2A-SERVER.md)** — Giao thức Agent-to-Agent
-- **[Tác tử đám mây](./CLOUD_AGENT.md)** — Các tác tử dựa trên đám mây
+- **[Cloud Agent](./CLOUD_AGENT.md)** — Các agent dựa trên đám mây
 
 ---
 
@@ -557,5 +557,5 @@ const agents = detectInstalledAgents();
 - [Dự án AionUi](https://github.com/iOfficeAI/AionUi) — Nguồn cảm hứng cho tính năng tự động phát hiện ACP
 - [Mã nguồn ACP](../../src/lib/acp/) — Chi tiết triển khai
   - `manager.ts` — Quản lý vòng đời tiến trình
-  - `registry.ts` — Khám phá và đăng ký tác tử
+  - `registry.ts` — Khám phá và đăng ký agent
   - `index.ts` — Các phần xuất API công khai

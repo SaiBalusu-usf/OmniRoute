@@ -1615,19 +1615,19 @@ GET /.well-known/agent.json
 
 ## CLI টুল ব্যবস্থাপনা
 
-OmniRoute-এর সঙ্গে সমন্বিত CLI টুলগুলো (antigravity, chipotle, commandCode,
-devin-cli, ইত্যাদি) পরিচালনা করুন। সম্পূর্ণ তালিকার জন্য [প্রোভাইডার রেফারেন্স](./PROVIDER_REFERENCE.md) দেখুন।
+OmniRoute-এর সঙ্গে সমন্বিত CLI টুলগুলো (antigravity, commandCode,
+devin-cli ইত্যাদি) পরিচালনা করুন। সম্পূর্ণ তালিকার জন্য [প্রোভাইডার রেফারেন্স](./PROVIDER_REFERENCE.md) দেখুন।
 
-| মেথড | পাথ                                     | বিবরণ                                                                                                                                                           |
-| ---- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET  | `/api/cli-tools/all-statuses`           | সব CLI টুলের স্ট্যাটাস (ইনস্টল করা হয়েছে কি না, সংস্করণ, সর্বশেষ দেখা হওয়ার সময়)                                                                             |
-| GET  | `/api/cli-tools/status`                 | একটি CLI টুলের বিস্তারিত স্ট্যাটাস (`?tool=` কোয়েরি)                                                                                                           |
-| POST | `/api/cli-tools/apply`                  | কোনো টুলের জেনারেট করা কনফিগ লিখুন (`dryRun` প্রিভিউ দেখায়; কনটেইনারাইজড হলে `422` + `containerEphemeralTarget`; `migration` লিগ্যাসি Codex YAML-এর তথ্য দেয়) |
-| GET  | `/api/cli-tools/backups`                | CLI টুলের কনফিগারেশন ব্যাকআপগুলোর তালিকা দেখুন                                                                                                                  |
-| POST | `/api/cli-tools/backups`                | সব CLI টুল কনফিগারেশনের একটি ব্যাকআপ তৈরি করুন                                                                                                                  |
-| POST | `/api/cli-tools/backups`                | পুনরুদ্ধার: একই এন্ডপয়েন্টের বডিতে `{tool, backupId}` দিলে সেই ব্যাকআপ পুনরুদ্ধার করা হয়                                                                      |
-| GET  | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM প্রক্সির স্ট্যাটাস ("antigravity-mitm" CLI টুল)                                                                                                |
-| POST | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm অ্যালিয়াস কনফিগার করুন                                                                                                                        |
+| মেথড | পাথ                                     | বিবরণ                                                                                                                                                               |
+| ---- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET  | `/api/cli-tools/all-statuses`           | সব CLI টুলের অবস্থা (ইনস্টল করা আছে কি না, সংস্করণ, সর্বশেষ কখন দেখা গেছে)                                                                                          |
+| GET  | `/api/cli-tools/status`                 | একটি CLI টুলের বিস্তারিত অবস্থা (`?tool=` কোয়েরি)                                                                                                                  |
+| POST | `/api/cli-tools/apply`                  | কোনো টুলের জেনারেট করা কনফিগ লিখুন (`dryRun` প্রিভিউ দেখায়; কনটেইনারাইজড হলে `422` + `containerEphemeralTarget`; `migration` একটি লিগ্যাসি Codex YAML নির্দেশ করে) |
+| GET  | `/api/cli-tools/backups`                | CLI টুল কনফিগারেশনের ব্যাকআপগুলো তালিকাভুক্ত করুন                                                                                                                   |
+| POST | `/api/cli-tools/backups`                | সব CLI টুল কনফিগারেশনের একটি ব্যাকআপ তৈরি করুন                                                                                                                      |
+| POST | `/api/cli-tools/backups`                | পুনরুদ্ধার: বডিতে `{tool, backupId}` দিয়ে একই এন্ডপয়েন্ট ব্যবহার করলে সেই ব্যাকআপটি পুনরুদ্ধার করা হয়                                                            |
+| GET  | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM প্রক্সির অবস্থা (`antigravity-mitm` CLI টুল)                                                                                                       |
+| POST | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm অ্যালিয়াস কনফিগার করুন                                                                                                                            |
 
 **প্রমাণীকরণ:** ম্যানেজমেন্ট সেশন প্রয়োজন।
 

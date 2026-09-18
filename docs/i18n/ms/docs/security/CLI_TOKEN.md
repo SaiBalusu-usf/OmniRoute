@@ -6,47 +6,61 @@
 
 ## Gambaran keseluruhan
 
-Perintah CLI OmniRoute mengesahkan identiti terhadap API pengurusan setempat menggunakan token
+Perintah OmniRoute CLI mengesahkan identiti terhadap API pengurusan setempat menggunakan token
 `HMAC-SHA256(machine-id, salt)` yang dihantar melalui pengepala permintaan
 `x-omniroute-cli-token`.
 
 Ini membolehkan subperintah CLI (`omniroute status`, `omniroute providers`, dan sebagainya)
-memanggil titik akhir pengurusan tanpa memerlukan pengguna memberikan JWT atau
-kata laluan pada setiap pemanggilan.
+memanggil titik akhir pengurusan tanpa memerlukan pengguna membekalkan JWT atau
+kata laluan pada setiap pelaksanaan.
 
 ## Cara ia berfungsi
 
 1. `getMachineTokenSync()` membaca ID mesin perkakasan melalui `node-machine-id`
    (kembali kepada rentetan kosong jika gagal, sekali gus menyahdayakan pengesahan CLI).
-2. Ia mengira `HMAC-SHA256(machine_id, salt)` dan mengembalikan cerna perenambelasan
-   64 aksara penuh — token deterministik yang tidak boleh diterbalikkan dan terikat pada mesin ini.
-3. CLI menghantar token sebagai `x-omniroute-cli-token` hanya apabila destinasi yang
-   diselesaikan ialah URL gelung balik yang eksplisit (`localhost`, `127.0.0.0/8`, atau
+2. Ia mengira `HMAC-SHA256(machine_id, salt)` dan mengembalikan cernaan heks
+   penuh 64 aksara — token deterministik yang tidak boleh diterbalikkan dan terikat pada mesin ini.
+3. CLI menghantar token sebagai `x-omniroute-cli-token` hanya apabila destinasi
+   yang ditentukan ialah URL gelung balik yang eksplisit (`localhost`, `127.0.0.0/8`, atau
    IPv6 gelung balik). Permintaan yang membawa token menggunakan `redirect: error`, supaya
-   ubah hala setempat tidak boleh memajukannya ke sumber lain. Konteks jauh sebaliknya
-   menggunakan token akses berskop. Jika penerbitan token tidak tersedia, CLI tidak
+   ubah hala setempat tidak boleh memajukannya ke asalan lain. Konteks jauh sebaliknya
+   menggunakan token akses dengan skop. Jika penerbitan token tidak tersedia, CLI tidak
    menyertakan pengepala tersebut dan `omniroute doctor` melaporkan kegagalan itu dan bukannya
    menganggap token kosong sebagai sah.
-4. Pelayan (`src/server/authz/policies/management.ts`) mengira semula
-   token yang dijangkakan dengan salt yang sama dan membandingkannya melalui `timingSafeEqual`
-   untuk menghalang pengekstrakan berasaskan pemasaan.
+4. Pelayan (`src/server/authz/policies/management.ts`) mengira semula token
+   yang dijangkakan dengan garam yang sama dan membandingkannya melalui `timingSafeEqual` untuk
+   menghalang pengekstrakan berasaskan pemasaan.
 
-## Sifat keselamatan
+## Ciri keselamatan
 
-| Sifat                                  | Butiran                                                                                                                                                                                                                                 |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Gelung balik sahaja**                | Diterima hanya apabila cap kelokalan rakan dipercayai pelayan (yang diperoleh daripada alamat rakan TCP sebenar) menunjukkan gelung balik. Pengepala `Host` yang dikawal oleh klien tidak pernah dipercayai untuk menentukan kelokalan. |
-| **Perbandingan masa malar**            | `crypto.timingSafeEqual` menghalang serangan pemasaan.                                                                                                                                                                                  |
-| **Tidak boleh diterbalikkan**          | Output HMAC tidak boleh mendapatkan semula machine-id.                                                                                                                                                                                  |
-| **Tiada pintasan terlindung `always`** | `isAlwaysProtectedPath()` dinilai sebelum semakan token CLI. `/api/shutdown` dan `/api/settings/database` sentiasa memerlukan JWT.                                                                                                      |
-| **Tidak boleh dieksport**              | Token tidak pernah ditulis ke cakera atau direkodkan dalam log.                                                                                                                                                                         |
+| Ciri                                     | Butiran                                                                                                                                                                                                                          |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Gelung balik sahaja**                  | Diterima hanya apabila cap lokaliti rakan dipercayai pelayan (yang diperoleh daripada alamat rakan TCP sebenar) menunjukkan gelung balik. Pengepala `Host` yang dikawal klien tidak pernah dipercayai untuk menentukan lokaliti. |
+| **Perbandingan masa malar**              | `crypto.timingSafeEqual` menghalang serangan pemasaan.                                                                                                                                                                           |
+| **Tidak boleh diterbalikkan**            | Output HMAC tidak boleh digunakan untuk mendapatkan semula ID mesin.                                                                                                                                                             |
+| **Tiada pintasan perlindungan `always`** | `isAlwaysProtectedPath()` dinilai sebelum pemeriksaan token CLI. `/api/shutdown` dan `/api/settings/database` sentiasa memerlukan JWT.                                                                                           |
+| **Tidak boleh dieksport**                | Token tidak pernah ditulis ke cakera atau direkodkan dalam log.                                                                                                                                                                  |
+
+## Garam lalai (rawak bagi setiap pemasangan)
+
+Apabila `OMNIROUTE_CLI_SALT` tidak ditetapkan, garam tersebut ialah rentetan heks rawak 64 aksara
+yang dijana sekali dan disimpan secara berterusan di `<DATA_DIR>/cli-token-salt.json` (mod `0600`) —
+bukannya nilai literal `omniroute-cli-auth-v1` yang disertakan dalam repositori. Kedua-dua `getActiveSalt()` dalam
+`src/lib/machineToken.ts` dan cerminannya dalam `bin/cli/utils/cliToken.mjs` membaca fail
+yang sama, supaya pelayan dan setiap pelaksanaan CLI pada pemasangan ini menggunakan
+nilai yang sama; nilai literal yang disertakan dalam repositori hanya digunakan sebagai sandaran terakhir apabila
+garam tersimpan atau garam persekitaran masih belum dapat diwujudkan (contohnya, pemasangan baharu untuk CLI sahaja
+sebelum pelayan pernah dijalankan). Ini menutup kelemahan lalai literal tetap yang lama:
+`/etc/machine-id` lazimnya boleh dibaca oleh semua pengguna, maka mana-mana pengguna setempat
+sebaliknya boleh menerbitkan token yang sama bagi setiap pemasangan yang tidak pernah menetapkan
+`OMNIROUTE_CLI_SALT`.
 
 ## Putaran salt
 
-Tetapkan `OMNIROUTE_CLI_SALT` untuk memutar token terbitan tanpa perubahan kod.
-Selepas putaran, semua proses CLI pada mesin ini akan menggunakan token baharu
-secara automatik. Berguna selepas kebocoran senarai proses yang mungkin telah mendedahkan
-nilai terbitan sebelumnya.
+Tetapkan `OMNIROUTE_CLI_SALT` untuk memutar token terbitan tanpa perubahan kod — ia
+sentiasa diutamakan berbanding salt setiap pemasangan yang disimpan. Selepas putaran, semua proses CLI
+pada mesin ini akan menggunakan token baharu secara automatik. Berguna selepas
+kebocoran senarai proses yang mungkin telah mendedahkan nilai terbitan sebelumnya.
 
 ```bash
 # Putaran berterusan (tambahkan pada profil shell)
@@ -56,9 +70,7 @@ export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 omniroute status
 ```
 
-Salt lalai: `omniroute-cli-auth-v1`
-
-## Format legasi (SHA-256, 32 aksara) — masih diterima
+## Format lama (SHA-256, 32 aksara) — masih diterima
 
 Sebelum format HMAC di atas, CLI menerbitkan tokennya sebagai
 `SHA-256(machineId + salt).hex[0..32]` (awalan 32 aksara) dalam
@@ -68,25 +80,26 @@ Untuk keserasian ke belakang, pelayan menerima **kedua-dua** format: pengesah me
 `expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` dan membandingkan
 pengepala masuk dengan setiap token menggunakan `timingSafeEqual`
 (`src/server/authz/policies/management.ts` dan `src/lib/middleware/cliTokenAuth.ts`).
-Oleh itu, token adalah sah jika sepadan dengan **sama ada** cerna HMAC 64 aksara atau
-awalan SHA-256 legasi 32 aksara.
+Oleh itu, sesuatu token adalah sah jika ia sepadan dengan **sama ada** cerna HMAC 64 aksara atau
+awalan SHA-256 lama 32 aksara.
 
-**Pilih keluar:** tetapkan `OMNIROUTE_DISABLE_CLI_TOKEN=true` (env atau `.env`) untuk
-menyahdayakan mekanisme token CLI sepenuhnya; selepas itu, semua akses memerlukan kunci API
-yang eksplisit. Pada hos berbilang pengguna, ini disyorkan kerana `machine-id` adalah bagi
-setiap peranti (bukan bagi setiap pengguna) dan pengguna lain pada hos yang sama boleh
-mengira token yang sama.
+**Pilih keluar:** tetapkan `OMNIROUTE_DISABLE_CLI_TOKEN=true` (env atau `.env`) untuk menyahdayakan
+mekanisme token CLI sepenuhnya; selepas itu, semua akses memerlukan kunci API yang dinyatakan secara eksplisit. Pada hos berbilang pengguna,
+langkah ini disyorkan kerana `machine-id` adalah khusus bagi setiap peranti (bukan setiap pengguna) dan pengguna lain
+pada hos yang sama boleh mengira token yang sama.
 
 ## Fail
 
 | Fail                                      | Tujuan                                      |
 | ----------------------------------------- | ------------------------------------------- |
 | `src/lib/machineToken.ts`                 | Penerbitan token (`getMachineTokenSync`)    |
+| `bin/cli/utils/cliToken.mjs`              | Cerminan penerbitan yang sama pada sisi CLI |
+| `<DATA_DIR>/cli-token-salt.json`          | Salt rawak setiap pemasangan yang disimpan  |
 | `src/server/authz/headers.ts`             | Pemalar `CLI_TOKEN_HEADER`                  |
-| `src/server/authz/policies/management.ts` | Pengesahan pada bahagian pelayan            |
+| `src/server/authz/policies/management.ts` | Pengesahan pada sisi pelayan                |
 | `src/server/authz/routeGuard.ts`          | Semakan hos gelung balik (`isLoopbackHost`) |
 
 ## Lihat juga
 
 - `docs/security/ROUTE_GUARD_TIERS.md` — peringkat perlindungan laluan
-- `docs/architecture/AUTHZ_GUIDE.md` — saluran paip keizinan penuh
+- `docs/architecture/AUTHZ_GUIDE.md` — saluran paip pemberian kuasa penuh

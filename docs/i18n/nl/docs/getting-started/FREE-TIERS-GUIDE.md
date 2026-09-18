@@ -4,7 +4,7 @@
 
 ---
 
-> **Kort gezegd**: OmniRoute registreert 352 provider-ID's, met **152 vermeldingen in de providercatalogus die als `hasFree` zijn gemarkeerd**. De strenger gecontroleerde catalogus met gratis modellen omvat **34 terugkerende poolsleutels / 443 vermeldingen** (436 actief + 7 beëindigd). Koppel meerdere geschikte providers voor een ruimere fallbackcapaciteit; alle quota, goedkeuringsregels, privacybeleidsregels en voorwaarden voor betaald meerverbruik blijven van toepassing.
+> **Kort samengevat**: OmniRoute registreert 357 provider-ID's, met **152 providercatalogusvermeldingen die als `hasFree` zijn gemarkeerd**. De strenger gecontroleerde catalogus van gratis modellen omvat **35 terugkerende poolsleutels / 482 vermeldingen** (475 actief + 7 stopgezet). Koppel meerdere geschikte providers voor een bredere terugvalcapaciteit; alle quota, goedkeuringsregels, privacybeleidsregels en voorwaarden voor betaald meerverbruik blijven van toepassing.
 
 ---
 
@@ -158,20 +158,20 @@ quotum- of toegangsbeleid van een provider te omzeilen.
 
 ---
 
-## Berekening van de gratis laag
+## Berekening van gratis niveaus
 
-De live, op pools gededupliceerde catalogus rapporteert momenteel:
+De actuele, op pools gededupliceerde catalogus rapporteert momenteel:
 
-| Metriek                                                                     |                         Huidige gecontroleerde waarde | Interpretatie                                                                                                                                                                 |
-| --------------------------------------------------------------------------- | ----------------------------------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Terugkerend gekwantificeerd tegoed                                          |                           **~1.47 mld. tokens/maand** | Gedeelde pools zijn eenmaal geteld; providers zonder limiet zijn niet in de som opgenomen                                                                                     |
-| Eerste maand met registratietegoeden                                        |                                 **~2.07 mld. tokens** | Terugkerend totaal plus eenmalige en terugkerende tegoeden                                                                                                                    |
-| Gecontroleerde inventaris van gratis modellen                               | **34 terugkerende poolsleutels / 443 catalogusitems** | 436 actief + 7 beëindigd; niet hetzelfde als de catalogus met 352 providers                                                                                                   |
-| Vertegenwoordigde terugkerende/sleutelloze providers die altijd gratis zijn |                                                **52** | Unieke providers binnen terugkerende dagelijkse/maandelijkse tegoeden, tegoeden zonder limiet en sleutelloze catalogustypen; rijen met toelatingsvoorwaarden zijn uitgesloten |
-| Providercatalogusitems gemarkeerd met `hasFree`                             |                                         **152 / 352** | Bredere providermetadata; niet alle hebben een kwantificeerbaar terugkerend quotum                                                                                            |
+| Metriek                                                                       |                         Huidige gecontroleerde waarde | Interpretatie                                                                                                                                              |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Terugkerende gekwantificeerde toekenning                                      |                               **~1.62B tokens/maand** | Gedeelde pools worden één keer geteld; providers zonder limiet zijn uitgesloten van de som                                                                 |
+| Eerste maand met registratietegoeden                                          |                                     **~2.22B tokens** | Terugkerend totaal plus eenmalige en terugkerende tegoeden                                                                                                 |
+| Gecontroleerde inventaris van gratis modellen                                 | **35 terugkerende poolsleutels / 482 catalogusitems** | 475 actief + 7 beëindigd; te onderscheiden van de catalogus met 357 providers                                                                              |
+| Vertegenwoordigde terugkerende/sleutelloze providers die blijvend gratis zijn |                                                **53** | Unieke providers voor terugkerende dagelijkse/maandelijkse tegoeden, onbeperkte en sleutelloze catalogustypen; rijen met toelatingsvoorwaarden uitgesloten |
+| Providercatalogusitems gemarkeerd met `hasFree`                               |                                         **152 / 357** | Bredere providermetadata; niet alle hebben een kwantificeerbaar terugkerend quotum                                                                         |
 
 Deze waarden worden berekend op basis van `open-sse/config/freeModelCatalog.ts`; zie de
-[Referentie voor gratis lagen](../reference/FREE_TIERS.md) voor pooldeduplicatie, ToS-markeringen,
+[Referentie voor gratis niveaus](../reference/FREE_TIERS.md) voor pooldeduplicatie, ToS-markeringen,
 beëindigde items en de methodologie voor registratietegoeden.
 
 ---

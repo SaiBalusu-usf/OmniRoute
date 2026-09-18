@@ -72,16 +72,16 @@ Regressiyadan himoya: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
 **Maqsad:** ayni provayderning boshqa ulanishlari xizmat ko‘rsatishda davom etayotgan paytda bitta nosoz kalitni chetlab o‘tish.
 
-**Amalga oshirilishi:**
+**Amalga oshirish:**
 
-- Mavjud emas deb belgilash: `src/sse/services/auth.ts::markAccountUnavailable()`
+- Ishlatib bo‘lmaydigan deb belgilash: `src/sse/services/auth.ts::markAccountUnavailable()`
 - Tanlash: ayni fayldagi `getProviderCredentials*`
 - Kutish davrini hisoblash: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Sozlamalar: `src/lib/resilience/settings.ts`
 
 **Har bir ulanish uchun maydonlar:**
 
-- `rateLimitedUntil` — kutish davri tugaydigan vaqt belgisi
+- `rateLimitedUntil` — kutish davri tugaydigan vaqt tamg‘asi
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
 - `backoffLevel` — eksponensial kechiktirish hisoblagichi
@@ -90,72 +90,56 @@ Regressiyadan himoya: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
 - OAuth bazaviy qiymati: 5s
 - API kaliti bazaviy qiymati: 3s
-- API kaliti uchun 429: yuqori oqimdagi `Retry-After`/qayta o‘rnatish sarlavhalari/tahlil qilinadigan qayta o‘rnatish matniga ustunlik beradi
+- API kaliti uchun 429: yuqori oqimdagi `Retry-After`/tiklash sarlavhalari/tahlil qilinadigan tiklash matniga ustuvorlik beradi
 - Kechiktirish: `baseCooldownMs * 2 ** failureIndex`
 
-**Birdaniga ommaviy qayta urinishdan himoya:** bir vaqtdagi nosozliklarning kutish davrini haddan tashqari uzaytirishi yoki `backoffLevel` qiymatini ikki marta oshirishining oldini oladi.
+**Birdaniga ommaviy qayta urinishdan himoya:** bir vaqtdagi xatolar kutish davrini ortiqcha uzaytirishi yoki `backoffLevel` qiymatini ikki marta oshirishining oldini oladi.
 
 **Yakuniy holatlar (kutish davrlari EMAS):**
 
-- `banned` — taqiqlangan kalit so‘zi / hisobni taqiqlash aniqlanganda o‘rnatiladi ([BAN_DETECTION](../security/BAN_DETECTION.md) ga qarang)
-- `expired` (cheklangan qayta urinishlardan keyin yakuniy holatga o‘tadi — eksponensial kechiktirish bilan `EXPIRED_RETRY_MAX = 3` — shu tariqa vaqtinchalik OAuth xatolari hisob butunlay faolsizlantirilishidan oldin o‘z-o‘zidan tiklanishi mumkin)
+- `banned` — taqiqlangan kalit so‘zi / hisob bloklanganini aniqlash orqali (qarang [BAN_DETECTION](../security/BAN_DETECTION.md)) hamda yuqori oqimning har bir so‘rov bo‘yicha ketma-ket uchta rad javobi (`request_rejected`, masalan, Anthropic OAuth 403 "So‘rovga ruxsat berilmagan" — `open-sse/services/requestRejectedStreak.ts`) natijasida o‘rnatiladi; bitta rad javobi faqat ulanishni kutish davriga o‘tkazadi
+- `expired` (cheklangan qayta urinishlardan so‘ng yakuniy holatga o‘tadi — eksponensial kechiktirish bilan `EXPIRED_RETRY_MAX = 3` — shuning uchun vaqtinchalik OAuth xatolari hisob butunlay faolsizlantirilishidan oldin o‘z-o‘zidan tiklanishi mumkin)
 - `credits_exhausted`
 
-Bu holatlar hisob ma’lumotlari o‘zgarmaguncha yoki operator ularni qayta o‘rnatmaguncha saqlanib qoladi. Yakuniy holatlarni vaqtinchalik kutish holati bilan almashtirmang.
+Bu holatlar hisob ma’lumotlari o‘zgarmaguncha yoki operator ularni tiklamaguncha saqlanib qoladi. Yakuniy holatlarni vaqtinchalik kutish holati bilan almashtirmang.
 
-**Kechiktirilgan tiklanish:** `rateLimitedUntil` vaqti o‘tgach, ulanish yana tanlash uchun yaroqli bo‘ladi. Muvaffaqiyatli ishlatilganda `clearAccountError()` barcha xato maydonlarini tozalaydi.
+**Kechiktirilgan tiklanish:** `rateLimitedUntil` vaqti o‘tgach, ulanish yana tanlashga yaroqli bo‘ladi. Muvaffaqiyatli foydalanilganda `clearAccountError()` barcha xato maydonlarini tozalaydi.
 
 ### Seansga bog‘liqlik (#7274)
 
 **Qamrov:** **istalgan** provayder uchun bitta ulanishga biriktirilgan bitta mijoz seansi (`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session` sarlavhasi).
 
-**Maqsad:** ko‘p bosqichli agentni (Claude Code, aider, maxsus agentlar) so‘rovlar davomida bir xil hisobda ushlab turish, shu orqali hisoblar o‘rtasida kontekst yo‘qolishini va har bir hisob bo‘yicha seans holatiga ega provayderlarda takroriy sovuq ishga tushirishdagi 429 xatolarini kamaytirish.
+**Maqsad:** ko‘p bosqichli agentni (Claude Code, aider, maxsus agentlar) so‘rovlar davomida ayni hisobda saqlab qolish, shu orqali hisoblararo kontekst yo‘qolishini va har bir hisob bo‘yicha seans holatiga ega provayderlarda takroriy sovuq ishga tushish 429 xatolarini kamaytirish.
 
-**Amalga oshirilishi:**
+**Amalga oshirish:**
 
 - TTL qiymatini aniqlash: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Biriktirishni tanlash/yaratish: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
 - Sarlavhani ajratib olish (umumiy, istalgan provayder): `src/sse/services/auth.ts::extractSessionAffinityKey()`
 - Saqlanadigan biriktirish jadvali: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Sozlama: `sessionAffinityTtlMs` (ms hisobidagi global TTL, `0` o‘chiradi) — `src/lib/db/settings.ts`. U faqat Codex uchun mo‘ljallangan `codexSessionAffinityTtlMs` nomidan `124_generic_session_affinity_ttl.sql` migratsiyasi orqali qayta nomlangan; bu migratsiya avval sozlangan har qanday Codex TTL qiymatini yangi standart qiymat sifatida ko‘chiradi.
+- Sozlama: `sessionAffinityTtlMs` (ms hisobidagi global TTL, `0` o‘chiradi) — `src/lib/db/settings.ts`. Faqat Codex uchun mo‘ljallangan `codexSessionAffinityTtlMs` nomidan `124_generic_session_affinity_ttl.sql` migratsiyasi orqali o‘zgartirilgan; u avval sozlangan har qanday Codex TTL qiymatini yangi standart qiymat sifatida ko‘chiradi.
 
-#7274 dan oldin `resolveSessionAffinityTtlMs()` `codex` dan boshqa har bir provayder uchun darhol `0` qaytarardi, shu sababli biriktirish mexanizmi va sarlavhalarni ajratib olish allaqachon provayderga bog‘liq bo‘lmagan bo‘lsa ham, TTL sozlamasi (va seans sarlavhalari) boshqa hech qayerda ta’sir ko‘rsatmasdi. Tuzatishda ushbu erta qaytish olib tashlandi; endi TTL global miqyosda `0` dan katta qiymatga o‘rnatilgach, barcha provayderlarga bir xilda qo‘llanadi.
+#7274 dan oldin `resolveSessionAffinityTtlMs()` `codex` dan boshqa har bir provayder uchun darhol `0` qaytarar edi, shu sababli biriktirish mexanizmi va sarlavhalarni ajratib olish allaqachon provayderga bog‘liq bo‘lmaganiga qaramay, TTL sozlamasi (va seans sarlavhalari) boshqa hech qayerda ta’sir qilmas edi. Tuzatish ushbu erta qaytishni olib tashladi; endi TTL global miqyosda `0` dan katta qiymatga o‘rnatilgach, barcha provayderlarga bir xilda qo‘llanadi.
 
-Seansga bog‘liqlikning uchta sarlavhasi hech qachon yuqori oqimga uzatilmaydi — ijro etuvchilar mijoz sarlavhalarini bevosita uzatish o‘rniga o‘zlarining yuqori oqim sarlavhalarini boshidan yaratadi, shuning uchun bu faqat ichki korrelyatsiya identifikatori bo‘lib qoladi.
+Seansga bog‘liqlikning uchta sarlavhasi hech qachon yuqori oqimga uzatilmaydi — ijro modullari mijoz sarlavhalarini bevosita uzatish o‘rniga o‘z yuqori oqim sarlavhalarini boshidan tuzadi, shuning uchun bu faqat ichki korrelyatsiya identifikatori bo‘lib qoladi.
 
 ### Eksklyuziv boshqariladigan seans ulanishi ijaralari
 
 **Qamrov:** bitta faol boshqariladigan HTTP mijozi/seansi bitta yaroqli OmniRoute ulanishiga egalik qiladi.
 
-**Maqsad:** so‘rovlar davomida qat’iy marshrutlash
-chegarasiga muhtoj mijozlar uchun uzoq muddatli eksklyuziv ulanish egaligini ta’minlash. Bu yumshoq uzluksizlik afzalligi bo‘lgan seansga bog‘liqlikdan farq qiladi:
-eksklyuziv ijara SQLite ichida hayotiy sikl holatini saqlaydi, global faol egasi va
-faol ulanishning yagonaligini ta’minlaydi hamda provayderga jo‘natishdan oldin eskirgan avlodni rad etadi.
+**Maqsad:** so‘rovlar davomida qat’iy marshrutlash chegarasiga muhtoj mijozlar uchun ulanishga mustahkam eksklyuziv egalikni ta’minlash. Bu yumshoq davomiylik afzalligi bo‘lgan seansga bog‘liqlikdan farq qiladi: eksklyuziv ijara hayot sikli holatini SQLite bazasida saqlaydi, faol egalar va faol ulanishlarning global yagonaligini ta’minlaydi hamda provayderga jo‘natishdan oldin eskirgan avlodni rad etadi.
 
-Bu imkoniyat har bir API kaliti uchun ixtiyoriy ravishda yoqiladi. Boshqariladigan kalit `lease:exclusive` qamroviga va
-aniq ko‘rsatilgan bo‘sh bo‘lmagan `allowedConnections` ro‘yxatiga ega bo‘lishi kerak. Istalgan HTTP mijozi hayotiy sikl yakuniy nuqtasidan foydalanishi mumkin; hech qanday
-mijoz nomi, foydalanuvchi agenti, provayder, OAuth usuli yoki model talab qilinmaydi. Ijara modelga emas, ulanishga egalik qiladi,
-shuning uchun ulanish odatiy tartibda yaroqli bo‘lib qolar ekan, modelni o‘zgartirish bog‘lanishni saqlab qoladi.
-Oddiy model, kvota, salomatlik, kutish davri va ruxsat etilgan ro‘yxat qoidalari ustuvor bo‘lib qoladi hamda
-ayni avlodni boshqa bo‘sh yaroqli ulanishga o‘tkazishi mumkin.
+Funksiya har bir API kaliti uchun ixtiyoriy ravishda yoqiladi. Boshqariladigan kalit `lease:exclusive` qamroviga va aniq ko‘rsatilgan bo‘sh bo‘lmagan `allowedConnections` ro‘yxatiga ega bo‘lishi kerak. Istalgan HTTP mijozi hayot sikli yakuniy nuqtasidan foydalanishi mumkin; mijoz nomi, user-agent, provayder, OAuth usuli yoki model talab qilinmaydi. Ijara modelga emas, ulanishga egalik qiladi, shuning uchun ulanish odatdagi tartibda yaroqli bo‘lib qolar ekan, model o‘zgarishi bog‘lanishni saqlab qoladi. Model, kvota, salomatlik, kutish davri va ruxsat etilganlar ro‘yxatining odatiy qoidalari o‘z kuchida qoladi hamda ayni avlodni boshqa bo‘sh yaroqli ulanishga o‘tkazishi mumkin.
 
-Hayotiy sikl JSON formatidagi `acquire`, `renew` va `release` amallari bilan `POST /api/v1/session-leases` orqali boshqariladi.
-Boshqariladigan inferensiya so‘rovlari shaffof bo‘lmagan `X-OmniRoute-Lease-Owner` qiymatini va aniq
-`X-OmniRoute-Lease-Generation` qiymatini taqdim etadi. Ega identifikatori `vlo_` dan keyin keluvchi 43 ta base64url belgisidan iborat;
-faqat uning SHA-256 xeshi saqlanadi. Har bir yakuniy jo‘natish chegarasi autentifikatsiya qilingan API kaliti identifikatori va
-faol ulanish identifikatorini ham bog‘laydi. Ijarani boshqarish sarlavhalari jurnallardan, saqlanadigan so‘rov nusxalaridan va
-yuqori oqim ijro etuvchisi sarlavhalaridan olib tashlanadi.
+Hayot sikli `acquire`, `renew` va `release` JSON amallariga ega `POST /api/v1/session-leases` orqali boshqariladi. Boshqariladigan xulosa chiqarish so‘rovlari shaffof bo‘lmagan `X-OmniRoute-Lease-Owner` qiymatini va aniq `X-OmniRoute-Lease-Generation` qiymatini taqdim etadi. Ega identifikatori `vlo_` dan keyingi 43 ta base64url belgisidan iborat; faqat uning SHA-256 xeshi saqlanadi. Har bir yakuniy jo‘natish chegarasi autentifikatsiyadan o‘tgan API kaliti identifikatori va faol ulanish identifikatorini ham bog‘laydi. Ijarani boshqarish sarlavhalari jurnallardan, saqlanadigan so‘rov oniy nusxalaridan va yuqori oqim ijro moduli sarlavhalaridan olib tashlanadi.
 
-Agar oddiy marshrutlashda yaroqli boshqariladigan nomzodlar mavjud bo‘lsa-yu, ammo barcha bo‘sh nomzodlar
-begona faol ijara tomonidan band qilingan bo‘lsa, OmniRoute HTTP `429`, ijara sig‘imi mavjud emasligi kodini,
-sig‘imni kutish holatini va tegishli eng yaqin tugash vaqtidan hosil qilingan cheklangan `Retry-After` qiymatini qaytaradi.
-Oddiy bo‘sh yaroqlilik ijara ziddiyati hisoblanmaydi va mavjud marshrutlash xatosi semantikasini saqlab qoladi.
+Agar odatiy marshrutlashda yaroqli boshqariladigan nomzodlar mavjud bo‘lsa-yu, ammo har bir bo‘sh nomzod begona faol ijara bilan band bo‘lsa, OmniRoute HTTP `429`, ijara sig‘imi mavjud emasligi kodini, sig‘imni kutish holatini va tegishli eng yaqin amal qilish muddati tugashidan hisoblangan cheklangan `Retry-After` qiymatini qaytaradi. Oddiy bo‘sh yaroqlilik ijara ziddiyati hisoblanmaydi va mavjud marshrutlash xatosi semantikasini saqlab qoladi.
 
-Tegishli mexanizmlar alohida bo‘lib qoladi:
+Bog‘liq mexanizmlar alohida bo‘lib qoladi:
 
-- OAuth seans bandligi OAuth hisoblari uchun jarayon doirasidagi yumshoq taqsimotdir.
-- Hisob semaforlari so‘rovlarning parallel bajarilishi uchun ruxsatlar beradi va so‘rov tugaganda yakunlanadi.
-- Eksklyuziv boshqariladigan seans ijaralari avlod chegarasiga ega uzoq muddatli hayotiy sikl egaligidir.
+- OAuth seansi bandligi OAuth hisoblarini jarayon doirasida yumshoq taqsimlash mexanizmidir.
+- Hisob semaforlari so‘rovlar parallelligi uchun ruxsatlar beradi va so‘rov tugaganda yakunlanadi.
+- Eksklyuziv boshqariladigan seans ijaralari avlod chegarasiga ega mustahkam hayot sikli egaligidir.
 
 ---
 
@@ -163,66 +147,85 @@ Tegishli mexanizmlar alohida bo‘lib qoladi:
 
 **Qamrov:** provayder + ulanish + model uchligi.
 
-**Maqsad:** faqat bitta model mavjud bo‘lmaganda yoki uning kvotasi cheklanganda butun ulanishni o‘chirib qo‘ymaslik.
+**Holat bo‘yicha kalit qamrovi:** xato holati bloklash qaysi kalitga
+yozilishini belgilaydi (`open-sse/services/accountFallback/exactModelLock.ts` ichidagi `resolveLockoutScope()`):
+
+- `429` / `403` / `402` — kvota yoki foydalanish huquqi signali — **kvota oilasini** bloklaydi:
+  codex uchun butun `codex` / `spark` qamrovi (ulanishdagi barcha `gpt-5*`
+  modellari), boshqa provayderlar uchun `getQuotaScopedModelForProvider()`.
+- `404` faqat modelning o‘zini bloklaydi (`getModelLockKey()` `not_found` qamrovini toraytiradi).
+- Boshqa har qanday holat — `5xx` transport/server xatolari va sifat tekshiruvi
+  natijasida OmniRoute tomonidan yaratilgan `502` — faqat **aniq**
+  provayder/ulanish/model uchligini bloklaydi. Bitta modeldagi nosoz oqim akkaunt
+  kvotasi haqida dalil emas; bu qoidadan oldin `codex/gpt-5.6-luna` modelidagi
+  bitta bo‘sh javob ushbu ulanishning barcha `gpt-5*` modellarini, kvotasi
+  o‘zgarmagan bo‘lsa ham, marshrutlashdan 2–30 daqiqaga (bosqichma-bosqich oshib boruvchi) chiqarib tashlardi.
+- Chaqiruvchining aniq ko‘rsatilgan `scope` opsiyasi doimo ustun turadi (Antigravity `"exact"` uzatadi).
+
+**Maqsad:** faqat bitta model mavjud bo‘lmaganda yoki kvotasi cheklanganda butun ulanishni o‘chirib qo‘yishning oldini olish.
 
 **Misollar:**
 
 - Har bir model uchun alohida kvotaga ega provayderlarning 429 qaytarishi
-- Bitta model mavjud bo‘lmaganda mahalliy provayderlarning 404 qaytarishi
-- Provayderga xos rejim/model ruxsati bilan bog‘liq xatolar (masalan, Grok rejimlari)
+- Mahalliy provayderlarning mavjud bo‘lmagan bitta model uchun 404 qaytarishi
+- Provayderga xos rejim/model ruxsati xatolari (masalan, Grok rejimlari)
 
 **Amalga oshirish:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
-### Modelning sovush muddatlari boshqaruv paneli (v3.8.0)
+### Model kutish muddatlari boshqaruv paneli (v3.8.0)
 
-UI: Sozlamalar → Modelning sovush muddatlari (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
+UI: Sozlamalar → Model kutish muddatlari (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
 Faol bloklashlarni quyidagi ma’lumotlar bilan ko‘rsatadi: provayder, ulanish, model, sabab, expiresAt. Operatorlar kartadan modelni qo‘lda qayta yoqishi mumkin.
 
 **REST API:**
 
 - `GET /api/resilience/model-cooldowns` — faol bloklashlar ro‘yxatini olish
-- `DELETE /api/resilience/model-cooldowns` — qo‘lda qayta yoqish. Tana: `{provider, connection, model}`. Autentifikatsiya: boshqaruv.
+- `DELETE /api/resilience/model-cooldowns` — qo‘lda qayta yoqish. So‘rov tanasi: `{provider, connection, model}`. Autentifikatsiya: boshqaruv.
 
-### Bloklash sozlamalari UI’si + muvaffaqiyat asosidagi pasayish orqali tiklash (v3.8.23)
+### Bloklash sozlamalari UI’i + muvaffaqiyat asosidagi pasayish orqali tiklash (v3.8.23)
 
-Modelni bloklash doimo yoqilgan, kodda qat’iy belgilangan xatti-harakatdan to‘liq sozlanadigan,
-ixtiyoriy yoqiladigan, o‘z sozlamalar kartasi va o‘z-o‘zini tiklash yo‘liga ega funksiyaga aylandi.
+Modelni bloklash doimo yoqilgan, kodda qat’iy belgilangan xatti-harakatdan o‘z
+sozlamalar kartasi va o‘zini o‘zi tiklash yo‘liga ega, to‘liq sozlanadigan hamda
+ixtiyoriy yoqiladigan funksiyaga aylantirildi.
 
 **Sozlamalar kartasi:** Sozlamalar → Modelni bloklash
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-Bu yuqoridagi faqat o‘qish uchun mo‘ljallangan `ModelCooldownsCard`dan **farq qiladi** (u faqat
-faol bloklashlarni _ro‘yxatlaydi_) — yangi karta _parametrlarni sozlaydi_. Standart qiymatlar
-`DEFAULT_MODEL_LOCKOUT_SETTINGS` ichida joylashgan
+Bu yuqoridagi faqat o‘qish uchun mo‘ljallangan `ModelCooldownsCard`dan (u faqat
+faol bloklashlarni _ro‘yxatlaydi_) **farq qiladi** — yangi karta _parametrlarni sozlaydi_. Standart
+qiymatlar `DEFAULT_MODEL_LOCKOUT_SETTINGS` ichida joylashgan
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
-| Sozlama                 | Standart qiymat                  | Ma’nosi                                                                        |
-| ----------------------- | -------------------------------- | ------------------------------------------------------------------------------ |
-| `enabled`               | `false`                          | Asosiy almashtirgich — modelni bloklash **standart holatda o‘chiq**.           |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Model doirasidagi xato sifatida hisoblanadigan yuqori oqim holat kodlari.      |
-| `baseCooldownMs`        | `120_000` (120 s)                | Birinchi xato uchun boshlang‘ich bloklash davomiyligi.                         |
-| `maxCooldownMs`         | `1_800_000` (30 min)             | Oshirib boriladigan sovush muddatining yuqori chegarasi.                       |
-| `maxBackoffSteps`       | `10`                             | Eksponensial chekinishni oshirish bosqichlarining maksimal soni.               |
-| `useExponentialBackoff` | `true`                           | Takroriy xatolar sovush muddatini eksponensial ravishda oshirish-oshirmasligi. |
+| Sozlama                 | Standart qiymat                  | Ma’nosi                                                                    |
+| ----------------------- | -------------------------------- | -------------------------------------------------------------------------- |
+| `enabled`               | `false`                          | Asosiy almashtirgich — modelni bloklash **standart holatda o‘chiq**.       |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Model qamrovidagi xato sifatida hisoblanadigan yuqori oqim holatlari.      |
+| `baseCooldownMs`        | `120_000` (120 s)                | Birinchi xato uchun dastlabki bloklash davomiyligi.                        |
+| `maxCooldownMs`         | `1_800_000` (30 min)             | Bosqichma-bosqich oshiriladigan kutish muddatining yuqori chegarasi.       |
+| `maxBackoffSteps`       | `10`                             | Eksponensial kechikishni oshirish bosqichlarining maksimal soni.           |
+| `useExponentialBackoff` | `true`                           | Takroriy xatolar kutish muddatini eksponensial ravishda oshirishi kerakmi. |
 
-Sozlamalar odatiy sozlamalar ombori orqali saqlanadi va
-barqarorlik sozlamalari sxemasi orqali tekshiriladi; karta `baseCooldownMs`/`maxCooldownMs`
-qiymatlarini (`maxCooldownMs ≥ baseCooldownMs` sharti bilan) va `maxBackoffSteps`ni ruxsat etilgan chegarada ushlab turadi.
+Sozlamalar odatiy sozlamalar ombori orqali saqlanadi va chidamlilik sozlamalari
+sxemasi orqali tekshiriladi; karta `baseCooldownMs`/`maxCooldownMs`
+qiymatlarini (`maxCooldownMs ≥ baseCooldownMs` sharti bilan) hamda `maxBackoffSteps`ni cheklaydi.
 
-**Muvaffaqiyat asosidagi pasayish orqali tiklash:** tiklash **faqat** taymer muddati tugashiga bog‘liq emas. Sog‘lom
-javob modelning xatolar sonini bosqichma-bosqich kamaytiradi, shuning uchun muddat oralig‘ida tiklangan model
-taymeri tugashidan oldin kuchayib borishni to‘xtatadi (va bloklashdan chiqariladi). Combo maqsadi muvaffaqiyatli
-bo‘lganda, `open-sse/services/combo.ts` fayli `decayModelFailureCount()`ni chaqiradi
-(`open-sse/services/accountFallback.ts`), u saqlangan
-`failureCount`ni **yarmiga kamaytiradi** (`Math.floor(failureCount / 2)`); qiymat `0`ga yetganda bloklash
-yozuvi butunlay o‘chiriladi. Uning jufti bo‘lgan `recordModelLockoutFailure()`
-eskalatsiya oralig‘idagi xatolarda hisoblagichni oshiradi (va sovush muddatini uzaytiradi).
-Muvaffaqiyat asosidagi bu pasayish oddiy taymer muddati tugashiga qo‘shimcha tarzda ishlaydi —
-har ikkala yo‘l ham modelni qayta yoqishi mumkin.
+**Muvaffaqiyat asosidagi pasayish orqali tiklash:** tiklash faqat taymer muddati
+tugashiga bog‘liq **emas**. Sog‘lom javob modelning xatolar sonini bosqichma-bosqich
+kamaytiradi, shuning uchun vaqt oralig‘i davomida tiklangan model taymer muddati
+tugashidan oldin oshib borishni to‘xtatadi (va bloklash bekor qilinadi). Kombinatsiyalangan
+nishon muvaffaqiyatli bo‘lganda, `open-sse/services/combo.ts` fayli
+`decayModelFailureCount()`ni (`open-sse/services/accountFallback.ts`) chaqiradi,
+u saqlangan `failureCount` qiymatini **yarmiga kamaytiradi**
+(`Math.floor(failureCount / 2)`); qiymat `0`ga yetganda bloklash yozuvi butunlay
+o‘chiriladi. Unga mos `recordModelLockoutFailure()` eskalatsiya oralig‘ida yuz
+bergan xatolarda hisoblagichni oshiradi (va kutish muddatini uzaytiradi).
+Muvaffaqiyat asosidagi bu pasayish oddiy taymer muddati tugashiga qo‘shimcha
+ravishda ishlaydi — har ikkala yo‘l ham modelni qayta yoqishi mumkin.
 
-**Holat:** bloklashlar DB’da saqlanmaydi, balki **xotirada** (har bir jarayon uchun
-`provider:connectionId:model` kaliti bilan indekslangan `ModelLockoutEntry` obyektlarining `Map`lari)
-saqlanadi — qayta ishga tushirilganda ular yo‘qoladi. _Sozlamalar_ doimiy saqlanadi; faol
+**Holat:** bloklashlar DB’da saqlanmaydi, balki **xotirada** saqlanadi (har bir
+jarayon uchun `provider:connectionId:model` kalitli `ModelLockoutEntry`
+`Map`lari, aniq qamrovli bloklashlar uchun esa `provider:connectionId:exact:model`);
+ular qayta ishga tushirilganda yo‘qoladi. _Sozlamalar_ doimiy saqlanadi; faol
 bloklash _holati_ esa vaqtinchalikdir.
 
 ---
@@ -664,11 +667,12 @@ tugagan kvota bilan bir xil signaldir. Amaldagi cheklovlar:
 
 ## Nosozliklarni tuzatish
 
-- Provayderning barcha kalitlari oʻtkazib yuborilsa → avtomatik uzgich holatini HAMDA har bir ulanishning `rateLimitedUntil`/`testStatus` qiymatini tekshiring.
-- Tiklanish oynasidan keyin provayder butunlay chiqarib tashlansa → kod `getStatus()`/`canExecute()` oʻrniga bevosita `state` qiymatini oʻqiyotgan boʻlishi mumkin.
-- Bitta kalit ishlamasa, boshqalari ishlashi kerak → avtomatik uzgichdan koʻra ulanishni vaqtincha toʻxtatishni afzal koʻring.
-- Faqat bitta model ishlamasa → ulanishni vaqtincha toʻxtatishdan koʻra modelni bloklashni afzal koʻring.
-- Holat oʻz-oʻzidan tiklanishi kerak, ammo tiklanmasa → kelajakdagi vaqt tamgʻasi va muddati tugagan holatni yangilaydigan oʻqish yoʻlini tekshiring. Doimiy holatlar qoʻlda oʻzgartirishni talab qiladi.
+- Vaznli kombinatsiya `503 all_targets_cooling_down` javobini qaytaradi (`Retry-After` o‘rnatilgan, `diagnostics.excluded` esa har bir nishonni `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable` bilan ro‘yxatlaydi) → pul sozlangan va ulangan, ammo har bir nishon barqarorlik taymeri sababli chiqarib tashlangan; `[COMBO] Weighted selection: every target excluded before dispatch — …` ogohlantirishi sabablar va qolgan soniyalarni ko‘rsatadi. Xuddi shu kombinatsiyadan kelgan `404 no_executable_targets` hech qanday barqarorlik taymeri qatnashmaganini anglatadi (ishga tushiradigan hech narsa yo‘q yoki barcha hisoblar mavjudlik tekshiruvidan o‘ta olmagan). Bu `targetResolution.ts` ichida to‘plangan chiqarib tashlashlar asosida `open-sse/services/combo/pinRecovery.ts` ichida tuzilgan.
+- Provayderning barcha kalitlari o‘tkazib yuborildi → uzgich holatini HAMDA har bir ulanishning `rateLimitedUntil`/`testStatus` qiymatini tekshiring.
+- Provayder tiklash oynasidan keyin ham doimiy ravishda chiqarib tashlanmoqda → kod `getStatus()`/`canExecute()` o‘rniga bevosita `state` qiymatini o‘qimoqda.
+- Bitta kalit ishlamaydi, boshqalari esa ishlashi kerak → uzgich o‘rniga ulanishning sovish davrini afzal ko‘ring.
+- Faqat bitta model ishlamaydi → ulanishning sovish davri o‘rniga model blokirovkasini afzal ko‘ring.
+- Holat o‘z-o‘zidan tiklanishi kerak, ammo tiklanmayapti → kelajak vaqt tamg‘asi va muddati o‘tgan holatni yangilaydigan o‘qish yo‘lini tekshiring. Doimiy holatlar qo‘lda o‘zgartirishni talab qiladi.
 
 ---
 

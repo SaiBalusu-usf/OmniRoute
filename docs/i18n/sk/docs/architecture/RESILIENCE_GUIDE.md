@@ -67,7 +67,7 @@ exponenciálne spätné čakanie `minRetryCooldownMs → maxRetryCooldownMs`. Pr
 `OMNIROUTE_PROVIDER_BREAKER_{OAUTH,API_KEY}_{FAILURE_THRESHOLD,FAILURE_WINDOW_MS,COOLDOWN_MS}`.
 Ochrana proti regresii: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
-## 2. Doba čakania pripojenia
+## 2. Časový limit pripojenia
 
 **Rozsah:** jedno pripojenie/účet/kľúč poskytovateľa.
 
@@ -75,88 +75,72 @@ Ochrana proti regresii: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
 **Implementácia:**
 
-- Označenie za nedostupné: `src/sse/services/auth.ts::markAccountUnavailable()`
-- Výber: `getProviderCredentials*` v tom istom súbore
-- Výpočet doby čakania: `open-sse/services/accountFallback.ts::checkFallbackError()`
+- Označenie ako nedostupné: `src/sse/services/auth.ts::markAccountUnavailable()`
+- Výber: `getProviderCredentials*` v rovnakom súbore
+- Výpočet časového limitu: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Nastavenia: `src/lib/resilience/settings.ts`
 
 **Polia pre jednotlivé pripojenia:**
 
-- `rateLimitedUntil` — časová pečiatka, dokedy trvá doba čakania
+- `rateLimitedUntil` — časová pečiatka, do ktorej trvá časový limit
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
-- `backoffLevel` — počítadlo exponenciálneho spätného čakania
+- `backoffLevel` — počítadlo exponenciálneho odstupu
 
-**Predvolené doby čakania:**
+**Predvolené časové limity:**
 
-- Základ pre OAuth: 5 s
-- Základ pre kľúč API: 3 s
-- Kľúč API pri 429: uprednostňuje hlavičku `Retry-After`/hlavičky obnovenia zo služby upstream/analyzovateľný text o čase obnovenia
-- Spätné čakanie: `baseCooldownMs * 2 ** failureIndex`
+- Základ OAuth: 5 s
+- Základ kľúča API: 3 s
+- Kľúč API pri 429: uprednostňuje hlavičky `Retry-After`/resetovania od nadradenej služby alebo analyzovateľný text o resetovaní
+- Odstup: `baseCooldownMs * 2 ** failureIndex`
 
-**Ochrana proti nárazovému stádu požiadaviek:** zabraňuje tomu, aby súbežné zlyhania nadmerne predlžovali dobu čakania alebo dvakrát zvyšovali `backoffLevel`.
+**Ochrana proti nárazovému súbehu:** zabraňuje tomu, aby súbežné zlyhania nadmerne predĺžili časový limit alebo dvakrát zvýšili `backoffLevel`.
 
-**Koncové stavy (NIE doby čakania):**
+**Koncové stavy (NIE časové limity):**
 
-- `banned` — nastavuje sa pri detekcii zakázaného kľúčového slova/zablokovania účtu (pozrite si [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (po obmedzenom počte opakovaní prejde do koncového stavu — `EXPIRED_RETRY_MAX = 3` s exponenciálnym spätným čakaním — aby sa prechodné chyby OAuth mohli samy napraviť pred trvalou deaktiváciou účtu)
+- `banned` — nastavuje sa pri detekcii zakázaného kľúčového slova/zablokovania účtu (pozrite si [BAN_DETECTION](../security/BAN_DETECTION.md)) a pri troch po sebe idúcich odmietnutiach jednotlivých požiadaviek nadradenou službou (`request_rejected`, napr. Anthropic OAuth 403 „Požiadavka nie je povolená“ — `open-sse/services/requestRejectedStreak.ts`); jediné odmietnutie iba dočasne pozastaví pripojenie
+- `expired` (po obmedzenom počte opakovaní prejde do koncového stavu — `EXPIRED_RETRY_MAX = 3` s exponenciálnym odstupom — aby sa prechodné chyby OAuth mohli automaticky odstrániť pred trvalou deaktiváciou účtu)
 - `credits_exhausted`
 
-Tieto stavy pretrvávajú, kým sa nezmenia prihlasovacie údaje alebo ich operátor nevynuluje. Koncové stavy neprepisujte prechodným stavom doby čakania.
+Tieto stavy pretrvávajú, kým sa nezmenia prihlasovacie údaje alebo ich operátor neresetuje. Neprepisujte koncové stavy prechodným stavom časového limitu.
 
-**Odložené obnovenie:** keď čas `rateLimitedUntil` uplynie, pripojenie sa znova stane oprávneným na výber. Po úspešnom použití funkcia `clearAccountError()` vymaže všetky chybové polia.
+**Oneskorené obnovenie:** keď čas `rateLimitedUntil` uplynie, pripojenie sa znova stane oprávneným na použitie. Po úspešnom použití funkcia `clearAccountError()` vymaže všetky chybové polia.
 
 ### Afinita relácie (#7274)
 
 **Rozsah:** jedna klientska relácia (hlavička `X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`) pripnutá k jednému pripojeniu pre **ľubovoľného** poskytovateľa.
 
-**Účel:** zachovať viacotáčkového agenta (Claude Code, aider, vlastné agenty) na rovnakom účte naprieč požiadavkami, čím sa znižuje strata kontextu medzi účtami a počet opakovaných chýb 429 pri studenom štarte u poskytovateľov so stavom relácie viazaným na účet.
+**Účel:** udržať agenta s viacerými kolami (Claude Code, aider, vlastné agenty) na rovnakom účte naprieč požiadavkami, čím sa zníži strata kontextu medzi účtami a počet opakovaných chýb 429 pri studenom štarte u poskytovateľov so stavom relácie viazaným na účet.
 
 **Implementácia:**
 
 - Určenie TTL: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Výber/vytvorenie pripnutia: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
 - Extrakcia hlavičky (všeobecná, pre ľubovoľného poskytovateľa): `src/sse/services/auth.ts::extractSessionAffinityKey()`
-- Trvalo uložená tabuľka pripnutí: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Nastavenie: `sessionAffinityTtlMs` (globálne TTL v ms, `0` ho deaktivuje) — `src/lib/db/settings.ts`. Migráciou `124_generic_session_affinity_ttl.sql` bolo premenované z nastavenia `codexSessionAffinityTtlMs`, ktoré bolo určené iba pre Codex; migrácia prenesie všetky predtým nakonfigurované hodnoty TTL pre Codex ako nové predvolené nastavenie.
+- Tabuľka trvalo uložených pripnutí: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
+- Nastavenie: `sessionAffinityTtlMs` (globálne TTL v ms, hodnota `0` funkciu vypne) — `src/lib/db/settings.ts`. Migrácia `124_generic_session_affinity_ttl.sql` ho premenovala z nastavenia `codexSessionAffinityTtlMs`, ktoré bolo určené iba pre Codex, a prenáša akékoľvek predtým nakonfigurované TTL pre Codex ako novú predvolenú hodnotu.
 
-Pred #7274 funkcia `resolveSessionAffinityTtlMs()` okamžite vracala `0` pre každého poskytovateľa okrem `codex`, takže nastavenie TTL (ani hlavičky relácie) nemalo nikde inde žiadny účinok, hoci mechanizmus pripínania a extrakcia hlavičiek už boli nezávislé od poskytovateľa. Oprava odstránila tento predčasný návrat; TTL sa teraz po globálnom nastavení na hodnotu vyššiu ako `0` jednotne uplatňuje na každého poskytovateľa.
+Pred #7274 funkcia `resolveSessionAffinityTtlMs()` okamžite vracala `0` pre každého poskytovateľa okrem `codex`, takže nastavenie TTL (ani hlavičky relácie) nemalo nikde inde žiadny účinok, hoci mechanizmus pripínania a extrakcia hlavičiek už boli nezávislé od poskytovateľa. Oprava toto predčasné ukončenie odstránila; po globálnom nastavení hodnoty vyššej než `0` sa TTL teraz uplatňuje jednotne na každého poskytovateľa.
 
-Tri hlavičky afinity relácie sa nikdy neposielajú do služby upstream — vykonávacie moduly vytvárajú vlastné hlavičky upstream od začiatku namiesto preposielania klientskych hlavičiek, takže zostávajú iba interným korelačným identifikátorom.
+Tri hlavičky afinity relácie sa nikdy neposielajú nadradenej službe — vykonávacie moduly vytvárajú vlastné hlavičky pre nadradenú službu od začiatku namiesto preposielania hlavičiek klienta, takže tento údaj zostáva iba interným korelačným identifikátorom.
 
-### Exkluzívne prenájmy pripojení spravovaných relácií
+### Výhradné prenájmy pripojení spravovaných relácií
 
-**Rozsah:** jeden aktívny spravovaný klient/relácia HTTP vlastní jedno oprávnené pripojenie OmniRoute.
+**Rozsah:** jeden aktívny spravovaný HTTP klient/relácia vlastní jedno oprávnené pripojenie OmniRoute.
 
-**Účel:** poskytovať trvalé exkluzívne vlastníctvo pripojenia klientom, ktorí potrebujú pevnú hranicu smerovania
-naprieč požiadavkami. To sa líši od afinity relácie, ktorá predstavuje miernu preferenciu kontinuity:
-exkluzívny prenájom uchováva stav životného cyklu v SQLite, vynucuje globálnu jedinečnosť aktívneho vlastníka aj
-aktívneho pripojenia a odmieta zastaranú generáciu pred odoslaním poskytovateľovi.
+**Účel:** poskytnúť trvalé výhradné vlastníctvo pripojenia klientom, ktorí potrebujú pevnú hranicu smerovania naprieč požiadavkami. Líši sa to od afinity relácie, ktorá predstavuje iba mäkkú preferenciu kontinuity: výhradný prenájom uchováva stav životného cyklu v SQLite, vynucuje globálnu jedinečnosť aktívneho vlastníka a aktívneho pripojenia a odmietne zastaranú generáciu pred odoslaním poskytovateľovi.
 
-Funkcia je voliteľná pre každý kľúč API. Spravovaný kľúč musí mať rozsah `lease:exclusive` a
-explicitný neprázdny zoznam `allowedConnections`. Koncový bod životného cyklu môže používať ľubovoľný klient HTTP; nevyžaduje sa
-názov klienta, používateľský agent, poskytovateľ, metóda OAuth ani model. Prenájom vlastní pripojenie,
-nie model, takže zmena modelu zachová väzbu, pokiaľ pripojenie zostáva za bežných okolností
-oprávnené. Bežné pravidlá modelu, kvóty, stavu, doby čakania a zoznamu povolení zostávajú rozhodujúce a môžu
-presunúť rovnakú generáciu na iné voľné oprávnené pripojenie.
+Funkcia je voliteľná pre jednotlivé kľúče API. Spravovaný kľúč musí mať rozsah `lease:exclusive` a explicitný neprázdny zoznam `allowedConnections`. Koncový bod životného cyklu môže používať ľubovoľný HTTP klient; nevyžaduje sa názov klienta, používateľský agent, poskytovateľ, metóda OAuth ani model. Prenájom vlastní pripojenie, nie model, takže pri zmene modelu sa väzba zachová, pokiaľ je pripojenie naďalej bežne oprávnené. Bežné pravidlá pre model, kvótu, stav, časový limit a zoznam povolených položiek zostávajú rozhodujúce a môžu tú istú generáciu presunúť na iné voľné oprávnené pripojenie.
 
-Životný cyklus používa `POST /api/v1/session-leases` s akciami JSON `acquire`, `renew` a `release`.
-Spravované inferenčné požiadavky odovzdávajú nepriehľadnú hodnotu `X-OmniRoute-Lease-Owner` a presnú hodnotu
-`X-OmniRoute-Lease-Generation`. Identifikátor vlastníka používa predponu `vlo_`, za ktorou nasleduje 43 znakov base64url;
-ukladá sa iba jeho hash SHA-256. Každá konečná hranica odoslania tiež viaže ID overeného kľúča API a
-ID aktívneho pripojenia. Riadiace hlavičky prenájmu sa odstraňujú z denníkov, uchovávaných snímok požiadaviek a
-hlavičiek vykonávacích modulov upstream.
+Životný cyklus používa `POST /api/v1/session-leases` s akciami JSON `acquire`, `renew` a `release`. Spravované inferenčné požiadavky odovzdávajú nepriehľadnú hodnotu `X-OmniRoute-Lease-Owner` a presnú hodnotu `X-OmniRoute-Lease-Generation`. Vlastník používa predponu `vlo_`, za ktorou nasleduje 43 znakov base64url; ukladá sa iba jeho hash SHA-256. Každá konečná kontrola pred odoslaním tiež viaže ID autentifikovaného kľúča API a ID aktívneho pripojenia. Riadiace hlavičky prenájmu sa odstraňujú z protokolov, uchovávaných snímok požiadaviek a hlavičiek vykonávacích modulov odosielaných nadradenej službe.
 
-Ak má bežné smerovanie oprávnených spravovaných kandidátov, ale každý voľný kandidát je obsadený
-cudzím aktívnym prenájmom, OmniRoute vráti HTTP `429`, kód nedostupnej kapacity prenájmu,
-stav čakania na kapacitu a obmedzenú hodnotu `Retry-After` odvodenú od najskoršieho relevantného času vypršania.
-Bežný prázdny výsledok výberu oprávnených pripojení nepredstavuje konflikt prenájmov a zachováva existujúcu sémantiku chýb smerovania.
+Ak má bežné smerovanie oprávnených spravovaných kandidátov, ale každý voľný kandidát je obsadený cudzím aktívnym prenájmom, OmniRoute vráti HTTP `429`, kód nedostupnej kapacity prenájmu, stav čakania na kapacitu a obmedzenú hodnotu `Retry-After` odvodenú od najskoršieho relevantného vypršania. Bežná prázdna množina oprávnených pripojení nepredstavuje konflikt prenájmov a zachováva existujúcu sémantiku chyby smerovania.
 
 Súvisiace mechanizmy zostávajú oddelené:
 
 - Obsadenosť relácií OAuth predstavuje lokálnu mäkkú distribúciu účtov OAuth v rámci procesu.
-- Semafory účtov udeľujú povolenia na súbežné požiadavky a končia sa po dokončení požiadavky.
-- Exkluzívne prenájmy pripojení spravovaných relácií predstavujú trvalé vlastníctvo počas životného cyklu s generačnou hranicou.
+- Semafory účtov udeľujú povolenia na súbežné požiadavky a končia po dokončení požiadavky.
+- Výhradné prenájmy pripojení spravovaných relácií predstavujú trvalé vlastníctvo počas životného cyklu s kontrolou generácie.
 
 ---
 
@@ -164,13 +148,28 @@ Súvisiace mechanizmy zostávajú oddelené:
 
 **Rozsah:** trojica poskytovateľ + pripojenie + model.
 
+**Rozsah kľúča podľa stavu:** stav zlyhania rozhoduje, do ktorého kľúča sa uzamknutie
+zapíše (`resolveLockoutScope()` v `open-sse/services/accountFallback/exactModelLock.ts`):
+
+- `429` / `403` / `402` — signál kvóty alebo oprávnenia — uzamkne **rodinu kvót**:
+  pre codex celý rozsah `codex` / `spark` (každý model `gpt-5*` daného
+  pripojenia), pre ostatných poskytovateľov `getQuotaScopedModelForProvider()`.
+- `404` uzamkne samotný model (`getModelLockKey()` zužuje `not_found`).
+- Akýkoľvek iný stav — transportné/serverové zlyhania `5xx` a vlastný
+  syntetizovaný stav `502` služby OmniRoute z validácie kvality — uzamkne iba **presnú**
+  trojicu poskytovateľ/pripojenie/model. Chybný stream jedného modelu nie je dôkazom
+  o kvóte účtu; pred zavedením tohto pravidla jedna prázdna odpoveď modelu
+  `codex/gpt-5.6-luna` odstránila zo smerovania každý model `gpt-5*` daného pripojenia
+  na 2–30 minút (s postupným predlžovaním), hoci jeho kvóta zostala nedotknutá.
+- Explicitná možnosť `scope` volajúceho má vždy prednosť (Antigravity odovzdáva `"exact"`).
+
 **Účel:** zabrániť deaktivácii celého pripojenia, keď je nedostupný alebo obmedzený kvótou iba jeden model.
 
 **Príklady:**
 
-- Poskytovatelia s kvótami pre jednotlivé modely, ktorí vracajú 429
-- Lokálni poskytovatelia, ktorí vracajú 404 pre jeden chýbajúci model
-- Zlyhania oprávnení špecifické pre režim/model poskytovateľa (napr. režimy Grok)
+- Poskytovatelia s kvótou pre jednotlivé modely vracajúci stav 429
+- Lokálni poskytovatelia vracajúci stav 404 pre jeden chýbajúci model
+- Zlyhania oprávnení pre režimy/modely špecifické pre poskytovateľa (napr. režimy Grok)
 
 **Implementácia:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
@@ -178,53 +177,54 @@ Súvisiace mechanizmy zostávajú oddelené:
 
 Používateľské rozhranie: Nastavenia → Časové blokovania modelov (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-Uvádza aktívne uzamknutia s údajmi: poskytovateľ, pripojenie, model, dôvod, expiresAt. Operátori môžu model z karty manuálne znova povoliť.
+Uvádza aktívne uzamknutia s týmito údajmi: poskytovateľ, pripojenie, model, dôvod, expiresAt. Operátori môžu model z karty manuálne znova povoliť.
 
 **REST API:**
 
-- `GET /api/resilience/model-cooldowns` — zobrazí zoznam aktívnych uzamknutí
+- `GET /api/resilience/model-cooldowns` — zobrazí aktívne uzamknutia
 - `DELETE /api/resilience/model-cooldowns` — manuálne opätovné povolenie. Telo: `{provider, connection, model}`. Autorizácia: správa.
 
-### Používateľské rozhranie nastavení uzamknutia + obnova pomocou úbytku pri úspechu (v3.8.23)
+### Používateľské rozhranie nastavení uzamknutia + obnova s útlmom pri úspechu (v3.8.23)
 
-Uzamknutie modelu sa z vždy zapnutého, pevne naprogramovaného správania zmenilo na plne konfigurovateľnú,
-voliteľnú funkciu s vlastnou kartou nastavení a samoopravnou cestou obnovy.
+Uzamknutie modelu sa z trvalo zapnutého, pevne zakódovaného správania zmenilo na plne konfigurovateľnú,
+voliteľnú funkciu s vlastnou kartou nastavení a samoopravným mechanizmom obnovy.
 
 **Karta nastavení:** Nastavenia → Uzamknutie modelu
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-Táto karta je **odlišná** od vyššie uvedenej karty `ModelCooldownsCard` určenej iba na čítanie (ktorá iba
-_uvádza_ aktívne uzamknutia) — nová karta _konfiguruje parametre_. Predvolené hodnoty
-sa nachádzajú v `DEFAULT_MODEL_LOCKOUT_SETTINGS`
+Táto karta sa **odlišuje** od vyššie uvedenej karty `ModelCooldownsCard` určenej iba na čítanie (ktorá iba
+_vypisuje_ aktívne uzamknutia) — nová karta _konfiguruje parametre_. Predvolené hodnoty
+sú uvedené v `DEFAULT_MODEL_LOCKOUT_SETTINGS`
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
 | Nastavenie              | Predvolená hodnota               | Význam                                                                      |
 | ----------------------- | -------------------------------- | --------------------------------------------------------------------------- |
 | `enabled`               | `false`                          | Hlavný prepínač — uzamknutie modelu je **predvolene vypnuté**.              |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Stavy nadradenej služby, ktoré sa počítajú ako zlyhanie konkrétneho modelu. |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Stavy nadradeného systému, ktoré sa počítajú ako zlyhanie viazané na model. |
 | `baseCooldownMs`        | `120_000` (120 s)                | Počiatočné trvanie uzamknutia pri prvom zlyhaní.                            |
-| `maxCooldownMs`         | `1_800_000` (30 min)             | Horný limit eskalovaného časového blokovania.                               |
-| `maxBackoffSteps`       | `10`                             | Maximálny počet krokov eskalácie exponenciálneho oneskorenia.               |
+| `maxCooldownMs`         | `1_800_000` (30 min)             | Horná hranica postupne predlžovaného časového blokovania.                   |
+| `maxBackoffSteps`       | `10`                             | Maximálny počet krokov eskalácie exponenciálneho odstupu.                   |
 | `useExponentialBackoff` | `true`                           | Určuje, či opakované zlyhania exponenciálne predlžujú časové blokovanie.    |
 
-Nastavenia sa uchovávajú prostredníctvom štandardného úložiska nastavení a overujú sa pomocou
+Nastavenia sa uchovávajú prostredníctvom bežného úložiska nastavení a overujú pomocou
 schémy nastavení odolnosti; karta obmedzuje hodnoty `baseCooldownMs`/`maxCooldownMs`
 (pričom `maxCooldownMs ≥ baseCooldownMs`) a `maxBackoffSteps`.
 
-**Obnova pomocou úbytku pri úspechu:** obnova **nie je** založená iba na uplynutí časovača. Zdravá
+**Obnova s útlmom pri úspechu:** obnova **nie je** založená výlučne na uplynutí časovača. Úspešná
 odpoveď postupne znižuje počet zlyhaní modelu, takže model, ktorý sa zotavil
 uprostred časového okna, prestane eskalovať (a uzamknutie sa zruší) skôr, než by uplynul jeho časovač. Pri úspešnom
 kombinovanom cieli `open-sse/services/combo.ts` volá `decayModelFailureCount()`
 (`open-sse/services/accountFallback.ts`), ktorá **zníži na polovicu** uloženú hodnotu
 `failureCount` (`Math.floor(failureCount / 2)`); keď dosiahne hodnotu `0`, záznam uzamknutia
 sa úplne odstráni. Zodpovedajúca funkcia `recordModelLockoutFailure()`
-pri zlyhaniach v rámci eskalačného okna zvýši počet (a predĺži časové blokovanie).
-Tento úbytok pri úspechu dopĺňa bežné uplynutie časovača —
-model môže znova povoliť ktorákoľvek z týchto ciest.
+zvyšuje počet (a predlžuje časové blokovanie) pri zlyhaniach v rámci
+eskalačného okna. Tento útlm pri úspechu dopĺňa bežné uplynutie časovača —
+model môže znova povoliť ktorýkoľvek z týchto mechanizmov.
 
-**Stav:** uzamknutia sa uchovávajú **v pamäti** (`Map` pre každý proces s položkami
-`ModelLockoutEntry` identifikovanými pomocou `provider:connectionId:model`), neukladajú sa
-do DB — pri reštarte sa stratia. _Nastavenia_ sa uchovávajú; aktívny
-_stav_ uzamknutia je dočasný.
+**Stav:** uzamknutia sa uchovávajú **v pamäti** (mapy `Map` pre jednotlivé procesy so záznamami
+`ModelLockoutEntry` indexovanými podľa `provider:connectionId:model`, uzamknutia s presným rozsahom podľa
+`provider:connectionId:exact:model`), nie sú uložené v
+databáze — pri reštarte sa stratia. _Nastavenia_ sa uchovávajú; aktívny
+_stav_ uzamknutí je dočasný.
 
 ---
 
@@ -636,10 +636,11 @@ kvóta. Reálne obmedzenia:
 
 ## Ladenie
 
-- Všetky kľúče poskytovateľa boli preskočené → skontrolujte stav ističa AJ hodnoty `rateLimitedUntil`/`testStatus` jednotlivých pripojení.
-- Poskytovateľ je po uplynutí okna resetovania natrvalo vylúčený → kód číta priamo `state` namiesto `getStatus()`/`canExecute()`.
-- Jeden kľúč zlyhá, ostatné by mali fungovať → uprednostnite časové pozastavenie pripojenia pred ističom.
-- Zlyhá iba jeden model → uprednostnite zablokovanie modelu pred časovým pozastavením pripojenia.
+- Odpovede váženého comba `503 all_targets_cooling_down` (hlavička `Retry-After` je nastavená, `diagnostics.excluded` uvádza každý cieľ s dôvodom `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → fond je nakonfigurovaný a pripojený, ale každý cieľ je vylúčený časovačom odolnosti; upozornenie `[COMBO] Weighted selection: every target excluded before dispatch — …` uvádza dôvody a zostávajúci počet sekúnd. Odpoveď `404 no_executable_targets` z rovnakého comba znamená, že nebol zapojený žiadny časovač odolnosti (nie je čo spustiť alebo všetky účty zlyhali pri kontrole dostupnosti). Implementované v `open-sse/services/combo/pinRecovery.ts` na základe vylúčení zhromaždených v `targetResolution.ts`.
+- Všetky kľúče poskytovateľa boli preskočené → skontrolujte stav ističa AJ hodnoty `rateLimitedUntil`/`testStatus` každého pripojenia.
+- Poskytovateľ je po uplynutí intervalu obnovenia natrvalo vylúčený → kód číta nespracovaný `state` namiesto `getStatus()`/`canExecute()`.
+- Jeden kľúč zlyhá, ostatné by mali fungovať → uprednostnite dobu čakania pripojenia pred ističom.
+- Zlyhá iba jeden model → uprednostnite zablokovanie modelu pred dobou čakania pripojenia.
 - Stav by sa mal automaticky obnoviť, ale neobnoví sa → skontrolujte budúcu časovú pečiatku a cestu čítania, ktorá obnovuje stav po uplynutí platnosti. Trvalé stavy vyžadujú manuálne zmeny.
 
 ---

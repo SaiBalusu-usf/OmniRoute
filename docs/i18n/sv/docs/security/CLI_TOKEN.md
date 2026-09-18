@@ -7,48 +7,63 @@
 ## Översikt
 
 OmniRoute CLI-kommandon autentiseras mot det lokala hanterings-API:t med en
-`HMAC-SHA256(machine-id, salt)`-token som skickas via request-headern
+`HMAC-SHA256(machine-id, salt)`-token som skickas via begärandehuvudet
 `x-omniroute-cli-token`.
 
 Detta gör att CLI-underkommandon (`omniroute status`, `omniroute providers` osv.)
-kan anropa hanteringsendpoints utan att användaren behöver ange en JWT eller ett
-lösenord vid varje körning.
+kan anropa hanteringsändpunkter utan att användaren behöver ange en JWT eller
+ett lösenord vid varje körning.
 
 ## Så fungerar det
 
-1. `getMachineTokenSync()` läser maskinvarans maskin-ID via `node-machine-id`
+1. `getMachineTokenSync()` läser maskinens hårdvaru-ID via `node-machine-id`
    (återgår till en tom sträng vid fel, vilket inaktiverar CLI-autentisering).
-2. Funktionen beräknar `HMAC-SHA256(machine_id, salt)` och returnerar hela det
-   hexadecimala sammandraget på 64 tecken — en deterministisk, icke-reversibel
-   token som är knuten till den här maskinen.
-3. CLI:t skickar endast token som `x-omniroute-cli-token` när den fastställda
+2. Den beräknar `HMAC-SHA256(machine_id, salt)` och returnerar hela det 64 tecken
+   långa hexadecimala sammandraget — en deterministisk, icke-reversibel token
+   som är knuten till den här maskinen.
+3. CLI:t skickar token som `x-omniroute-cli-token` endast när den matchade
    destinationen är en explicit loopback-URL (`localhost`, `127.0.0.0/8` eller
-   loopback-IPv6). Förfrågningar som innehåller token använder `redirect: error`,
-   så att en lokal omdirigering inte kan vidarebefordra den till ett annat
-   ursprung. Fjärrkontexter använder i stället åtkomsttoken med begränsad
-   omfattning. Om härledningen inte är tillgänglig utelämnar CLI:t headern, och
-   `omniroute doctor` rapporterar felet i stället för att behandla en tom token
-   som giltig.
-4. Servern (`src/server/authz/policies/management.ts`) beräknar den förväntade
-   token på nytt med samma salt och jämför med `timingSafeEqual` för att
+   loopback-IPv6). Begäranden som innehåller token använder `redirect: error`,
+   så en lokal omdirigering kan inte vidarebefordra den till ett annat ursprung.
+   Fjärrkontexter använder i stället åtkomsttoken med begränsad omfattning. Om
+   härledning inte är tillgänglig utelämnar CLI:t huvudet, och `omniroute doctor`
+   rapporterar felet i stället för att behandla en tom token som giltig.
+4. Servern (`src/server/authz/policies/management.ts`) beräknar om den
+   förväntade token med samma salt och jämför med `timingSafeEqual` för att
    förhindra tidsbaserad extrahering.
 
 ## Säkerhetsegenskaper
 
-| Egenskap                                  | Detalj                                                                                                                                                                                                   |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Endast loopback**                       | Accepteras endast när serverns betrodda stämpel för motpartens lokalitet (härledd från den faktiska TCP-motpartens adress) anger loopback. Den klientstyrda `Host`-headern används aldrig för lokalitet. |
-| **Jämförelse i konstant tid**             | `crypto.timingSafeEqual` förhindrar tidsattacker.                                                                                                                                                        |
-| **Icke-reversibel**                       | Maskin-ID:t kan inte återskapas från HMAC-utdata.                                                                                                                                                        |
-| **Ingen förbikoppling av `always`-skydd** | `isAlwaysProtectedPath()` utvärderas före kontrollen av CLI-token. `/api/shutdown` och `/api/settings/database` kräver alltid JWT.                                                                       |
-| **Kan inte exporteras**                   | Token skrivs aldrig till disk eller loggas.                                                                                                                                                              |
+| Egenskap                                  | Detalj                                                                                                                                                                                       |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Endast loopback**                       | Accepteras endast när serverns betrodda stämpel för peer-lokalitet (härledd från den verkliga TCP-peeradressen) anger loopback. Det klientstyrda `Host`-huvudet betros aldrig för lokalitet. |
+| **Jämförelse i konstant tid**             | `crypto.timingSafeEqual` förhindrar tidsattacker.                                                                                                                                            |
+| **Icke-reversibel**                       | Maskin-ID:t kan inte återvinnas från HMAC-utdata.                                                                                                                                            |
+| **Ingen förbikoppling av `always`-skydd** | `isAlwaysProtectedPath()` utvärderas före kontrollen av CLI-token. `/api/shutdown` och `/api/settings/database` kräver alltid JWT.                                                           |
+| **Kan inte exporteras**                   | Token skrivs aldrig till disk eller loggas.                                                                                                                                                  |
 
-## Rotation av salt
+## Standardsalt (slumpmässigt per installation)
 
-Ange `OMNIROUTE_CLI_SALT` för att rotera den härledda token utan kodändringar.
-Efter rotationen använder alla CLI-processer på den här maskinen automatiskt
-den nya token. Detta är användbart efter en läcka av processlistan som kan ha
-exponerat det tidigare härledda värdet.
+När `OMNIROUTE_CLI_SALT` inte är angiven är saltet en slumpmässig hexadecimal
+sträng på 64 tecken som genereras en gång och sparas i
+`<DATA_DIR>/cli-token-salt.json` (läge `0600`) — inte den incheckade literalen
+`omniroute-cli-auth-v1`. Både `getActiveSalt()` i
+`src/lib/machineToken.ts` och dess motsvarighet i
+`bin/cli/utils/cliToken.mjs` läser samma fil, så servern och varje CLI-körning i
+den här installationen enas om samma värde. Den incheckade literalen används
+endast som en sista reservlösning när inget sparat salt eller miljövariabelsalt
+ännu kan fastställas (exempelvis i en ny installation med endast CLI innan
+servern någonsin har körts). Detta åtgärdar en svaghet i den tidigare fasta
+standardliteralen: `/etc/machine-id` är ofta läsbar för alla, så vilken lokal
+användare som helst skulle annars kunna härleda samma token för varje
+installation där `OMNIROUTE_CLI_SALT` aldrig hade angetts.
+
+## Saltrotation
+
+Ange `OMNIROUTE_CLI_SALT` för att rotera den härledda token utan kodändringar — den
+har alltid företräde framför det beständiga installationsspecifika saltet. Efter rotationen kommer alla CLI-
+processer på den här datorn automatiskt att använda den nya token. Användbart efter en
+läcka från processlistan som kan ha exponerat det tidigare härledda värdet.
 
 ```bash
 # Beständig rotation (lägg till i skalprofilen)
@@ -58,11 +73,9 @@ export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 omniroute status
 ```
 
-Standardsalt: `omniroute-cli-auth-v1`
-
 ## Äldre format (SHA-256, 32 tecken) — accepteras fortfarande
 
-Före HMAC-formatet ovan härledde CLI:t sin token som
+Före HMAC-formatet ovan härledde CLI-verktyget sin token som
 `SHA-256(machineId + salt).hex[0..32]` (ett prefix på 32 tecken) i
 `bin/cli/utils/cliToken.mjs` (`getLegacyCliTokenSync` i `src/lib/machineToken.ts`).
 
@@ -70,23 +83,24 @@ För bakåtkompatibilitet accepterar servern **båda** formaten: verifieraren sk
 `expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` och jämför den
 inkommande headern mot var och en med `timingSafeEqual`
 (`src/server/authz/policies/management.ts` och `src/lib/middleware/cliTokenAuth.ts`).
-En token är alltså giltig om den matchar **antingen** HMAC-sammandraget på 64 tecken
-eller det äldre SHA-256-prefixet på 32 tecken.
+En token är alltså giltig om den matchar **antingen** HMAC-sammandraget på 64 tecken eller det
+äldre SHA-256-prefixet på 32 tecken.
 
-**Inaktivering:** ange `OMNIROUTE_DISABLE_CLI_TOKEN=true` (i miljön eller `.env`) för
-att inaktivera CLI-tokenmekanismen helt. All åtkomst kräver då en explicit API-nyckel.
-Detta rekommenderas på värdar med flera användare, eftersom `machine-id` gäller per
-enhet (inte per användare) och en annan användare på samma värd skulle kunna beräkna
-samma token.
+**Avaktivering:** ange `OMNIROUTE_DISABLE_CLI_TOKEN=true` (miljövariabel eller `.env`) för att helt
+inaktivera CLI-tokenmekanismen; all åtkomst kräver då en uttrycklig API-nyckel. På värdar med flera användare
+rekommenderas detta, eftersom `machine-id` gäller per enhet (inte per användare) och en annan
+användare på samma värd skulle kunna beräkna samma token.
 
 ## Filer
 
-| Fil                                       | Syfte                                        |
-| ----------------------------------------- | -------------------------------------------- |
-| `src/lib/machineToken.ts`                 | Tokenhärledning (`getMachineTokenSync`)      |
-| `src/server/authz/headers.ts`             | Konstanten `CLI_TOKEN_HEADER`                |
-| `src/server/authz/policies/management.ts` | Verifiering på serversidan                   |
-| `src/server/authz/routeGuard.ts`          | Kontroll av loopback-värd (`isLoopbackHost`) |
+| Fil                                       | Syfte                                               |
+| ----------------------------------------- | --------------------------------------------------- |
+| `src/lib/machineToken.ts`                 | Tokenhärledning (`getMachineTokenSync`)             |
+| `bin/cli/utils/cliToken.mjs`              | CLI-motsvarighet till samma härledning              |
+| `<DATA_DIR>/cli-token-salt.json`          | Beständigt slumpmässigt installationsspecifikt salt |
+| `src/server/authz/headers.ts`             | Konstanten `CLI_TOKEN_HEADER`                       |
+| `src/server/authz/policies/management.ts` | Verifiering på serversidan                          |
+| `src/server/authz/routeGuard.ts`          | Kontroll av loopback-värd (`isLoopbackHost`)        |
 
 ## Se även
 

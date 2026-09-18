@@ -4,7 +4,7 @@
 
 ---
 
-> **TL;DR**: OmniRoute registruje 352 ID poskytovatelů, přičemž **152 položek katalogu poskytovatelů je označeno `hasFree`**. Přísnější auditovaný katalog bezplatných modelů zahrnuje **34 klíčů opakovaně obnovovaných fondů / 443 položek** (436 aktivních + 7 ukončených). Připojte několik vhodných poskytovatelů, abyste získali širší kapacitu pro záložní směrování; nadále platí veškeré kvóty, pravidla schvalování, zásady ochrany osobních údajů a podmínky placeného překročení limitů.
+> **TL;DR**: OmniRoute registruje 357 ID poskytovatelů, přičemž **152 položek v katalogu poskytovatelů je označeno `hasFree`**. Přísněji auditovaný katalog bezplatných modelů zahrnuje **35 klíčů opakujících se fondů / 482 položek** (475 aktivních + 7 ukončených). Připojte několik vhodných poskytovatelů, abyste získali širší kapacitu pro záložní zpracování; nadále platí veškeré kvóty, pravidla schvalování, zásady ochrany soukromí a podmínky placeného překročení limitů.
 
 ---
 
@@ -158,20 +158,20 @@ kvóty nebo zásad přístupu poskytovatele.
 
 ---
 
-## Výpočty bezplatné úrovně
+## Výpočet bezplatné úrovně
 
-Aktuální živý katalog s deduplikací fondů uvádí:
+Aktuální katalog s deduplikací sdílených fondů v současnosti uvádí:
 
-| Metrika                                                                                        |                              Aktuální auditovaná hodnota | Interpretace                                                                                                                                                      |
-| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Opakující se kvantifikovaný příděl                                                             |                              **~1,47 mld. tokenů/měsíc** | Sdílené fondy jsou započítány jednou; poskytovatelé bez limitu jsou ze součtu vyloučeni                                                                           |
-| První měsíc s kredity za registraci                                                            |                                    **~2,07 mld. tokenů** | Opakující se celkový objem plus jednorázové a opakující se kredity                                                                                                |
-| Auditovaný inventář bezplatných modelů                                                         | **34 klíčů opakujících se fondů / 443 položek katalogu** | 436 aktivních + 7 ukončených; liší se od katalogu 352 poskytovatelů                                                                                               |
-| Zastoupení poskytovatelů s trvale bezplatným přístupem bez klíče nebo s opakujícími se příděly |                                                   **52** | Unikátní poskytovatelé napříč opakujícími se denními/měsíčními/kreditními/neomezenými typy a typy katalogu bez klíče; řádky podmíněné způsobilostí jsou vyloučeny |
-| Položky katalogu poskytovatelů označené `hasFree`                                              |                                            **152 / 352** | Širší metadata poskytovatelů; ne všichni mají vyčíslitelnou opakující se kvótu                                                                                    |
+| Metrika                                                              |                              Aktuální auditovaná hodnota | Interpretace                                                                                                                                                     |
+| -------------------------------------------------------------------- | -------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Opakující se kvantifikovaný příděl                                   |                                  **~1.62B tokenů/měsíc** | Sdílené fondy se započítávají jednou; poskytovatelé bez limitu jsou ze součtu vyloučeni                                                                          |
+| První měsíc s kredity za registraci                                  |                                        **~2.22B tokenů** | Opakující se součet plus jednorázové a opakující se kredity                                                                                                      |
+| Auditovaný inventář bezplatných modelů                               | **35 klíčů opakujících se fondů / 482 položek katalogu** | 475 aktivních + 7 ukončených; odlišné od katalogu 357 poskytovatelů                                                                                              |
+| Zastoupení opakujících se / bezklíčových poskytovatelů zdarma navždy |                                                   **53** | Jedineční poskytovatelé napříč opakujícími se denními/měsíčními/kreditními/neomezenými a bezklíčovými typy katalogu; řádky podmíněné způsobilostí jsou vyloučeny |
+| Položky katalogu poskytovatelů označené `hasFree`                    |                                            **152 / 357** | Širší metadata poskytovatelů; ne všichni mají vyčíslitelnou opakující se kvótu                                                                                   |
 
-Tyto hodnoty se počítají z `open-sse/config/freeModelCatalog.ts`; informace o deduplikaci fondů, příznacích smluvních podmínek,
-ukončených položkách a metodice kreditů za registraci naleznete v
+Tyto hodnoty jsou vypočítány z `open-sse/config/freeModelCatalog.ts`; informace o deduplikaci fondů, příznacích ToS,
+ukončených položkách a metodice kreditů za registraci najdete v
 [Referenční příručce bezplatných úrovní](../reference/FREE_TIERS.md).
 
 ---

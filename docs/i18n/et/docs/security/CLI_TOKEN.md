@@ -6,86 +6,98 @@
 
 ## Ülevaade
 
-OmniRoute CLI käsud autendivad end kohaliku haldus-API vastu, kasutades
-`HMAC-SHA256(machine-id, salt)` tokenit, mis saadetakse päringu päises
+OmniRoute CLI käsud autendivad kohaliku haldus-API vastu
+`HMAC-SHA256(machine-id, salt)` loaga, mis saadetakse päringu päises
 `x-omniroute-cli-token`.
 
 See võimaldab CLI alamkäskudel (`omniroute status`, `omniroute providers` jne)
-kutsuda halduse lõpp-punkte, ilma et kasutaja peaks iga käivitamise korral
-JWT-d või parooli sisestama.
+kutsuda halduse lõpp-punkte, ilma et kasutaja peaks igal käivitamisel JWT-d või
+parooli sisestama.
 
 ## Kuidas see töötab
 
 1. `getMachineTokenSync()` loeb riistvara masina ID paketi `node-machine-id`
    kaudu (tõrke korral kasutatakse tühja stringi, mis keelab CLI autentimise).
 2. See arvutab `HMAC-SHA256(machine_id, salt)` ja tagastab täieliku 64-märgilise
-   kuueteistkümnendsüsteemis räsi — deterministliku, pöördumatu ja selle masinaga seotud tokeni.
-3. CLI saadab tokeni päisena `x-omniroute-cli-token` ainult siis, kui lahendatud
-   sihtkoht on selgesõnaline loopback-URL (`localhost`, `127.0.0.0/8` või
-   loopback-IPv6). Tokenit sisaldavad päringud kasutavad sätet `redirect: error`,
-   mistõttu kohalik ümbersuunamine ei saa seda teisele päritolule edastada. Kaugkontekstid
-   kasutavad selle asemel piiratud ulatusega juurdepääsutokeneid. Kui tuletamine pole võimalik,
-   jätab CLI päise lisamata ja `omniroute doctor` raporteerib tõrke, selle asemel et
-   pidada tühja tokenit kehtivaks.
-4. Server (`src/server/authz/policies/management.ts`) arvutab sama soola abil
-   oodatava tokeni uuesti ja võrdleb seda funktsiooniga `timingSafeEqual`, et
-   vältida ajastusel põhinevat eraldamist.
+   kuueteistkümnendsüsteemi räsi — deterministliku, pöördumatu ja selle masinaga seotud loa.
+3. CLI saadab loa päisena `x-omniroute-cli-token` ainult siis, kui lahendatud
+   sihtkoht on otsene loopback-URL (`localhost`, `127.0.0.0/8` või
+   loopback-IPv6). Luba sisaldavad päringud kasutavad sätet `redirect: error`, et kohalik
+   ümbersuunamine ei saaks seda teisele päritolule edastada. Kaugkontekstid kasutavad selle
+   asemel piiritletud juurdepääsulube. Kui tuletamine pole võimalik, jätab CLI päise ära
+   ning `omniroute doctor` teatab tõrkest, selle asemel et käsitleda tühja luba
+   kehtivana.
+4. Server (`src/server/authz/policies/management.ts`) arvutab oodatava
+   loa sama soolaga uuesti ja võrdleb seda funktsiooniga `timingSafeEqual`, et
+   vältida ajastuspõhist tuletamist.
 
-## Turvaomadused
+## Turbeomadused
 
-| Omadus                               | Üksikasjad                                                                                                                                                                                                                             |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Ainult loopback**                  | Aktsepteeritakse ainult siis, kui serveri usaldusväärne partneri lokaalsuse märgend (tuletatud tegelikust TCP partneri aadressist) näitab loopback-aadressi. Kliendi juhitavat päist `Host` ei usaldata kunagi lokaalsuse määramiseks. |
-| **Konstantse ajaga võrdlus**         | `crypto.timingSafeEqual` takistab ajastusründeid.                                                                                                                                                                                      |
-| **Pöördumatu**                       | HMAC-i väljundist ei saa masina ID-d taastada.                                                                                                                                                                                         |
-| **`always`-kaitse möödaviik puudub** | `isAlwaysProtectedPath()` hinnatakse enne CLI tokeni kontrollimist. `/api/shutdown` ja `/api/settings/database` nõuavad alati JWT-d.                                                                                                   |
-| **Mitte-eksporditav**                | Tokenit ei kirjutata kunagi kettale ega logita.                                                                                                                                                                                        |
+| Omadus                               | Üksikasjad                                                                                                                                                                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Ainult loopback**                  | Aktsepteeritakse ainult siis, kui serveri usaldusväärne partneri lokaalsuse märge (tuletatud tegelikust TCP-partneri aadressist) näitab loopback-aadressi. Kliendi juhitavat päist `Host` ei usaldata kunagi lokaalsuse määramiseks. |
+| **Konstantse ajaga võrdlus**         | `crypto.timingSafeEqual` takistab ajastusründeid.                                                                                                                                                                                    |
+| **Pöördumatu**                       | HMAC-i väljundist ei saa masina ID-d taastada.                                                                                                                                                                                       |
+| **`always`-kaitse möödaviik puudub** | `isAlwaysProtectedPath()` käivitatakse enne CLI loa kontrolli. `/api/shutdown` ja `/api/settings/database` nõuavad alati JWT-d.                                                                                                      |
+| **Mitteeksporditav**                 | Luba ei kirjutata kunagi kettale ega logita.                                                                                                                                                                                         |
 
-## Soola vahetamine
+## Vaikimisi sool (juhuslik iga installi puhul)
 
-Määrake `OMNIROUTE_CLI_SALT`, et vahetada tuletatud token ilma koodi muutmata.
-Pärast vahetamist kasutavad kõik selle masina CLI protsessid automaatselt uut tokenit.
-See on kasulik pärast protsessiloendi leket, mis võis paljastada eelmise
-tuletatud väärtuse.
+Kui `OMNIROUTE_CLI_SALT` pole määratud, on sool juhuslik 64-märgiline
+kuueteistkümnendsüsteemi string, mis genereeritakse üks kord ja salvestatakse faili
+`<DATA_DIR>/cli-token-salt.json` (režiim `0600`) — mitte lähtekoodis sisalduv
+literiaal `omniroute-cli-auth-v1`. Nii `getActiveSalt()` failis
+`src/lib/machineToken.ts` kui ka selle vaste failis `bin/cli/utils/cliToken.mjs` loevad
+sama faili, mistõttu server ja iga selle installi CLI käivitus jõuavad sama
+väärtuseni; lähtekoodis sisalduvat literaali kasutatakse ainult viimase abinõuna, kui
+salvestatud või keskkonnast pärit soola pole veel võimalik määrata (näiteks värske, ainult
+CLI-d sisaldava installi puhul enne serveri esmakordset käivitamist). See kõrvaldab vana
+fikseeritud vaikeliteraali nõrkuse: `/etc/machine-id` on tavaliselt kõigile kasutajatele
+loetav, mistõttu saaks iga kohalik kasutaja muidu tuletada sama loa kõigi installide jaoks,
+milles `OMNIROUTE_CLI_SALT` pole kunagi määratud.
+
+## Soola rotatsioon
+
+Määra `OMNIROUTE_CLI_SALT`, et tuletatud tokenit ilma koodimuudatusteta roteerida — sellel on alati prioriteet installipõhiselt püsivalt salvestatud soola ees. Pärast rotatsiooni kasutavad kõik selle masina CLI-protsessid automaatselt uut tokenit. Kasulik pärast protsessiloendi leket, mis võis paljastada eelmise tuletatud väärtuse.
 
 ```bash
-# Püsiv vahetamine (lisage shelli profiili)
+# Püsiv rotatsioon (lisa shelli profiili)
 export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 
-# Kontrollige, et uus token oleks kasutusel
+# Kontrolli, et uus token on kasutusel
 omniroute status
 ```
 
-Vaikesool: `omniroute-cli-auth-v1`
+## Pärandvorming (SHA-256, 32 märki) — endiselt aktsepteeritud
 
-## Pärandvorming (SHA-256, 32 märki) — endiselt aktsepteeritav
-
-Enne eespool kirjeldatud HMAC-vormingut tuletas CLI oma tokeni kujul
+Enne ülaltoodud HMAC-vormingut tuletas CLI oma tokeni kujul
 `SHA-256(machineId + salt).hex[0..32]` (32-märgiline prefiks) failis
 `bin/cli/utils/cliToken.mjs` (`getLegacyCliTokenSync` failis `src/lib/machineToken.ts`).
 
-Tagasiühilduvuse tagamiseks aktsepteerib server **mõlemat** vormingut: verifitseerija koostab
+Tagasiühilduvuse tagamiseks aktsepteerib server **mõlemat** vormingut: kontrollija koostab
 `expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` ja võrdleb
-sissetulevat päist igaühega funktsiooni `timingSafeEqual` abil
+sissetulevat päist iga väärtusega funktsiooni `timingSafeEqual` abil
 (`src/server/authz/policies/management.ts` ja `src/lib/middleware/cliTokenAuth.ts`).
 Seega on token kehtiv, kui see vastab **kas** 64-märgilisele HMAC-räsile või 32-märgilisele
-pärandvormingu SHA-256 prefiksile.
+SHA-256 pärandprefiksile.
 
-**Keelamine:** määrake `OMNIROUTE_DISABLE_CLI_TOKEN=true` (keskkonnas või failis `.env`), et CLI
-tokenimehhanism täielikult keelata; seejärel nõuab kogu juurdepääs selgesõnalist API-võtit. Mitme kasutajaga
-hostides on see soovitatav, kuna `machine-id` on seadmepõhine (mitte kasutajapõhine) ja sama
-hosti teine kasutaja võib arvutada sama tokeni.
+**Loobumine:** määra `OMNIROUTE_DISABLE_CLI_TOKEN=true` (keskkonnas või failis `.env`), et CLI
+tokenimehhanism täielikult keelata; sel juhul nõuab kogu juurdepääs otsest API-võtit. Mitme kasutajaga
+hostides on see soovitatav, kuna `machine-id` on seadmepõhine (mitte kasutajapõhine) ja teine
+sama hosti kasutaja võib arvutada sama tokeni.
 
 ## Failid
 
-| Fail                                      | Otstarve                                   |
-| ----------------------------------------- | ------------------------------------------ |
-| `src/lib/machineToken.ts`                 | Tokeni tuletamine (`getMachineTokenSync`)  |
-| `src/server/authz/headers.ts`             | Konstant `CLI_TOKEN_HEADER`                |
-| `src/server/authz/policies/management.ts` | Serveripoolne kontrollimine                |
-| `src/server/authz/routeGuard.ts`          | Loopback-hosti kontroll (`isLoopbackHost`) |
+| Fail                                      | Otstarve                                          |
+| ----------------------------------------- | ------------------------------------------------- |
+| `src/lib/machineToken.ts`                 | Tokeni tuletamine (`getMachineTokenSync`)         |
+| `bin/cli/utils/cliToken.mjs`              | Sama tuletus CLI poolel                           |
+| `<DATA_DIR>/cli-token-salt.json`          | Püsivalt salvestatud juhuslik installipõhine sool |
+| `src/server/authz/headers.ts`             | Konstant `CLI_TOKEN_HEADER`                       |
+| `src/server/authz/policies/management.ts` | Serveripoolne kontroll                            |
+| `src/server/authz/routeGuard.ts`          | Tagasisideahela hosti kontroll (`isLoopbackHost`) |
 
 ## Vaata ka
 
-- `docs/security/ROUTE_GUARD_TIERS.md` — marsruudi kaitsetasemed
+- `docs/security/ROUTE_GUARD_TIERS.md` — marsruutide kaitsetasemed
 - `docs/architecture/AUTHZ_GUIDE.md` — täielik autoriseerimiskonveier

@@ -7,83 +7,100 @@
 ## አጠቃላይ እይታ
 
 የOmniRoute CLI ትዕዛዞች በ`x-omniroute-cli-token` የጥያቄ ራስጌ በኩል የሚላክን
-የ`HMAC-SHA256(machine-id, salt)` ቶከን በመጠቀም በአካባቢያዊው የአስተዳደር API ላይ
+`HMAC-SHA256(machine-id, salt)` ቶከን በመጠቀም ከአካባቢያዊው የአስተዳደር API ጋር
 ማንነታቸውን ያረጋግጣሉ።
 
-ይህም የCLI ንዑስ ትዕዛዞች (`omniroute status`፣ `omniroute providers`፣ ወዘተ)
+ይህ CLI ንዑስ ትዕዛዞች (`omniroute status`፣ `omniroute providers`፣ ወዘተ)
 ተጠቃሚው በእያንዳንዱ ጥሪ JWT ወይም የይለፍ ቃል እንዲያቀርብ ሳያስፈልግ
-የአስተዳደር መጨረሻ ነጥቦችን እንዲጠሩ ያስችላል።
+የአስተዳደር መገናኛዎችን እንዲጠሩ ያስችላል።
 
 ## እንዴት እንደሚሠራ
 
-1. `getMachineTokenSync()` በ`node-machine-id` በኩል የሃርድዌር ማሽን መለያውን ያነባል
-   (ሲሳነው ወደ ባዶ ሕብረቁምፊ ይመለሳል፣ ይህም የCLI ማረጋገጫን ያሰናክላል)።
-2. `HMAC-SHA256(machine_id, salt)`ን ያሰላል እና ሙሉውን ባለ64-ቁምፊ
-   hex digest ይመልሳል — ከዚህ ማሽን ጋር የተሳሰረ ወጥና ወደኋላ ሊቀለበስ የማይችል ቶከን።
-3. CLIው ቶከኑን እንደ `x-omniroute-cli-token` የሚልከው የተፈታው
+1. `getMachineTokenSync()` በ`node-machine-id` በኩል የሃርድዌር ማሽን መታወቂያውን
+   ያነባል (ካልተሳካ ወደ ባዶ ሕብረቁምፊ ይመለሳል፣ ይህም የCLI ማንነት ማረጋገጫን ያሰናክላል)።
+2. `HMAC-SHA256(machine_id, salt)` ያሰላል እና ሙሉውን ባለ64-ቁምፊ
+   የሄክስ ዲጄስት ይመልሳል — ከዚህ ማሽን ጋር የተያያዘ የማይለዋወጥ እና የማይቀለበስ ቶከን።
+3. CLI ቶከኑን እንደ `x-omniroute-cli-token` የሚልከው የተወሰነው
    መድረሻ ግልጽ የloopback URL (`localhost`፣ `127.0.0.0/8`፣ ወይም
-   loopback IPv6) ሲሆን ብቻ ነው። ቶከኑን የያዙ ጥያቄዎች `redirect: error`ን ይጠቀማሉ፣ ስለዚህ አካባቢያዊ
-   ማዘዋወር ወደ ሌላ origin ሊያስተላልፈው አይችልም። የርቀት አውዶች በምትኩ ወሰን የተበጀላቸውን
-   የመዳረሻ ቶከኖች ይጠቀማሉ። ማመንጨት የማይቻል ከሆነ CLIው ራስጌውን አያካትትም
-   እና `omniroute doctor` ባዶ ቶከንን ትክክለኛ አድርጎ ከመቁጠር ይልቅ ውድቀቱን ሪፖርት ያደርጋል።
-4. አገልጋዩ (`src/server/authz/policies/management.ts`) በተመሳሳይ salt
-   የሚጠበቀውን ቶከን እንደገና ያሰላል እና በጊዜ ልዩነት ላይ የተመሠረተ ማውጣትን
-   ለመከላከል በ`timingSafeEqual` ያወዳድራል።
+   loopback IPv6) ሲሆን ብቻ ነው። ቶከኑን የያዙ ጥያቄዎች `redirect: error` ይጠቀማሉ፤ ስለዚህ አካባቢያዊ
+   አቅጣጫ ለውጥ ቶከኑን ወደ ሌላ መነሻ ማስተላለፍ አይችልም። የርቀት አውዶች በምትኩ ወሰን የተደረገላቸውን
+   የመዳረሻ ቶከኖች ይጠቀማሉ። ማመንጨት የማይቻል ከሆነ CLI ራስጌውን አያካትትም፣
+   እና `omniroute doctor` ባዶ ቶከንን ትክክለኛ እንደሆነ ከመቁጠር ይልቅ ውድቀቱን ሪፖርት ያደርጋል።
+4. አገልጋዩ (`src/server/authz/policies/management.ts`) በተመሳሳይ salt የሚጠበቀውን
+   ቶከን እንደገና ያሰላል እና በጊዜ ልዩነት ላይ የተመሠረተ ማውጣትን
+   ለመከላከል `timingSafeEqual` በመጠቀም ያነጻጽራል።
 
-## የደህንነት ባህሪያት
+## የደኅንነት ባህሪያት
 
-| ባህሪ                        | ዝርዝር                                                                                                                                                           |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Loopback ብቻ**            | የአገልጋዩ እምነት የተጣለበት የpeer-locality ማህተም (ከትክክለኛው የTCP peer አድራሻ የሚገኝ) loopback እንደሆነ ሲገልጽ ብቻ ተቀባይነት ያገኛል። በደንበኛው የሚቆጣጠረው `Host` ራስጌ ለአካባቢያዊነት ፈጽሞ እምነት አይጣልበትም። |
-| **በቋሚ ጊዜ ማወዳደር**           | `crypto.timingSafeEqual` የጊዜ መለኪያ ጥቃቶችን ይከላከላል።                                                                                                                |
-| **ወደኋላ የማይቀለበስ**           | ከHMAC ውጤት machine-idን መልሶ ማግኘት አይቻልም።                                                                                                                          |
-| **የ`always`-ጥበቃ ማለፊያ የለም** | `isAlwaysProtectedPath()` ከCLI ቶከን ምርመራው በፊት ይገመገማል። `/api/shutdown` እና `/api/settings/database` ሁልጊዜ JWT ይፈልጋሉ።                                               |
-| **ወደ ውጭ የማይላክ**            | ቶከኑ ፈጽሞ ወደ ዲስክ አይጻፍም ወይም በመዝገብ አይመዘገብም።                                                                                                                        |
+| ባህሪ                               | ዝርዝር                                                                                                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Loopback ብቻ**                   | ተቀባይነት የሚኖረው የአገልጋዩ የታመነ የpeer-locality ምልክት (ከእውነተኛው TCP peer አድራሻ የሚመነጭ) loopback መሆኑን ሲያመለክት ብቻ ነው። በደንበኛው የሚቆጣጠረው `Host` ራስጌ ለአካባቢያዊነት በፍጹም አይታመንም። |
+| **ቋሚ-ጊዜ ንጽጽር**                    | `crypto.timingSafeEqual` የጊዜ ልዩነት ጥቃቶችን ይከላከላል።                                                                                                         |
+| **የማይቀለበስ**                       | ከHMAC ውጤት የማሽን መታወቂያውን መልሶ ማግኘት አይቻልም።                                                                                                                  |
+| **በ`always` የተጠበቀን የማለፊያ ዘዴ የለም** | `isAlwaysProtectedPath()` ከCLI ቶከን ፍተሻው በፊት ይገመገማል። `/api/shutdown` እና `/api/settings/database` ሁልጊዜ JWT ይፈልጋሉ።                                         |
+| **ወደ ውጭ የማይላክ**                   | ቶከኑ በፍጹም ወደ ዲስክ አይጻፍም ወይም በምዝግብ ውስጥ አይመዘገብም።                                                                                                            |
 
-## የSalt ማዞር
+## ነባሪ salt (በእያንዳንዱ ጭነት በዘፈቀደ)
 
-የተገኘውን ቶከን የኮድ ለውጦች ሳያስፈልጉ ለማዞር `OMNIROUTE_CLI_SALT`ን ያቀናብሩ።
-ከማዞሩ በኋላ በዚህ ማሽን ላይ ያሉ ሁሉም የCLI ሂደቶች አዲሱን ቶከን
-በራስ-ሰር ይጠቀማሉ። ከዚህ ቀደም የተገኘውን እሴት አጋልጦ ሊሆን ከሚችል
-የሂደት ዝርዝር ፍሰት በኋላ ጠቃሚ ነው።
+`OMNIROUTE_CLI_SALT` ካልተዋቀረ፣ salt አንድ ጊዜ የሚመነጭ በዘፈቀደ ባለ64-ቁምፊ የሄክስ ሕብረቁምፊ
+ሲሆን በ`<DATA_DIR>/cli-token-salt.json` (ሁነታ `0600`) ላይ በቋሚነት ይቀመጣል —
+በማከማቻው ውስጥ የተካተተው ቀጥተኛ እሴት `omniroute-cli-auth-v1` አይደለም። በ
+`src/lib/machineToken.ts` ውስጥ ያለው `getActiveSalt()` እና በ`bin/cli/utils/cliToken.mjs` ውስጥ ያለው ተመሳሳይ ቅጂ
+አንድ ዓይነት ፋይል ያነባሉ፤ ስለዚህ አገልጋዩ እና በዚህ ጭነት ላይ ያለ እያንዳንዱ የCLI ጥሪ
+ወደ አንድ እሴት ይደርሳሉ። በማከማቻው ውስጥ የተካተተው ቀጥተኛ እሴት የሚጠቀመው
+በቋሚነት የተቀመጠ ወይም የenv salt ገና ማዘጋጀት በማይቻልበት ጊዜ እንደ የመጨረሻ አማራጭ ብቻ ነው
+(ለምሳሌ፣ አገልጋዩ ከመጀመሪያውም ከመሥራቱ በፊት የተደረገ አዲስ CLI-ብቻ ጭነት)።
+ይህ የቀድሞውን ቋሚ ቀጥተኛ ነባሪ ድክመት ይዘጋል፦ `/etc/machine-id` በተለምዶ
+ለሁሉም የሚነበብ ስለሆነ፣ ያለበለዚያ ማንኛውም የአካባቢ ተጠቃሚ
+`OMNIROUTE_CLI_SALT` ባላዋቀረ እያንዳንዱ ጭነት ላይ ተመሳሳዩን ቶከን ማመንጨት ይችላል።
+
+## ሳልት ማዞር
+
+የተዋቀረውን ቶከን ያለ ኮድ ለውጥ ለማዞር `OMNIROUTE_CLI_SALT`ን ያዘጋጁ — ይህ
+ሁልጊዜ በእያንዳንዱ ጭነት ከተከማቸው ሳልት የበለጠ ቅድሚያ ያገኛል። ከማዞሩ በኋላ በዚህ ማሽን
+ላይ ያሉ ሁሉም የCLI ሂደቶች አዲሱን ቶከን በራስ-ሰር ይጠቀማሉ። ቀዳሚውን የተዋቀረ እሴት
+አጋልጦ ሊሆን ከሚችል የሂደት ዝርዝር መረጃ ፍሰት በኋላ ጠቃሚ ነው።
 
 ```bash
-# ቋሚ ማዞር (ወደ shell profile ያክሉ)
+# ቋሚ ማዞር (ወደ shell መገለጫ ያክሉ)
 export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 
 # አዲሱ ቶከን ጥቅም ላይ መዋሉን ያረጋግጡ
 omniroute status
 ```
 
-ነባሪ salt፦ `omniroute-cli-auth-v1`
+## የቀድሞ ቅርጸት (SHA-256፣ 32-ቁምፊ) — አሁንም ተቀባይነት አለው
 
-## የቆየ ቅርጸት (SHA-256፣ ባለ32-ቁምፊ) — አሁንም ተቀባይነት አለው
+ከላይ ካለው የHMAC ቅርጸት በፊት፣ CLI ቶከኑን
+በ`bin/cli/utils/cliToken.mjs` ውስጥ እንደ `SHA-256(machineId + salt).hex[0..32]`
+(ባለ 32-ቁምፊ ቅድመ ቅጥያ) ያዋቅር ነበር (`getLegacyCliTokenSync` በ
+`src/lib/machineToken.ts` ውስጥ)።
 
-ከላይ ካለው የHMAC ቅርጸት በፊት CLIው ቶከኑን
-`SHA-256(machineId + salt).hex[0..32]` (ባለ32-ቁምፊ ቅድመ ክፍል) በ
-`bin/cli/utils/cliToken.mjs` (በ`src/lib/machineToken.ts` ውስጥ `getLegacyCliTokenSync`) ያመነጭ ነበር።
+ከቀድሞ ስሪቶች ጋር ለመጣጣም ሰርቨሩ **ሁለቱንም** ቅርጸቶች ይቀበላል፦ አረጋጋጩ
+`expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]`ን ይገነባል እና የገባውን
+ርዕስ ከእያንዳንዳቸው ጋር `timingSafeEqual`ን በመጠቀም ያነጻጽራል
+(`src/server/authz/policies/management.ts` እና `src/lib/middleware/cliTokenAuth.ts`)።
+ስለዚህ አንድ ቶከን ከ64-ቁምፊው የHMAC ዲጀስት **ወይም** ከ32-ቁምፊው
+የቀድሞ SHA-256 ቅድመ ቅጥያ ከአንዳቸው ጋር ከተዛመደ ትክክለኛ ነው።
 
-ለኋላቀር ተኳኋኝነት አገልጋዩ **ሁለቱንም** ቅርጸቶች ይቀበላል፦ አረጋጋጩ
-`expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]`ን ይገነባል እና ገቢውን
-ራስጌ በ`timingSafeEqual`
-(`src/server/authz/policies/management.ts` እና `src/lib/middleware/cliTokenAuth.ts`) ከእያንዳንዱ ጋር ያወዳድራል።
-ስለዚህ አንድ ቶከን ከባለ64-ቁምፊው HMAC digest **ወይም** ከባለ32-ቁምፊው
-የቆየ SHA-256 ቅድመ ክፍል ከአንዳቸው ጋር ከተዛመደ ትክክለኛ ነው።
-
-**ማሰናከል፦** የCLI ቶከን ዘዴውን ሙሉ በሙሉ ለማሰናከል `OMNIROUTE_DISABLE_CLI_TOKEN=true`ን (env ወይም `.env`) ያቀናብሩ፤ ከዚያ ሁሉም መዳረሻ ግልጽ API key ይፈልጋል። ብዙ ተጠቃሚዎች ባሉባቸው
-hosts ላይ ይህ ይመከራል፤ ምክንያቱም `machine-id` በመሣሪያ ደረጃ እንጂ በተጠቃሚ ደረጃ አይደለም፣ እና በተመሳሳይ
-host ላይ ያለ ሌላ ተጠቃሚ ተመሳሳዩን ቶከን ማስላት ይችላል።
+**ላለመጠቀም፦** የCLI ቶከን ስልቱን ሙሉ በሙሉ ለማሰናከል
+`OMNIROUTE_DISABLE_CLI_TOKEN=true`ን (በenv ወይም `.env`) ያዘጋጁ፤ ከዚያ በኋላ ሁሉም
+መዳረሻ ግልጽ የAPI ቁልፍ ይፈልጋል። በብዙ ተጠቃሚ አስተናጋጆች ላይ `machine-id`
+ለእያንዳንዱ መሣሪያ (ለእያንዳንዱ ተጠቃሚ ሳይሆን) የተለየ ስለሆነ እና በዚያው
+አስተናጋጅ ላይ ያለ ሌላ ተጠቃሚ ተመሳሳዩን ቶከን ሊያሰላ ስለሚችል ይህ ይመከራል።
 
 ## ፋይሎች
 
-| ፋይል                                       | ዓላማ                                    |
-| ----------------------------------------- | -------------------------------------- |
-| `src/lib/machineToken.ts`                 | ቶከን ማመንጨት (`getMachineTokenSync`)      |
-| `src/server/authz/headers.ts`             | `CLI_TOKEN_HEADER` ቋሚ እሴት              |
-| `src/server/authz/policies/management.ts` | በአገልጋይ በኩል ማረጋገጥ                       |
-| `src/server/authz/routeGuard.ts`          | የloopback host ምርመራ (`isLoopbackHost`) |
+| ፋይል                                       | ዓላማ                                       |
+| ----------------------------------------- | ----------------------------------------- |
+| `src/lib/machineToken.ts`                 | የቶከን ማዋቀር (`getMachineTokenSync`)         |
+| `bin/cli/utils/cliToken.mjs`              | የዚያው ማዋቀር የCLI-ወገን ቅጂ                     |
+| `<DATA_DIR>/cli-token-salt.json`          | የተከማቸ የዘፈቀደ በየጭነቱ ሳልት                     |
+| `src/server/authz/headers.ts`             | `CLI_TOKEN_HEADER` ቋሚ እሴት                 |
+| `src/server/authz/policies/management.ts` | የሰርቨር-ወገን ማረጋገጥ                           |
+| `src/server/authz/routeGuard.ts`          | የloopback አስተናጋጅ ማረጋገጫ (`isLoopbackHost`) |
 
-## በተጨማሪ ይመልከቱ
+## እንዲሁም ይመልከቱ
 
-- `docs/security/ROUTE_GUARD_TIERS.md` — የroute ጥበቃ ደረጃዎች
-- `docs/architecture/AUTHZ_GUIDE.md` — ሙሉ የፈቃድ መስጫ ሂደት
+- `docs/security/ROUTE_GUARD_TIERS.md` — የመስመር ጥበቃ ደረጃዎች
+- `docs/architecture/AUTHZ_GUIDE.md` — ሙሉ የፈቃድ አሰጣጥ ሂደት

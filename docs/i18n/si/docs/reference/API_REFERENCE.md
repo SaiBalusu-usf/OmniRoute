@@ -1606,19 +1606,19 @@ GET /.well-known/agent.json
 
 ## CLI මෙවලම් කළමනාකරණය
 
-OmniRoute සමඟ ඒකාබද්ධ වන CLI මෙවලම් (antigravity, chipotle, commandCode,
-devin-cli, ආදිය) කළමනාකරණය කරන්න. සම්පූර්ණ ලැයිස්තුව සඳහා [සපයන්නන් පිළිබඳ යොමුව](./PROVIDER_REFERENCE.md) බලන්න.
+OmniRoute සමඟ ඒකාබද්ධ වන CLI මෙවලම් (antigravity, commandCode,
+devin-cli ආදිය) කළමනාකරණය කරන්න. සම්පූර්ණ ලැයිස්තුව සඳහා [සපයන්නාගේ යොමුව](./PROVIDER_REFERENCE.md) බලන්න.
 
-| ක්රමය | මාර්ගය                                  | විස්තරය                                                                                                                                                                                |
-| ----- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET   | `/api/cli-tools/all-statuses`           | සියලුම CLI මෙවලම්වල තත්ත්වය (ස්ථාපනය කර තිබේද, අනුවාදය, අවසන් වරට දුටු වේලාව)                                                                                                          |
-| GET   | `/api/cli-tools/status`                 | එක් CLI මෙවලමක් සඳහා සවිස්තරාත්මක තත්ත්වය (`?tool=` විමසුම)                                                                                                                            |
-| POST  | `/api/cli-tools/apply`                  | මෙවලමක් මඟින් ජනනය කළ වින්යාසය ලියන්න (`dryRun` මඟින් පෙරදසුනක් පෙන්වයි; බහාලුම්ගත කර ඇති විට `422` + `containerEphemeralTarget`; පැරණි Codex YAML එකක් පිළිබඳ `migration` සටහන් කරයි) |
-| GET   | `/api/cli-tools/backups`                | CLI මෙවලම් වින්යාස උපස්ථ ලැයිස්තුගත කරන්න                                                                                                                                              |
-| POST  | `/api/cli-tools/backups`                | සියලුම CLI මෙවලම් වින්යාසවල උපස්ථයක් සාදන්න                                                                                                                                            |
-| POST  | `/api/cli-tools/backups`                | ප්රතිසාධනය: ඉල්ලීම් අන්තර්ගතය තුළ `{tool, backupId}` සමඟ එම අන්ත ලක්ෂ්යයම භාවිත කිරීමෙන් අදාළ උපස්ථය ප්රතිසාධනය කරයි                                                                   |
-| GET   | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM ප්රොක්සි තත්ත්වය ("antigravity-mitm" CLI මෙවලම)                                                                                                                       |
-| POST  | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm අන්වර්ථ නාම වින්යාස කරන්න                                                                                                                                             |
+| ක්රමය | මාර්ගය                                  | විස්තරය                                                                                                                                                                                 |
+| ----- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET   | `/api/cli-tools/all-statuses`           | සියලු CLI මෙවලම්වල තත්ත්වය (ස්ථාපනය කර තිබේද, අනුවාදය, අවසන් වරට දුටු වේලාව)                                                                                                            |
+| GET   | `/api/cli-tools/status`                 | එක් CLI මෙවලමක් සඳහා තත්ත්ව විස්තර (`?tool=` විමසුම)                                                                                                                                    |
+| POST  | `/api/cli-tools/apply`                  | මෙවලමක ජනනය කළ වින්යාසය ලියයි (`dryRun` මඟින් පෙරදසුනක් පෙන්වයි; බහාලුම්ගත කර ඇති විට `422` + `containerEphemeralTarget`; `migration` මඟින් පැරණි Codex YAML එකක් පිළිබඳ සටහනක් දක්වයි) |
+| GET   | `/api/cli-tools/backups`                | CLI මෙවලම් වින්යාස උපස්ථ ලැයිස්තුගත කරයි                                                                                                                                                |
+| POST  | `/api/cli-tools/backups`                | සියලු CLI මෙවලම් වින්යාසවල උපස්ථයක් සාදයි                                                                                                                                               |
+| POST  | `/api/cli-tools/backups`                | ප්රතිසාධනය: ඉල්ලීම් අන්තර්ගතයේ `{tool, backupId}` සමඟ එකම අන්ත ලක්ෂ්යය භාවිත කිරීමෙන් එම උපස්ථය ප්රතිසාධනය කරයි                                                                         |
+| GET   | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM ප්රොක්සි තත්ත්වය ("antigravity-mitm" CLI මෙවලම)                                                                                                                        |
+| POST  | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm අන්වර්ථ නාම වින්යාස කරයි                                                                                                                                               |
 
 **සත්යාපනය:** කළමනාකරණ සැසියක් අවශ්ය වේ.
 

@@ -1599,19 +1599,19 @@ Operasyonel yönetim için yalnızca yöneticilere açık uç noktalar.
 
 ## CLI Araçları Yönetimi
 
-OmniRoute ile entegre olan CLI araçlarını (antigravity, chipotle, commandCode,
-devin-cli vb.) yönetin. Tam liste için [Sağlayıcı Referansı](./PROVIDER_REFERENCE.md) belgesine bakın.
+OmniRoute ile entegre olan CLI araçlarını (antigravity, commandCode,
+devin-cli vb.) yönetin. Tam liste için [Sağlayıcı Referansı](./PROVIDER_REFERENCE.md) sayfasına bakın.
 
-| Yöntem | Yol                                     | Açıklama                                                                                                                                                                     |
-| ------ | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | Tüm CLI araçlarının durumu (kurulu olma durumu, sürüm, son görülme zamanı)                                                                                                   |
-| GET    | `/api/cli-tools/status`                 | Bir CLI aracının ayrıntılı durumu (`?tool=` sorgusu)                                                                                                                         |
-| POST   | `/api/cli-tools/apply`                  | Bir aracın oluşturulan yapılandırmasını yaz (`dryRun` önizleme yapar; kapsayıcı ortamında `422` + `containerEphemeralTarget`; `migration`, eski bir Codex YAML'ını belirtir) |
-| GET    | `/api/cli-tools/backups`                | CLI aracı yapılandırma yedeklerini listele                                                                                                                                   |
-| POST   | `/api/cli-tools/backups`                | Tüm CLI aracı yapılandırmalarının yedeğini oluştur                                                                                                                           |
-| POST   | `/api/cli-tools/backups`                | Geri yükle: gövdede `{tool, backupId}` ile aynı uç nokta, ilgili yedeği geri yükler                                                                                          |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM proxy durumu ("antigravity-mitm" CLI aracı)                                                                                                                 |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm alias'larını yapılandır                                                                                                                                     |
+| Yöntem | Yol                                     | Açıklama                                                                                                                                                                                |
+| ------ | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/cli-tools/all-statuses`           | Tüm CLI araçlarının durumu (yüklü olma durumu, sürüm, son görülme zamanı)                                                                                                               |
+| GET    | `/api/cli-tools/status`                 | Tek bir CLI aracının durum ayrıntıları (`?tool=` sorgusu)                                                                                                                               |
+| POST   | `/api/cli-tools/apply`                  | Bir aracın oluşturulan yapılandırmasını yazar (`dryRun` önizleme yapar; konteynerleştirilmişse `422` + `containerEphemeralTarget`; `migration`, eski bir Codex YAML dosyasını belirtir) |
+| GET    | `/api/cli-tools/backups`                | CLI aracı yapılandırma yedeklerini listeler                                                                                                                                             |
+| POST   | `/api/cli-tools/backups`                | Tüm CLI aracı yapılandırmalarının yedeğini oluşturur                                                                                                                                    |
+| POST   | `/api/cli-tools/backups`                | Geri yükleme: gövdesinde `{tool, backupId}` ile aynı uç nokta, ilgili yedeği geri yükler                                                                                                |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM proxy durumu ("antigravity-mitm" CLI aracı)                                                                                                                            |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm takma adlarını yapılandırır                                                                                                                                            |
 
 **Kimlik doğrulama:** Yönetim oturumu gerektirir.
 

@@ -4,7 +4,7 @@
 
 ---
 
-> **TL;DR**: OmniRoute rejestruje 352 identyfikatory dostawców, z czego **152 wpisy w katalogu dostawców są oznaczone jako `hasFree`**. Bardziej rygorystyczny, audytowany katalog bezpłatnych modeli obejmuje **34 klucze cyklicznych pul / 443 wpisy** (436 aktywnych + 7 wycofanych). Połącz kilku odpowiednich dostawców, aby uzyskać większe możliwości przełączania awaryjnego; wszystkie limity, zasady zatwierdzania, polityki prywatności i warunki płatnego przekroczenia limitów nadal obowiązują.
+> **TL;DR**: OmniRoute rejestruje 357 identyfikatorów dostawców, z czego **152 wpisy w katalogu dostawców są oznaczone jako `hasFree`**. Bardziej rygorystyczny, audytowany katalog bezpłatnych modeli obejmuje **35 cyklicznych kluczy puli / 482 wpisy** (475 aktywnych + 7 wycofanych). Połącz kilku odpowiednich dostawców, aby zwiększyć możliwości przełączania awaryjnego; nadal obowiązują wszystkie limity, zasady zatwierdzania, polityki prywatności i warunki dotyczące płatnego przekroczenia limitu.
 
 ---
 
@@ -203,20 +203,20 @@ Jeśli masz wiele kont u tego samego providera, OmniRoute traktuje każde jako o
 
 ---
 
-## Obliczenia dla bezpłatnych planów
+## Obliczenia bezpłatnego planu
 
-Aktualny katalog działający na żywo, z deduplikacją pul, podaje:
+Aktualny katalog z deduplikacją pul podaje obecnie:
 
-| Metryka                                                              |                      Bieżąca zweryfikowana wartość | Interpretacja                                                                                                                                                                    |
-| -------------------------------------------------------------------- | -------------------------------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cykliczny, określony ilościowo przydział                             |                      **~1,47 mld tokenów/miesiąc** | Współdzielone pule policzono jednokrotnie; dostawcy bez limitu zostali wyłączeni z sumy                                                                                          |
-| Pierwszy miesiąc z przydziałami za rejestrację                       |                              **~2,07 mld tokenów** | Suma cykliczna wraz z jednorazowymi i cyklicznymi środkami                                                                                                                       |
-| Zweryfikowany wykaz bezpłatnych modeli                               | **34 cykliczne klucze pul / 443 wpisy katalogowe** | 436 aktywnych + 7 wycofanych; niezależnie od katalogu obejmującego 352 dostawców                                                                                                 |
-| Reprezentowani dostawcy cykliczni/bez klucza, bezpłatni bezterminowo |                                             **52** | Unikalni dostawcy w cyklicznych dziennych/miesięcznych/kredytowych/bezlimitowych i bezkluczowych typach katalogowych, z wyłączeniem wierszy objętych kryteriami kwalifikacyjnymi |
-| Wpisy katalogu dostawców oznaczone jako `hasFree`                    |                                      **152 / 352** | Szersze metadane dostawców; nie wszyscy mają mierzalny cykliczny limit                                                                                                           |
+| Metryka                                                                     |                        Bieżąca zweryfikowana wartość | Interpretacja                                                                                                                                                                                |
+| --------------------------------------------------------------------------- | ---------------------------------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cykliczny, określony ilościowo przydział                                    |                           **~1.62B tokenów/miesiąc** | Współdzielone pule liczone jednokrotnie; dostawcy bez limitu wyłączeni z sumy                                                                                                                |
+| Pierwszy miesiąc z przydziałami za rejestrację                              |                                   **~2.22B tokenów** | Cykliczna suma powiększona o jednorazowe i cykliczne środki                                                                                                                                  |
+| Zweryfikowany wykaz bezpłatnych modeli                                      | **35 kluczy cyklicznych pul / 482 wpisy katalogowe** | 475 aktywnych + 7 wycofanych; niezależnie od katalogu 357 dostawców                                                                                                                          |
+| Uwzględnieni dostawcy cyklicznych/bezkluczowych usług bezpłatnych na zawsze |                                               **53** | Unikalni dostawcy we wszystkich typach katalogowych: cyklicznych dziennych/miesięcznych, opartych na środkach, bez limitu i bez klucza; wiersze zależne od kryteriów kwalifikacji wykluczono |
+| Wpisy katalogu dostawców oznaczone jako `hasFree`                           |                                        **152 / 357** | Szersze metadane dostawców; nie wszyscy mają wymierny cykliczny limit                                                                                                                        |
 
-Wartości te są obliczane na podstawie `open-sse/config/freeModelCatalog.ts`; informacje o deduplikacji pul, flagach ToS,
-wycofanych wpisach i metodologii uwzględniania środków za rejestrację zawiera
+Wartości te są obliczane na podstawie pliku `open-sse/config/freeModelCatalog.ts`; informacje o deduplikacji pul, flagach ToS,
+wycofanych wpisach i metodologii środków za rejestrację zawiera
 [Dokumentacja bezpłatnych planów](../reference/FREE_TIERS.md).
 
 ---

@@ -1589,21 +1589,21 @@ Mga endpoint na para lamang sa admin para sa pamamahala ng operasyon.
 
 ## Pamamahala ng mga CLI Tool
 
-Pamahalaan ang mga CLI tool na nagsasama sa OmniRoute (antigravity, chipotle, commandCode,
+Pamahalaan ang mga CLI tool na nagsasama sa OmniRoute (antigravity, commandCode,
 devin-cli, atbp.). Tingnan ang [Sanggunian ng Provider](./PROVIDER_REFERENCE.md) para sa kumpletong listahan.
 
-| Paraan | Path                                    | Paglalarawan                                                                                                                                                                       |
-| ------ | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | Katayuan ng lahat ng CLI tool (naka-install, bersyon, huling nakita)                                                                                                               |
-| GET    | `/api/cli-tools/status`                 | Mga detalye ng katayuan para sa isang CLI tool (`?tool=` query)                                                                                                                    |
-| POST   | `/api/cli-tools/apply`                  | Isulat ang nabuong config ng tool (nagbibigay ang `dryRun` ng preview; `422` + `containerEphemeralTarget` kapag nasa container; itinatala ng `migration` ang legacy na Codex YAML) |
-| GET    | `/api/cli-tools/backups`                | Ilista ang mga backup ng configuration ng CLI tool                                                                                                                                 |
-| POST   | `/api/cli-tools/backups`                | Gumawa ng backup ng lahat ng configuration ng CLI tool                                                                                                                             |
-| POST   | `/api/cli-tools/backups`                | I-restore: nire-restore ng parehong endpoint na may `{tool, backupId}` sa body ang backup na iyon                                                                                  |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Katayuan ng Antigravity MITM proxy (ang "antigravity-mitm" CLI tool)                                                                                                               |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | I-configure ang mga alias ng antigravity-mitm                                                                                                                                      |
+| Pamamaraan | Path                                    | Paglalarawan                                                                                                                                                                           |
+| ---------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET        | `/api/cli-tools/all-statuses`           | Katayuan ng lahat ng CLI tool (naka-install, bersyon, huling nakita)                                                                                                                   |
+| GET        | `/api/cli-tools/status`                 | Mga detalye ng katayuan para sa isang CLI tool (`?tool=` na query)                                                                                                                     |
+| POST       | `/api/cli-tools/apply`                  | Isulat ang nabuong config ng isang tool (nagpapakita ng preview ang `dryRun`; `422` + `containerEphemeralTarget` kapag naka-container; itinatala ng `migration` ang lumang Codex YAML) |
+| GET        | `/api/cli-tools/backups`                | Ilista ang mga backup ng configuration ng CLI tool                                                                                                                                     |
+| POST       | `/api/cli-tools/backups`                | Gumawa ng backup ng lahat ng configuration ng CLI tool                                                                                                                                 |
+| POST       | `/api/cli-tools/backups`                | I-restore: nire-restore ng parehong endpoint na may `{tool, backupId}` sa body ang backup na iyon                                                                                      |
+| GET        | `/api/cli-tools/antigravity-mitm`       | Katayuan ng Antigravity MITM proxy (ang "antigravity-mitm" na CLI tool)                                                                                                                |
+| POST       | `/api/cli-tools/antigravity-mitm/alias` | I-configure ang mga alias ng antigravity-mitm                                                                                                                                          |
 
-**Awtorisasyon:** Nangangailangan ng session sa pamamahala.
+**Auth:** Nangangailangan ng session sa pamamahala.
 
 ---
 

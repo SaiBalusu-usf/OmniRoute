@@ -1592,19 +1592,19 @@ Endpoints għall-amministraturi biss għall-ġestjoni operazzjonali.
 
 ## Ġestjoni tal-Għodod CLI
 
-Immaniġġja l-għodod CLI li jintegraw ma’ OmniRoute (antigravity, chipotle, commandCode,
-devin-cli, eċċ.). Ara r-[Referenza tal-Fornituri](./PROVIDER_REFERENCE.md) għal-lista sħiħa.
+Immaniġġja l-għodod CLI li jintegraw ma’ OmniRoute (antigravity, commandCode,
+devin-cli, eċċ.). Ara [Referenza tal-Fornituri](./PROVIDER_REFERENCE.md) għal-lista sħiħa.
 
-| Metodu | Mogħdija                                | Deskrizzjoni                                                                                                                                                             |
-| ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| GET    | `/api/cli-tools/all-statuses`           | Status tal-għodod CLI kollha (installati, verżjoni, l-aħħar darba li dehru)                                                                                              |
-| GET    | `/api/cli-tools/status`                 | Dettalji tal-istatus għal għodda CLI waħda (query `?tool=`)                                                                                                              |
-| POST   | `/api/cli-tools/apply`                  | Ikteb il-konfigurazzjoni ġġenerata ta’ għodda (`dryRun` juri previżjoni; `422` + `containerEphemeralTarget` meta tkun f’container; `migration` jinnota Codex YAML antik) |
-| GET    | `/api/cli-tools/backups`                | Elenka l-backups tal-konfigurazzjonijiet tal-għodod CLI                                                                                                                  |
-| POST   | `/api/cli-tools/backups`                | Oħloq backup tal-konfigurazzjonijiet kollha tal-għodod CLI                                                                                                               |
-| POST   | `/api/cli-tools/backups`                | Irrestawra: l-istess endpoint b’`{tool, backupId}` fil-body jirrestawra dak il-backup                                                                                    |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Status tal-proxy MITM ta’ Antigravity (l-għodda CLI "antigravity-mitm")                                                                                                  |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | Ikkonfigura l-aliases ta’ antigravity-mitm                                                                                                                               |
+| Metodu | Mogħdija                                | Deskrizzjoni                                                                                                                                                                   |
+| ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET    | `/api/cli-tools/all-statuses`           | L-istatus tal-għodod CLI kollha (installati, verżjoni, l-aħħar darba li dehru)                                                                                                 |
+| GET    | `/api/cli-tools/status`                 | Dettalji tal-istatus għal għodda CLI waħda (query `?tool=`)                                                                                                                    |
+| POST   | `/api/cli-tools/apply`                  | Jikteb il-konfigurazzjoni ġġenerata ta’ għodda (`dryRun` juri previżjoni; `422` + `containerEphemeralTarget` meta tkun f’container; `migration` jinnota YAML legacy ta’ Codex) |
+| GET    | `/api/cli-tools/backups`                | Jelenka l-backups tal-konfigurazzjonijiet tal-għodod CLI                                                                                                                       |
+| POST   | `/api/cli-tools/backups`                | Joħloq backup tal-konfigurazzjonijiet kollha tal-għodod CLI                                                                                                                    |
+| POST   | `/api/cli-tools/backups`                | Restawr: l-istess endpoint b’`{tool, backupId}` fil-body jirrestawra dak il-backup                                                                                             |
+| GET    | `/api/cli-tools/antigravity-mitm`       | L-istatus tal-proxy MITM ta’ Antigravity (l-għodda CLI "antigravity-mitm")                                                                                                     |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | Jikkonfigura l-aliases ta’ antigravity-mitm                                                                                                                                    |
 
 **Awtentikazzjoni:** Teħtieġ sessjoni ta’ ġestjoni.
 

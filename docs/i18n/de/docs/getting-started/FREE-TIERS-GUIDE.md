@@ -4,7 +4,7 @@
 
 ---
 
-> **Kurz gesagt**: OmniRoute registriert 352 Anbieter-IDs, darunter **152 Anbieterkatalogeinträge, die mit `hasFree` gekennzeichnet sind**. Der strengere, geprüfte Katalog kostenloser Modelle umfasst **34 wiederkehrende Pool-Schlüssel / 443 Einträge** (436 aktiv + 7 eingestellt). Verbinden Sie mehrere geeignete Anbieter, um breitere Ausweichkapazitäten zu erhalten; sämtliche Kontingente, Genehmigungsregeln, Datenschutzrichtlinien und Bedingungen für kostenpflichtige Mehrnutzung gelten weiterhin.
+> **Kurzfassung**: OmniRoute registriert 357 Anbieter-IDs, darunter **152 Anbieter-Katalogeinträge, die mit `hasFree` gekennzeichnet sind**. Der strengere, geprüfte Katalog kostenloser Modelle umfasst **35 wiederkehrende Pool-Schlüssel / 482 Einträge** (475 aktiv + 7 eingestellt). Verbinden Sie mehrere geeignete Anbieter, um die Fallback-Kapazität zu erhöhen; sämtliche Kontingente, Genehmigungsregeln, Datenschutzrichtlinien und Bedingungen für kostenpflichtige Mehrnutzung gelten weiterhin.
 
 ---
 
@@ -160,17 +160,16 @@ Kontingent oder die Zugriffsrichtlinien eines Anbieters zu umgehen.
 
 Der aktuelle, nach Pools deduplizierte Live-Katalog weist derzeit Folgendes aus:
 
-| Metrik                                                                                 |                                     Aktuell geprüfter Wert | Interpretation                                                                                                                                                                 |
-| -------------------------------------------------------------------------------------- | ---------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Wiederkehrendes quantifiziertes Kontingent                                             |                                 **~1,47 Mrd. Token/Monat** | Gemeinsam genutzte Pools werden einmal gezählt; Anbieter ohne Obergrenze sind von der Summe ausgeschlossen                                                                     |
-| Erster Monat einschließlich Registrierungs­gutschriften                                |                                       **~2,07 Mrd. Token** | Wiederkehrende Gesamtsumme zuzüglich einmaliger und wiederkehrender Gutschriften                                                                                               |
-| Geprüfter Bestand kostenloser Modelle                                                  | **34 wiederkehrende Pool-Schlüssel / 443 Katalogeinträge** | 436 aktiv + 7 eingestellt; unabhängig vom Katalog mit 352 Anbietern                                                                                                            |
-| Vertretene dauerhaft kostenlose Anbieter mit wiederkehrendem Kontingent/ohne Schlüssel |                                                     **52** | Eindeutige Anbieter über die Katalogtypen „täglich“, „monatlich“, „Gutschrift“, „ohne Obergrenze“ und „ohne Schlüssel“ hinweg; an Berechtigung gebundene Zeilen ausgeschlossen |
-| Mit `hasFree` gekennzeichnete Anbieterkatalogeinträge                                  |                                              **152 / 352** | Allgemeinere Anbietermetadaten; nicht alle verfügen über ein quantifizierbares wiederkehrendes Kontingent                                                                      |
+| Metrik                                                                 |                                   Aktueller geprüfter Wert | Interpretation                                                                                                                                                                     |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Wiederkehrendes quantifiziertes Kontingent                             |                                    **~1.62B Tokens/Monat** | Gemeinsam genutzte Pools werden einmal gezählt; Anbieter ohne Obergrenze sind von der Summe ausgeschlossen                                                                         |
+| Erster Monat mit Registrierungsguthaben                                |                                          **~2.22B Tokens** | Wiederkehrende Gesamtsumme zuzüglich einmaliger und wiederkehrender Guthaben                                                                                                       |
+| Geprüfter Bestand kostenloser Modelle                                  | **35 wiederkehrende Pool-Schlüssel / 482 Katalogeinträge** | 475 aktiv + 7 eingestellt; unterscheidet sich vom Katalog mit 357 Anbietern                                                                                                        |
+| Vertretene wiederkehrende/schlüssellose, dauerhaft kostenlose Anbieter |                                                     **53** | Eindeutige Anbieter über wiederkehrende tägliche/monatliche/guthabenbasierte/unbegrenzte und schlüssellose Katalogtypen hinweg; an Voraussetzungen gebundene Zeilen ausgeschlossen |
+| Mit `hasFree` gekennzeichnete Anbieterkatalogeinträge                  |                                              **152 / 357** | Umfassendere Anbieter-Metadaten; nicht alle verfügen über ein quantifizierbares wiederkehrendes Kontingent                                                                         |
 
 Diese Werte werden aus `open-sse/config/freeModelCatalog.ts` berechnet; Informationen zur
-Pool-Deduplizierung, zu AGB-Kennzeichnungen, eingestellten Einträgen und zur Methodik für
-Registrierungsgutschriften finden Sie in der
+Pool-Deduplizierung, zu Nutzungsbedingungen-Kennzeichnungen, eingestellten Einträgen und zur Methodik für Registrierungsguthaben finden Sie in der
 [Referenz zu kostenlosen Kontingenten](../reference/FREE_TIERS.md).
 
 ---

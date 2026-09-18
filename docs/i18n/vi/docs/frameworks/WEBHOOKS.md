@@ -4,14 +4,14 @@
 
 ---
 
-> **Nguồn chuẩn:** `src/lib/webhookDispatcher.ts`, `src/lib/db/webhooks.ts`, `src/app/api/webhooks/`
+> **Nguồn chính xác:** `src/lib/webhookDispatcher.ts`, `src/lib/db/webhooks.ts`, `src/app/api/webhooks/`
 > **Cập nhật lần cuối:** 2026-06-28 — v3.8.40
 
-OmniRoute có thể kích hoạt webhook HTTP khi có sự kiện trên nền tảng. Hãy sử dụng chúng để tích hợp với
+OmniRoute có thể kích hoạt webhook HTTP khi xảy ra các sự kiện trên nền tảng. Hãy sử dụng chúng để tích hợp với
 Slack, PagerDuty, Datadog, các dịch vụ cảnh báo nội bộ hoặc bất kỳ trình nhận HTTP nào.
 
-Trình điều phối ký từng lần gửi bằng HMAC-SHA256, thử lại khi có lỗi
-tạm thời, theo dõi tình trạng gửi của từng webhook và tự động vô hiệu hóa các endpoint
+Trình điều phối ký mỗi lần gửi bằng HMAC-SHA256, thử lại khi xảy ra
+lỗi tạm thời, theo dõi tình trạng gửi của từng webhook và tự động vô hiệu hóa các endpoint
 liên tục gặp lỗi.
 
 ## Các sự kiện được hỗ trợ
@@ -22,15 +22,15 @@ Kiểu `WebhookEvent` (`src/lib/webhooks/eventDescriptions.ts`, được `src/li
 | ------------------- | ------------------------------------------------------------ |
 | `request.completed` | Một yêu cầu được proxy hoàn tất thành công                   |
 | `request.failed`    | Một yêu cầu được proxy thất bại sau mọi lần thử lại/dự phòng |
-| `quota.exceeded`    | Một khóa API vượt ngưỡng ngân sách/hạn ngạch                 |
+| `quota.exceeded`    | Một khóa API vượt qua ngưỡng ngân sách/hạn mức               |
 | `test.ping`         | Sự kiện mô phỏng được endpoint kiểm thử sử dụng              |
 
-Các đăng ký chấp nhận giá trị literal `"*"` để nhận mọi sự kiện. Các tên sự kiện không xác định
-trong `events` sẽ bị bỏ qua tại thời điểm điều phối.
+Các đăng ký chấp nhận giá trị cố định `"*"` để nhận mọi sự kiện. Tên sự kiện
+không xác định trong `events` sẽ bị bỏ qua tại thời điểm điều phối.
 
-> Lưu ý: API của trình điều phối đã được kết nối, nhưng các điểm gọi trong môi trường production cho một số
+> Lưu ý: API của trình điều phối đã được kết nối, nhưng các vị trí gọi trong môi trường sản xuất cho một số
 > sự kiện không phải `test.ping` vẫn đang được bổ sung. Hãy kiểm tra `grep dispatchEvent` để xem
-> những luồng nào hiện gọi trình điều phối trong bản phát hành của bạn.
+> những luồng nào hiện đang gọi trình điều phối trong bản phát hành của bạn.
 
 ## Kiến trúc
 
@@ -42,26 +42,26 @@ Bên gọi (trình xử lý, dịch vụ, trình giám sát)
     -> với mỗi mục khớp (song song):
        deliverWebhook(url, payload, secret)
          tạo payload { event, timestamp, data }
-         ký phần thân bằng HMAC-SHA256 (nếu có secret)
+         ký nội dung bằng HMAC-SHA256 (nếu có secret)
          POST với thời gian chờ 10 giây
-         thử lại tối đa 3 lần khi có lỗi 5xx / lỗi mạng
+         thử lại tối đa 3 lần khi gặp lỗi 5xx / lỗi mạng
        recordWebhookDelivery(id, status, success)
     -> disableWebhooksWithHighFailures(10)
 ```
 
-Việc điều phối được thực hiện theo kiểu gửi rồi không chờ kết quả đối với bên gọi: `Promise.allSettled` bỏ qua
+Việc điều phối là kiểu gửi rồi không chờ kết quả đối với bên gọi: `Promise.allSettled` bỏ qua
 lỗi của từng webhook để một trình nhận bị lỗi không thể chặn các trình nhận khác.
 
 ## Ký bằng HMAC
 
-Khi webhook có `secret`, OmniRoute ký phần thân JSON và gửi:
+Khi một webhook có `secret`, OmniRoute ký nội dung JSON và gửi:
 
 ```
 Content-Type: application/json
 User-Agent: OmniRoute-Webhook/1.0
 X-Webhook-Event: <sự kiện>
 X-Webhook-Timestamp: <ISO-8601>
-X-Webhook-Signature: sha256=<HMAC-SHA256 dạng hex(secret, phần thân)>
+X-Webhook-Signature: sha256=<HMAC-SHA256(secret, nội dung) dạng hex>
 ```
 
 > Tên header sử dụng tiền tố `X-Webhook-*` (không phải `X-OmniRoute-*`). Giá trị chữ ký
@@ -70,7 +70,7 @@ X-Webhook-Signature: sha256=<HMAC-SHA256 dạng hex(secret, phần thân)>
 Nếu `createWebhook` được gọi mà không có secret, mô-đun DB sẽ tạo một secret
 (`whsec_<48 hex>`) để tất cả webhook đều được ký theo mặc định.
 
-### Xác minh ở phía trình nhận
+### Xác minh tại trình nhận
 
 ```typescript
 import { createHmac, timingSafeEqual } from "node:crypto";
@@ -83,9 +83,9 @@ function verify(rawBody: string, signature: string, secret: string) {
 }
 ```
 
-Luôn xác minh dựa trên phần thân yêu cầu **thô**, trước khi phân tích cú pháp JSON.
+Luôn xác minh dựa trên nội dung yêu cầu **thô**, trước khi thực hiện bất kỳ thao tác phân tích cú pháp JSON nào.
 
-## Chính sách thử lại & xử lý lỗi
+## Chính sách thử lại & lỗi
 
 `deliverWebhook(url, payload, secret, maxRetries = 3)`:
 
@@ -98,31 +98,31 @@ Luôn xác minh dựa trên phần thân yêu cầu **thô**, trước khi phân
 - Sau `maxRetries`, lần gửi được ghi nhận là thất bại.
 - Mỗi lần gửi sẽ cập nhật `last_triggered_at`, `last_status`, đồng thời đặt lại
   hoặc tăng `failure_count`.
-- Bộ điều phối gọi `disableWebhooksWithHighFailures(10)` sau mỗi lần phân phối,
+- Trình điều phối gọi `disableWebhooksWithHighFailures(10)` sau mỗi lần phân phối,
   vì vậy mọi webhook có `failure_count >= 10` sẽ tự động bị vô hiệu hóa.
 
 ## Cơ sở dữ liệu
 
 Bảng `webhooks` (migration `011_webhooks.sql`):
 
-| Cột                 | Kiểu    | Ghi chú                                           |
-| ------------------- | ------- | ------------------------------------------------- |
-| `id`                | TEXT PK | UUID                                              |
-| `url`               | TEXT    | URL đích                                          |
-| `events`            | TEXT    | Mảng JSON; mặc định `["*"]`                       |
-| `secret`            | TEXT    | Bí mật HMAC (tự động tạo nếu không được cung cấp) |
-| `enabled`           | INT     | 0/1; mặc định là 1                                |
-| `description`       | TEXT    | Nhãn tùy chọn do người dùng đặt                   |
-| `created_at`        | TEXT    | `datetime('now')`                                 |
-| `last_triggered_at` | TEXT    | Được cập nhật ở mỗi lần thử gửi                   |
-| `last_status`       | INT     | Trạng thái HTTP của lần thử gần nhất (0 = mạng)   |
-| `failure_count`     | INT     | Đặt lại thành 0 khi thành công, +1 khi thất bại   |
+| Cột                 | Kiểu    | Ghi chú                                         |
+| ------------------- | ------- | ----------------------------------------------- |
+| `id`                | TEXT PK | UUID                                            |
+| `url`               | TEXT    | URL đích                                        |
+| `events`            | TEXT    | Mảng JSON; mặc định `["*"]`                     |
+| `secret`            | TEXT    | Bí mật HMAC (tự động tạo nếu không cung cấp)    |
+| `enabled`           | INT     | 0/1; mặc định là 1                              |
+| `description`       | TEXT    | Nhãn mô tả tùy chọn                             |
+| `created_at`        | TEXT    | `datetime('now')`                               |
+| `last_triggered_at` | TEXT    | Được cập nhật trong mỗi lần thử gửi             |
+| `last_status`       | INT     | Trạng thái HTTP của lần thử gần nhất (0 = mạng) |
+| `failure_count`     | INT     | Đặt lại thành 0 khi thành công, +1 khi thất bại |
 
-Lịch sử gửi được lưu trong bảng chuyên dụng `webhook_deliveries`
-(migration `069_webhook_deliveries.sql`, được ghi qua
-`src/lib/db/webhookDeliveries.ts::insertDelivery` ở mỗi lần thử), bên cạnh
-các bộ đếm tổng hợp trên hàng `webhooks`. Siêu dữ liệu về loại (Slack / Discord /
-Telegram / các bộ chuyển đổi payload tùy chỉnh) được thêm bởi `070_webhooks_kind_metadata.sql`.
+Lịch sử gửi được lưu trữ trong bảng chuyên dụng `webhook_deliveries`
+(migration `069_webhook_deliveries.sql`, được ghi thông qua
+`src/lib/db/webhookDeliveries.ts::insertDelivery` trong mỗi lần thử), bên cạnh
+các bộ đếm tổng hợp trên hàng `webhooks`. Siêu dữ liệu loại (Slack / Discord /
+Telegram / các trình chuyển đổi payload tùy chỉnh) được thêm bởi `070_webhooks_kind_metadata.sql`.
 
 ## API REST
 
@@ -130,17 +130,17 @@ Tất cả endpoint đều yêu cầu xác thực quản trị (`requireManageme
 
 | Endpoint                        | Phương thức | Mô tả                                          |
 | ------------------------------- | ----------- | ---------------------------------------------- |
-| `/api/webhooks`                 | GET         | Liệt kê webhook (bí mật được che)              |
+| `/api/webhooks`                 | GET         | Liệt kê webhook (các bí mật được che)          |
 | `/api/webhooks`                 | POST        | Tạo webhook                                    |
 | `/api/webhooks/[id]`            | GET         | Chi tiết webhook (bí mật đầy đủ)               |
 | `/api/webhooks/[id]`            | PUT         | Cập nhật các trường                            |
 | `/api/webhooks/[id]`            | DELETE      | Xóa                                            |
-| `/api/webhooks/[id]/test`       | POST        | Gửi một `test.ping` (không thử lại)            |
+| `/api/webhooks/[id]/test`       | POST        | Kích hoạt một `test.ping` (không thử lại)      |
 | `/api/webhooks/[id]/deliveries` | GET         | Các lần thử gửi gần đây của một webhook        |
 | `/api/webhooks/validate-url`    | POST        | Xác thực URL trước khi gửi (bảo vệ chống SSRF) |
 
 `GET /api/webhooks` che bí mật thành `<10 ký tự đầu tiên>...` để tránh làm lộ
-trên các trang danh sách. Hãy dùng GET `[id]` khi bạn thực sự cần bí mật.
+trên các trang danh sách. Sử dụng GET `[id]` khi bạn thực sự cần bí mật.
 
 ### Tạo webhook
 
@@ -152,7 +152,7 @@ curl -X POST http://localhost:20128/api/webhooks \
     "url": "https://hooks.slack.com/services/...",
     "secret": "whsec_my_shared_secret",
     "events": ["quota.exceeded", "request.failed"],
-    "description": "Cảnh báo Slack"
+    "description": "Slack alerts"
   }'
 ```
 
@@ -166,7 +166,7 @@ curl -X POST http://localhost:20128/api/webhooks/<id>/test \
   -H "Cookie: auth_token=..."
 ```
 
-Trả về `{ delivered, status, error }`. Không thực hiện thử lại — hữu ích để
+Trả về `{ delivered, status, error }`. Hệ thống không thực hiện thử lại — hữu ích để
 nhanh chóng xác thực rằng bên nhận chấp nhận payload và chữ ký.
 
 ## Bảng điều khiển
@@ -175,12 +175,12 @@ Trang bảng điều khiển tại `/dashboard/webhooks` (xem
 `src/app/(dashboard)/dashboard/webhooks/page.tsx`) cung cấp:
 
 - Tạo/chỉnh sửa webhook bằng trình chọn sự kiện
-- Chỉ báo trạng thái (đang hoạt động / không hoạt động / gặp lỗi) dựa trên `enabled`,
+- Chỉ báo trạng thái (đang hoạt động / không hoạt động / bị lỗi) dựa trên `enabled`,
   `failure_count` và `last_status`
-- Gửi thử chỉ với một lần nhấp
+- Gửi thử nghiệm chỉ bằng một lần nhấp
 - Nút bật/tắt thủ công
 
-## Ví dụ về payload
+## Ví dụ payload
 
 ### request.completed
 
@@ -215,28 +215,28 @@ Trang bảng điều khiển tại `/dashboard/webhooks` (xem
 ```
 
 Cấu trúc trường cho các sự kiện không phải `test.ping` được xác định bởi các vị trí gọi phát ra
-chúng; hãy xem đối tượng `data` là tương thích về sau (có thể thêm trường, không phụ thuộc vào
-việc trường không tồn tại).
+chúng; hãy coi đối tượng `data` là tương thích về sau (có thể thêm trường, không phụ thuộc vào
+việc trường nào đó không tồn tại).
 
 ## Các phương pháp hay nhất
 
-- **Xác minh chữ ký cho mỗi lần gửi** dựa trên phần nội dung thô — ngăn chặn
+- **Xác minh chữ ký trong mỗi lần gửi** dựa trên phần thân thô — giúp ngăn chặn
   các yêu cầu POST giả mạo từ bất kỳ ai đoán được URL webhook của bạn.
-- **Phản hồi bằng mã 2xx trong vòng ~5 giây** — bộ điều phối sẽ hết thời gian chờ sau 10 giây. Các
-  trình nhận chậm sẽ làm tiêu tốn số lần thử lại và tăng `failure_count`.
+- **Phản hồi bằng mã 2xx trong vòng khoảng 5 giây** — bộ điều phối hết thời gian chờ sau 10 giây. Các
+  bên nhận chậm sẽ làm tiêu tốn số lần thử lại và tăng `failure_count`.
 - **Thiết kế các trình xử lý có tính lũy đẳng** — cơ chế thử lại và ngữ nghĩa gửi ít nhất một lần
   đồng nghĩa với việc có thể xuất hiện dữ liệu trùng lặp.
-- **Đăng ký ở mức tối thiểu** — chỉ liệt kê những sự kiện bạn thực sự sử dụng; `"*"` sẽ
-  làm tăng chi phí trên các trình nhận mà bạn không kiểm soát.
+- **Chỉ đăng ký tối thiểu** — chỉ liệt kê những sự kiện bạn thực sự sử dụng; `"*"` sẽ
+  làm tăng chi phí trên các bên nhận mà bạn không kiểm soát.
 - **Theo dõi `failure_count`** — các endpoint sẽ tự động bị vô hiệu hóa sau 10 lần
   thất bại liên tiếp; đặt lại bằng cách gọi `PUT /api/webhooks/[id]` với `enabled: true`
-  sau khi sửa trình nhận.
-- **Luân chuyển secret định kỳ** — dùng `PUT` để đặt một `secret` mới, triển khai giá trị mới
-  tới trình nhận và xác nhận thông qua endpoint kiểm thử.
+  sau khi đã khắc phục bên nhận.
+- **Luân chuyển secret định kỳ** — dùng `PUT` để đặt `secret` mới, triển khai giá trị mới
+  tới bên nhận và xác nhận qua endpoint thử nghiệm.
 
 ## Xem thêm
 
-- [API_REFERENCE.md](../reference/API_REFERENCE.md) — toàn bộ phạm vi API quản lý
-- [RESILIENCE_GUIDE.md](../architecture/RESILIENCE_GUIDE.md) — ngữ nghĩa của bộ ngắt mạch / thời gian chờ
+- [API_REFERENCE.md](../reference/API_REFERENCE.md) — toàn bộ bề mặt API quản lý
+- [RESILIENCE_GUIDE.md](../architecture/RESILIENCE_GUIDE.md) — ngữ nghĩa circuit breaker / cooldown
   đằng sau các lỗi nhà cung cấp được hiển thị qua `request.failed`
 - Mã nguồn: `src/lib/webhookDispatcher.ts`, `src/lib/db/webhooks.ts`

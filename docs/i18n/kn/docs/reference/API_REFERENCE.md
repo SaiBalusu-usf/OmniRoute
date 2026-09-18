@@ -1584,21 +1584,21 @@ GET /.well-known/agent.json
 
 ## CLI ಪರಿಕರಗಳ ನಿರ್ವಹಣೆ
 
-OmniRoute ಜೊತೆಗೆ ಸಂಯೋಜನೆಗೊಳ್ಳುವ CLI ಪರಿಕರಗಳನ್ನು (antigravity, chipotle, commandCode,
-devin-cli ಇತ್ಯಾದಿ) ನಿರ್ವಹಿಸಿ. ಸಂಪೂರ್ಣ ಪಟ್ಟಿಗಾಗಿ [ಪೂರೈಕೆದಾರರ ಉಲ್ಲೇಖ](./PROVIDER_REFERENCE.md) ನೋಡಿ.
+OmniRoute ಜೊತೆಗೆ ಏಕೀಕರಣಗೊಳ್ಳುವ CLI ಪರಿಕರಗಳನ್ನು (antigravity, commandCode,
+devin-cli, ಇತ್ಯಾದಿ) ನಿರ್ವಹಿಸಿ. ಸಂಪೂರ್ಣ ಪಟ್ಟಿಗಾಗಿ [ಪೂರೈಕೆದಾರರ ಉಲ್ಲೇಖ](./PROVIDER_REFERENCE.md) ನೋಡಿ.
 
-| ವಿಧಾನ | ಪಥ                                      | ವಿವರಣೆ                                                                                                                                                                          |
-| ----- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET   | `/api/cli-tools/all-statuses`           | ಎಲ್ಲಾ CLI ಪರಿಕರಗಳ ಸ್ಥಿತಿ (ಸ್ಥಾಪಿಸಲಾಗಿದೆ, ಆವೃತ್ತಿ, ಕೊನೆಯದಾಗಿ ಕಂಡ ಸಮಯ)                                                                                                            |
-| GET   | `/api/cli-tools/status`                 | ಒಂದು CLI ಪರಿಕರದ ವಿವರವಾದ ಸ್ಥಿತಿ (`?tool=` ಕ್ವೆರಿ)                                                                                                                                |
-| POST  | `/api/cli-tools/apply`                  | ಪರಿಕರದಿಂದ ರಚಿಸಲಾದ ಕಾನ್ಫಿಗ್ ಅನ್ನು ಬರೆಯಿರಿ (`dryRun` ಪೂರ್ವವೀಕ್ಷಣೆ ನೀಡುತ್ತದೆ; ಕಂಟೇನರ್ನಲ್ಲಿದ್ದಾಗ `422` + `containerEphemeralTarget`; `migration` ಹಳೆಯ Codex YAML ಅನ್ನು ಸೂಚಿಸುತ್ತದೆ) |
-| GET   | `/api/cli-tools/backups`                | CLI ಪರಿಕರಗಳ ಕಾನ್ಫಿಗರೇಶನ್ ಬ್ಯಾಕಪ್ಗಳನ್ನು ಪಟ್ಟಿ ಮಾಡಿ                                                                                                                               |
-| POST  | `/api/cli-tools/backups`                | ಎಲ್ಲಾ CLI ಪರಿಕರಗಳ ಕಾನ್ಫಿಗರೇಶನ್ಗಳ ಬ್ಯಾಕಪ್ ರಚಿಸಿ                                                                                                                                  |
-| POST  | `/api/cli-tools/backups`                | ಮರುಸ್ಥಾಪನೆ: ವಿನಂತಿಯ ಭಾಗದಲ್ಲಿ `{tool, backupId}` ಜೊತೆಗೆ ಇದೇ ಎಂಡ್ಪಾಯಿಂಟ್ ಆ ಬ್ಯಾಕಪ್ ಅನ್ನು ಮರುಸ್ಥಾಪಿಸುತ್ತದೆ                                                                         |
-| GET   | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM ಪ್ರಾಕ್ಸಿಯ ಸ್ಥಿತಿ ("antigravity-mitm" CLI ಪರಿಕರ)                                                                                                                |
-| POST  | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm ಅಲಿಯಾಸ್ಗಳನ್ನು ಕಾನ್ಫಿಗರ್ ಮಾಡಿ                                                                                                                                   |
+| ವಿಧಾನ | ಪಥ                                      | ವಿವರಣೆ                                                                                                                                                                                                 |
+| ----- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET   | `/api/cli-tools/all-statuses`           | ಎಲ್ಲಾ CLI ಪರಿಕರಗಳ ಸ್ಥಿತಿ (ಸ್ಥಾಪಿಸಲಾಗಿದೆ, ಆವೃತ್ತಿ, ಕೊನೆಯದಾಗಿ ಕಂಡದ್ದು)                                                                                                                                   |
+| GET   | `/api/cli-tools/status`                 | ಒಂದು CLI ಪರಿಕರದ ಸ್ಥಿತಿಯ ವಿವರ (`?tool=` ಕ್ವೆರಿ)                                                                                                                                                         |
+| POST  | `/api/cli-tools/apply`                  | ಪರಿಕರವು ರಚಿಸಿದ ಸಂರಚನೆಯನ್ನು ಬರೆಯುತ್ತದೆ (`dryRun` ಪೂರ್ವವೀಕ್ಷಣೆಗಳನ್ನು ತೋರಿಸುತ್ತದೆ; ಕಂಟೇನರ್ನಲ್ಲಿ ಚಾಲನೆಯಲ್ಲಿರುವಾಗ `422` + `containerEphemeralTarget`; `migration` ಹಳೆಯ Codex YAML ಕುರಿತು ಟಿಪ್ಪಣಿ ನೀಡುತ್ತದೆ) |
+| GET   | `/api/cli-tools/backups`                | CLI ಪರಿಕರಗಳ ಸಂರಚನಾ ಬ್ಯಾಕಪ್ಗಳನ್ನು ಪಟ್ಟಿ ಮಾಡುತ್ತದೆ                                                                                                                                                       |
+| POST  | `/api/cli-tools/backups`                | ಎಲ್ಲಾ CLI ಪರಿಕರಗಳ ಸಂರಚನೆಗಳ ಬ್ಯಾಕಪ್ ರಚಿಸುತ್ತದೆ                                                                                                                                                          |
+| POST  | `/api/cli-tools/backups`                | ಮರುಸ್ಥಾಪನೆ: bodyಯಲ್ಲಿ `{tool, backupId}` ಜೊತೆಗೆ ಇದೇ endpoint ಆ ಬ್ಯಾಕಪ್ ಅನ್ನು ಮರುಸ್ಥಾಪಿಸುತ್ತದೆ                                                                                                          |
+| GET   | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM proxy ಸ್ಥಿತಿ ("antigravity-mitm" CLI ಪರಿಕರ)                                                                                                                                           |
+| POST  | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm ಅಡ್ಡಹೆಸರುಗಳನ್ನು ಸಂರಚಿಸುತ್ತದೆ                                                                                                                                                          |
 
-**ದೃಢೀಕರಣ:** ನಿರ್ವಹಣಾ ಸೆಷನ್ ಅಗತ್ಯವಿದೆ.
+**ದೃಢೀಕರಣ:** ನಿರ್ವಹಣಾ session ಅಗತ್ಯವಿದೆ.
 
 ---
 

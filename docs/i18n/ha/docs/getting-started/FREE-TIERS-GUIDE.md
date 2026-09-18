@@ -4,7 +4,7 @@
 
 ---
 
-> **A Taƙaice**: OmniRoute yana rajistar ID na masu samarwa guda 352, tare da **shigarwar kundin masu samarwa guda 152 da aka yi wa alamar `hasFree`**. Kundin samfuran kyauta da aka tantance da tsauraran ƙa’idoji ya ƙunshi **maɓallan tarin da ke sabuntawa guda 34 / shigarwa guda 443** (436 masu aiki + 7 da aka daina). Haɗa masu samarwa da dama da suka dace domin samun ƙarin ƙarfin madadin; duk ƙayyadaddun amfani, ƙa’idojin amincewa, manufofin sirri, da sharuɗɗan biyan kuɗin amfani fiye da ƙayyadadden adadi har yanzu suna aiki.
+> **A taƙaice**: OmniRoute yana rajistar ID na masu samarwa guda 357, tare da **shigarwar kundin masu samarwa guda 152 da aka yi wa alamar `hasFree`**. Kundin samfuran kyauta da aka tantance da tsauraran ƙa’idoji ya ƙunshi **maɓallan rukunin da ake maimaitawa guda 35 / shigarwa guda 482** (475 masu aiki + 7 da aka daina). Haɗa masu samarwa da dama da suka dace domin samun ƙarin damar amfani da madadin; duk ƙayyadaddun amfani, ƙa’idojin amincewa, manufofin sirri, da sharuɗɗan cajin amfani fiye da ƙayyadadden adadin suna nan daram.
 
 ---
 
@@ -160,19 +160,19 @@ haɗi a matsayin ɗan takarar zaɓen hanya na daban. Kada ka ƙirƙiri ƙarin as
 
 ## Lissafin Matakin Kyauta
 
-Kundin kai-tsaye da ake cire maimaituwar rukunansa a halin yanzu yana bayar da rahoton:
+Kundin samfura mai aiki, wanda aka cire maimaituwar wuraren ajiya, a halin yanzu yana bayar da rahoton:
 
-| Ma'auni                                                                      |                          Ƙimar da aka tantance a halin yanzu | Bayani                                                                                                                                      |
-| ---------------------------------------------------------------------------- | -----------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tallafin adadi mai maimaituwa                                                |                                        **~1.47B token/wata** | An ƙirga rukunin da aka raba sau ɗaya; ba a haɗa masu samarwa marasa iyaka cikin jimillar ba                                                |
-| Watan farko tare da tallafin yin rajista                                     |                                             **~2.07B token** | Jimillar tallafi mai maimaituwa tare da kiredit na lokaci ɗaya da masu maimaituwa                                                           |
-| Jerin samfuran kyauta da aka tantance                                        | **maɓallan rukuni 34 masu maimaituwa / shigarwar kundi 443** | 436 masu aiki + 7 da aka dakatar; sun bambanta da kundin masu samarwa 352                                                                   |
-| Masu samar da kyauta-har-abada masu maimaituwa/marasa maɓalli da aka wakilta |                                                       **52** | Masu samarwa na musamman a nau'ikan kundi na kullum/wata-wata/kiredit/marasa iyaka da marasa maɓalli, ban da layukan da cancanta ta taƙaita |
-| Shigarwar kundin masu samarwa da aka yiwa alamar `hasFree`                   |                                                **152 / 352** | Faɗaɗɗen metadata na masu samarwa; ba dukkansu ke da ƙayyadadden kaso mai maimaituwa ba                                                     |
+| Ma'auni                                                     |              Ƙimar da aka tantance a halin yanzu | Bayani                                                                                                                                                                           |
+| ----------------------------------------------------------- | -----------------------------------------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tallafin maimaitacce da aka ƙididdige                       |                          **~1.62B tokens/month** | An ƙirga wuraren ajiya na haɗin gwiwa sau ɗaya; ba a haɗa masu samarwa marasa iyaka cikin jimillar ba                                                                            |
+| Watan farko tare da tallafin rajista                        |                                **~2.22B tokens** | Jimillar maimaitacciya tare da kiredit na sau ɗaya da na maimaitawa                                                                                                              |
+| Ƙididdigar samfuran kyauta da aka tantance                  | **35 recurring pool keys / 482 catalog entries** | 475 masu aiki + 7 da aka daina; sun bambanta da kundin masu samarwa 357                                                                                                          |
+| Masu samar da kyauta na dindindin da aka wakilta            |                                           **53** | Masu samarwa na musamman a nau'ikan kundin maimaitawa na yau da kullum/wata-wata/kiredit/marasa iyaka da marasa buƙatar maɓalli; ba a haɗa layukan da suka dogara da cancanta ba |
+| Shigarwar kundin masu samarwa da aka yi wa alamar `hasFree` |                                    **152 / 357** | Faɗaɗɗun metadata na masu samarwa; ba dukkansu ke da adadin maimaitaccen kaso da za a iya ƙididdigewa ba                                                                         |
 
-An ƙididdige waɗannan ƙimomi daga `open-sse/config/freeModelCatalog.ts`; duba
-[Manazartar Matakan Kyauta](../reference/FREE_TIERS.md) don cire maimaituwar rukuni, alamomin ToS,
-shigarwar da aka dakatar, da tsarin ƙididdige kiredit na yin rajista.
+Ana ƙididdige waɗannan ƙimomin daga `open-sse/config/freeModelCatalog.ts`; duba
+[Manazartar Matakan Kyauta](../reference/FREE_TIERS.md) don cire maimaituwar wuraren ajiya, alamomin ToS,
+shigarwar da aka daina, da tsarin ƙididdigar kiredit na rajista.
 
 ---
 

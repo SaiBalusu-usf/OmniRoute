@@ -4,7 +4,7 @@
 
 ---
 
-> **Kort fortalt**: OmniRoute registrerer 352 leverandør-ID-er, med **152 oppføringer i leverandørkatalogen merket `hasFree`**. Den strengere, reviderte katalogen over gratismodeller dekker **34 gjentakende pool-nøkler / 443 oppføringer** (436 aktive + 7 avviklede). Koble til flere egnede leverandører for større reservekapasitet. Alle kvoter, godkjenningsregler, personvernregler og vilkår for betalt overforbruk gjelder fortsatt.
+> **Kort fortalt**: OmniRoute registrerer 357 leverandør-ID-er, med **152 oppføringer i leverandørkatalogen merket `hasFree`**. Den strengere, reviderte gratismodellkatalogen omfatter **35 gjentakende pool-nøkler / 482 oppføringer** (475 aktive + 7 avviklede). Koble til flere egnede leverandører for å få bredere reservekapasitet; alle kvoter, godkjenningsregler, personvernregler og vilkår for betalt overforbruk gjelder fortsatt.
 
 ---
 
@@ -158,17 +158,17 @@ kvote- eller tilgangsregler.
 
 ---
 
-## Gratisnivå i tall
+## Matematikk for gratisnivået
 
 Den aktive, pool-dedupliserte katalogen rapporterer for øyeblikket:
 
-| Måleparameter                                                      |                              Gjeldende reviderte verdi | Tolkning                                                                                                                                                                |
-| ------------------------------------------------------------------ | -----------------------------------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Gjentakende kvantifisert tildeling                                 |                            **~1,47 mrd. tokens/måned** | Delte pooler telles én gang; leverandører uten øvre grense er ikke inkludert i summen                                                                                   |
-| Første måned med registreringstildelinger                          |                                  **~2,07 mrd. tokens** | Gjentakende total pluss engangskreditter og gjentakende kreditter                                                                                                       |
-| Revidert beholdning av gratis modeller                             | **34 gjentakende poolnøkler / 443 katalogoppføringer** | 436 aktive + 7 avviklede; ikke det samme som katalogen med 352 leverandører                                                                                             |
-| Representerte gjentakende/nøkkelfrie gratisleverandører for alltid |                                                 **52** | Unike leverandører på tvers av katalogtyper med daglige/månedlige/gjentakende kreditter, uten øvre grense eller uten nøkkel; rader med kvalifikasjonskrav er ekskludert |
-| Leverandørkatalogoppføringer merket `hasFree`                      |                                          **152 / 352** | Bredere leverandørmetadata; ikke alle har en kvantifiserbar gjentakende kvote                                                                                           |
+| Målepunkt                                                                               |                              Gjeldende reviderte verdi | Tolkning                                                                                                                                                                 |
+| --------------------------------------------------------------------------------------- | -----------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Gjentakende kvantifisert tildeling                                                      |                            **~1.62 mrd. tokens/måned** | Delte pooler telles én gang; leverandører uten øvre grense er utelatt fra summen                                                                                         |
+| Første måned med registreringstildelinger                                               |                                  **~2.22 mrd. tokens** | Gjentakende total pluss engangskreditter og gjentakende kreditter                                                                                                        |
+| Revidert beholdning av gratismodeller                                                   | **35 gjentakende poolnøkler / 482 katalogoppføringer** | 475 aktive + 7 avviklede; må holdes atskilt fra katalogen med 357 leverandører                                                                                           |
+| Representerte leverandører med gjentakende/nøkkelfri gratistilgang uten tidsbegrensning |                                                 **53** | Unike leverandører på tvers av katalogtyper for gjentakende daglig/månedlig/kredittbasert/ubegrenset og nøkkelfri tilgang; oppføringer med kvalifikasjonskrav er utelatt |
+| Leverandørkatalogoppføringer merket med `hasFree`                                       |                                          **152 / 357** | Bredere leverandørmetadata; ikke alle har en kvantifiserbar gjentakende kvote                                                                                            |
 
 Disse verdiene beregnes fra `open-sse/config/freeModelCatalog.ts`; se
 [Referanse for gratisnivåer](../reference/FREE_TIERS.md) for pool-deduplisering, ToS-flagg,

@@ -77,7 +77,7 @@ Pengaman regresi: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
 - Tandai tidak tersedia: `src/sse/services/auth.ts::markAccountUnavailable()`
 - Pemilihan: `getProviderCredentials*` dalam file yang sama
-- Penghitungan masa tunggu: `open-sse/services/accountFallback.ts::checkFallbackError()`
+- Perhitungan masa tunggu: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Pengaturan: `src/lib/resilience/settings.ts`
 
 **Kolom per koneksi:**
@@ -89,58 +89,74 @@ Pengaman regresi: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
 **Masa tunggu default:**
 
-- Dasar OAuth: 5 dtk
-- Dasar kunci API: 3 dtk
-- Kunci API 429: mengutamakan `Retry-After`/header reset/teks reset dari upstream yang dapat diurai
+- Basis OAuth: 5 detik
+- Basis kunci API: 3 detik
+- 429 kunci API: mengutamakan header `Retry-After`/reset dari upstream/teks reset yang dapat diuraikan
 - Backoff: `baseCooldownMs * 2 ** failureIndex`
 
-**Pengaman anti-thundering-herd:** mencegah kegagalan serentak memperpanjang masa tunggu secara berlebihan atau menaikkan `backoffLevel` dua kali.
+**Pelindung anti-thundering-herd:** mencegah kegagalan serentak memperpanjang masa tunggu secara berlebihan atau menaikkan `backoffLevel` dua kali.
 
 **Status terminal (BUKAN masa tunggu):**
 
-- `banned` — ditetapkan oleh deteksi kata kunci terlarang / pemblokiran akun (lihat [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (bertransisi menjadi terminal setelah percobaan ulang terbatas — `EXPIRED_RETRY_MAX = 3` dengan backoff eksponensial — sehingga galat OAuth sementara dapat pulih sendiri sebelum akun dinonaktifkan secara permanen)
+- `banned` — ditetapkan oleh deteksi kata kunci terlarang/pemblokiran akun (lihat [BAN_DETECTION](../security/BAN_DETECTION.md)), dan oleh tiga penolakan per permintaan secara berturut-turut dari upstream (`request_rejected`, misalnya OAuth Anthropic 403 "Permintaan tidak diizinkan" — `open-sse/services/requestRejectedStreak.ts`); satu penolakan hanya membuat koneksi memasuki masa tunggu
+- `expired` (beralih menjadi terminal setelah percobaan ulang terbatas — `EXPIRED_RETRY_MAX = 3` dengan backoff eksponensial — sehingga kesalahan OAuth sementara dapat pulih sendiri sebelum akun dinonaktifkan secara permanen)
 - `credits_exhausted`
 
-Status tersebut bertahan hingga kredensial berubah atau operator meresetnya. Jangan menimpa status terminal dengan status masa tunggu sementara.
+Status ini bertahan hingga kredensial berubah atau operator meresetnya. Jangan menimpa status terminal dengan status masa tunggu sementara.
 
-**Pemulihan malas:** ketika `rateLimitedUntil` telah berlalu, koneksi kembali memenuhi syarat. Setelah penggunaan berhasil, `clearAccountError()` menghapus semua kolom galat.
+**Pemulihan malas:** ketika `rateLimitedUntil` telah berlalu, koneksi kembali memenuhi syarat. Setelah berhasil digunakan, `clearAccountError()` menghapus semua kolom kesalahan.
 
 ### Afinitas sesi (#7274)
 
-**Cakupan:** satu sesi klien (header `X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`) disematkan ke satu koneksi, untuk penyedia **apa pun**.
+**Cakupan:** satu sesi klien (header `X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`) yang disematkan ke satu koneksi, untuk penyedia **mana pun**.
 
-**Tujuan:** mempertahankan agen multi-giliran (Claude Code, aider, agen khusus) pada akun yang sama di seluruh permintaan, sehingga mengurangi hilangnya konteks lintas akun dan 429 cold-start berulang pada penyedia yang memiliki status sesi per akun.
+**Tujuan:** mempertahankan agen multi-giliran (Claude Code, aider, agen khusus) pada akun yang sama di seluruh permintaan, sehingga mengurangi kehilangan konteks lintas akun dan 429 cold-start berulang pada penyedia dengan status sesi per akun.
 
 **Implementasi:**
 
 - Resolusi TTL: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Pemilihan/pembuatan sematan: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
-- Ekstraksi header (generik, penyedia apa pun): `src/sse/services/auth.ts::extractSessionAffinityKey()`
+- Ekstraksi header (generik, penyedia mana pun): `src/sse/services/auth.ts::extractSessionAffinityKey()`
 - Tabel sematan persisten: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Pengaturan: `sessionAffinityTtlMs` (TTL global dalam md, `0` menonaktifkan) — `src/lib/db/settings.ts`. Namanya diubah dari `codexSessionAffinityTtlMs` yang khusus Codex melalui migrasi `124_generic_session_affinity_ttl.sql`, yang memindahkan TTL Codex yang sebelumnya telah dikonfigurasi sebagai nilai default baru.
+- Pengaturan: `sessionAffinityTtlMs` (TTL global dalam milidetik, `0` menonaktifkan) — `src/lib/db/settings.ts`. Diubah namanya dari `codexSessionAffinityTtlMs` yang hanya berlaku untuk Codex melalui migrasi `124_generic_session_affinity_ttl.sql`, yang memindahkan TTL Codex yang sebelumnya dikonfigurasi sebagai default baru.
 
-Sebelum #7274, `resolveSessionAffinityTtlMs()` langsung mengembalikan `0` untuk setiap penyedia selain `codex`, sehingga pengaturan TTL (dan header sesi) tidak berpengaruh di tempat lain meskipun mekanisme penyematan dan ekstraksi header sudah tidak bergantung pada penyedia. Perbaikan tersebut menghapus pengembalian awal itu; TTL kini berlaku secara seragam untuk setiap penyedia setelah ditetapkan secara global di atas `0`.
+Sebelum #7274, `resolveSessionAffinityTtlMs()` langsung mengembalikan `0` untuk setiap penyedia selain `codex`, sehingga pengaturan TTL (dan header sesi) tidak berpengaruh di tempat lain meskipun mekanisme penyematan dan ekstraksi header sudah tidak bergantung pada penyedia. Perbaikan tersebut menghapus pengembalian dini itu; TTL kini berlaku secara seragam untuk setiap penyedia setelah ditetapkan secara global di atas `0`.
 
-Ketiga header afinitas sesi tidak pernah diteruskan ke upstream — eksekutor membuat sendiri header upstream dari awal alih-alih meneruskan header klien, sehingga header tersebut hanya tetap menjadi ID korelasi internal.
+Ketiga header afinitas sesi tidak pernah diteruskan ke upstream — eksekutor menyusun header upstream-nya sendiri dari awal alih-alih meneruskan header klien, sehingga header tersebut tetap hanya menjadi ID korelasi internal.
 
 ### Sewa koneksi sesi terkelola eksklusif
 
 **Cakupan:** satu klien/sesi HTTP terkelola yang aktif memiliki satu koneksi OmniRoute yang memenuhi syarat.
 
-**Tujuan:** menyediakan kepemilikan koneksi eksklusif yang tahan lama bagi klien yang memerlukan pagar perutean ketat di seluruh permintaan. Ini berbeda dari afinitas sesi, yang merupakan preferensi kontinuitas lunak: sewa eksklusif mempertahankan status siklus hidup di SQLite, memberlakukan keunikan global pemilik aktif dan koneksi aktif, serta menolak generasi usang sebelum pengiriman ke penyedia.
+**Tujuan:** menyediakan kepemilikan koneksi eksklusif yang tahan lama bagi klien yang memerlukan batas perutean
+ketat di seluruh permintaan. Hal ini berbeda dari afinitas sesi, yang merupakan preferensi kontinuitas lunak:
+sewa eksklusif mempertahankan status siklus hidup di SQLite, memberlakukan keunikan global pemilik aktif dan
+koneksi aktif, serta menolak generasi kedaluwarsa sebelum pengiriman ke penyedia.
 
-Fitur ini bersifat opsional per kunci API. Kunci terkelola harus memiliki cakupan `lease:exclusive` dan daftar `allowedConnections` eksplisit yang tidak kosong. Klien HTTP apa pun dapat menggunakan endpoint siklus hidup; nama klien, user-agent, penyedia, metode OAuth, atau model tidak diperlukan. Sewa memiliki koneksi, bukan model, sehingga perubahan model mempertahankan pengikatan selama koneksi tetap memenuhi syarat seperti biasa. Aturan normal untuk model, kuota, kesehatan, masa tunggu, dan daftar izin tetap menjadi otoritas dan dapat memindahkan generasi yang sama ke koneksi bebas lain yang memenuhi syarat.
+Fitur ini bersifat opsional untuk setiap kunci API. Kunci terkelola harus memiliki cakupan `lease:exclusive` dan
+daftar `allowedConnections` eksplisit yang tidak kosong. Klien HTTP mana pun dapat menggunakan endpoint siklus hidup; tidak
+diperlukan nama klien, user-agent, penyedia, metode OAuth, ataupun model. Sewa memiliki sebuah koneksi,
+bukan model, sehingga perubahan model mempertahankan pengikatan selama koneksi tetap memenuhi syarat
+sebagaimana mestinya. Aturan normal terkait model, kuota, kesehatan, masa tunggu, dan daftar izin tetap
+menjadi otoritas dan dapat mengalihkan generasi yang sama ke koneksi lain yang bebas dan memenuhi syarat.
 
-Siklus hidupnya adalah `POST /api/v1/session-leases` dengan tindakan JSON `acquire`, `renew`, dan `release`. Permintaan inferensi terkelola menyertakan nilai buram `X-OmniRoute-Lease-Owner` dan `X-OmniRoute-Lease-Generation` yang tepat. Pemilik menggunakan `vlo_` yang diikuti 43 karakter base64url; hanya hash SHA-256-nya yang disimpan. Setiap pagar pengiriman akhir juga mengikat ID kunci API yang diautentikasi dan ID koneksi aktif. Header kontrol sewa dihapus dari log, snapshot permintaan yang disimpan, dan header eksekutor upstream.
+Siklus hidupnya adalah `POST /api/v1/session-leases` dengan tindakan JSON `acquire`, `renew`, dan `release`.
+Permintaan inferensi terkelola menyertakan nilai opak `X-OmniRoute-Lease-Owner` dan
+`X-OmniRoute-Lease-Generation` yang tepat. Pemilik menggunakan `vlo_` diikuti oleh 43 karakter base64url; hanya
+hash SHA-256-nya yang disimpan. Setiap batas pengiriman akhir juga mengikat ID kunci API terautentikasi dan
+ID koneksi aktif. Header kontrol sewa dihapus dari log, snapshot permintaan yang disimpan, dan
+header eksekutor upstream.
 
-Jika perutean biasa memiliki kandidat terkelola yang memenuhi syarat tetapi setiap kandidat bebas ditempati oleh sewa aktif asing, OmniRoute mengembalikan HTTP `429`, kode lease-capacity-unavailable, status menunggu kapasitas, dan `Retry-After` terbatas yang diturunkan dari waktu kedaluwarsa relevan paling awal. Kondisi biasa ketika tidak ada yang memenuhi syarat bukanlah perebutan sewa dan tetap menggunakan semantik galat perutean yang sudah ada.
+Jika perutean biasa memiliki kandidat terkelola yang memenuhi syarat tetapi setiap kandidat bebas ditempati oleh
+sewa aktif milik pihak lain, OmniRoute mengembalikan HTTP `429`, kode lease-capacity-unavailable, status
+menunggu kapasitas, dan `Retry-After` terbatas yang diturunkan dari waktu kedaluwarsa relevan paling awal.
+Ketiadaan pemenuhan syarat biasa bukanlah perebutan sewa dan tetap menggunakan semantik kesalahan perutean yang sudah ada.
 
 Mekanisme terkait tetap terpisah:
 
-- Okupansi sesi OAuth merupakan distribusi lunak lokal-proses untuk akun OAuth.
+- Okupansi sesi OAuth adalah distribusi lunak lokal proses untuk akun OAuth.
 - Semaphore akun memberikan izin konkurensi permintaan dan berakhir ketika permintaan selesai.
-- Sewa koneksi sesi terkelola eksklusif merupakan kepemilikan siklus hidup yang tahan lama dengan pagar generasi.
+- Sewa koneksi sesi terkelola eksklusif adalah kepemilikan siklus hidup tahan lama dengan batas generasi.
 
 ---
 
@@ -148,7 +164,22 @@ Mekanisme terkait tetap terpisah:
 
 **Cakupan:** kombinasi penyedia + koneksi + model.
 
-**Tujuan:** menghindari penonaktifan seluruh koneksi ketika hanya satu model yang tidak tersedia atau terkena batas kuota.
+**Cakupan kunci berdasarkan status:** status kegagalan menentukan kunci tempat penguncian ditulis
+(`resolveLockoutScope()` di `open-sse/services/accountFallback/exactModelLock.ts`):
+
+- `429` / `403` / `402` — sinyal kuota atau hak akses — mengunci **keluarga kuota**:
+  untuk codex, seluruh cakupan `codex` / `spark` (setiap model `gpt-5*` dari
+  koneksi tersebut), sedangkan untuk penyedia lain menggunakan `getQuotaScopedModelForProvider()`.
+- `404` mengunci model dasarnya (`getModelLockKey()` mempersempit `not_found`).
+- Status lainnya — kegagalan transportasi/server `5xx` dan `502` buatan
+  OmniRoute sendiri dari validasi kualitas — hanya mengunci tuple **persis**
+  penyedia/koneksi/model. Stream yang buruk pada satu model bukanlah bukti
+  adanya masalah pada kuota akun; sebelum aturan ini, satu respons kosong pada
+  `codex/gpt-5.6-luna` menghapus setiap model `gpt-5*` dari koneksi tersebut dari
+  perutean selama 2–30 menit (meningkat secara bertahap), padahal kuotanya tidak terpengaruh.
+- Opsi `scope` eksplisit dari pemanggil selalu diprioritaskan (Antigravity meneruskan `"exact"`).
+
+**Tujuan:** menghindari penonaktifan seluruh koneksi ketika hanya satu model yang tidak tersedia atau dibatasi kuota.
 
 **Contoh:**
 
@@ -158,20 +189,22 @@ Mekanisme terkait tetap terpisah:
 
 **Implementasi:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
-### Dasbor Masa Tunggu Model (v3.8.0)
+### Dasbor Cooldown Model (v3.8.0)
 
-UI: Pengaturan → Masa Tunggu Model (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
+UI: Pengaturan → Cooldown Model (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-Menampilkan penguncian aktif beserta: penyedia, koneksi, model, alasan, expiresAt. Operator dapat mengaktifkan kembali model secara manual dari kartu tersebut.
+Menampilkan daftar penguncian aktif beserta: penyedia, koneksi, model, alasan, expiresAt. Operator dapat mengaktifkan kembali model secara manual dari kartu tersebut.
 
 **REST API:**
 
-- `GET /api/resilience/model-cooldowns` — menampilkan penguncian aktif
-- `DELETE /api/resilience/model-cooldowns` — mengaktifkan kembali secara manual. Isi: `{provider, connection, model}`. Autentikasi: manajemen.
+- `GET /api/resilience/model-cooldowns` — menampilkan daftar penguncian aktif
+- `DELETE /api/resilience/model-cooldowns` — mengaktifkan kembali secara manual. Body: `{provider, connection, model}`. Autentikasi: management.
 
-### UI pengaturan penguncian + pemulihan berbasis pengurangan setelah berhasil (v3.8.23)
+### UI pengaturan penguncian + pemulihan berbasis penurunan saat berhasil (v3.8.23)
 
-Penguncian model berubah dari perilaku berkode tetap yang selalu aktif menjadi fitur opsional yang sepenuhnya dapat dikonfigurasi, dengan kartu pengaturannya sendiri dan jalur pemulihan yang dapat memulihkan diri.
+Penguncian model berubah dari perilaku bawaan yang selalu aktif menjadi fitur
+opsional yang sepenuhnya dapat dikonfigurasi, dengan kartu pengaturannya sendiri
+dan jalur pemulihan mandiri.
 
 **Kartu pengaturan:** Pengaturan → Penguncian Model
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
@@ -180,29 +213,34 @@ _menampilkan_ penguncian aktif) — kartu baru tersebut _mengonfigurasi paramete
 berada di `DEFAULT_MODEL_LOCKOUT_SETTINGS`
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
-| Pengaturan              | Default                          | Arti                                                                    |
-| ----------------------- | -------------------------------- | ----------------------------------------------------------------------- |
-| `enabled`               | `false`                          | Sakelar utama — penguncian model **nonaktif secara default**.           |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Status upstream yang dihitung sebagai kegagalan lingkup model.          |
-| `baseCooldownMs`        | `120_000` (120 dtk)              | Durasi penguncian awal untuk kegagalan pertama.                         |
-| `maxCooldownMs`         | `1_800_000` (30 mnt)             | Batas maksimum masa tunggu yang telah dieskalasi.                       |
-| `maxBackoffSteps`       | `10`                             | Jumlah maksimum langkah eskalasi backoff eksponensial.                  |
-| `useExponentialBackoff` | `true`                           | Apakah kegagalan berulang meningkatkan masa tunggu secara eksponensial. |
+| Pengaturan              | Default                          | Arti                                                                 |
+| ----------------------- | -------------------------------- | -------------------------------------------------------------------- |
+| `enabled`               | `false`                          | Sakelar utama — penguncian model **nonaktif secara default**.        |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Status upstream yang dihitung sebagai kegagalan tingkat model.       |
+| `baseCooldownMs`        | `120_000` (120 dtk)              | Durasi penguncian awal untuk kegagalan pertama.                      |
+| `maxCooldownMs`         | `1_800_000` (30 mnt)             | Batas cooldown yang telah ditingkatkan.                              |
+| `maxBackoffSteps`       | `10`                             | Jumlah maksimum langkah peningkatan backoff eksponensial.            |
+| `useExponentialBackoff` | `true`                           | Apakah kegagalan berulang meningkatkan cooldown secara eksponensial. |
 
-Pengaturan dipertahankan melalui penyimpanan pengaturan normal dan divalidasi melalui
-skema pengaturan ketahanan; kartu membatasi `baseCooldownMs`/`maxCooldownMs`
+Pengaturan disimpan melalui penyimpanan pengaturan biasa dan divalidasi melalui
+skema pengaturan ketahanan; kartu tersebut membatasi `baseCooldownMs`/`maxCooldownMs`
 (dengan `maxCooldownMs ≥ baseCooldownMs`) dan `maxBackoffSteps`.
 
-**Pemulihan berbasis pengurangan setelah berhasil:** pemulihan **tidak** hanya bergantung pada berakhirnya waktu. Respons yang sehat menurunkan kembali jumlah kegagalan model sehingga model yang pulih di tengah jendela berhenti mengalami eskalasi (dan pengunciannya dihapus) sebelum waktunya berakhir. Ketika target kombinasi berhasil, `open-sse/services/combo.ts` memanggil `decayModelFailureCount()`
+**Pemulihan berbasis penurunan saat berhasil:** pemulihan **tidak** hanya bergantung pada berakhirnya timer. Respons
+yang sehat menurunkan kembali jumlah kegagalan model sehingga model yang pulih
+di tengah periode berhenti mengalami peningkatan (dan pengunciannya dihapus) sebelum timernya berakhir. Pada target
+kombinasi yang berhasil, `open-sse/services/combo.ts` memanggil `decayModelFailureCount()`
 (`open-sse/services/accountFallback.ts`), yang **membagi dua** nilai
-`failureCount` yang tersimpan (`Math.floor(failureCount / 2)`); ketika nilainya mencapai `0`, entri penguncian dihapus sepenuhnya. Pasangannya, `recordModelLockoutFailure()`,
-meningkatkan jumlah tersebut (dan mengeskalasi masa tunggu) pada kegagalan yang terjadi dalam
-jendela eskalasi. Pengurangan setelah berhasil ini merupakan tambahan selain berakhirnya waktu —
-salah satu jalur dapat mengaktifkan kembali model.
+`failureCount` yang tersimpan (`Math.floor(failureCount / 2)`); ketika nilainya mencapai `0`, entri penguncian
+dihapus sepenuhnya. Pasangannya, `recordModelLockoutFailure()`,
+menaikkan jumlah tersebut (dan meningkatkan cooldown) ketika terjadi kegagalan dalam
+periode eskalasi. Penurunan saat berhasil ini merupakan tambahan terhadap berakhirnya timer biasa —
+kedua jalur tersebut dapat mengaktifkan kembali suatu model.
 
-**Status:** penguncian disimpan **dalam memori** (`Map` per proses dari
-`ModelLockoutEntry` yang menggunakan `provider:connectionId:model` sebagai kunci), tidak disimpan ke
-DB — status tersebut hilang saat dimulai ulang. _Pengaturan_ disimpan; _status_
+**Status:** penguncian disimpan **dalam memori** (`Map` per proses yang berisi
+`ModelLockoutEntry` dengan kunci `provider:connectionId:model`, sedangkan penguncian cakupan persis menggunakan
+`provider:connectionId:exact:model`), dan tidak disimpan secara persisten ke
+DB — data tersebut hilang saat proses dimulai ulang. _Pengaturan_ disimpan secara persisten; _status_
 penguncian aktif bersifat sementara.
 
 ---
@@ -610,13 +648,14 @@ berbasis bucket IP merupakan sinyal yang sama dengan kuota yang habis. Batasan s
 
 ---
 
-## Penelusuran Kesalahan
+## Debugging
 
+- Kombo berbobot merespons dengan `503 all_targets_cooling_down` (`Retry-After` ditetapkan, `diagnostics.excluded` mencantumkan setiap target dengan `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → pool telah dikonfigurasi dan terhubung, tetapi setiap target dikecualikan oleh timer ketahanan; peringatan `[COMBO] Weighted selection: every target excluded before dispatch — …` menyebutkan alasan dan jumlah detik yang tersisa. Respons `404 no_executable_targets` dari kombo yang sama berarti tidak ada timer ketahanan yang terlibat (tidak ada yang dapat dijalankan, atau setiap akun gagal dalam pemeriksaan ketersediaan). Dibangun di `open-sse/services/combo/pinRecovery.ts` berdasarkan pengecualian yang dikumpulkan di `targetResolution.ts`.
 - Semua kunci untuk suatu penyedia dilewati → periksa status circuit breaker DAN `rateLimitedUntil`/`testStatus` setiap koneksi.
 - Penyedia dikecualikan secara permanen setelah jendela reset → kode membaca `state` mentah, bukan `getStatus()`/`canExecute()`.
-- Satu kunci gagal, kunci lainnya seharusnya berfungsi → prioritaskan masa tunggu koneksi daripada circuit breaker.
-- Hanya satu model yang gagal → prioritaskan penguncian model daripada masa tunggu koneksi.
-- Status seharusnya pulih sendiri tetapi tidak → periksa stempel waktu mendatang + jalur baca yang menyegarkan status kedaluwarsa. Status permanen memerlukan perubahan manual.
+- Satu kunci gagal, sedangkan yang lain seharusnya berfungsi → utamakan cooldown koneksi daripada circuit breaker.
+- Hanya satu model yang gagal → utamakan penguncian model daripada cooldown koneksi.
+- Status seharusnya pulih sendiri tetapi tidak → periksa timestamp masa depan + jalur pembacaan yang menyegarkan status kedaluwarsa. Status permanen memerlukan perubahan manual.
 
 ---
 

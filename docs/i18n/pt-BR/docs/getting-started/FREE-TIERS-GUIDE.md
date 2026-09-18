@@ -4,7 +4,7 @@
 
 ---
 
-> **TL;DR**: O OmniRoute registra 352 IDs de provedores, com **152 entradas no catálogo de provedores marcadas como `hasFree`**. O catálogo auditado mais rigoroso de modelos gratuitos abrange **34 chaves de pools recorrentes / 443 entradas** (436 ativas + 7 descontinuadas). Conecte vários provedores adequados para ampliar a capacidade de fallback; todas as cotas, regras de aprovação, políticas de privacidade e condições de cobrança por uso excedente continuam aplicáveis.
+> **Resumo**: O OmniRoute registra 357 IDs de provedores, com **152 entradas do catálogo de provedores marcadas como `hasFree`**. O catálogo auditado mais rigoroso de modelos gratuitos abrange **35 chaves de pools recorrentes / 482 entradas** (475 ativas + 7 descontinuadas). Conecte vários provedores adequados para ampliar a capacidade de fallback; todas as cotas, regras de aprovação, políticas de privacidade e condições de cobrança por excedentes continuam aplicáveis.
 
 ---
 
@@ -158,20 +158,20 @@ cota ou a política de acesso de um provedor.
 
 ---
 
-## Cálculos do nível gratuito
+## Cálculo do nível gratuito
 
-O catálogo ativo, com pools deduplicados, atualmente apresenta:
+O catálogo ativo, com pools desduplicados, informa atualmente:
 
-| Métrica                                                                    |                                         Valor atual auditado | Interpretação                                                                                                                                                                  |
-| -------------------------------------------------------------------------- | -----------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Cota recorrente quantificada                                               |                                   **~1,47 bi de tokens/mês** | Pools compartilhados contabilizados uma vez; exclui da soma os provedores sem limite definido                                                                                  |
-| Primeiro mês com créditos de cadastro                                      |                                       **~2,07 bi de tokens** | Total recorrente mais créditos únicos e recorrentes                                                                                                                            |
-| Inventário auditado de modelos gratuitos                                   | **34 chaves de pool recorrentes / 443 entradas no catálogo** | 436 ativas + 7 descontinuadas; distinto do catálogo de 352 provedores                                                                                                          |
-| Provedores recorrentes/sem chave e permanentemente gratuitos representados |                                                       **52** | Provedores únicos entre os tipos de catálogo recorrentes diários/mensais, de créditos, sem limite definido e sem chave; linhas sujeitas a critérios de elegibilidade excluídas |
-| Entradas do catálogo de provedores marcadas como `hasFree`                 |                                                **152 / 352** | Metadados mais amplos dos provedores; nem todos têm uma cota recorrente quantificável                                                                                          |
+| Métrica                                                              |                                         Valor auditado atual | Interpretação                                                                                                                                                                 |
+| -------------------------------------------------------------------- | -----------------------------------------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Concessão recorrente quantificada                                    |                                        **~1,62B tokens/mês** | Pools compartilhados contabilizados uma única vez; provedores sem limite máximo são excluídos da soma                                                                         |
+| Primeiro mês com concessões de cadastro                              |                                            **~2,22B tokens** | Total recorrente acrescido de créditos únicos e recorrentes                                                                                                                   |
+| Inventário auditado de modelos gratuitos                             | **35 chaves de pool recorrentes / 482 entradas de catálogo** | 475 ativas + 7 descontinuadas; distinto do catálogo de 357 provedores                                                                                                         |
+| Provedores gratuitos permanentes recorrentes/sem chave representados |                                                       **53** | Provedores únicos entre os tipos de catálogo recorrentes diários/mensais, por créditos, sem limite máximo e sem chave; linhas sujeitas a critérios de elegibilidade excluídas |
+| Entradas do catálogo de provedores marcadas como `hasFree`           |                                                **152 / 357** | Metadados mais abrangentes de provedores; nem todos têm uma cota recorrente quantificável                                                                                     |
 
 Esses valores são calculados a partir de `open-sse/config/freeModelCatalog.ts`; consulte a
-[Referência de níveis gratuitos](../reference/FREE_TIERS.md) para obter informações sobre deduplicação de pools, sinalizadores de Termos de Serviço,
+[Referência de níveis gratuitos](../reference/FREE_TIERS.md) para obter informações sobre desduplicação de pools, sinalizadores de Termos de Serviço,
 entradas descontinuadas e metodologia de créditos de cadastro.
 
 ---

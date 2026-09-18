@@ -165,7 +165,7 @@ Yanıttan sonra (başarılı veya başarısız), kullanım kaydedilir:
 
 ---
 
-## Temel Dosyaların Derinlemesine İncelenmesi
+## Temel Dosyalara Derinlemesine Bakış
 
 ### chatCore.ts (5977 satır)
 
@@ -200,14 +200,14 @@ export async function handleChat(request: NextRequest) {
     }
   }
 
-  // 5. Acil durum geri dönüşü
+  // 5. Acil durum yedeği
   return await emergencyFallback(body);
 }
 ```
 
-Tek bir devasa fonksiyon olmasına rağmen, 5 aşamalı işlem hattıyla eşleşen **yorumlarla belirtilmiş bölümler** hâlinde düzenlenmiştir.
+Tek ve devasa bir fonksiyon olmasına rağmen, 5 aşamalı işlem hattıyla eşleşen **yorumlarla belirtilmiş bölümler** hâlinde düzenlenmiştir.
 
-### combo.ts (4456 LOC)
+### combo.ts (4456 kod satırı)
 
 Bir kombinasyonu sıralı hedeflere çözümleyen **yönlendirme motoru**.
 
@@ -219,7 +219,7 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
     try {
       return await handleSingleModel(target, body);
     } catch (err) {
-      log.warn("hedef başarısız oldu, sıradaki deneniyor", { target, err });
+      log.warn("hedef başarısız oldu, sonraki deneniyor", { target, err });
     }
   }
   throw new ComboExhaustedError("Tüm hedefler başarısız oldu");
@@ -228,34 +228,34 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
 
 **19 yönlendirme stratejisini** destekler (bkz. `src/shared/constants/routingStrategies.ts`):
 
-| Strateji            | Davranış                                                                                             |
-| ------------------- | ---------------------------------------------------------------------------------------------------- |
-| `priority`          | İlk hedef öncelikli sıralı liste                                                                     |
-| `weighted`          | Hedef başına ağırlığa göre olasılıksal seçim                                                         |
-| `round-robin`       | Hedefler arasında sırayla döngü                                                                      |
-| `context-relay`     | Bağlamı hedefler arasında aktarır                                                                    |
-| `fill-first`        | Sonrakine geçmeden önce kotayı doldurur                                                              |
-| `p2c`               | İki seçeneğin gücü                                                                                   |
-| `random`            | Eş dağılımlı rastgele seçim                                                                          |
-| `least-used`        | Yakın zamanda en az kullanılanı seçer                                                                |
-| `cost-optimized`    | Önce en ucuz sağlıklı hedef                                                                          |
-| `reset-aware`       | Sağlayıcı sıfırlama aralıklarını dikkate alır                                                        |
-| `reset-window`      | Sıfırlama aralığına dayalı yönlendirme                                                               |
-| `headroom`          | Önce en fazla kalan kota kapasitesine sahip hedef                                                    |
-| `strict-random`     | Gerçek anlamda eş dağılımlı (kalite ağırlıklandırması yoktur)                                        |
-| `auto`              | 16 faktörlü puanlamayı kullanır (`autoCombo/`)                                                       |
-| `lkgp`              | Önce bilinen son iyi sağlayıcı                                                                       |
-| `context-optimized` | Uzun bağlamlı istekler için en uygun olanı seçer                                                     |
-| `fusion`            | İstekleri paralel olarak bir panele dağıtır, ardından bir hakem aracılığıyla sentezler (`fusion.ts`) |
+| Strateji            | Davranış                                                                                            |
+| ------------------- | --------------------------------------------------------------------------------------------------- |
+| `priority`          | İlk hedefe öncelik veren sıralı liste                                                               |
+| `weighted`          | Hedef başına ağırlığa göre olasılıksal seçim                                                        |
+| `round-robin`       | Hedefler arasında sırayla döngü                                                                     |
+| `context-relay`     | Bağlamı hedefler arasında aktarır                                                                   |
+| `fill-first`        | Sonraki hedefe geçmeden önce kotayı doldurur                                                        |
+| `p2c`               | İki seçenekten güçlü olanı                                                                          |
+| `random`            | Eşit olasılıklı rastgele seçim                                                                      |
+| `least-used`        | Son zamanlarda en az kullanılanı seçer                                                              |
+| `cost-optimized`    | Önce en ucuz ve sağlıklı hedef                                                                      |
+| `reset-aware`       | Sağlayıcı sıfırlama pencerelerini dikkate alır                                                      |
+| `reset-window`      | Sıfırlama penceresine dayalı yönlendirme                                                            |
+| `headroom`          | Önce en fazla kalan kota kapasitesine sahip olan                                                    |
+| `strict-random`     | Gerçek anlamda eşit olasılıklı (kalite ağırlığı yok)                                                |
+| `auto`              | 16 faktörlü puanlamayı kullanır (`autoCombo/`)                                                      |
+| `lkgp`              | Önce bilinen son iyi sağlayıcı                                                                      |
+| `context-optimized` | Uzun bağlamlı istekler için en iyisi                                                                |
+| `fusion`            | Paralel olarak bir panele dağıtır, ardından bir değerlendirici aracılığıyla sentezler (`fusion.ts`) |
 
-### base.ts (1170 LOC)
+### base.ts (1170 kod satırı)
 
-101 yürütücünün tamamının genişlettiği **soyut yürütücü**. Şunları içerir:
+107 yürütücünün tamamının genişlettiği **soyut yürütücü**. Şunları içerir:
 
 - `buildUrl()` — varsayılan URL oluşturma (alt sınıflar özel davranış için geçersiz kılar)
 - `buildHeaders()` — varsayılan üstbilgiler (kimlik doğrulama, içerik türü)
-- `transformRequest()` — varsayılan olarak doğrudan aktarım
-- `execute()` — yeniden deneme/geri çekilme/devre kesici içeren ana HTTP döngüsü
+- `transformRequest()` — varsayılan olarak değişiklik yapmadan geçirir
+- `execute()` — yeniden deneme/artan bekleme/devre kesici özellikli ana HTTP döngüsü
 
 ```ts
 // open-sse/executors/default.ts
@@ -265,7 +265,7 @@ export class DefaultExecutor extends BaseExecutor {
 }
 ```
 
-Sağlayıcıya özgü davranışlar (kimlik doğrulama üstbilgileri, temel URL, sürüm üstbilgileri), ayrı yürütücü sınıfları üzerinden değil, sağlayıcı kayıt defteri aracılığıyla yapılandırılır.
+Sağlayıcıya özgü davranışlar (kimlik doğrulama üstbilgileri, temel URL, sürüm üstbilgileri) ayrı yürütücü sınıfları üzerinden değil, sağlayıcı kayıt defteri aracılığıyla yapılandırılır.
 
 ````
 
@@ -273,7 +273,7 @@ Sağlayıcıya özgü davranışlar (kimlik doğrulama üstbilgileri, temel URL,
 
 ## Servisler (117 modül)
 
-Servisler, işleyicilerin bir araya getirdiği **odaklanmış, tek amaçlı modüllerdir**. Ana kategoriler:
+Servisler, işleyicilerin bir araya getirdiği **odaklanmış, tek amaçlı modüllerdir**. Başlıca kategoriler:
 
 ### Yönlendirme ve Combo
 
@@ -290,16 +290,16 @@ Servisler, işleyicilerin bir araya getirdiği **odaklanmış, tek amaçlı mod�
 
 ### Hesap ve Token
 
-- `tokenRefresh.ts` — 401 durumunda OAuth yenilemesi
+- `tokenRefresh.ts` — 401 durumunda OAuth yenileme
 - `accountFallback.ts` — alternatif hesaba geçiş
 - `sessionManager.ts` — çok turlu oturum durumu
 
-### Zekâ
+### Akıllı İşlemler
 
 - `intentClassifier.ts` — istek amacını sınıflandırır
 - `taskAwareRouter.ts` — görev türüne göre yönlendirir
-- `thinkingBudget.ts` — düşünme tokenlarını tahsis eder
-- `contextManager.ts` — yönlendirme bağlamını ekler
+- `thinkingBudget.ts` — düşünme token'larını tahsis eder
+- `contextManager.ts` — yönlendirme bağlamı ekler
 
 ### Dayanıklılık
 
@@ -316,21 +316,21 @@ Servisler, işleyicilerin bir araya getirdiği **odaklanmış, tek amaçlı mod�
 ### Sıkıştırma
 
 - `compression/` (alt dizin) — eksiksiz sıkıştırma işlem hattı
-- Motorları, kural paketlerini ve bağdaştırıcıları kapsayan 39 dosya
+- Motorları, kural paketlerini ve adaptörleri kapsayan 39 dosya
 
 ### Beceriler
 
-- ([SKILLS.md](./SKILLS.md) belgesinde ele alınmıştır)
+- ([SKILLS.md](./SKILLS.md) dosyasında ele alınmıştır)
 
 ### Bellek
 
-- ([MEMORY.md](./MEMORY.md) belgesinde ele alınmıştır)
+- ([MEMORY.md](./MEMORY.md) dosyasında ele alınmıştır)
 
 ---
 
 ## Yürütücüler (75+ dosya)
 
-Her sağlayıcı için bir dosya bulunur. Bunların tümü `BaseExecutor` sınıfını genişletir ve farklı olan kısımları geçersiz kılar.
+Her sağlayıcı için bir dosya bulunur. Bunların tümü `BaseExecutor` sınıfını genişletir ve farklı olan davranışları geçersiz kılar.
 
 ### Yaygın Kalıplar
 
@@ -346,15 +346,15 @@ export default {
 }
 ````
 
-**Özel kimlik doğrulama**, sağlayıcı kayıt defterinin kimlik doğrulama yapılandırması (API anahtarı, OAuth, başlık profilleri) aracılığıyla gerçekleştirilir.
+**Özel kimlik doğrulama**, sağlayıcı kayıt sisteminin kimlik doğrulama yapılandırması (API anahtarı, OAuth, başlık profilleri) üzerinden gerçekleştirilir.
 
-**Özel istek gövdesi** dönüşümleri (örneğin Anthropic'in `system` öğesini `messages` öğesinden ayırması), `open-sse/translator/` içinde sağlayıcı bazında kaydedilir.
+**Özel istek gövdesi** dönüşümleri (ör. Anthropic'in `system` öğesini `messages` öğesinden ayırması), `open-sse/translator/` içinde sağlayıcı bazında kaydedilir.
 
 ````
 
 ### Yürütücü Fabrikası
 
-`executors/index.ts`, `getExecutor(providerId)` işlevini dışa aktarır:
+`executors/index.ts`, `getExecutor(providerId)` fonksiyonunu dışa aktarır:
 
 ```ts
 import { getExecutor } from "@omniroute/open-sse/executors";
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-Çözümleme, `ExecutorRegistry` (`executors/registry.ts`) üzerinden gerçekleştirilir: her özelleştirilmiş yürütücü, `executors/index.ts` dosyasındaki yerleşik tabloda bildirilir ve modül yüklenirken `registerExecutor(alias, instance)` aracılığıyla kaydedilir; `getExecutor()`, kayıt defterine başvurur ve özelleştirilmiş girdisi olmayan herhangi bir sağlayıcı için belleğe alınmış bir `DefaultExecutor` örneğine geri döner. Eksiksiz alias → yürütücü eşlemesi, `tests/unit/executor-map-golden.test.ts` golden testiyle tanımlanır.
+Çözümleme, `ExecutorRegistry` (`executors/registry.ts`) üzerinden gerçekleştirilir: her özelleştirilmiş yürütücü, `executors/index.ts` içindeki yerleşik tabloda bildirilir ve modül yüklenirken `registerExecutor(alias, instance)` aracılığıyla kaydedilir; `getExecutor()`, kayıt sistemine başvurur ve özelleştirilmiş girdisi bulunmayan herhangi bir sağlayıcı için belleğe alınmış bir `DefaultExecutor` örneğine geri döner. Tam alias → yürütücü eşlemesi, `tests/unit/executor-map-golden.test.ts` altın testiyle tanımlanır.
 
 ---
 

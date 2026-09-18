@@ -4,7 +4,7 @@
 
 ---
 
-> **TL;DR**: OmniRoute registra 352 IDs de proveedores, con **152 entradas del catálogo de proveedores marcadas como `hasFree`**. El catálogo auditado, más estricto, de modelos gratuitos abarca **34 claves de grupos recurrentes / 443 entradas** (436 activas + 7 descontinuadas). Conecta varios proveedores adecuados para ampliar la capacidad de respaldo; siguen aplicándose todas las cuotas, reglas de aprobación, políticas de privacidad y condiciones de sobrecostes de pago.
+> **TL;DR**: OmniRoute registra 357 IDs de proveedores, con **152 entradas del catálogo de proveedores marcadas como `hasFree`**. El catálogo auditado, más estricto, de modelos gratuitos abarca **35 claves de grupos recurrentes / 482 entradas** (475 activas + 7 descontinuadas). Conecta varios proveedores adecuados para disponer de una mayor capacidad de respaldo; siguen aplicándose todas las cuotas, reglas de aprobación, políticas de privacidad y condiciones de cargos por excedentes.
 
 ---
 
@@ -158,21 +158,21 @@ cuota o la política de acceso de un proveedor.
 
 ---
 
-## Cálculos del nivel gratuito
+## Cálculo del nivel gratuito
 
-El catálogo activo, con grupos sin duplicados, informa actualmente:
+El catálogo activo, con deduplicación por grupos, informa actualmente:
 
-| Métrica                                                                |                                        Valor auditado actual | Interpretación                                                                                                                                                              |
-| ---------------------------------------------------------------------- | -----------------------------------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Asignación recurrente cuantificada                                     |                                        **~1.47B tokens/mes** | Los grupos compartidos se cuentan una sola vez; se excluyen de la suma los proveedores sin límite                                                                           |
-| Primer mes con asignaciones de registro                                |                                            **~2.07B tokens** | Total recurrente más créditos únicos y recurrentes                                                                                                                          |
-| Inventario auditado de modelos gratuitos                               | **34 claves de grupo recurrente / 443 entradas de catálogo** | 436 activas + 7 discontinuadas; distinto del catálogo de 352 proveedores                                                                                                    |
-| Proveedores recurrentes/sin clave gratuitos para siempre representados |                                                       **52** | Proveedores únicos entre los tipos de catálogo recurrentes diarios/mensuales/de créditos/sin límite y sin clave; se excluyen las filas sujetas a requisitos de elegibilidad |
-| Entradas del catálogo de proveedores marcadas como `hasFree`           |                                                **152 / 352** | Metadatos generales de proveedores; no todos tienen una cuota recurrente cuantificable                                                                                      |
+| Métrica                                                                |                                         Valor auditado actual | Interpretación                                                                                                                                                               |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Asignación recurrente cuantificada                                     |                                         **~1.62B tokens/mes** | Los grupos compartidos se contabilizan una sola vez; la suma excluye a los proveedores sin límite                                                                            |
+| Primer mes con asignaciones de registro                                |                                             **~2.22B tokens** | Total recurrente más créditos únicos y recurrentes                                                                                                                           |
+| Inventario auditado de modelos gratuitos                               | **35 claves de grupo recurrentes / 482 entradas de catálogo** | 475 activas + 7 descontinuadas; diferente del catálogo de 357 proveedores                                                                                                    |
+| Proveedores recurrentes/sin clave gratuitos para siempre representados |                                                        **53** | Proveedores únicos entre los tipos de catálogo recurrentes diarios/mensuales/por créditos/sin límite y sin clave; se excluyen las filas sujetas a requisitos de elegibilidad |
+| Entradas del catálogo de proveedores marcadas como `hasFree`           |                                                 **152 / 357** | Metadatos generales de proveedores; no todos tienen una cuota recurrente cuantificable                                                                                       |
 
 Estos valores se calculan a partir de `open-sse/config/freeModelCatalog.ts`; consulta la
-[Referencia de niveles gratuitos](../reference/FREE_TIERS.md) para obtener información sobre la eliminación de duplicados en grupos, los indicadores de los términos de servicio,
-las entradas discontinuadas y la metodología de los créditos de registro.
+[Referencia de niveles gratuitos](../reference/FREE_TIERS.md) para obtener información sobre la deduplicación de grupos, los indicadores de ToS,
+las entradas descontinuadas y la metodología de los créditos de registro.
 
 ---
 

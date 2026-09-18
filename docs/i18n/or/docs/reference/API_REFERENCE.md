@@ -1004,14 +1004,14 @@ curl -X POST https://your-host.example/api/v1/vscode/YOUR_API_KEY/chat/completio
 
 ---
 
-## ଟେଲିମେଟ୍ରୀ
+## ଟେଲିମେଟ୍ରି
 
 ```bash
-# Get latency telemetry summary (p50/p95/p99 per provider)
+# ଲେଟେନ୍ସି ଟେଲିମେଟ୍ରି ସାରାଂଶ ପ୍ରାପ୍ତ କରନ୍ତୁ (ପ୍ରତ୍ୟେକ ପ୍ରଦାନକାରୀ ପାଇଁ p50/p95/p99)
 GET /api/telemetry/summary
 ```
 
-**ଉତ୍ତର:**
+**ପ୍ରତିକ୍ରିୟା:**
 
 ```json
 {
@@ -1027,10 +1027,10 @@ GET /api/telemetry/summary
 ## ବଜେଟ୍
 
 ```bash
-# Get budget status for all API keys
+# ସମସ୍ତ API କୀ ପାଇଁ ବଜେଟ୍ ସ୍ଥିତି ପ୍ରାପ୍ତ କରନ୍ତୁ
 GET /api/usage/budget
 
-# Set or update a budget
+# ଏକ ବଜେଟ୍ ସେଟ୍ କିମ୍ବା ଅପଡେଟ୍ କରନ୍ତୁ
 POST /api/usage/budget
 Content-Type: application/json
 
@@ -1044,7 +1044,7 @@ Content-Type: application/json
 }
 ```
 
-> **ସ୍କିମା ନୋଟ୍** (`setBudgetSchema`): `apiKeyId` ଆବଶ୍ୟକୀୟ; `dailyLimitUsd`, `weeklyLimitUsd`, କିମ୍ବା `monthlyLimitUsd` ମଧ୍ୟରୁ ଅତିକମ୍ ଗୋଟିଏ ଶୂନ୍ୟ ଅପେକ୍ଷା ବଡ଼ ହେବା ଆବଶ୍ୟକ। ଐଚ୍ଛିକ କ୍ଷେତ୍ରଗୁଡ଼ିକ: `warningThreshold` (0–1), `resetInterval` (`daily` | `weekly` | `monthly`), `resetTime` (`HH:MM`)। ପୁରାତନ `{keyId, limit, period}` ସଂରଚନା `400 Bad Request` ଫେରାଇ ଥାଏ।
+> **ସ୍କିମା ଟିପ୍ପଣୀ** (`setBudgetSchema`): `apiKeyId` ଆବଶ୍ୟକ; `dailyLimitUsd`, `weeklyLimitUsd`, କିମ୍ବା `monthlyLimitUsd` ମଧ୍ୟରୁ ଅତି କମରେ ଗୋଟିଏ ଶୂନ୍ୟଠାରୁ ଅଧିକ ହେବା ଆବଶ୍ୟକ। ଇଚ୍ଛାଧୀନ ଫିଲ୍ଡଗୁଡ଼ିକ: `warningThreshold` (0–1), `resetInterval` (`daily` | `weekly` | `monthly`), `resetTime` (`HH:MM`)। ପୁରୁଣା `{keyId, limit, period}` ଆକୃତି `400 Bad Request` ଫେରାଏ।
 
 ## ଟୋକେନ୍ ସୀମା
 
@@ -1495,20 +1495,21 @@ GET /.well-known/agent.json
 
 ## CLI ଟୁଲ୍ ପରିଚାଳନା
 
-OmniRoute ସହ ଏକୀଭୂତ ହୋଇଥିବା CLI ଟୁଲ୍ ପରିଚାଳନା କରନ୍ତୁ (antigravity, chipotle, commandCode, devin-cli, ଇତ୍ୟାଦି)। ସମ୍ପୂର୍ଣ୍ଣ ତାଲିକା ପାଇଁ [ପ୍ରଦାନକର୍ତ୍ତା ସନ୍ଦର୍ଭ](./PROVIDER_REFERENCE.md) ଦେଖନ୍ତୁ।
+OmniRoute ସହିତ ଏକୀକୃତ ହେଉଥିବା CLI ଟୁଲ୍ଗୁଡ଼ିକୁ (antigravity, commandCode,
+devin-cli ଇତ୍ୟାଦି) ପରିଚାଳନା କରନ୍ତୁ। ସମ୍ପୂର୍ଣ୍ଣ ତାଲିକା ପାଇଁ [ପ୍ରଦାନକାରୀ ସନ୍ଦର୍ଭ](./PROVIDER_REFERENCE.md) ଦେଖନ୍ତୁ।
 
-| ପଦ୍ଧତି | ପଥ                                      | ବିବରଣୀ                                                                                                                                                      |
-| ------ | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | ସମସ୍ତ CLI ଟୁଲ୍ ର ସ୍ଥିତି (ସ୍ଥାପିତ, ସଂସ୍କରଣ, ଶେଷ ଦେଖାଗଲା)                                                                                                     |
-| GET    | `/api/cli-tools/status`                 | ଗୋଟିଏ CLI ଟୁଲ୍ ର ସ୍ଥିତି ବିବରଣୀ (`?tool=` ପ୍ରଶ୍ନ)                                                                                                            |
-| POST   | `/api/cli-tools/apply`                  | ଟୁଲ୍ ର ଜନିତ କନଫିଗରେସନ୍ ଲେଖନ୍ତୁ (`dryRun` ପୂର୍ବାଲୋକନ; କଣ୍ଟେନରାଇଜଡ୍ ହୋଇଥିଲେ `422` + `containerEphemeralTarget`; `migration` ଏକ ପୁରାତନ Codex YAML ର ସୂଚନା ଦିଏ) |
-| GET    | `/api/cli-tools/backups`                | CLI ଟୁଲ୍ କନଫିଗରେସନ୍ ବ୍ୟାକଅପ୍ ତାଲିକା                                                                                                                         |
-| POST   | `/api/cli-tools/backups`                | ସମସ୍ତ CLI ଟୁଲ୍ କନଫିଗରେସନ୍ ର ବ୍ୟାକଅପ୍ ସୃଷ୍ଟି କରନ୍ତୁ                                                                                                          |
-| POST   | `/api/cli-tools/backups`                | ପୁନରୁଦ୍ଧାର: ସେହି ଏକା ଏଣ୍ଡପଏଣ୍ଟ୍ ସହ ବଡୀରେ `{tool, backupId}` ସେ ବ୍ୟାକଅପ୍ କୁ ପୁନରୁଦ୍ଧାର କରେ                                                                   |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM ପ୍ରକ୍ସି ସ୍ଥିତି ("antigravity-mitm" CLI ଟୁଲ୍)                                                                                               |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm ଉପନାମ କନଫିଗର କରନ୍ତୁ                                                                                                                        |
+| ପଦ୍ଧତି | ପଥ                                      | ବର୍ଣ୍ଣନା                                                                                                                                                         |
+| ------ | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/cli-tools/all-statuses`           | ସମସ୍ତ CLI ଟୁଲ୍ର ସ୍ଥିତି (ଇନ୍ଷ୍ଟଲ୍ ହୋଇଛି କି ନାହିଁ, ସଂସ୍କରଣ, ଶେଷ ଥର ଦେଖାଯାଇଥିବା ସମୟ)                                                                                |
+| GET    | `/api/cli-tools/status`                 | ଗୋଟିଏ CLI ଟୁଲ୍ ପାଇଁ ବିସ୍ତୃତ ସ୍ଥିତି (`?tool=` କ୍ୱେରୀ)                                                                                                             |
+| POST   | `/api/cli-tools/apply`                  | ଗୋଟିଏ ଟୁଲ୍ର ସୃଷ୍ଟ କନ୍ଫିଗ୍ ଲେଖେ (`dryRun` ପୂର୍ବାବଲୋକନ କରେ; କଣ୍ଟେନର୍ରେ ଚାଲୁଥିଲେ `422` + `containerEphemeralTarget`; `migration` ଏକ ପୁରୁଣା Codex YAML ବିଷୟରେ ସୂଚାଏ) |
+| GET    | `/api/cli-tools/backups`                | CLI ଟୁଲ୍ କନ୍ଫିଗରେସନ୍ ବ୍ୟାକଅପ୍ଗୁଡ଼ିକର ତାଲିକା                                                                                                                      |
+| POST   | `/api/cli-tools/backups`                | ସମସ୍ତ CLI ଟୁଲ୍ କନ୍ଫିଗରେସନ୍ର ଏକ ବ୍ୟାକଅପ୍ ସୃଷ୍ଟି କରେ                                                                                                               |
+| POST   | `/api/cli-tools/backups`                | ପୁନଃସ୍ଥାପନ: ଅନୁରୋଧ ବଡିରେ `{tool, backupId}` ସହିତ ସେହି ଏଣ୍ଡପଏଣ୍ଟ ଉକ୍ତ ବ୍ୟାକଅପ୍କୁ ପୁନଃସ୍ଥାପନ କରେ                                                                   |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM ପ୍ରକ୍ସି ସ୍ଥିତି (`antigravity-mitm` CLI ଟୁଲ୍)                                                                                                    |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm ଉପନାମଗୁଡ଼ିକୁ କନ୍ଫିଗର୍ କରେ                                                                                                                       |
 
-**ପ୍ରମାଣୀକରଣ:** ପରିଚାଳନା ସେସନ୍ ଆବଶ୍ୟକ।
+**ପ୍ରାମାଣିକରଣ:** ପରିଚାଳନା ସେସନ୍ ଆବଶ୍ୟକ।
 
 ---
 

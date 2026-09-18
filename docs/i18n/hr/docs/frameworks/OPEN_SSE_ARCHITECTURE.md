@@ -196,20 +196,20 @@ export async function handleChat(request: NextRequest) {
       await recordUsage(result);
       return result;
     } catch (err) {
-      // Nastavi na sljedeće odredište
+      // Nastavi na sljedeći cilj
     }
   }
 
-  // 5. Rezervno rješenje za hitne slučajeve
+  // 5. Rezervna opcija za hitne slučajeve
   return await emergencyFallback(body);
 }
 ```
 
-Unatoč tomu što je riječ o jednoj golemoj funkciji, organizirana je u **komentirane odjeljke** koji odgovaraju procesnom toku od 5 faza.
+Unatoč tome što je riječ o jednoj golemoj funkciji, organizirana je u **komentirane odjeljke** koji odgovaraju procesu od 5 faza.
 
 ### combo.ts (4456 redaka koda)
 
-**Mehanizam za usmjeravanje** koji razrješava kombinaciju u poredana odredišta.
+**Mehanizam usmjeravanja** koji kombinaciju razrješava u poredane ciljeve.
 
 ```ts
 // services/combo.ts
@@ -219,10 +219,10 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
     try {
       return await handleSingleModel(target, body);
     } catch (err) {
-      log.warn("odredište nije uspjelo, pokušava se sljedeće", { target, err });
+      log.warn("target failed, trying next", { target, err });
     }
   }
-  throw new ComboExhaustedError("Sva odredišta nisu uspjela");
+  throw new ComboExhaustedError("All targets failed");
 }
 ```
 
@@ -230,57 +230,57 @@ Podržava **19 strategija usmjeravanja** (pogledajte `src/shared/constants/routi
 
 | Strategija          | Ponašanje                                                                     |
 | ------------------- | ----------------------------------------------------------------------------- |
-| `priority`          | Poredani popis s prvim odredištem                                             |
-| `weighted`          | Vjerojatnosni odabir prema težini pojedinačnog odredišta                      |
-| `round-robin`       | Kružno kretanje kroz odredišta po redoslijedu                                 |
-| `context-relay`     | Prosljeđivanje konteksta između odredišta                                     |
-| `fill-first`        | Ispunjavanje kvote prije prelaska na sljedeće odredište                       |
+| `priority`          | Poredani popis u kojem prvi cilj ima prednost                                 |
+| `weighted`          | Vjerojatnosni odabir prema težinskom faktoru svakog cilja                     |
+| `round-robin`       | Kružno prolazi kroz ciljeve zadanim redoslijedom                              |
+| `context-relay`     | Prosljeđuje kontekst između ciljeva                                           |
+| `fill-first`        | Ispunjava kvotu prije prelaska na sljedeći cilj                               |
 | `p2c`               | Odabir između dvije mogućnosti                                                |
-| `random`            | Jednoliki nasumični odabir                                                    |
-| `least-used`        | Odabir odredišta s najmanje nedavnih upotreba                                 |
-| `cost-optimized`    | Najprije najjeftinije dostupno odredište                                      |
-| `reset-aware`       | Uvažavanje vremenskih razdoblja poništavanja pružatelja                       |
-| `reset-window`      | Usmjeravanje na temelju vremenskog razdoblja poništavanja                     |
-| `headroom`          | Najprije odredište s najvećom preostalom kvotom                               |
-| `strict-random`     | Uistinu jednoliko (bez ponderiranja kvalitete)                                |
-| `auto`              | Primjena bodovanja sa 16 čimbenika (`autoCombo/`)                             |
-| `lkgp`              | Najprije posljednji poznati ispravni pružatelj                                |
-| `context-optimized` | Najbolje za zahtjeve s dugim kontekstom                                       |
-| `fusion`            | Paralelno slanje panelu, zatim sintetiziranje putem ocjenjivača (`fusion.ts`) |
+| `random`            | Ravnomjeran nasumični odabir                                                  |
+| `least-used`        | Odabire cilj s najmanje nedavnih upotreba                                     |
+| `cost-optimized`    | Najprije odabire najjeftiniji dostupan cilj                                   |
+| `reset-aware`       | Uzima u obzir razdoblja poništavanja pružatelja                               |
+| `reset-window`      | Usmjeravanje na temelju razdoblja poništavanja                                |
+| `headroom`          | Najprije odabire cilj s najvećom preostalom kvotom                            |
+| `strict-random`     | Uistinu ravnomjeran odabir (bez ponderiranja prema kvaliteti)                 |
+| `auto`              | Koristi bodovanje sa 16 faktora (`autoCombo/`)                                |
+| `lkgp`              | Najprije odabire posljednjeg poznatog ispravnog pružatelja                    |
+| `context-optimized` | Najprikladniji za zahtjeve s dugim kontekstom                                 |
+| `fusion`            | Paralelno šalje zahtjeve panelu, a zatim sintetizira putem suca (`fusion.ts`) |
 
 ### base.ts (1170 redaka koda)
 
-**Apstraktni izvršitelj** koji proširuje svih 101 izvršitelja. Sadrži:
+**Apstraktni izvršitelj** koji proširuje svih 107 izvršitelja. Sadrži:
 
-- `buildUrl()` — zadana konstrukcija URL-a (podklase je nadjačavaju za prilagođeno ponašanje)
+- `buildUrl()` — zadana izgradnja URL-a (podklase je nadjačavaju za prilagođeno ponašanje)
 - `buildHeaders()` — zadana zaglavlja (autentifikacija, vrsta sadržaja)
 - `transformRequest()` — zadano prosljeđivanje bez izmjena
-- `execute()` — glavna HTTP petlja s ponovnim pokušajima, eksponencijalnim odmakom i prekidačem
+- `execute()` — glavna HTTP petlja s ponovnim pokušajima, postupnim povećanjem čekanja i prekidačem
 
 ```ts
 // open-sse/executors/default.ts
 export class DefaultExecutor extends BaseExecutor {
-  // Obrađuje sve pružatelje kompatibilne s OpenAI-jem/Anthropicom
+  // Obrađuje sve pružatelje kompatibilne s OpenAI/Anthropic
   // Pružatelji registriraju konfiguracije (URL, autentifikaciju, zaglavlja), ali dijele logiku izvršitelja
 }
 ```
 
-Ponašanje specifično za pružatelja (zaglavlja za autentifikaciju, osnovni URL, zaglavlja verzije) konfigurira se putem registra pružatelja, a ne zasebnih klasa izvršitelja.
+Ponašanje specifično za pružatelja (autentifikacijska zaglavlja, osnovni URL, zaglavlja verzije) konfigurira se putem registra pružatelja, a ne zasebnim klasama izvršitelja.
 
 ````
 
 ---
 
-## Servisi (117 modula)
+## Usluge (117 modula)
 
-Servisi su **usmjereni moduli s jednom svrhom** koje obrađivači kombiniraju. Glavne kategorije:
+Usluge su **usmjereni, jednonamjenski moduli** koje obrađivači kombiniraju. Glavne kategorije:
 
-### Usmjeravanje i kombiniranje
+### Usmjeravanje i kombinacije
 
-- `combo.ts` — ulazna točka za zahtjeve s kombiniranim usmjeravanjem
+- `combo.ts` — ulazna točka za zahtjeve usmjerene kombinacijama
 - `services/autoCombo/` — bodovanje prema 16 čimbenika, 8 strategija automatskog usmjeravanja
-- `wildcardRouter.ts` — podudara zamjenske rute (`gpt-*`)
-- `modelFamilyFallback.ts` — T5 pričuvno preusmjeravanje unutar obitelji
+- `wildcardRouter.ts` — pronalazi podudaranja s rutama koje sadržavaju zamjenske znakove (`gpt-*`)
+- `modelFamilyFallback.ts` — T5 rezervna opcija unutar obitelji
 
 ### Ograničavanje brzine i kvota
 
@@ -292,31 +292,31 @@ Servisi su **usmjereni moduli s jednom svrhom** koje obrađivači kombiniraju. G
 
 - `tokenRefresh.ts` — osvježavanje OAuth tokena pri odgovoru 401
 - `accountFallback.ts` — prebacivanje na alternativni račun
-- `sessionManager.ts` — stanje sesije s više interakcija
+- `sessionManager.ts` — stanje višekoračne sesije
 
 ### Inteligencija
 
-- `intentClassifier.ts` — klasificira namjeru zahtjeva
-- `taskAwareRouter.ts` — usmjerava prema vrsti zadatka
-- `thinkingBudget.ts` — dodjeljuje tokene za razmišljanje
-- `contextManager.ts` — umeće kontekst usmjeravanja
+- `intentClassifier.ts` — klasifikacija namjere zahtjeva
+- `taskAwareRouter.ts` — usmjeravanje prema vrsti zadatka
+- `thinkingBudget.ts` — dodjeljivanje tokena za razmišljanje
+- `contextManager.ts` — umetanje konteksta usmjeravanja
 
 ### Otpornost
 
 - `resilience.ts` — orkestracija ponovnih pokušaja, vremenskog odmaka i prekidača
-- `emergencyFallback.ts` — krajnje pričuvno rješenje
-- `modelDeprecation.ts` — automatski usmjerava na modele nasljednike
+- `emergencyFallback.ts` — krajnja rezervna opcija
+- `modelDeprecation.ts` — automatsko usmjeravanje na modele nasljednike
 
 ### Stanje
 
-- `signatureCache.ts` — uklanjanje duplikata prema potpisu zahtjeva
+- `signatureCache.ts` — deduplikacija prema potpisu zahtjeva
 - `volumeDetector.ts` — rasterećenje opterećenja
 - `contextHandoff.ts` — serijalizacija sesije
 
 ### Kompresija
 
-- `compression/` (poddirektorij) — cjeloviti proces kompresije
-- 39 datoteka koje obuhvaćaju mehanizme, pakete pravila i prilagodnike
+- `compression/` (poddirektorij) — cjelovit cjevovod kompresije
+- 39 datoteka koje obuhvaćaju pogonske mehanizme, pakete pravila i prilagodnike
 
 ### Vještine
 
@@ -334,7 +334,7 @@ Jedna datoteka po pružatelju. Svi proširuju `BaseExecutor` i nadjačavaju ono 
 
 ### Uobičajeni obrasci
 
-Pružatelji se razrješavaju putem `getExecutor(providerId)`, koji vraća konfigurirani izvršitelj. Pružatelji kompatibilni s OpenAI-jem/Anthropicom koriste `DefaultExecutor` (`executors/default.ts`). Ponašanje specifično za pružatelja (osnovni URL, zaglavlja za autentifikaciju, verzija API-ja) konfigurira se u `open-sse/config/providers/`, dok se transformacije tijela zahtjeva obrađuju u `open-sse/translator/`.
+Pružatelji se razrješavaju putem `getExecutor(providerId)`, koji vraća konfigurirani izvršitelj. Pružatelji kompatibilni s OpenAI-jem/Anthropicom upotrebljavaju `DefaultExecutor` (`executors/default.ts`). Ponašanje specifično za pružatelja (osnovni URL, zaglavlja za autentifikaciju, verzija API-ja) konfigurira se u `open-sse/config/providers/`, dok se transformacije tijela zahtjeva obrađuju u `open-sse/translator/`.
 
 **Prilagođeni URL** postavlja se putem konfiguracije pružatelja:
 
@@ -348,7 +348,7 @@ export default {
 
 **Prilagođena autentifikacija** obrađuje se putem konfiguracije autentifikacije u registru pružatelja (API ključ, OAuth, profili zaglavlja).
 
-Transformacije **prilagođenog tijela zahtjeva** (npr. Anthropicovo odvajanje `system` od `messages`) registriraju se za svakog pružatelja u `open-sse/translator/`.
+Transformacije **prilagođenog tijela zahtjeva** (npr. Anthropicovo odvajanje `system` od `messages`) registriraju se zasebno za svakog pružatelja u `open-sse/translator/`.
 
 ````
 
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-Razrješavanje se provodi putem `ExecutorRegistry` (`executors/registry.ts`): svaki specijalizirani izvršitelj deklariran je u ugrađenoj tablici datoteke `executors/index.ts` i registriran putem `registerExecutor(alias, instance)` pri učitavanju modula; `getExecutor()` provjerava registar i, za svakog pružatelja bez specijaliziranog unosa, kao pričuvno rješenje koristi memoizirani `DefaultExecutor`. Potpuno mapiranje pseudonima na izvršitelje opisano je referentnim testom `tests/unit/executor-map-golden.test.ts`.
+Razrješavanje se odvija putem `ExecutorRegistry` (`executors/registry.ts`): svaki specijalizirani izvršitelj deklariran je u ugrađenoj tablici datoteke `executors/index.ts` i registriran putem `registerExecutor(alias, instance)` pri učitavanju modula; `getExecutor()` provjerava registar i vraća memoizirani `DefaultExecutor` za svakog pružatelja bez specijaliziranog unosa. Cjelovito mapiranje pseudonima na izvršitelje opisano je referentnim testom `tests/unit/executor-map-golden.test.ts`.
 
 ---
 

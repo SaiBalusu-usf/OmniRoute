@@ -1616,19 +1616,19 @@ Končne točke, namenjene izključno skrbnikom, za operativno upravljanje.
 
 ## Upravljanje orodij CLI
 
-Upravljajte orodja CLI, ki se integrirajo z OmniRoute (antigravity, chipotle, commandCode,
+Upravljajte orodja CLI, ki se integrirajo z OmniRoute (antigravity, commandCode,
 devin-cli itd.). Za celoten seznam glejte [Referenco ponudnikov](./PROVIDER_REFERENCE.md).
 
-| Metoda | Pot                                     | Opis                                                                                                                                                                           |
-| ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| GET    | `/api/cli-tools/all-statuses`           | Stanje vseh orodij CLI (namestitev, različica, čas zadnje zaznave)                                                                                                             |
-| GET    | `/api/cli-tools/status`                 | Podrobnosti o stanju posameznega orodja CLI (poizvedba `?tool=`)                                                                                                               |
-| POST   | `/api/cli-tools/apply`                  | Zapiše ustvarjeno konfiguracijo orodja (`dryRun` prikaže predogled; `422` + `containerEphemeralTarget` pri izvajanju v vsebniku; `migration` opozori na podedovani Codex YAML) |
-| GET    | `/api/cli-tools/backups`                | Prikaže seznam varnostnih kopij konfiguracij orodij CLI                                                                                                                        |
-| POST   | `/api/cli-tools/backups`                | Ustvari varnostno kopijo konfiguracij vseh orodij CLI                                                                                                                          |
-| POST   | `/api/cli-tools/backups`                | Obnovitev: ista končna točka s `{tool, backupId}` v telesu obnovi navedeno varnostno kopijo                                                                                    |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Stanje posredniškega strežnika MITM Antigravity (orodje CLI »antigravity-mitm«)                                                                                                |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | Konfigurira vzdevke antigravity-mitm                                                                                                                                           |
+| Metoda | Pot                                     | Opis                                                                                                                                                                     |
+| ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET    | `/api/cli-tools/all-statuses`           | Stanje vseh orodij CLI (nameščenost, različica, čas zadnje zaznave)                                                                                                      |
+| GET    | `/api/cli-tools/status`                 | Podrobnosti stanja enega orodja CLI (poizvedba `?tool=`)                                                                                                                 |
+| POST   | `/api/cli-tools/apply`                  | Zapiše ustvarjeno konfiguracijo orodja (`dryRun` prikaže predogled; `422` + `containerEphemeralTarget` pri izvajanju v vsebniku; `migration` navede starejši Codex YAML) |
+| GET    | `/api/cli-tools/backups`                | Prikaže varnostne kopije konfiguracij orodij CLI                                                                                                                         |
+| POST   | `/api/cli-tools/backups`                | Ustvari varnostno kopijo konfiguracij vseh orodij CLI                                                                                                                    |
+| POST   | `/api/cli-tools/backups`                | Obnovitev: ista končna točka z `{tool, backupId}` v telesu obnovi navedeno varnostno kopijo                                                                              |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Stanje posredniškega strežnika MITM Antigravity (orodje CLI »antigravity-mitm«)                                                                                          |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | Konfigurira vzdevke antigravity-mitm                                                                                                                                     |
 
 **Preverjanje pristnosti:** Zahteva upravljavsko sejo.
 

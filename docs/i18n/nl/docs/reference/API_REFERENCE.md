@@ -1607,19 +1607,19 @@ Endpoints die uitsluitend voor beheerders zijn bedoeld voor operationeel beheer.
 
 ## Beheer van CLI-tools
 
-Beheer CLI-tools die met OmniRoute integreren (antigravity, chipotle, commandCode,
+Beheer CLI-tools die met OmniRoute integreren (antigravity, commandCode,
 devin-cli, enz.). Zie [Providerreferentie](./PROVIDER_REFERENCE.md) voor de volledige lijst.
 
-| Methode | Pad                                     | Beschrijving                                                                                                                                                                             |
-| ------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET     | `/api/cli-tools/all-statuses`           | Status van alle CLI-tools (geïnstalleerd, versie, laatst gezien)                                                                                                                         |
-| GET     | `/api/cli-tools/status`                 | Statusdetails voor één CLI-tool (`?tool=`-query)                                                                                                                                         |
-| POST    | `/api/cli-tools/apply`                  | Gegenereerde configuratie van een tool schrijven (`dryRun` toont een voorbeeld; `422` + `containerEphemeralTarget` indien gecontaineriseerd; `migration` vermeldt verouderde Codex-YAML) |
-| GET     | `/api/cli-tools/backups`                | Back-ups van CLI-toolconfiguraties weergeven                                                                                                                                             |
-| POST    | `/api/cli-tools/backups`                | Een back-up van alle CLI-toolconfiguraties maken                                                                                                                                         |
-| POST    | `/api/cli-tools/backups`                | Herstellen: hetzelfde endpoint met `{tool, backupId}` in de body herstelt die back-up                                                                                                    |
-| GET     | `/api/cli-tools/antigravity-mitm`       | Status van de Antigravity-MITM-proxy (de CLI-tool "antigravity-mitm")                                                                                                                    |
-| POST    | `/api/cli-tools/antigravity-mitm/alias` | Aliassen voor antigravity-mitm configureren                                                                                                                                              |
+| Methode | Pad                                     | Beschrijving                                                                                                                                                                                      |
+| ------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET     | `/api/cli-tools/all-statuses`           | Status van alle CLI-tools (geïnstalleerd, versie, laatst gezien)                                                                                                                                  |
+| GET     | `/api/cli-tools/status`                 | Statusdetails voor één CLI-tool (`?tool=`-query)                                                                                                                                                  |
+| POST    | `/api/cli-tools/apply`                  | Schrijft de gegenereerde configuratie van een tool (`dryRun` toont een voorbeeld; `422` + `containerEphemeralTarget` bij uitvoering in een container; `migration` vermeldt verouderde Codex-YAML) |
+| GET     | `/api/cli-tools/backups`                | Geeft een lijst met back-ups van CLI-toolconfiguraties                                                                                                                                            |
+| POST    | `/api/cli-tools/backups`                | Maakt een back-up van alle CLI-toolconfiguraties                                                                                                                                                  |
+| POST    | `/api/cli-tools/backups`                | Herstellen: hetzelfde endpoint met `{tool, backupId}` in de body herstelt die back-up                                                                                                             |
+| GET     | `/api/cli-tools/antigravity-mitm`       | Status van de Antigravity MITM-proxy (de CLI-tool "antigravity-mitm")                                                                                                                             |
+| POST    | `/api/cli-tools/antigravity-mitm/alias` | Configureert aliassen voor antigravity-mitm                                                                                                                                                       |
 
 **Authenticatie:** Vereist een beheersessie.
 

@@ -67,9 +67,9 @@ recuo exponencial de `minRetryCooldownMs → maxRetryCooldownMs`. Substituiçõe
 `OMNIROUTE_PROVIDER_BREAKER_{OAUTH,API_KEY}_{FAILURE_THRESHOLD,FAILURE_WINDOW_MS,COOLDOWN_MS}`.
 Proteção contra regressão: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
-## 2. Tempo de espera da conexão
+## 2. Cooldown de conexão
 
-**Escopo:** uma única conexão/conta/chave do provedor.
+**Escopo:** uma única conexão/conta/chave de provedor.
 
 **Finalidade:** ignorar uma chave com problema enquanto outras conexões do mesmo provedor continuam atendendo.
 
@@ -77,134 +77,154 @@ Proteção contra regressão: `tests/unit/provider-cooldown-window-gate.test.ts`
 
 - Marcar como indisponível: `src/sse/services/auth.ts::markAccountUnavailable()`
 - Seleção: `getProviderCredentials*` no mesmo arquivo
-- Cálculo do tempo de espera: `open-sse/services/accountFallback.ts::checkFallbackError()`
+- Cálculo do cooldown: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Configurações: `src/lib/resilience/settings.ts`
 
 **Campos por conexão:**
 
-- `rateLimitedUntil` — timestamp até o fim do tempo de espera
+- `rateLimitedUntil` — timestamp até o cooldown expirar
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
 - `backoffLevel` — contador de backoff exponencial
 
-**Tempos de espera padrão:**
+**Cooldowns padrão:**
 
 - Base do OAuth: 5s
 - Base da chave de API: 3s
-- Chave de API com 429: prioriza cabeçalhos upstream `Retry-After`/de redefinição/texto de redefinição interpretável
+- 429 de chave de API: dá preferência a cabeçalhos upstream `Retry-After`/de redefinição/texto de redefinição analisável
 - Backoff: `baseCooldownMs * 2 ** failureIndex`
 
-**Proteção contra efeito manada:** impede que falhas simultâneas prolonguem excessivamente o tempo de espera ou incrementem `backoffLevel` duas vezes.
+**Proteção antiefeito-manada:** impede que falhas simultâneas prolonguem excessivamente o cooldown ou incrementem `backoffLevel` duas vezes.
 
-**Estados terminais (NÃO são tempos de espera):**
+**Estados terminais (NÃO são cooldowns):**
 
-- `banned` — definido pela detecção de palavra-chave de banimento/banimento de conta (consulte [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (transita para o estado terminal após um número limitado de novas tentativas — `EXPIRED_RETRY_MAX = 3` com backoff exponencial — para que erros transitórios de OAuth possam se corrigir antes que a conta seja permanentemente desativada)
+- `banned` — definido pela detecção de palavra-chave de banimento / banimento de conta (consulte [BAN_DETECTION](../security/BAN_DETECTION.md)) e por três recusas upstream consecutivas por solicitação (`request_rejected`, por exemplo, Anthropic OAuth 403 "Request not allowed" — `open-sse/services/requestRejectedStreak.ts`); uma única recusa apenas coloca a conexão em cooldown
+- `expired` (faz a transição para o estado terminal após um número limitado de novas tentativas — `EXPIRED_RETRY_MAX = 3` com backoff exponencial — para que erros transitórios de OAuth possam se autorrecuperar antes que a conta seja permanentemente desativada)
 - `credits_exhausted`
 
-Esses estados persistem até que as credenciais sejam alteradas ou que um operador os redefina. Não substitua estados terminais por um estado transitório de tempo de espera.
+Esses estados persistem até que as credenciais sejam alteradas ou um operador os redefina. Não substitua estados terminais por um estado de cooldown transitório.
 
-**Recuperação preguiçosa:** quando `rateLimitedUntil` fica no passado, a conexão volta a ser elegível. Após o uso bem-sucedido, `clearAccountError()` limpa todos os campos de erro.
+**Recuperação preguiçosa:** quando `rateLimitedUntil` já passou, a conexão volta a ser elegível. Após o uso bem-sucedido, `clearAccountError()` limpa todos os campos de erro.
 
 ### Afinidade de sessão (#7274)
 
 **Escopo:** uma sessão de cliente (`X-Session-Id` / `x-codex-session-id` / cabeçalho `x-omniroute-session`) fixada a uma conexão, para **qualquer** provedor.
 
-**Finalidade:** manter um agente com vários turnos (Claude Code, aider, agentes personalizados) na mesma conta entre requisições, reduzindo a perda de contexto entre contas e erros 429 repetidos de inicialização a frio em provedores com estado de sessão por conta.
+**Finalidade:** manter um agente de múltiplos turnos (Claude Code, aider, agentes personalizados) na mesma conta entre solicitações, reduzindo a perda de contexto entre contas e ocorrências repetidas de 429 em inicializações a frio em provedores com estado de sessão por conta.
 
 **Implementação:**
 
 - Resolução do TTL: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Seleção/criação da fixação: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
-- Extração do cabeçalho (genérica, para qualquer provedor): `src/sse/services/auth.ts::extractSessionAffinityKey()`
+- Extração de cabeçalho (genérica, para qualquer provedor): `src/sse/services/auth.ts::extractSessionAffinityKey()`
 - Tabela persistida de fixações: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Configuração: `sessionAffinityTtlMs` (TTL global em ms, `0` desabilita) — `src/lib/db/settings.ts`. Renomeada da configuração exclusiva do Codex `codexSessionAffinityTtlMs` pela migração `124_generic_session_affinity_ttl.sql`, que transfere qualquer TTL do Codex configurado anteriormente como o novo padrão.
+- Configuração: `sessionAffinityTtlMs` (TTL global em ms, `0` desabilita) — `src/lib/db/settings.ts`. Renomeada de `codexSessionAffinityTtlMs`, específica do Codex, pela migração `124_generic_session_affinity_ttl.sql`, que transfere qualquer TTL do Codex configurado anteriormente como o novo padrão.
 
-Antes da #7274, `resolveSessionAffinityTtlMs()` retornava imediatamente `0` para todos os provedores, exceto `codex`; portanto, a configuração de TTL (e os cabeçalhos de sessão) não tinha efeito em nenhum outro lugar, embora o mecanismo de fixação e a extração de cabeçalhos já fossem independentes do provedor. A correção removeu esse retorno antecipado; agora, o TTL se aplica uniformemente a todos os provedores quando definido globalmente com um valor acima de `0`.
+Antes da #7274, `resolveSessionAffinityTtlMs()` retornava imediatamente `0` para todos os provedores, exceto `codex`; portanto, a configuração de TTL (e os cabeçalhos de sessão) não produzia efeito em nenhum outro lugar, embora o mecanismo de fixação e a extração de cabeçalhos já fossem independentes do provedor. A correção removeu esse retorno antecipado; agora, o TTL é aplicado uniformemente a todos os provedores quando definido globalmente com um valor acima de `0`.
 
-Os três cabeçalhos de afinidade de sessão nunca são encaminhados para o upstream — os executores criam seus próprios cabeçalhos upstream do zero, em vez de repassar os cabeçalhos do cliente; portanto, isso permanece apenas como um ID de correlação interno.
+Os três cabeçalhos de afinidade de sessão nunca são encaminhados ao upstream — os executores constroem do zero seus próprios cabeçalhos upstream em vez de repassar os cabeçalhos do cliente, portanto eles permanecem apenas como identificadores internos de correlação.
 
 ### Locações exclusivas de conexão para sessões gerenciadas
 
 **Escopo:** um cliente/sessão HTTP gerenciado ativo possui uma conexão elegível do OmniRoute.
 
-**Finalidade:** fornecer posse exclusiva e durável da conexão para clientes que precisam de uma barreira rígida de roteamento entre requisições. Isso difere da afinidade de sessão, que é uma preferência flexível de continuidade: uma locação exclusiva persiste o estado do ciclo de vida no SQLite, impõe a unicidade global do proprietário ativo e da conexão ativa e rejeita uma geração obsoleta antes do despacho ao provedor.
+**Finalidade:** fornecer a clientes que precisam de uma barreira rígida de roteamento entre solicitações a propriedade exclusiva e durável de uma conexão. Isso difere da afinidade de sessão, que é uma preferência flexível de continuidade: uma locação exclusiva mantém o estado do ciclo de vida no SQLite, impõe a unicidade global do proprietário ativo e da conexão ativa e rejeita uma geração obsoleta antes do despacho ao provedor.
 
-O recurso é opcional para cada chave de API. Uma chave gerenciada deve ter o escopo `lease:exclusive` e uma lista `allowedConnections` explícita e não vazia. Qualquer cliente HTTP pode usar o endpoint de ciclo de vida; não é necessário informar nome do cliente, user-agent, provedor, método OAuth ou modelo. A locação possui uma conexão, não um modelo; portanto, uma alteração de modelo mantém o vínculo enquanto a conexão permanecer normalmente elegível. As regras normais de modelo, cota, integridade, tempo de espera e lista de permissões continuam tendo precedência e podem transferir a mesma geração para outra conexão livre e elegível.
+O recurso é opcional para cada chave de API. Uma chave gerenciada deve ter o escopo `lease:exclusive` e uma lista `allowedConnections` explicitamente não vazia. Qualquer cliente HTTP pode usar o endpoint de ciclo de vida; não são necessários nome do cliente, user-agent, provedor, método OAuth nem modelo. A locação possui uma conexão, não um modelo; portanto, uma alteração de modelo mantém o vínculo enquanto a conexão permanecer normalmente elegível. As regras normais de modelo, cota, integridade, cooldown e lista de permissões continuam tendo precedência e podem transferir a mesma geração para outra conexão livre e elegível.
 
-O ciclo de vida usa `POST /api/v1/session-leases` com as ações JSON `acquire`, `renew` e `release`. As requisições de inferência gerenciadas apresentam o valor opaco `X-OmniRoute-Lease-Owner` e o valor exato de `X-OmniRoute-Lease-Generation`. O proprietário usa `vlo_` seguido por 43 caracteres base64url; apenas seu hash SHA-256 é armazenado. Cada barreira final de despacho também vincula o ID da chave de API autenticada e o ID da conexão ativa. Os cabeçalhos de controle da locação são removidos dos logs, dos snapshots de requisição retidos e dos cabeçalhos dos executores upstream.
+O ciclo de vida é `POST /api/v1/session-leases` com as ações JSON `acquire`, `renew` e `release`. As solicitações gerenciadas de inferência apresentam o valor opaco de `X-OmniRoute-Lease-Owner` e o valor exato de `X-OmniRoute-Lease-Generation`. O proprietário usa `vlo_` seguido por 43 caracteres base64url; somente seu hash SHA-256 é armazenado. Cada barreira final de despacho também vincula o ID da chave de API autenticada e o ID da conexão ativa. Os cabeçalhos de controle da locação são removidos dos logs, dos snapshots de solicitação retidos e dos cabeçalhos dos executores upstream.
 
-Se o roteamento comum tiver candidatos gerenciados elegíveis, mas todos os candidatos livres estiverem ocupados por uma locação ativa externa, o OmniRoute retornará HTTP `429`, um código de indisponibilidade de capacidade de locação, um estado de espera por capacidade e um `Retry-After` limitado, derivado da expiração relevante mais próxima. A ausência comum de elegibilidade não representa contenção de locação e mantém a semântica de erro de roteamento existente.
+Se o roteamento normal tiver candidatos gerenciados elegíveis, mas todos os candidatos livres estiverem ocupados por uma locação ativa estrangeira, o OmniRoute retornará HTTP `429`, o código lease-capacity-unavailable, um estado de espera por capacidade e um `Retry-After` limitado, derivado da expiração relevante mais próxima. A ausência normal de elegibilidade não constitui contenção de locação e mantém a semântica de erro de roteamento existente.
 
 Os mecanismos relacionados permanecem separados:
 
-- A ocupação de sessão OAuth é uma distribuição flexível de contas OAuth, local ao processo.
-- Os semáforos de conta concedem permissões de simultaneidade de requisições e terminam quando uma requisição é concluída.
-- As locações exclusivas de conexão para sessões gerenciadas representam posse durável durante o ciclo de vida com uma barreira de geração.
+- A ocupação de sessão OAuth é uma distribuição flexível e local ao processo para contas OAuth.
+- Os semáforos de conta concedem permissões de simultaneidade de solicitações e terminam quando uma solicitação é concluída.
+- As locações exclusivas de sessão gerenciada representam propriedade durável durante o ciclo de vida, com uma barreira de geração.
 
 ---
 
 ## 3. Bloqueio de modelo
 
-**Escopo:** combinação de provedor + conexão + modelo.
+**Escopo:** trio de provedor + conexão + modelo.
+
+**Escopo da chave por status:** o status da falha determina em qual chave um bloqueio é gravado
+(`resolveLockoutScope()` em `open-sse/services/accountFallback/exactModelLock.ts`):
+
+- `429` / `403` / `402` — um sinal de cota ou direito de acesso — bloqueiam a **família de cota**:
+  para codex, todo o escopo `codex` / `spark` (todos os modelos `gpt-5*` da
+  conexão); para outros provedores, `getQuotaScopedModelForProvider()`.
+- `404` bloqueia o modelo específico (`getModelLockKey()` restringe `not_found`).
+- Qualquer outro status — falhas de transporte/servidor `5xx` e o `502`
+  sintetizado pelo próprio OmniRoute a partir da validação de qualidade — bloqueia somente a
+  tupla **exata** de provedor/conexão/modelo. Um stream inválido em um modelo não é evidência
+  sobre a cota da conta; antes dessa regra, uma resposta vazia em
+  `codex/gpt-5.6-luna` removia todos os modelos `gpt-5*` dessa conexão do
+  roteamento por 2–30 min (com escalonamento), mesmo que sua cota permanecesse intacta.
+- A opção explícita `scope` do chamador sempre prevalece (Antigravity passa `"exact"`).
 
 **Objetivo:** evitar desabilitar uma conexão inteira quando apenas um modelo está indisponível ou com a cota limitada.
 
 **Exemplos:**
 
 - Provedores com cota por modelo retornando 429
-- Provedores locais retornando 404 para um modelo ausente
+- Provedores locais retornando 404 para um único modelo ausente
 - Falhas de permissão específicas do provedor para modos/modelos (por exemplo, modos do Grok)
 
 **Implementação:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
-### Painel de tempos de espera dos modelos (v3.8.0)
+### Painel de períodos de espera dos modelos (v3.8.0)
 
-Interface: Configurações → Tempos de espera dos modelos (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
+IU: Configurações → Períodos de espera dos modelos (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-Lista os bloqueios ativos com: provedor, conexão, modelo, motivo e expiresAt. Os operadores podem reabilitar manualmente um modelo por meio do cartão.
+Lista os bloqueios ativos com: provedor, conexão, modelo, motivo, expiresAt. Os operadores podem reabilitar manualmente um modelo pelo cartão.
 
 **API REST:**
 
 - `GET /api/resilience/model-cooldowns` — lista os bloqueios ativos
-- `DELETE /api/resilience/model-cooldowns` — reabilitação manual. Corpo: `{provider, connection, model}`. Autenticação: gerenciamento.
+- `DELETE /api/resilience/model-cooldowns` — reabilitação manual. Corpo: `{provider, connection, model}`. Autorização: gerenciamento.
 
-### Interface de configurações de bloqueio + recuperação por redução após sucesso (v3.8.23)
+### IU de configurações de bloqueio + recuperação por decaimento após sucesso (v3.8.23)
 
-O bloqueio de modelo deixou de ser um comportamento codificado e sempre ativo para se tornar um recurso totalmente configurável e opcional, com seu próprio cartão de configurações e um mecanismo de recuperação automática.
+O bloqueio de modelo deixou de ser um comportamento codificado e sempre ativo para se tornar um recurso
+totalmente configurável e opcional, com seu próprio cartão de configurações e um mecanismo de recuperação automática.
 
 **Cartão de configurações:** Configurações → Bloqueio de modelo
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
 Ele é **diferente** do `ModelCooldownsCard` somente leitura acima (que apenas
 _lista_ os bloqueios ativos) — o novo cartão _configura os parâmetros_. Os valores padrão
-estão em `DEFAULT_MODEL_LOCKOUT_SETTINGS`
+ficam em `DEFAULT_MODEL_LOCKOUT_SETTINGS`
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
-| Configuração            | Padrão                           | Significado                                                             |
-| ----------------------- | -------------------------------- | ----------------------------------------------------------------------- |
-| `enabled`               | `false`                          | Controle mestre — o bloqueio de modelo fica **desativado por padrão**.  |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Status do serviço upstream que contam como falha específica do modelo.  |
-| `baseCooldownMs`        | `120_000` (120 s)                | Duração inicial do bloqueio para a primeira falha.                      |
-| `maxCooldownMs`         | `1_800_000` (30 min)             | Limite máximo do tempo de espera escalonado.                            |
-| `maxBackoffSteps`       | `10`                             | Número máximo de etapas de escalonamento do recuo exponencial.          |
-| `useExponentialBackoff` | `true`                           | Define se falhas repetidas aumentam exponencialmente o tempo de espera. |
+| Configuração            | Padrão                           | Significado                                                               |
+| ----------------------- | -------------------------------- | ------------------------------------------------------------------------- |
+| `enabled`               | `false`                          | Controle mestre — o bloqueio de modelo fica **desativado por padrão**.    |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Status do upstream que contam como falha no escopo do modelo.             |
+| `baseCooldownMs`        | `120_000` (120 s)                | Duração inicial do bloqueio para a primeira falha.                        |
+| `maxCooldownMs`         | `1_800_000` (30 min)             | Limite máximo do período de espera escalonado.                            |
+| `maxBackoffSteps`       | `10`                             | Número máximo de etapas de escalonamento por recuo exponencial.           |
+| `useExponentialBackoff` | `true`                           | Define se falhas repetidas aumentam exponencialmente o período de espera. |
 
 As configurações persistem por meio do armazenamento normal de configurações e são validadas pelo
 esquema de configurações de resiliência; o cartão limita `baseCooldownMs`/`maxCooldownMs`
 (com `maxCooldownMs ≥ baseCooldownMs`) e `maxBackoffSteps`.
 
-**Recuperação por redução após sucesso:** a recuperação **não** depende apenas da expiração do temporizador. Uma resposta saudável reduz gradualmente a contagem de falhas do modelo, de modo que um modelo que se recuperou no meio do período deixe de sofrer escalonamento (e tenha o bloqueio removido) antes do fim do temporizador. Quando um destino de combinação responde com sucesso, `open-sse/services/combo.ts` chama `decayModelFailureCount()`
+**Recuperação por decaimento após sucesso:** a recuperação **não** ocorre somente pela expiração do temporizador. Uma resposta
+bem-sucedida reduz gradualmente a contagem de falhas do modelo para que um modelo que se recuperou
+durante o intervalo pare de escalar (e seja liberado) antes que seu temporizador expire. Quando um
+destino de combinação tem sucesso, `open-sse/services/combo.ts` chama `decayModelFailureCount()`
 (`open-sse/services/accountFallback.ts`), que reduz pela **metade** o
-`failureCount` armazenado (`Math.floor(failureCount / 2)`); quando ele chega a `0`, a entrada de bloqueio
-é excluída por completo. A função correspondente `recordModelLockoutFailure()`
-incrementa a contagem (e aumenta o tempo de espera) em caso de falhas dentro da
-janela de escalonamento. Essa redução após sucesso complementa a simples expiração do temporizador —
+`failureCount` armazenado (`Math.floor(failureCount / 2)`); quando ele chega a `0`, a entrada
+de bloqueio é completamente excluída. A função correspondente `recordModelLockoutFailure()`
+incrementa a contagem (e aumenta o período de espera) em caso de falhas dentro da
+janela de escalonamento. Esse decaimento após sucesso complementa a simples expiração do temporizador —
 qualquer um dos caminhos pode reabilitar um modelo.
 
 **Estado:** os bloqueios são mantidos **em memória** (`Map`s por processo de
-`ModelLockoutEntry`, indexados por `provider:connectionId:model`), e não persistem no
-banco de dados — eles são perdidos após uma reinicialização. As _configurações_ são persistidas; o _estado_
-dos bloqueios ativos é efêmero.
+`ModelLockoutEntry` indexados por `provider:connectionId:model`, com bloqueios de escopo exato por
+`provider:connectionId:exact:model`), sem persistência no
+banco de dados — eles são perdidos ao reiniciar. As _configurações_ são persistidas; o
+_estado_ dos bloqueios ativos é efêmero.
 
 ---
 
@@ -604,11 +624,12 @@ um limite de taxa agrupado por IP é o mesmo sinal de uma cota esgotada. Limites
 
 ## Depuração
 
+- Respostas da combinação ponderada `503 all_targets_cooling_down` (`Retry-After` definido, `diagnostics.excluded` lista todos os destinos com `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → o pool está configurado e conectado; todos os destinos estão apenas excluídos por um temporizador de resiliência. O aviso `[COMBO] Weighted selection: every target excluded before dispatch — …` informa os motivos e os segundos restantes. Um `404 no_executable_targets` da mesma combinação significa que nenhum temporizador de resiliência esteve envolvido (não há nada para executar ou todas as contas falharam na verificação de disponibilidade). Implementado em `open-sse/services/combo/pinRecovery.ts` com base nas exclusões coletadas em `targetResolution.ts`.
 - Todas as chaves de um provedor foram ignoradas → verifique tanto o estado do circuit breaker QUANTO o `rateLimitedUntil`/`testStatus` de cada conexão.
 - Provedor permanentemente excluído após a janela de redefinição → o código está lendo o `state` bruto em vez de `getStatus()`/`canExecute()`.
-- Uma chave falha, mas as outras devem funcionar → prefira o cooldown da conexão ao circuit breaker.
+- Uma chave falha, mas as outras deveriam funcionar → prefira o cooldown da conexão ao circuit breaker.
 - Apenas um modelo falha → prefira o bloqueio do modelo ao cooldown da conexão.
-- O estado deveria se recuperar automaticamente, mas isso não ocorre → verifique se há um timestamp futuro e um caminho de leitura que atualize o estado expirado. Status permanentes exigem alterações manuais.
+- O estado deveria se recuperar automaticamente, mas não se recupera → verifique se há um timestamp futuro e um caminho de leitura que atualize o estado expirado. Status permanentes exigem alterações manuais.
 
 ---
 

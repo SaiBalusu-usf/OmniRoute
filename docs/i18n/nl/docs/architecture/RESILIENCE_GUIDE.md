@@ -66,50 +66,50 @@ exponentiële back-off `minRetryCooldownMs → maxRetryCooldownMs` gebruiken. Ov
 `OMNIROUTE_PROVIDER_BREAKER_{OAUTH,API_KEY}_{FAILURE_THRESHOLD,FAILURE_WINDOW_MS,COOLDOWN_MS}`.
 Regressiebeveiliging: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
-## 2. Verbindingscooldown
+## 2. Afkoelperiode voor verbindingen
 
 **Bereik:** één providerverbinding/account/sleutel.
 
-**Doel:** één slechte sleutel overslaan terwijl andere verbindingen voor dezelfde provider aanvragen blijven verwerken.
+**Doel:** één ongeldige sleutel overslaan terwijl andere verbindingen voor dezelfde provider verzoeken blijven verwerken.
 
 **Implementatie:**
 
 - Als niet beschikbaar markeren: `src/sse/services/auth.ts::markAccountUnavailable()`
 - Selectie: `getProviderCredentials*` in hetzelfde bestand
-- Cooldownberekening: `open-sse/services/accountFallback.ts::checkFallbackError()`
+- Berekening van afkoelperiode: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Instellingen: `src/lib/resilience/settings.ts`
 
 **Velden per verbinding:**
 
-- `rateLimitedUntil` — tijdstempel waarop de cooldown verloopt
+- `rateLimitedUntil` — tijdstempel waarop de afkoelperiode afloopt
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
 - `backoffLevel` — teller voor exponentiële back-off
 
-**Standaardcooldowns:**
+**Standaardafkoelperioden:**
 
-- OAuth-basis: 5 s
-- API-sleutelbasis: 3 s
-- API-sleutel bij 429: geeft de voorkeur aan upstream-`Retry-After`-/resetheaders/parseerbare resettekst
+- OAuth-basis: 5s
+- API-sleutelbasis: 3s
+- API-sleutel 429: geeft de voorkeur aan upstream `Retry-After`-/resetheaders/parseerbare resettekst
 - Back-off: `baseCooldownMs * 2 ** failureIndex`
 
-**Bescherming tegen een thundering herd:** voorkomt dat gelijktijdige fouten de cooldown buitensporig verlengen of `backoffLevel` dubbel verhogen.
+**Beveiliging tegen een thundering herd:** voorkomt dat gelijktijdige fouten de afkoelperiode overmatig verlengen of `backoffLevel` dubbel verhogen.
 
-**Terminale statussen (GEEN cooldowns):**
+**Terminale statussen (GEEN afkoelperioden):**
 
-- `banned` — ingesteld door detectie van verboden trefwoorden/accountblokkering (zie [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (gaat na een begrensd aantal nieuwe pogingen over naar een terminale status — `EXPIRED_RETRY_MAX = 3` met exponentiële back-off — zodat tijdelijke OAuth-fouten zichzelf kunnen herstellen voordat het account permanent wordt gedeactiveerd)
+- `banned` — ingesteld door detectie van verboden trefwoorden/accountblokkeringen (zie [BAN_DETECTION](../security/BAN_DETECTION.md)) en door drie opeenvolgende upstreamweigeringen per verzoek (`request_rejected`, bijvoorbeeld Anthropic OAuth 403 "Request not allowed" — `open-sse/services/requestRejectedStreak.ts`); één weigering activeert alleen een afkoelperiode voor de verbinding
+- `expired` (gaat na een beperkt aantal nieuwe pogingen over naar een terminale status — `EXPIRED_RETRY_MAX = 3` met exponentiële back-off — zodat tijdelijke OAuth-fouten zichzelf kunnen herstellen voordat het account permanent wordt gedeactiveerd)
 - `credits_exhausted`
 
-Deze blijven bestaan totdat de referenties worden gewijzigd of een beheerder ze reset. Overschrijf terminale statussen niet met een tijdelijke cooldownstatus.
+Deze blijven bestaan totdat de referenties wijzigen of een beheerder ze opnieuw instelt. Overschrijf terminale statussen niet met een tijdelijke afkoelstatus.
 
-**Luie herstelprocedure:** wanneer `rateLimitedUntil` verstreken is, komt de verbinding weer in aanmerking. Na succesvol gebruik wist `clearAccountError()` alle foutvelden.
+**Luie herstelprocedure:** wanneer `rateLimitedUntil` verstreken is, komt de verbinding opnieuw in aanmerking. Na succesvol gebruik wist `clearAccountError()` alle foutvelden.
 
-### Sessieaffiniteit (#7274)
+### Sessietoewijzing (#7274)
 
 **Bereik:** één clientsessie (`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`-header) die voor **elke** provider aan één verbinding is gekoppeld.
 
-**Doel:** een agent met meerdere beurten (Claude Code, aider, aangepaste agents) voor opeenvolgende aanvragen op hetzelfde account houden, zodat contextverlies tussen accounts en herhaalde cold-start-429-fouten bij providers met sessiestatus per account worden beperkt.
+**Doel:** een agent met meerdere interactierondes (Claude Code, aider, aangepaste agents) voor opeenvolgende verzoeken op hetzelfde account houden, waardoor contextverlies tussen accounts en herhaalde 429-fouten door een koude start worden verminderd bij providers met een sessiestatus per account.
 
 **Implementatie:**
 
@@ -117,29 +117,29 @@ Deze blijven bestaan totdat de referenties worden gewijzigd of een beheerder ze 
 - Selectie/aanmaak van koppeling: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
 - Headerextractie (generiek, elke provider): `src/sse/services/auth.ts::extractSessionAffinityKey()`
 - Persistente koppelingstabel: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Instelling: `sessionAffinityTtlMs` (globale TTL in ms, `0` schakelt deze uit) — `src/lib/db/settings.ts`. Hernoemd van de uitsluitend voor Codex bestemde `codexSessionAffinityTtlMs` door migratie `124_generic_session_affinity_ttl.sql`, die een eventueel eerder geconfigureerde Codex-TTL overneemt als de nieuwe standaardwaarde.
+- Instelling: `sessionAffinityTtlMs` (globale TTL in ms, `0` schakelt deze uit) — `src/lib/db/settings.ts`. Hernoemd van de uitsluitend voor Codex bedoelde `codexSessionAffinityTtlMs` door migratie `124_generic_session_affinity_ttl.sql`, die een eerder geconfigureerde Codex-TTL overneemt als de nieuwe standaardwaarde.
 
-Vóór #7274 brak `resolveSessionAffinityTtlMs()` voor elke provider behalve `codex` onmiddellijk af met `0`, waardoor de TTL-instelling (en de sessieheaders) nergens anders effect hadden, hoewel het koppelingsmechanisme en de headerextractie al provideronafhankelijk waren. De oplossing verwijderde die vroegtijdige return; de TTL geldt nu uniform voor elke provider zodra deze globaal op een waarde groter dan `0` is ingesteld.
+Vóór #7274 stopte `resolveSessionAffinityTtlMs()` voor elke provider behalve `codex` direct met `0`, waardoor de TTL-instelling (en de sessieheaders) nergens anders effect hadden, hoewel het koppelingsmechanisme en de headerextractie al provideronafhankelijk waren. De oplossing verwijderde die voortijdige return; de TTL geldt nu uniform voor elke provider zodra deze globaal op een waarde hoger dan `0` is ingesteld.
 
-De drie sessieaffiniteitsheaders worden nooit upstream doorgestuurd — executors bouwen hun eigen upstreamheaders vanaf nul op in plaats van clientheaders door te geven, zodat dit uitsluitend een interne correlatie-ID blijft.
+De drie headers voor sessietoewijzing worden nooit upstream doorgestuurd — uitvoerders bouwen hun eigen upstreamheaders volledig opnieuw op in plaats van clientheaders door te geven, zodat dit uitsluitend een interne correlatie-ID blijft.
 
 ### Exclusieve leases voor verbindingen van beheerde sessies
 
-**Bereik:** één actieve beheerde HTTP-client/-sessie is eigenaar van één in aanmerking komende OmniRoute-verbinding.
+**Bereik:** één actieve beheerde HTTP-client/sessie is eigenaar van één in aanmerking komende OmniRoute-verbinding.
 
-**Doel:** duurzaam exclusief eigenaarschap van verbindingen bieden aan clients die tussen aanvragen een harde routeringsgrens nodig hebben. Dit verschilt van sessieaffiniteit, die een zachte continuïteitsvoorkeur is: een exclusieve lease bewaart de levenscyclusstatus in SQLite, dwingt globale uniciteit van de actieve eigenaar en actieve verbinding af en weigert een verouderde generatie vóór dispatch naar de provider.
+**Doel:** duurzaam exclusief eigendom van een verbinding bieden aan clients die een harde routeringsgrens tussen verzoeken nodig hebben. Dit verschilt van sessietoewijzing, die een zachte voorkeur voor continuïteit is: een exclusieve lease bewaart de levenscyclusstatus in SQLite, dwingt globale uniciteit van de actieve eigenaar en actieve verbinding af en weigert een verouderde generatie voordat verzending naar de provider plaatsvindt.
 
-De functie wordt per API-sleutel expliciet ingeschakeld. Een beheerde sleutel moet het bereik `lease:exclusive` en een expliciete, niet-lege lijst `allowedConnections` hebben. Elke HTTP-client kan het levenscycluseindpunt gebruiken; er is geen clientnaam, user-agent, provider, OAuth-methode of model vereist. De lease bezit een verbinding, niet een model, zodat bij een modelwijziging de koppeling behouden blijft zolang de verbinding normaal gesproken in aanmerking blijft komen. De normale regels voor model, quota, status, cooldown en allowlist blijven bepalend en kunnen dezelfde generatie naar een andere vrije, in aanmerking komende verbinding laten overgaan.
+De functie kan per API-sleutel worden ingeschakeld. Een beheerde sleutel moet het bereik `lease:exclusive` en een expliciete, niet-lege lijst `allowedConnections` hebben. Elke HTTP-client kan het levenscycluseindpunt gebruiken; er is geen clientnaam, user-agent, provider, OAuth-methode of model vereist. De lease is eigenaar van een verbinding, niet van een model, zodat bij een modelwijziging de koppeling behouden blijft zolang de verbinding normaal gesproken in aanmerking blijft komen. De normale regels voor modellen, quota, status, afkoelperioden en toelatingslijsten blijven leidend en kunnen dezelfde generatie overzetten naar een andere vrije, in aanmerking komende verbinding.
 
-De levenscyclus gebruikt `POST /api/v1/session-leases` met de JSON-acties `acquire`, `renew` en `release`. Beheerde inferentieaanvragen bevatten de ondoorzichtige waarde `X-OmniRoute-Lease-Owner` en de exacte `X-OmniRoute-Lease-Generation`. De eigenaar gebruikt `vlo_`, gevolgd door 43 base64url-tekens; alleen de SHA-256-hash ervan wordt opgeslagen. Elke definitieve dispatchgrens koppelt ook de ID van de geauthenticeerde API-sleutel en de ID van de actieve verbinding. Leasebeheerheaders worden verwijderd uit logs, bewaarde snapshots van aanvragen en upstreamheaders van executors.
+De levenscyclus gebruikt `POST /api/v1/session-leases` met de JSON-acties `acquire`, `renew` en `release`. Beheerde inferentieverzoeken bevatten de ondoorzichtige waarde `X-OmniRoute-Lease-Owner` en de exacte `X-OmniRoute-Lease-Generation`. De eigenaar gebruikt `vlo_`, gevolgd door 43 base64url-tekens; alleen de SHA-256-hash ervan wordt opgeslagen. Elke definitieve verzendingscontrole wordt ook gekoppeld aan de ID van de geauthenticeerde API-sleutel en de ID van de actieve verbinding. Headers voor leasebeheer worden verwijderd uit logboeken, bewaarde momentopnamen van verzoeken en headers van upstreamuitvoerders.
 
-Als normale routering in aanmerking komende beheerde kandidaten heeft, maar elke vrije kandidaat door een externe actieve lease bezet is, retourneert OmniRoute HTTP `429`, een code voor niet-beschikbare leasecapaciteit, een status die aangeeft dat op capaciteit wordt gewacht en een begrensde `Retry-After` die is afgeleid van het vroegste relevante verloopmoment. Een normaal gebrek aan geschikte kandidaten is geen leaseconflict en behoudt de bestaande semantiek voor routeringsfouten.
+Als de normale routering in aanmerking komende beheerde kandidaten heeft, maar elke vrije kandidaat bezet is door een externe actieve lease, retourneert OmniRoute HTTP `429`, de code voor niet-beschikbare leasecapaciteit, een status die aangeeft dat op capaciteit wordt gewacht en een begrensde `Retry-After` die is afgeleid van het vroegste relevante vervaltijdstip. Normale lege geschiktheid is geen leaseconflict en behoudt de bestaande semantiek voor routeringsfouten.
 
 Gerelateerde mechanismen blijven gescheiden:
 
-- OAuth-sessiebezetting is proceslokale zachte distributie voor OAuth-accounts.
-- Accountsemaforen verlenen toestemmingen voor gelijktijdige aanvragen en eindigen wanneer een aanvraag is voltooid.
-- Exclusieve leases voor verbindingen van beheerde sessies bieden duurzaam eigenaarschap gedurende de levenscyclus, met een generatiegrens.
+- Bezetting van OAuth-sessies is een proceslokale, zachte verdeling voor OAuth-accounts.
+- Accountsemaforen verlenen toestemmingen voor gelijktijdige verzoeken en eindigen wanneer een verzoek is voltooid.
+- Exclusieve leases voor verbindingen van beheerde sessies bieden duurzaam eigendom gedurende de levenscyclus, met een generatiecontrole.
 
 ---
 
@@ -147,7 +147,22 @@ Gerelateerde mechanismen blijven gescheiden:
 
 **Bereik:** combinatie van provider + verbinding + model.
 
-**Doel:** voorkomen dat een volledige verbinding wordt uitgeschakeld wanneer slechts één model niet beschikbaar is of een quotumlimiet heeft bereikt.
+**Sleutelbereik per status:** de foutstatus bepaalt naar welke sleutel een vergrendeling
+wordt geschreven (`resolveLockoutScope()` in `open-sse/services/accountFallback/exactModelLock.ts`):
+
+- `429` / `403` / `402` — een quota- of rechtensignaal — vergrendelt de **quotafamilie**:
+  voor codex het volledige `codex`- / `spark`-bereik (elk `gpt-5*`-model van de
+  verbinding), voor andere providers `getQuotaScopedModelForProvider()`.
+- `404` vergrendelt het basismodel (`getModelLockKey()` beperkt `not_found`).
+- Elke andere status — `5xx`-transport-/serverfouten en OmniRoute's eigen
+  gegenereerde `502` uit kwaliteitsvalidatie — vergrendelt alleen de **exacte**
+  combinatie van provider/verbinding/model. Een ongeldige stream voor één model is geen bewijs
+  voor het quota van het account; vóór deze regel verwijderde één leeg antwoord van
+  `codex/gpt-5.6-luna` elk `gpt-5*`-model van die verbinding gedurende
+  2–30 min (oplopend) uit de routering, terwijl het quota onaangetast bleef.
+- Een expliciete `scope`-optie van een aanroeper heeft altijd voorrang (Antigravity geeft `"exact"` door).
+
+**Doel:** voorkomen dat een volledige verbinding wordt uitgeschakeld wanneer slechts één model niet beschikbaar is of door een quota wordt beperkt.
 
 **Voorbeelden:**
 
@@ -157,54 +172,56 @@ Gerelateerde mechanismen blijven gescheiden:
 
 **Implementatie:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
-### Dashboard voor modelafkoelperioden (v3.8.0)
+### Dashboard voor modelafkoelperiodes (v3.8.0)
 
-UI: Instellingen → Modelafkoelperioden (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
+UI: Instellingen → Modelafkoelperiodes (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-Toont actieve vergrendelingen met: provider, verbinding, model, reden, expiresAt. Beheerders kunnen vanuit de kaart handmatig een model opnieuw inschakelen.
+Toont actieve vergrendelingen met: provider, verbinding, model, reden, expiresAt. Beheerders kunnen via de kaart handmatig een model opnieuw inschakelen.
 
-**REST-API:**
+**REST API:**
 
 - `GET /api/resilience/model-cooldowns` — actieve vergrendelingen weergeven
 - `DELETE /api/resilience/model-cooldowns` — handmatig opnieuw inschakelen. Body: `{provider, connection, model}`. Authenticatie: beheer.
 
-### UI voor vergrendelingsinstellingen + herstel via afname bij succes (v3.8.23)
+### UI voor vergrendelingsinstellingen + herstel via verval bij succes (v3.8.23)
 
-Modelvergrendeling is gewijzigd van altijd ingeschakeld, hardgecodeerd gedrag naar een volledig configureerbare, expliciet in te schakelen functie met een eigen instellingenkaart en een zelfherstellend herstelpad.
+Modelvergrendeling veranderde van altijd ingeschakeld, hardgecodeerd gedrag in een volledig configureerbare,
+optionele functie met een eigen instellingenkaart en een zelfherstellend herstelpad.
 
 **Instellingenkaart:** Instellingen → Modelvergrendeling
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-Deze is **onderscheiden** van de alleen-lezenkaart `ModelCooldownsCard` hierboven (die alleen actieve vergrendelingen
-_weergeeft_) — de nieuwe kaart _configureert de parameters_. Standaardwaarden
+Deze is **afzonderlijk** van de alleen-lezen `ModelCooldownsCard` hierboven (die alleen
+actieve vergrendelingen _weergeeft_) — de nieuwe kaart _configureert de parameters_. Standaardwaarden
 staan in `DEFAULT_MODEL_LOCKOUT_SETTINGS`
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
 | Instelling              | Standaardwaarde                  | Betekenis                                                            |
 | ----------------------- | -------------------------------- | -------------------------------------------------------------------- |
 | `enabled`               | `false`                          | Hoofdschakelaar — modelvergrendeling is **standaard uitgeschakeld**. |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Upstreamstatussen die als een modelspecifieke fout gelden.           |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Upstreamstatussen die gelden als een modelspecifieke fout.           |
 | `baseCooldownMs`        | `120_000` (120 s)                | Initiële vergrendelingsduur voor de eerste fout.                     |
 | `maxCooldownMs`         | `1_800_000` (30 min)             | Bovengrens voor de oplopende afkoelperiode.                          |
-| `maxBackoffSteps`       | `10`                             | Maximaal aantal stappen voor exponentieel oplopende wachttijd.       |
+| `maxBackoffSteps`       | `10`                             | Maximaal aantal exponentiële back-off-escalatiestappen.              |
 | `useExponentialBackoff` | `true`                           | Of herhaalde fouten de afkoelperiode exponentieel verlengen.         |
 
-Instellingen worden opgeslagen via de normale instellingenopslag en gevalideerd via het
-schema voor weerbaarheidsinstellingen; de kaart begrenst `baseCooldownMs`/`maxCooldownMs`
-(met `maxCooldownMs ≥ baseCooldownMs`) en `maxBackoffSteps`.
+Instellingen worden opgeslagen via de normale instellingenopslag en gevalideerd met het
+schema voor veerkrachtinstellingen; de kaart begrenst `baseCooldownMs`/`maxCooldownMs`
+(waarbij `maxCooldownMs ≥ baseCooldownMs`) en `maxBackoffSteps`.
 
-**Herstel via afname bij succes:** herstel vindt **niet** uitsluitend plaats doordat de timer verloopt. Een succesvol
-antwoord verlaagt het aantal fouten van het model, zodat een model dat
-halverwege het tijdvenster is hersteld niet verder escaleert en de vergrendeling wordt opgeheven voordat de timer zou verlopen. Bij een succesvol
-combinatiedoel roept `open-sse/services/combo.ts` de functie `decayModelFailureCount()`
-(`open-sse/services/accountFallback.ts`) aan, die de opgeslagen
+**Herstel via verval bij succes:** herstel is **niet** uitsluitend gebaseerd op het verstrijken van de timer. Een gezond
+antwoord verlaagt het aantal fouten van het model stapsgewijs, zodat een model dat
+halverwege het tijdsvenster is hersteld, stopt met escaleren (en wordt vrijgegeven) voordat de timer dat zou doen. Bij een succesvol
+combinatiedoel roept `open-sse/services/combo.ts` `decayModelFailureCount()` aan
+(`open-sse/services/accountFallback.ts`), dat de opgeslagen
 `failureCount` **halveert** (`Math.floor(failureCount / 2)`); wanneer deze `0` bereikt, wordt de vergrendelingsvermelding
 volledig verwijderd. De tegenhanger `recordModelLockoutFailure()`
-verhoogt de telling (en verlengt de afkoelperiode) bij fouten binnen het
-escalatievenster. Deze afname bij succes vormt een aanvulling op het gewone verlopen van de timer —
+verhoogt het aantal (en verlengt de afkoelperiode) bij fouten binnen het
+escalatievenster. Dit verval bij succes komt boven op het reguliere verstrijken van de timer —
 beide paden kunnen een model opnieuw inschakelen.
 
 **Status:** vergrendelingen worden **in het geheugen** bewaard (`Map`s per proces van
-`ModelLockoutEntry`, geïndexeerd op `provider:connectionId:model`) en niet opgeslagen in
+`ModelLockoutEntry`, geïndexeerd op `provider:connectionId:model`, met vergrendelingen met exact bereik geïndexeerd op
+`provider:connectionId:exact:model`) en niet opgeslagen in
 de database — ze gaan verloren bij een herstart. De _instellingen_ worden opgeslagen; de actieve
 _vergrendelingsstatus_ is tijdelijk.
 
@@ -614,11 +631,12 @@ snelheidslimiet hetzelfde signaal als een uitgeput quotum. Eerlijke beperkingen:
 
 ## Foutopsporing
 
-- Alle sleutels voor een provider worden overgeslagen → controleer zowel de status van de circuit breaker ALS de `rateLimitedUntil`/`testStatus` van elke verbinding.
-- Provider permanent uitgesloten na het resetvenster → code leest de onbewerkte `state` in plaats van `getStatus()`/`canExecute()`.
-- Eén sleutel faalt, andere zouden moeten werken → geef de voorkeur aan een afkoelperiode voor de verbinding boven de circuit breaker.
-- Slechts één model faalt → geef de voorkeur aan modelblokkering boven een afkoelperiode voor de verbinding.
-- De status zou zichzelf moeten herstellen, maar doet dat niet → controleer op een toekomstig tijdstempel en een leespad dat een verlopen status vernieuwt. Permanente statussen vereisen handmatige wijzigingen.
+- Antwoorden van een gewogen combinatie met `503 all_targets_cooling_down` (`Retry-After` ingesteld, `diagnostics.excluded` vermeldt elk doel met `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → de pool is geconfigureerd en verbonden, maar elk doel is uitgesloten door een veerkrachttimer; de waarschuwing `[COMBO] Weighted selection: every target excluded before dispatch — …` vermeldt de redenen en het aantal resterende seconden. Een `404 no_executable_targets` van dezelfde combinatie betekent dat er geen veerkrachttimer betrokken was (er is niets om uit te voeren, of de beschikbaarheidscontrole is voor elk account mislukt). Geïmplementeerd in `open-sse/services/combo/pinRecovery.ts` op basis van de uitsluitingen die in `targetResolution.ts` zijn verzameld.
+- Alle sleutels voor een provider worden overgeslagen → controleer zowel de status van de circuitonderbreker ALS `rateLimitedUntil`/`testStatus` van elke verbinding.
+- Provider blijft na het resetvenster permanent uitgesloten → code leest de onbewerkte `state` in plaats van `getStatus()`/`canExecute()`.
+- Eén sleutel werkt niet, andere zouden wel moeten werken → geef de voorkeur aan een afkoelperiode voor de verbinding boven de circuitonderbreker.
+- Slechts één model werkt niet → geef de voorkeur aan modelvergrendeling boven een afkoelperiode voor de verbinding.
+- Status zou zichzelf moeten herstellen, maar doet dat niet → controleer op een toekomstig tijdstempel en een leespad dat een verlopen status vernieuwt. Permanente statussen vereisen handmatige wijzigingen.
 
 ---
 

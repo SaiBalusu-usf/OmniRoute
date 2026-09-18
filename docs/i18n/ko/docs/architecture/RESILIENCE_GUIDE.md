@@ -70,7 +70,7 @@ OmniRoute에는 서로 구분되지만 관련성이 있는 세 가지 복원력 
 
 **범위:** 단일 제공자 연결/계정/키.
 
-**목적:** 동일한 제공자의 다른 연결은 계속 요청을 처리하도록 하면서 문제가 있는 키 하나를 건너뜁니다.
+**목적:** 동일한 제공자의 다른 연결은 계속 요청을 처리하도록 하면서 문제가 있는 키 하나만 건너뜁니다.
 
 **구현:**
 
@@ -90,56 +90,72 @@ OmniRoute에는 서로 구분되지만 관련성이 있는 세 가지 복원력 
 
 - OAuth 기본값: 5초
 - API 키 기본값: 3초
-- API 키 429: 가능한 경우 업스트림 `Retry-After`/재설정 헤더/파싱 가능한 재설정 텍스트를 우선 사용
+- API 키 429: 업스트림 `Retry-After`/재설정 헤더/파싱 가능한 재설정 텍스트를 우선 사용
 - 백오프: `baseCooldownMs * 2 ** failureIndex`
 
-**동시 요청 폭주 방지 가드:** 동시 실패로 인해 쿨다운이 과도하게 연장되거나 `backoffLevel`이 중복 증가하는 것을 방지합니다.
+**동시 재시도 폭주 방지 가드:** 동시 실패로 인해 쿨다운이 과도하게 연장되거나 `backoffLevel`이 이중으로 증가하는 것을 방지합니다.
 
-**종료 상태(쿨다운 아님):**
+**종료 상태(쿨다운이 아님):**
 
-- `banned` — 금지 키워드/계정 차단 감지에 의해 설정됨([BAN_DETECTION](../security/BAN_DETECTION.md) 참조)
-- `expired` (제한된 재시도 후 종료 상태로 전환됨 — 지수 백오프와 함께 `EXPIRED_RETRY_MAX = 3` 적용 — 따라서 일시적인 OAuth 오류는 계정이 영구적으로 비활성화되기 전에 자동으로 복구될 수 있음)
+- `banned` — 금지 키워드/계정 차단 감지([BAN_DETECTION](../security/BAN_DETECTION.md) 참조) 및 업스트림의 요청별 거부가 3회 연속 발생했을 때 설정됩니다(`request_rejected`, 예: Anthropic OAuth 403 "Request not allowed" — `open-sse/services/requestRejectedStreak.ts`). 한 번의 거부는 연결을 쿨다운 상태로만 전환합니다.
+- `expired` (제한된 재시도 후 종료 상태로 전환됨 — 지수 백오프와 함께 `EXPIRED_RETRY_MAX = 3` 적용 — 따라서 일시적인 OAuth 오류는 계정이 영구적으로 비활성화되기 전에 자체적으로 복구될 수 있음)
 - `credits_exhausted`
 
-이러한 상태는 자격 증명이 변경되거나 운영자가 재설정할 때까지 유지됩니다. 종료 상태를 일시적인 쿨다운 상태로 덮어쓰지 마십시오.
+이 상태들은 자격 증명이 변경되거나 운영자가 재설정할 때까지 유지됩니다. 종료 상태를 일시적인 쿨다운 상태로 덮어쓰지 마세요.
 
-**지연 복구:** `rateLimitedUntil`이 지나면 연결이 다시 선택 대상이 됩니다. 연결이 성공적으로 사용되면 `clearAccountError()`가 모든 오류 필드를 지웁니다.
+**지연 복구:** `rateLimitedUntil`이 지나면 연결은 다시 선택 대상이 됩니다. 사용에 성공하면 `clearAccountError()`가 모든 오류 필드를 지웁니다.
 
-### 세션 어피니티(#7274)
+### 세션 선호도(#7274)
 
 **범위:** **모든** 제공자에 대해 하나의 연결에 고정된 하나의 클라이언트 세션(`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session` 헤더).
 
-**목적:** 여러 턴으로 구성된 에이전트(Claude Code, aider, 사용자 지정 에이전트)가 요청 전반에서 동일한 계정을 계속 사용하도록 하여, 계정 간 컨텍스트 손실과 계정별 세션 상태가 있는 제공자에서 반복되는 콜드 스타트 429를 줄입니다.
+**목적:** 여러 요청에 걸쳐 멀티턴 에이전트(Claude Code, aider, 사용자 지정 에이전트)가 동일한 계정을 계속 사용하도록 하여, 계정 간 컨텍스트 손실과 계정별 세션 상태를 사용하는 제공자에서 반복되는 콜드 스타트 429를 줄입니다.
 
 **구현:**
 
 - TTL 결정: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - 고정 연결 선택/생성: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
 - 헤더 추출(범용, 모든 제공자): `src/sse/services/auth.ts::extractSessionAffinityKey()`
-- 영구 저장되는 고정 연결 테이블: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- 설정: `sessionAffinityTtlMs`(전역 TTL, 단위: ms, `0`이면 비활성화) — `src/lib/db/settings.ts`. 마이그레이션 `124_generic_session_affinity_ttl.sql`을 통해 Codex 전용 `codexSessionAffinityTtlMs`에서 이름이 변경되었으며, 이전에 설정된 Codex TTL이 있으면 이를 새로운 기본값으로 승계합니다.
+- 영구 저장 고정 테이블: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
+- 설정: `sessionAffinityTtlMs`(밀리초 단위의 전역 TTL, `0`이면 비활성화) — `src/lib/db/settings.ts`. 마이그레이션 `124_generic_session_affinity_ttl.sql`을 통해 Codex 전용 `codexSessionAffinityTtlMs`에서 이름이 변경되었으며, 이전에 구성된 Codex TTL이 있으면 이를 새로운 기본값으로 이전합니다.
 
-#7274 이전에는 `resolveSessionAffinityTtlMs()`가 `codex`를 제외한 모든 제공자에 대해 곧바로 `0`을 반환했기 때문에, 고정 메커니즘과 헤더 추출이 이미 제공자에 종속되지 않았음에도 TTL 설정과 세션 헤더가 다른 모든 곳에서는 아무런 효과가 없었습니다. 수정 사항에서는 이 조기 반환을 제거했습니다. 이제 TTL을 전역적으로 `0`보다 큰 값으로 설정하면 모든 제공자에 동일하게 적용됩니다.
+#7274 이전에는 `resolveSessionAffinityTtlMs()`가 `codex`를 제외한 모든 제공자에 대해 즉시 `0`을 반환했기 때문에, 고정 메커니즘과 헤더 추출이 이미 제공자에 구애받지 않았음에도 TTL 설정(및 세션 헤더)이 다른 곳에서는 아무런 효과가 없었습니다. 수정 사항에서 해당 조기 반환을 제거했으며, 이제 TTL이 전역적으로 `0`보다 크게 설정되면 모든 제공자에 동일하게 적용됩니다.
 
-세 가지 세션 어피니티 헤더는 업스트림으로 전달되지 않습니다. 실행기는 클라이언트 헤더를 그대로 전달하지 않고 자체 업스트림 헤더를 처음부터 구성하므로, 이 값은 내부 상관관계 ID로만 유지됩니다.
+세 가지 세션 선호도 헤더는 업스트림으로 절대 전달되지 않습니다. 실행기는 클라이언트 헤더를 그대로 전달하지 않고 자체 업스트림 헤더를 처음부터 구성하므로, 이 값은 내부 상관관계 ID로만 유지됩니다.
 
 ### 독점 관리형 세션 연결 임대
 
-**범위:** 하나의 활성 관리형 HTTP 클라이언트/세션이 적격 OmniRoute 연결 하나를 소유합니다.
+**범위:** 하나의 활성 관리형 HTTP 클라이언트/세션이 하나의 적격 OmniRoute 연결을 소유합니다.
 
-**목적:** 요청 전반에서 강력한 라우팅 경계가 필요한 클라이언트에 지속적인 독점 연결 소유권을 제공합니다. 이는 소프트 연속성 기본 설정인 세션 어피니티와 다릅니다. 독점 임대는 수명 주기 상태를 SQLite에 유지하고, 전역 활성 소유자 및 활성 연결의 고유성을 강제하며, 제공자에 디스패치하기 전에 오래된 세대를 거부합니다.
+**목적:** 요청 전반에 걸쳐 엄격한 라우팅
+경계가 필요한 클라이언트에 지속적인 독점 연결 소유권을 제공합니다. 이는 소프트한 연속성 기본 설정인 세션 선호도와 다릅니다.
+독점 임대는 수명 주기 상태를 SQLite에 영구 저장하고, 전역 활성 소유자 및
+활성 연결의 고유성을 강제하며, 제공자 디스패치 전에 오래된 세대를 거부합니다.
 
-이 기능은 API 키별 옵트인 방식입니다. 관리형 키에는 `lease:exclusive` 범위와 명시적인 비어 있지 않은 `allowedConnections` 목록이 있어야 합니다. 모든 HTTP 클라이언트가 수명 주기 엔드포인트를 사용할 수 있으며, 클라이언트 이름, 사용자 에이전트, 제공자, OAuth 방식 또는 모델은 필요하지 않습니다. 임대는 모델이 아닌 연결을 소유하므로, 연결이 일반적인 적격 상태를 유지하는 동안에는 모델이 변경되어도 바인딩이 유지됩니다. 일반적인 모델, 할당량, 상태, 쿨다운 및 허용 목록 규칙은 계속 우선하며, 동일한 세대를 다른 사용 가능한 적격 연결로 전환할 수 있습니다.
+이 기능은 API 키별로 선택적으로 사용합니다. 관리형 키에는 `lease:exclusive` 범위와
+명시적인 비어 있지 않은 `allowedConnections` 목록이 있어야 합니다. 모든 HTTP 클라이언트가 수명 주기 엔드포인트를 사용할 수 있으며,
+클라이언트 이름, 사용자 에이전트, 제공자, OAuth 방식 또는 모델은 필요하지 않습니다. 임대는 모델이 아니라 연결을 소유하므로,
+연결이 일반적인 기준에 따라 계속 적격인 동안에는 모델이 변경되어도 바인딩이 유지됩니다.
+일반적인 모델, 할당량, 상태, 쿨다운 및 허용 목록 규칙은 계속 우선 적용되며,
+이에 따라 동일한 세대가 다른 비어 있는 적격 연결로 전환될 수 있습니다.
 
-수명 주기는 JSON 작업 `acquire`, `renew`, `release`와 함께 `POST /api/v1/session-leases`를 사용합니다. 관리형 추론 요청은 불투명한 `X-OmniRoute-Lease-Owner` 값과 정확한 `X-OmniRoute-Lease-Generation`을 제공합니다. 소유자 값은 `vlo_` 뒤에 43자의 base64url 문자가 오는 형식이며, SHA-256 해시만 저장됩니다. 모든 최종 디스패치 경계는 인증된 API 키 ID와 활성 연결 ID도 바인딩합니다. 임대 제어 헤더는 로그, 보존된 요청 스냅샷 및 업스트림 실행기 헤더에서 제거됩니다.
+수명 주기는 JSON 작업 `acquire`, `renew`, `release`를 사용하는 `POST /api/v1/session-leases`입니다.
+관리형 추론 요청은 불투명한 `X-OmniRoute-Lease-Owner` 값과 정확한
+`X-OmniRoute-Lease-Generation`을 제공합니다. 소유자 값은 `vlo_` 뒤에 base64url 문자 43개가 이어지는 형식이며,
+해당 값의 SHA-256 해시만 저장됩니다. 모든 최종 디스패치 경계는 인증된 API 키 ID와
+활성 연결 ID도 바인딩합니다. 임대 제어 헤더는 로그, 보존된 요청 스냅샷 및
+업스트림 실행기 헤더에서 제거됩니다.
 
-일반 라우팅에 적격 관리형 후보가 있지만 사용 가능한 모든 후보가 다른 소유자의 활성 임대에 점유되어 있다면, OmniRoute는 HTTP `429`, 임대 용량 사용 불가 코드, 용량 대기 상태 및 가장 이른 관련 만료 시점에서 계산한 상한이 있는 `Retry-After`를 반환합니다. 일반적인 적격 대상 부재는 임대 경합이 아니며 기존 라우팅 오류 의미 체계를 유지합니다.
+일반 라우팅에 적격한 관리형 후보가 있지만 비어 있는 모든 후보가
+다른 활성 임대에 점유된 경우, OmniRoute는 HTTP `429`, lease-capacity-unavailable 코드,
+용량 대기 상태 및 가장 이른 관련 만료 시점에서 파생된 제한된 `Retry-After`를 반환합니다.
+일반적인 적격 대상 없음 상태는 임대 경합이 아니며 기존 라우팅 오류 의미 체계를 유지합니다.
 
-관련 메커니즘은 서로 별개로 유지됩니다.
+관련 메커니즘은 서로 분리된 상태로 유지됩니다.
 
-- OAuth 세션 점유는 OAuth 계정에 대한 프로세스 로컬 소프트 분배입니다.
+- OAuth 세션 점유는 OAuth 계정을 위한 프로세스 로컬 소프트 분배입니다.
 - 계정 세마포어는 요청 동시성 허가를 부여하며 요청이 완료되면 종료됩니다.
-- 독점 관리형 세션 임대는 세대 경계를 갖는 지속적인 수명 주기 소유권입니다.
+- 독점 관리형 세션 임대는 세대 경계를 갖춘 지속적인 수명 주기 소유권입니다.
 
 ---
 
@@ -147,13 +163,28 @@ OmniRoute에는 서로 구분되지만 관련성이 있는 세 가지 복원력 
 
 **범위:** 제공자 + 연결 + 모델 조합.
 
-**목적:** 하나의 모델만 사용할 수 없거나 할당량이 제한된 경우 전체 연결이 비활성화되는 것을 방지합니다.
+**상태별 키 범위:** 실패 상태에 따라 잠금이 기록되는 키가 결정됩니다
+(`open-sse/services/accountFallback/exactModelLock.ts`의 `resolveLockoutScope()`):
+
+- `429` / `403` / `402` — 할당량 또는 사용 권한 신호 — **할당량 계열**을 잠급니다:
+  codex의 경우 해당 연결의 전체 `codex` / `spark` 범위(모든 `gpt-5*` 모델),
+  그 외 제공자의 경우 `getQuotaScopedModelForProvider()`.
+- `404`는 기본 모델을 잠급니다(`getModelLockKey()`가 `not_found` 범위를 좁힘).
+- 그 외 모든 상태 — `5xx` 전송/서버 실패와 품질 검증에서 OmniRoute가 자체적으로
+  생성한 `502` — 는 정확한 제공자/연결/모델 조합만 잠급니다. 한 모델의 잘못된
+  스트림은 계정 할당량에 문제가 있다는 증거가 아닙니다. 이 규칙이 도입되기
+  전에는 `codex/gpt-5.6-luna`에서 빈 응답이 한 번만 발생해도 해당 연결의 모든
+  `gpt-5*` 모델이 할당량에는 아무런 문제가 없음에도 라우팅에서 2~30분 동안
+  제외되었습니다(시간은 점차 증가).
+- 호출자가 명시적으로 지정한 `scope` 옵션이 항상 우선합니다(Antigravity는 `"exact"`를 전달).
+
+**목적:** 모델 하나만 사용할 수 없거나 할당량 제한에 걸렸을 때 전체 연결이 비활성화되는 것을 방지합니다.
 
 **예시:**
 
 - 모델별 할당량을 적용하는 제공자가 429를 반환하는 경우
-- 로컬 제공자에서 누락된 모델 하나에 대해 404를 반환하는 경우
-- 제공자별 모드/모델 권한 오류(예: Grok 모드)
+- 로컬 제공자가 누락된 모델 하나에 대해 404를 반환하는 경우
+- 제공자별 모드/모델 권한 실패(예: Grok 모드)
 
 **구현:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
@@ -161,7 +192,7 @@ OmniRoute에는 서로 구분되지만 관련성이 있는 세 가지 복원력 
 
 UI: 설정 → 모델 쿨다운 (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-활성 잠금을 제공자, 연결, 모델, 사유, expiresAt 정보와 함께 나열합니다. 운영자는 카드에서 모델을 수동으로 다시 활성화할 수 있습니다.
+활성 잠금을 제공자, 연결, 모델, 사유, expiresAt 정보와 함께 표시합니다. 운영자는 카드에서 모델을 수동으로 다시 활성화할 수 있습니다.
 
 **REST API:**
 
@@ -170,30 +201,45 @@ UI: 설정 → 모델 쿨다운 (`src/app/(dashboard)/dashboard/settings/compone
 
 ### 잠금 설정 UI + 성공 감쇠 복구 (v3.8.23)
 
-모델 잠금은 항상 활성화된 하드코딩 동작에서 자체 설정 카드와 자가 복구 경로를 갖춘 완전히 구성 가능한 옵트인 기능으로 변경되었습니다.
+모델 잠금은 항상 활성화된 하드코딩 동작에서 자체 설정 카드와 자가 복구 경로를
+갖춘 완전히 구성 가능한 옵트인 기능으로 변경되었습니다.
 
 **설정 카드:** 설정 → 모델 잠금
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-이는 위의 읽기 전용 `ModelCooldownsCard`(활성 잠금을 _나열_만 함)와 **별개**이며, 새 카드는 _매개변수를 구성_합니다. 기본값은 `DEFAULT_MODEL_LOCKOUT_SETTINGS`
-(`src/lib/resilience/modelLockoutSettings.ts`)에 정의되어 있습니다.
+이는 위의 읽기 전용 `ModelCooldownsCard`(활성 잠금을 _나열_만 함)와
+**별개**이며, 새 카드는 _매개변수를 구성_합니다. 기본값은
+`DEFAULT_MODEL_LOCKOUT_SETTINGS`
+(`src/lib/resilience/modelLockoutSettings.ts`)에 정의되어 있습니다:
 
-| 설정                    | 기본값                           | 의미                                                    |
-| ----------------------- | -------------------------------- | ------------------------------------------------------- |
-| `enabled`               | `false`                          | 마스터 토글 — 모델 잠금은 **기본적으로 꺼져 있습니다**. |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | 모델 범위의 실패로 간주되는 업스트림 상태 코드입니다.   |
-| `baseCooldownMs`        | `120_000` (120초)                | 첫 번째 실패에 적용되는 초기 잠금 지속 시간입니다.      |
-| `maxCooldownMs`         | `1_800_000` (30분)               | 단계적으로 증가한 쿨다운의 상한입니다.                  |
-| `maxBackoffSteps`       | `10`                             | 지수 백오프의 최대 증가 단계 수입니다.                  |
-| `useExponentialBackoff` | `true`                           | 반복된 실패 시 쿨다운을 지수적으로 늘릴지 여부입니다.   |
+| 설정                    | 기본값                           | 의미                                                            |
+| ----------------------- | -------------------------------- | --------------------------------------------------------------- |
+| `enabled`               | `false`                          | 마스터 토글 — 모델 잠금은 **기본적으로 비활성화**되어 있습니다. |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | 모델 범위 실패로 간주되는 업스트림 상태입니다.                  |
+| `baseCooldownMs`        | `120_000` (120초)                | 첫 번째 실패에 적용되는 초기 잠금 시간입니다.                   |
+| `maxCooldownMs`         | `1_800_000` (30분)               | 단계적으로 증가한 쿨다운의 상한입니다.                          |
+| `maxBackoffSteps`       | `10`                             | 최대 지수 백오프 증가 단계 수입니다.                            |
+| `useExponentialBackoff` | `true`                           | 반복되는 실패에 따라 쿨다운을 지수적으로 늘릴지 여부입니다.     |
 
-설정은 일반 설정 저장소를 통해 유지되며 복원력 설정 스키마를 통해 검증됩니다. 카드는 `baseCooldownMs`/`maxCooldownMs`
-(`maxCooldownMs ≥ baseCooldownMs`) 및 `maxBackoffSteps`를 허용 범위로 제한합니다.
+설정은 일반 설정 저장소를 통해 유지되며 복원력 설정 스키마를 통해 검증됩니다.
+카드는 `baseCooldownMs`/`maxCooldownMs`(`maxCooldownMs ≥ baseCooldownMs`)와
+`maxBackoffSteps`를 허용 범위로 제한합니다.
 
-**성공 감쇠 복구:** 복구는 단순히 타이머 만료에만 의존하지 **않습니다**. 정상 응답이 발생하면 모델의 실패 횟수가 점차 감소하므로, 기간 도중 복구된 모델은 타이머가 만료되기 전에 단계적 증가를 멈추고 잠금이 해제됩니다. 조합 대상이 성공하면 `open-sse/services/combo.ts`가 `decayModelFailureCount()`
-(`open-sse/services/accountFallback.ts`)를 호출하며, 이 함수는 저장된 `failureCount`를 **절반으로 줄입니다**
-(`Math.floor(failureCount / 2)`). 값이 `0`에 도달하면 잠금 항목이 완전히 삭제됩니다. 이에 대응하는 `recordModelLockoutFailure()`는 증가 기간 내에 실패가 발생할 때 횟수를 늘리고 쿨다운을 단계적으로 증가시킵니다. 이 성공 감쇠는 단순 타이머 만료와 별도로 작동하며, 어느 경로를 통해서든 모델을 다시 활성화할 수 있습니다.
+**성공 감쇠 복구:** 복구는 단순히 타이머 만료에만 의존하지 **않습니다**. 정상
+응답이 발생하면 모델의 실패 횟수가 점차 감소하므로, 기간 중간에 복구된 모델은
+타이머가 만료되기 전에 증가가 멈추고 잠금이 해제됩니다. 조합 대상이 성공하면
+`open-sse/services/combo.ts`가 `decayModelFailureCount()`
+(`open-sse/services/accountFallback.ts`)를 호출하여 저장된
+`failureCount`를 **절반으로 줄입니다**(`Math.floor(failureCount / 2)`).
+값이 `0`에 도달하면 잠금 항목이 완전히 삭제됩니다. 이에 대응하는
+`recordModelLockoutFailure()`는 증가 기간 내에 실패가 발생할 때 횟수를
+증가시키고 쿨다운을 늘립니다. 이 성공 감쇠는 일반적인 타이머 만료에 더해
+적용되며, 어느 경로를 통해서든 모델을 다시 활성화할 수 있습니다.
 
-**상태:** 잠금은 DB에 유지되지 않고 `provider:connectionId:model`을 키로 사용하는 `ModelLockoutEntry`의 프로세스별 `Map` 형태로 **메모리 내에** 보관되므로 재시작 시 사라집니다. _설정_은 유지되지만 활성 잠금 _상태_는 일시적입니다.
+**상태:** 잠금은 DB에 유지되지 않고 **메모리 내**에 보관됩니다
+(`provider:connectionId:model`을 키로 사용하는 프로세스별 `ModelLockoutEntry`
+`Map`, 정확 범위 잠금은 `provider:connectionId:exact:model`을 키로 사용).
+따라서 재시작하면 잠금이 사라집니다. _설정_은 유지되지만 활성 잠금 _상태_는
+일시적입니다.
 
 ---
 
@@ -549,11 +595,12 @@ headers/body가 전달되지 않고 opencode가 `FULL_TEXT_RULE_PROVIDERS`에 �
 
 ## 디버깅
 
-- 공급자의 모든 키를 건너뜀 → 회로 차단기 상태와 각 연결의 `rateLimitedUntil`/`testStatus`를 모두 확인하세요.
-- 재설정 기간 이후에도 공급자가 영구적으로 제외됨 → 코드가 `getStatus()`/`canExecute()` 대신 원시 `state`를 읽는지 확인하세요.
-- 하나의 키가 실패해도 다른 키는 작동해야 함 → 회로 차단기보다 연결 쿨다운을 우선 사용하세요.
-- 하나의 모델만 실패함 → 연결 쿨다운보다 모델 잠금을 우선 사용하세요.
-- 상태가 자동 복구되어야 하지만 복구되지 않음 → 미래 타임스탬프와 만료된 상태를 갱신하는 읽기 경로를 확인하세요. 영구 상태는 수동으로 변경해야 합니다.
+- 가중치 기반 콤보가 `503 all_targets_cooling_down`으로 응답함(`Retry-After`가 설정되고, `diagnostics.excluded`에 모든 대상이 `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`과 함께 나열됨) → 풀이 구성 및 연결되어 있지만, 모든 대상이 복원력 타이머에 의해 제외된 상태입니다. `[COMBO] Weighted selection: every target excluded before dispatch — …` 경고에 제외 이유와 남은 시간(초)이 표시됩니다. 동일한 콤보에서 발생하는 `404 no_executable_targets`는 복원력 타이머가 관여하지 않았음을 의미합니다(실행할 대상이 없거나 모든 계정이 가용성 프로브에 실패함). `targetResolution.ts`에서 수집된 제외 항목을 기반으로 `open-sse/services/combo/pinRecovery.ts`에 구현되어 있습니다.
+- 특정 제공자의 모든 키가 건너뛰어짐 → 회로 차단기 상태와 각 연결의 `rateLimitedUntil`/`testStatus`를 모두 확인하세요.
+- 재설정 기간 이후에도 제공자가 영구적으로 제외됨 → 코드가 `getStatus()`/`canExecute()` 대신 원시 `state`를 읽는지 확인하세요.
+- 하나의 키가 실패해도 다른 키는 작동해야 함 → 회로 차단기보다 연결 쿨다운을 우선하세요.
+- 하나의 모델만 실패함 → 연결 쿨다운보다 모델 잠금을 우선하세요.
+- 상태가 자동으로 복구되어야 하지만 복구되지 않음 → 미래 타임스탬프와 만료된 상태를 새로 고치는 읽기 경로를 확인하세요. 영구 상태는 수동으로 변경해야 합니다.
 
 ---
 

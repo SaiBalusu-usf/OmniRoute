@@ -4,7 +4,7 @@
 
 ---
 
-> **TL;DR**: OmniRoute mendaftarkan 352 ID penyedia, dengan **152 entri katalog penyedia yang ditandai `hasFree`**. Katalog model gratis yang diaudit secara lebih ketat mencakup **34 kunci pool berulang / 443 entri** (436 aktif + 7 dihentikan). Hubungkan beberapa penyedia yang sesuai untuk kapasitas fallback yang lebih luas; setiap kuota, aturan persetujuan, kebijakan privasi, dan ketentuan kelebihan pemakaian berbayar tetap berlaku.
+> **TL;DR**: OmniRoute mendaftarkan 357 ID penyedia, dengan **152 entri katalog penyedia yang ditandai `hasFree`**. Katalog model gratis yang diaudit secara lebih ketat mencakup **35 kunci pool berulang / 482 entri** (475 aktif + 7 dihentikan). Hubungkan beberapa penyedia yang sesuai untuk kapasitas fallback yang lebih luas; setiap kuota, aturan persetujuan, kebijakan privasi, dan ketentuan kelebihan penggunaan berbayar tetap berlaku.
 
 ---
 
@@ -162,13 +162,13 @@ kebijakan kuota atau akses penyedia.
 
 Katalog aktif yang telah dideduplikasi berdasarkan pool saat ini melaporkan:
 
-| Metrik                                                                |                           Nilai audit saat ini | Interpretasi                                                                                                                                      |
-| --------------------------------------------------------------------- | ---------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Kuota berulang yang terukur                                           |                   **~1,47 miliar token/bulan** | Pool bersama dihitung satu kali; penyedia tanpa batas tidak disertakan dalam total                                                                |
-| Bulan pertama dengan kuota pendaftaran                                |                         **~2,07 miliar token** | Total berulang ditambah kredit satu kali dan berulang                                                                                             |
-| Inventaris model gratis yang diaudit                                  | **34 kunci pool berulang / 443 entri katalog** | 436 aktif + 7 dihentikan; berbeda dari katalog 352 penyedia                                                                                       |
-| Penyedia gratis selamanya berulang/tanpa kunci yang direpresentasikan |                                         **52** | Penyedia unik di seluruh jenis katalog harian/bulanan/kredit/tanpa batas yang berulang dan tanpa kunci; baris berbasis kelayakan tidak disertakan |
-| Entri katalog penyedia yang ditandai `hasFree`                        |                                  **152 / 352** | Metadata penyedia yang lebih luas; tidak semuanya memiliki kuota berulang yang dapat diukur                                                       |
+| Metrik                                                                |                        Nilai teraudit saat ini | Interpretasi                                                                                                                                         |
+| --------------------------------------------------------------------- | ---------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Kuota terukur berulang                                                |                         **~1.62B token/bulan** | Pool bersama dihitung sekali; penyedia tanpa batas tidak disertakan dalam total                                                                      |
+| Bulan pertama dengan kuota pendaftaran                                |                               **~2.22B token** | Total berulang ditambah kredit satu kali dan berulang                                                                                                |
+| Inventaris model gratis yang diaudit                                  | **35 kunci pool berulang / 482 entri katalog** | 475 aktif + 7 dihentikan; berbeda dari katalog 357 penyedia                                                                                          |
+| Penyedia gratis selamanya berulang/tanpa kunci yang direpresentasikan |                                         **53** | Penyedia unik di seluruh jenis katalog harian/bulanan/kredit/tanpa batas yang berulang dan tanpa kunci, tidak termasuk baris yang dibatasi kelayakan |
+| Entri katalog penyedia yang ditandai `hasFree`                        |                                  **152 / 357** | Metadata penyedia yang lebih luas; tidak semuanya memiliki kuota berulang yang dapat dikuantifikasi                                                  |
 
 Nilai-nilai ini dihitung dari `open-sse/config/freeModelCatalog.ts`; lihat
 [Referensi Tingkat Gratis](../reference/FREE_TIERS.md) untuk deduplikasi pool, penanda Ketentuan Layanan,

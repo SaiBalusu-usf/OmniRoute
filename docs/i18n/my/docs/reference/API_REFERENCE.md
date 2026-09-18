@@ -1587,21 +1587,21 @@ routing၊ compression နှင့် provider မျိုးစုံကွ�
 
 ## CLI ကိရိယာများ စီမံခန့်ခွဲမှု
 
-OmniRoute နှင့် ပေါင်းစည်းအသုံးပြုသည့် CLI ကိရိယာများ (antigravity, chipotle, commandCode,
-devin-cli စသည်တို့) ကို စီမံခန့်ခွဲရန်။ စာရင်းအပြည့်အစုံအတွက် [Provider ကိုးကားချက်](./PROVIDER_REFERENCE.md) ကို ကြည့်ပါ။
+OmniRoute နှင့် ပေါင်းစပ်အသုံးပြုသော CLI ကိရိယာများ (antigravity, commandCode၊
+devin-cli စသည်) ကို စီမံခန့်ခွဲပါ။ စာရင်းအပြည့်အစုံအတွက် [ပံ့ပိုးသူ ကိုးကားချက်](./PROVIDER_REFERENCE.md) ကို ကြည့်ပါ။
 
-| နည်းလမ်း | လမ်းကြောင်း                             | ဖော်ပြချက်                                                                                                                                                                                                          |
-| -------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET      | `/api/cli-tools/all-statuses`           | CLI ကိရိယာအားလုံး၏ အခြေအနေ (ထည့်သွင်းထားမှု၊ version၊ နောက်ဆုံးတွေ့ရှိချိန်)                                                                                                                                        |
-| GET      | `/api/cli-tools/status`                 | CLI ကိရိယာတစ်ခု၏ အခြေအနေအသေးစိတ် (`?tool=` query)                                                                                                                                                                   |
-| POST     | `/api/cli-tools/apply`                  | ကိရိယာတစ်ခု၏ ထုတ်လုပ်ထားသော config ကို ရေးသားရန် (`dryRun` ဖြင့် အစမ်းကြည့်နိုင်သည်၊ container အတွင်း လုပ်ဆောင်သည့်အခါ `422` + `containerEphemeralTarget`၊ `migration` သည် အဟောင်း Codex YAML ကို မှတ်သားဖော်ပြသည်) |
-| GET      | `/api/cli-tools/backups`                | CLI ကိရိယာ configuration backup များကို စာရင်းပြုစုရန်                                                                                                                                                              |
-| POST     | `/api/cli-tools/backups`                | CLI ကိရိယာ configuration အားလုံး၏ backup တစ်ခု ဖန်တီးရန်                                                                                                                                                            |
-| POST     | `/api/cli-tools/backups`                | ပြန်လည်ရယူရန်- body ထဲတွင် `{tool, backupId}` ထည့်ပြီး တူညီသော endpoint ကို အသုံးပြုပါက ထို backup ကို ပြန်လည်ရယူပေးမည်                                                                                             |
-| GET      | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM proxy အခြေအနေ ("antigravity-mitm" CLI ကိရိယာ)                                                                                                                                                      |
-| POST     | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm alias များကို စီစဉ်သတ်မှတ်ရန်                                                                                                                                                                      |
+| နည်းလမ်း | လမ်းကြောင်း                             | ဖော်ပြချက်                                                                                                                                                                                                       |
+| -------- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET      | `/api/cli-tools/all-statuses`           | CLI ကိရိယာအားလုံး၏ အခြေအနေ (ထည့်သွင်းထားမှု၊ ဗားရှင်း၊ နောက်ဆုံးတွေ့ရှိချိန်)                                                                                                                                    |
+| GET      | `/api/cli-tools/status`                 | CLI ကိရိယာတစ်ခု၏ အသေးစိတ်အခြေအနေ (`?tool=` query)                                                                                                                                                                |
+| POST     | `/api/cli-tools/apply`                  | ကိရိယာတစ်ခုအတွက် ထုတ်လုပ်ထားသော config ကို ရေးသားသည် (`dryRun` ဖြင့် အကြိုကြည့်နိုင်သည်၊ container အတွင်း လုပ်ဆောင်ပါက `422` + `containerEphemeralTarget`၊ `migration` သည် ယခင် Codex YAML ကို မှတ်သားဖော်ပြသည်) |
+| GET      | `/api/cli-tools/backups`                | CLI ကိရိယာ configuration အရန်သိမ်းဆည်းမှုများကို စာရင်းပြုစုသည်                                                                                                                                                  |
+| POST     | `/api/cli-tools/backups`                | CLI ကိရိယာ configuration အားလုံး၏ အရန်သိမ်းဆည်းမှုတစ်ခုကို ဖန်တီးသည်                                                                                                                                             |
+| POST     | `/api/cli-tools/backups`                | ပြန်လည်ရယူခြင်း- body ထဲတွင် `{tool, backupId}` ပါဝင်သည့် တူညီသော endpoint သည် ထိုအရန်သိမ်းဆည်းမှုကို ပြန်လည်ရယူပေးသည်                                                                                           |
+| GET      | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM proxy အခြေအနေ ("antigravity-mitm" CLI ကိရိယာ)                                                                                                                                                   |
+| POST     | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm alias များကို စီစဉ်သတ်မှတ်သည်                                                                                                                                                                   |
 
-**အထောက်အထားစိစစ်ခြင်း:** management session လိုအပ်သည်။
+**အထောက်အထားစိစစ်မှု:** စီမံခန့်ခွဲမှု session လိုအပ်သည်။
 
 ---
 

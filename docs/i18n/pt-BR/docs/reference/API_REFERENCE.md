@@ -1616,23 +1616,23 @@ Endpoints exclusivos para administradores destinados ao gerenciamento operaciona
 
 ---
 
-## Gerenciamento de Ferramentas de CLI
+## Gerenciamento de ferramentas de CLI
 
-Gerencie ferramentas de CLI que se integram ao OmniRoute (antigravity, chipotle, commandCode,
-devin-cli etc.). Consulte a [Referência de Provedores](./PROVIDER_REFERENCE.md) para ver a lista completa.
+Gerencie ferramentas de CLI que se integram ao OmniRoute (antigravity, commandCode,
+devin-cli etc.). Consulte a [Referência de provedores](./PROVIDER_REFERENCE.md) para ver a lista completa.
 
-| Método | Caminho                                 | Descrição                                                                                                                                                                     |
-| ------ | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | Status de todas as ferramentas de CLI (instalação, versão, última detecção)                                                                                                   |
-| GET    | `/api/cli-tools/status`                 | Detalhes do status de uma ferramenta de CLI (consulta `?tool=`)                                                                                                               |
-| POST   | `/api/cli-tools/apply`                  | Grava a configuração gerada de uma ferramenta (`dryRun` exibe uma prévia; `422` + `containerEphemeralTarget` quando em contêiner; `migration` indica um YAML legado do Codex) |
-| GET    | `/api/cli-tools/backups`                | Lista os backups de configuração das ferramentas de CLI                                                                                                                       |
-| POST   | `/api/cli-tools/backups`                | Cria um backup das configurações de todas as ferramentas de CLI                                                                                                               |
-| POST   | `/api/cli-tools/backups`                | Restauração: o mesmo endpoint com `{tool, backupId}` no corpo restaura esse backup                                                                                            |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Status do proxy MITM do Antigravity (a ferramenta de CLI "antigravity-mitm")                                                                                                  |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | Configura aliases do antigravity-mitm                                                                                                                                         |
+| Método | Caminho                                 | Descrição                                                                                                                                                                       |
+| ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/cli-tools/all-statuses`           | Status de todas as ferramentas de CLI (instalada, versão, última detecção)                                                                                                      |
+| GET    | `/api/cli-tools/status`                 | Detalhes do status de uma ferramenta de CLI (consulta `?tool=`)                                                                                                                 |
+| POST   | `/api/cli-tools/apply`                  | Grava a configuração gerada de uma ferramenta (`dryRun` fornece uma prévia; `422` + `containerEphemeralTarget` quando em contêiner; `migration` indica um YAML legado do Codex) |
+| GET    | `/api/cli-tools/backups`                | Lista os backups de configuração das ferramentas de CLI                                                                                                                         |
+| POST   | `/api/cli-tools/backups`                | Cria um backup das configurações de todas as ferramentas de CLI                                                                                                                 |
+| POST   | `/api/cli-tools/backups`                | Restaura: o mesmo endpoint, com `{tool, backupId}` no corpo, restaura esse backup                                                                                               |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Status do proxy MITM do Antigravity (a ferramenta de CLI "antigravity-mitm")                                                                                                    |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | Configura aliases do antigravity-mitm                                                                                                                                           |
 
-**Autenticação:** Requer sessão de gerenciamento.
+**Autenticação:** Requer uma sessão de gerenciamento.
 
 ---
 

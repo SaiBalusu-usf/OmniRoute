@@ -83,73 +83,58 @@ Regresyon koruması: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
 **Varsayılan bekleme süreleri:**
 
-- OAuth tabanı: 5s
-- API anahtarı tabanı: 3s
-- API anahtarı 429: üst sistemden gelen `Retry-After`/sıfırlama başlıkları/ayrıştırılabilir sıfırlama metni tercih edilir
+- OAuth tabanı: 5 sn
+- API anahtarı tabanı: 3 sn
+- API anahtarı 429: tercihen üst kaynaktan gelen `Retry-After`/sıfırlama başlıklarını/ayrıştırılabilir sıfırlama metnini kullanır
 - Geri çekilme: `baseCooldownMs * 2 ** failureIndex`
 
-**Eşzamanlı yüklenme önleme koruması:** eşzamanlı hataların bekleme süresini gereğinden fazla uzatmasını veya `backoffLevel` değerini iki kez artırmasını önler.
+**Ani yüklenme önleme koruması:** eşzamanlı hataların bekleme süresini gereğinden fazla uzatmasını veya `backoffLevel` değerini iki kez artırmasını önler.
 
-**Sonlandırıcı durumlar (bekleme süresi DEĞİLDİR):**
+**Terminal durumlar (bekleme süreleri DEĞİLDİR):**
 
-- `banned` — yasaklı anahtar sözcük / hesap yasağı algılaması tarafından ayarlanır (bkz. [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (sınırlı sayıda yeniden denemeden sonra sonlandırıcı duruma geçer — `EXPIRED_RETRY_MAX = 3`, üstel geri çekilme ile — böylece geçici OAuth hataları, hesap kalıcı olarak devre dışı bırakılmadan önce kendiliğinden düzelebilir)
+- `banned` — yasaklı anahtar sözcük / hesap yasağı algılamasıyla (bkz. [BAN_DETECTION](../security/BAN_DETECTION.md)) ve istek başına üst kaynak tarafından art arda üç ret verilmesiyle (`request_rejected`, ör. Anthropic OAuth 403 "İsteğe izin verilmiyor" — `open-sse/services/requestRejectedStreak.ts`) ayarlanır; tek bir ret yalnızca bağlantıyı beklemeye alır
+- `expired` (sınırlı sayıda yeniden denemeden sonra terminal duruma geçer — üstel geri çekilmeyle `EXPIRED_RETRY_MAX = 3` — böylece geçici OAuth hataları, hesap kalıcı olarak devre dışı bırakılmadan önce kendiliğinden düzelebilir)
 - `credits_exhausted`
 
-Bunlar, kimlik bilgileri değişene veya bir operatör tarafından sıfırlanana kadar kalıcıdır. Sonlandırıcı durumların üzerine geçici bekleme süresi durumu yazmayın.
+Bunlar, kimlik bilgileri değişene veya bir operatör tarafından sıfırlanana kadar kalıcıdır. Terminal durumların üzerine geçici bekleme durumu yazmayın.
 
 **Tembel kurtarma:** `rateLimitedUntil` geçmişte kaldığında bağlantı yeniden uygun hâle gelir. Başarılı kullanımda `clearAccountError()` tüm hata alanlarını temizler.
 
 ### Oturum yakınlığı (#7274)
 
-**Kapsam:** **herhangi bir** sağlayıcı için tek bir bağlantıya sabitlenmiş tek bir istemci oturumu (`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session` başlığı).
+**Kapsam:** **herhangi bir** sağlayıcı için tek bir bağlantıya sabitlenmiş bir istemci oturumu (`X-Session-Id` / `x-codex-session-id` / `x-omniroute-session` başlığı).
 
-**Amaç:** çok turlu bir aracıyı (Claude Code, aider, özel aracılar) istekler arasında aynı hesapta tutarak hesaplar arası bağlam kaybını ve hesap başına oturum durumu kullanan sağlayıcılarda tekrarlanan soğuk başlangıç 429 hatalarını azaltmak.
+**Amaç:** çok turlu bir aracıyı (Claude Code, aider, özel aracılar) istekler arasında aynı hesapta tutarak hesaplar arası bağlam kaybını ve hesap başına oturum durumu tutan sağlayıcılarda tekrarlanan soğuk başlangıç 429'larını azaltmak.
 
 **Uygulama:**
 
-- TTL çözümlemesi: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
+- TTL çözümleme: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Sabitleme seçimi/oluşturma: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
-- Başlık çıkarma (genel, herhangi bir sağlayıcı): `src/sse/services/auth.ts::extractSessionAffinityKey()`
+- Başlık ayıklama (genel, tüm sağlayıcılar): `src/sse/services/auth.ts::extractSessionAffinityKey()`
 - Kalıcı sabitleme tablosu: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Ayar: `sessionAffinityTtlMs` (ms cinsinden genel TTL, `0` devre dışı bırakır) — `src/lib/db/settings.ts`. Yalnızca Codex'e özgü `codexSessionAffinityTtlMs` adından, önceden yapılandırılmış Codex TTL değerini yeni varsayılan olarak aktaran `124_generic_session_affinity_ttl.sql` geçişiyle yeniden adlandırılmıştır.
+- Ayar: `sessionAffinityTtlMs` (ms cinsinden genel TTL, `0` devre dışı bırakır) — `src/lib/db/settings.ts`. Yalnızca Codex'e özgü `codexSessionAffinityTtlMs` adından, daha önce yapılandırılmış Codex TTL değerini yeni varsayılan değer olarak devralan `124_generic_session_affinity_ttl.sql` geçişiyle yeniden adlandırılmıştır.
 
-#7274 öncesinde `resolveSessionAffinityTtlMs()`, `codex` dışındaki her sağlayıcı için doğrudan `0` döndürüyordu; bu nedenle sabitleme mekanizması ve başlık çıkarma zaten sağlayıcıdan bağımsız olsa da TTL ayarı (ve oturum başlıkları) başka hiçbir yerde etkili olmuyordu. Düzeltmeyle bu erken dönüş kaldırıldı; TTL artık genel olarak `0` değerinin üzerinde ayarlandığında tüm sağlayıcılara eşit biçimde uygulanır.
+#7274 öncesinde `resolveSessionAffinityTtlMs()`, `codex` dışındaki her sağlayıcı için doğrudan `0` döndürüyordu; dolayısıyla sabitleme mekanizması ve başlık ayıklama zaten sağlayıcıdan bağımsız olmasına rağmen TTL ayarı (ve oturum başlıkları) başka hiçbir yerde etkili değildi. Düzeltme bu erken dönüşü kaldırdı; TTL artık genel olarak `0` değerinin üzerinde ayarlandığında tüm sağlayıcılara eşit biçimde uygulanır.
 
-Üç oturum yakınlığı başlığı hiçbir zaman üst sisteme iletilmez — yürütücüler, istemci başlıklarını aktarmak yerine kendi üst sistem başlıklarını sıfırdan oluşturur; dolayısıyla bu yalnızca dahili bir korelasyon kimliği olarak kalır.
+Üç oturum yakınlığı başlığı hiçbir zaman üst kaynağa iletilmez — yürütücüler, istemci başlıklarını aktarmak yerine kendi üst kaynak başlıklarını sıfırdan oluşturur; dolayısıyla bu yalnızca dahili bir korelasyon kimliği olarak kalır.
 
 ### Özel yönetilen oturum bağlantısı kiralamaları
 
 **Kapsam:** etkin bir yönetilen HTTP istemcisi/oturumu, uygun bir OmniRoute bağlantısının sahibi olur.
 
-**Amaç:** istekler arasında katı bir yönlendirme sınırına ihtiyaç duyan istemcilere dayanıklı ve özel bağlantı sahipliği sağlamak. Bu, yumuşak bir süreklilik tercihi olan oturum yakınlığından farklıdır:
-özel kiralama, yaşam döngüsü durumunu SQLite içinde kalıcılaştırır, genel etkin sahip ve
-etkin bağlantı benzersizliğini zorunlu kılar ve sağlayıcıya gönderimden önce eski bir nesli reddeder.
+**Amaç:** istekler arasında katı bir yönlendirme sınırına ihtiyaç duyan istemciler için dayanıklı ve özel bağlantı sahipliği sağlamak. Bu, yumuşak bir süreklilik tercihi olan oturum yakınlığından farklıdır: özel bir kiralama, yaşam döngüsü durumunu SQLite'ta kalıcı hâle getirir, genel etkin sahip ve etkin bağlantı benzersizliğini zorunlu kılar ve sağlayıcıya gönderimden önce eski bir nesli reddeder.
 
-Özellik, API anahtarı başına isteğe bağlıdır. Yönetilen bir anahtar `lease:exclusive` kapsamına ve
-açıkça belirtilmiş, boş olmayan bir `allowedConnections` listesine sahip olmalıdır. Herhangi bir HTTP istemcisi yaşam döngüsü uç noktasını kullanabilir; herhangi bir
-istemci adı, kullanıcı aracısı, sağlayıcı, OAuth yöntemi veya model gerekli değildir. Kiralama bir modelin değil, bir bağlantının sahibi olur;
-bu nedenle bağlantı normal koşullarda uygun kaldığı sürece model değişikliği bağlamayı korur.
-Normal model, kota, sağlık, bekleme süresi ve izin listesi kuralları geçerliliğini korur ve
-aynı nesli başka bir boş ve uygun bağlantıya geçirebilir.
+Bu özellik API anahtarı başına isteğe bağlıdır. Yönetilen bir anahtar `lease:exclusive` kapsamına ve açıkça belirtilmiş, boş olmayan bir `allowedConnections` listesine sahip olmalıdır. Herhangi bir HTTP istemcisi yaşam döngüsü uç noktasını kullanabilir; istemci adı, user-agent, sağlayıcı, OAuth yöntemi veya model gerekli değildir. Kiralama bir modelin değil, bir bağlantının sahibi olur; dolayısıyla bağlantı olağan şekilde uygun kaldığı sürece model değişikliği bağlamayı korur. Normal model, kota, sağlık, bekleme süresi ve izin listesi kuralları belirleyici olmaya devam eder ve aynı nesli başka bir boş ve uygun bağlantıya geçirebilir.
 
-Yaşam döngüsü, `acquire`, `renew` ve `release` JSON eylemleriyle `POST /api/v1/session-leases` şeklindedir.
-Yönetilen çıkarım istekleri, opak `X-OmniRoute-Lease-Owner` değerini ve tam
-`X-OmniRoute-Lease-Generation` değerini sunar. Sahip değeri, `vlo_` ve ardından gelen 43 base64url karakterinden oluşur; yalnızca
-SHA-256 karması saklanır. Her son gönderim sınırı, kimliği doğrulanmış API anahtarı kimliğini ve
-etkin bağlantı kimliğini de bağlar. Kiralama denetim başlıkları günlüklerden, saklanan istek anlık görüntülerinden ve
-üst sistem yürütücü başlıklarından kaldırılır.
+Yaşam döngüsü, `acquire`, `renew` ve `release` JSON eylemleriyle `POST /api/v1/session-leases` şeklindedir. Yönetilen çıkarım istekleri, opak `X-OmniRoute-Lease-Owner` değerini ve tam `X-OmniRoute-Lease-Generation` değerini sunar. Sahip değeri, `vlo_` ve ardından gelen 43 base64url karakterinden oluşur; yalnızca SHA-256 karması saklanır. Her nihai gönderim sınırı ayrıca kimliği doğrulanmış API anahtarı kimliğini ve etkin bağlantı kimliğini bağlar. Kiralama denetim başlıkları günlüklerden, saklanan istek anlık görüntülerinden ve üst kaynak yürütücü başlıklarından kaldırılır.
 
-Normal yönlendirmede uygun yönetilen adaylar varsa ancak her boş aday yabancı bir
-etkin kiralama tarafından tutuluyorsa OmniRoute; HTTP `429`, kiralama kapasitesinin kullanılamadığını belirten bir kod,
-kapasite bekleme durumu ve ilgili en erken sona erme zamanından türetilen, sınırlandırılmış bir `Retry-After` döndürür.
-Normal boş uygunluk durumu kiralama çakışması değildir ve mevcut yönlendirme hatası semantiğini korur.
+Olağan yönlendirmede uygun yönetilen adaylar bulunmasına rağmen tüm boş adaylar yabancı etkin kiralamalar tarafından kullanılıyorsa OmniRoute; HTTP `429`, kiralama kapasitesinin kullanılamadığını belirten bir kod, kapasite bekleme durumu ve ilgili en erken sona erme zamanından türetilen sınırlı bir `Retry-After` döndürür. Olağan uygunluk kümesinin boş olması kiralama çekişmesi değildir ve mevcut yönlendirme hatası anlamını korur.
 
-İlgili mekanizmalar ayrı kalır:
+İlgili mekanizmalar birbirinden ayrı kalır:
 
-- OAuth oturum doluluğu, OAuth hesapları için süreç içinde tutulan yumuşak bir dağıtım mekanizmasıdır.
+- OAuth oturum doluluğu, OAuth hesapları için süreç içi yumuşak dağıtımdır.
 - Hesap semaforları, istek eşzamanlılığı izinleri verir ve bir istek tamamlandığında sona erer.
-- Özel yönetilen oturum kiralamaları, nesil sınırına sahip dayanıklı yaşam döngüsü sahipliğidir.
+- Özel yönetilen oturum kiralamaları, nesil sınırıyla dayanıklı yaşam döngüsü sahipliği sağlar.
 
 ---
 
@@ -157,7 +142,25 @@ Normal boş uygunluk durumu kiralama çakışması değildir ve mevcut yönlendi
 
 **Kapsam:** sağlayıcı + bağlantı + model üçlüsü.
 
-**Amaç:** yalnızca bir model kullanılamadığında veya kota sınırlamasına takıldığında tüm bağlantının devre dışı bırakılmasını önlemek.
+**Duruma göre anahtar kapsamı:** başarısızlık durumu, kilitlemenin hangi anahtara
+yazılacağını belirler (`open-sse/services/accountFallback/exactModelLock.ts`
+içindeki `resolveLockoutScope()`):
+
+- `429` / `403` / `402` — kota veya yetkilendirme sinyali — **kota ailesini** kilitler:
+  codex için bağlantının tüm `codex` / `spark` kapsamı (bağlantıdaki her
+  `gpt-5*` modeli), diğer sağlayıcılar için `getQuotaScopedModelForProvider()`.
+- `404`, yalın modeli kilitler (`getModelLockKey()`, `not_found` kapsamını daraltır).
+- Diğer tüm durumlar — `5xx` aktarım/sunucu hataları ve OmniRoute'un kalite
+  doğrulamasından kaynaklanan, kendi oluşturduğu `502` — yalnızca **tam**
+  sağlayıcı/bağlantı/model üçlüsünü kilitler. Bir modeldeki bozuk akış, hesabın
+  kotası hakkında kanıt değildir; bu kuraldan önce `codex/gpt-5.6-luna`
+  üzerindeki tek bir boş yanıt, kotasına dokunulmamış olmasına rağmen o
+  bağlantının tüm `gpt-5*` modellerini 2–30 dakikalığına (giderek artacak şekilde)
+  yönlendirmeden çıkarıyordu.
+- Çağıranın açık `scope` seçeneği her zaman önceliklidir (Antigravity `"exact"`
+  iletir).
+
+**Amaç:** yalnızca tek bir model kullanılamadığında veya kota sınırına takıldığında bağlantının tamamını devre dışı bırakmaktan kaçınmak.
 
 **Örnekler:**
 
@@ -175,38 +178,54 @@ Etkin kilitlemeleri şu bilgilerle listeler: sağlayıcı, bağlantı, model, ne
 
 **REST API:**
 
-- `GET /api/resilience/model-cooldowns` — etkin kilitlemeleri listele
-- `DELETE /api/resilience/model-cooldowns` — manuel olarak yeniden etkinleştir. Gövde: `{provider, connection, model}`. Kimlik doğrulama: yönetim.
+- `GET /api/resilience/model-cooldowns` — etkin kilitlemeleri listeler
+- `DELETE /api/resilience/model-cooldowns` — manuel olarak yeniden etkinleştirir. Gövde: `{provider, connection, model}`. Kimlik doğrulama: yönetim.
 
 ### Kilitleme ayarları kullanıcı arayüzü + başarıyla azalan kurtarma (v3.8.23)
 
-Model kilitleme, her zaman etkin olan sabit kodlanmış bir davranıştan, kendi ayarlar kartına ve kendi kendini iyileştiren bir kurtarma yoluna sahip, tamamen yapılandırılabilir ve isteğe bağlı bir özelliğe dönüştürüldü.
+Model kilitleme, her zaman etkin olan sabit kodlanmış bir davranıştan, kendi
+ayar kartına ve kendi kendini iyileştiren kurtarma yoluna sahip, tamamen
+yapılandırılabilir ve isteğe bağlı bir özelliğe dönüştü.
 
 **Ayarlar kartı:** Ayarlar → Model Kilitleme
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-Bu kart, yukarıdaki salt okunur `ModelCooldownsCard` kartından (yalnızca etkin kilitlemeleri _listeler_) **farklıdır** — yeni kart _parametreleri yapılandırır_. Varsayılan değerler
-`DEFAULT_MODEL_LOCKOUT_SETTINGS` içinde bulunur
+Bu kart, yukarıdaki salt okunur `ModelCooldownsCard` kartından (yalnızca etkin
+kilitlemeleri _listeler_) **farklıdır** — yeni kart _parametreleri yapılandırır_.
+Varsayılanlar `DEFAULT_MODEL_LOCKOUT_SETTINGS` içinde bulunur
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
 | Ayar                    | Varsayılan                       | Anlamı                                                                     |
 | ----------------------- | -------------------------------- | -------------------------------------------------------------------------- |
 | `enabled`               | `false`                          | Ana anahtar — model kilitleme **varsayılan olarak kapalıdır**.             |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Model kapsamlı hata olarak sayılan üst akış durumları.                     |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Model kapsamlı hata sayılan üst akış durumları.                            |
 | `baseCooldownMs`        | `120_000` (120 sn)               | İlk hata için başlangıç kilitleme süresi.                                  |
 | `maxCooldownMs`         | `1_800_000` (30 dk)              | Artırılmış bekleme süresinin üst sınırı.                                   |
-| `maxBackoffSteps`       | `10`                             | Maksimum üstel geri çekilme artırım adımı sayısı.                          |
+| `maxBackoffSteps`       | `10`                             | Azami üstel geri çekilme artış adımı sayısı.                               |
 | `useExponentialBackoff` | `true`                           | Tekrarlanan hataların bekleme süresini üstel olarak artırıp artırmayacağı. |
 
-Ayarlar normal ayar deposu aracılığıyla kalıcı hâle getirilir ve dayanıklılık ayarları şeması üzerinden doğrulanır; kart `baseCooldownMs`/`maxCooldownMs`
-değerlerini (`maxCooldownMs ≥ baseCooldownMs` olacak şekilde) ve `maxBackoffSteps` değerini sınırlar.
+Ayarlar normal ayar deposu aracılığıyla kalıcı hale getirilir ve dayanıklılık
+ayarları şeması üzerinden doğrulanır; kart `baseCooldownMs`/`maxCooldownMs`
+değerlerini (`maxCooldownMs ≥ baseCooldownMs` olacak şekilde) ve
+`maxBackoffSteps` değerini sınırlar.
 
-**Başarıyla azalan kurtarma:** kurtarma **yalnızca** zamanlayıcının süresinin dolmasına bağlı değildir. Sağlıklı bir yanıt, modelin hata sayısını kademeli olarak azaltır; böylece pencerenin ortasında kurtarılan bir modelin artışı durur (ve kilidi temizlenir) ve bu işlem zamanlayıcının dolmasından önce gerçekleşebilir. Başarılı bir birleşik hedefte `open-sse/services/combo.ts`, `decayModelFailureCount()` fonksiyonunu çağırır
-(`open-sse/services/accountFallback.ts`); bu fonksiyon, depolanan
-`failureCount` değerini **yarıya indirir** (`Math.floor(failureCount / 2)`); değer `0` olduğunda kilitleme girdisi tamamen silinir. Karşılık gelen `recordModelLockoutFailure()`, artış penceresi içindeki hatalarda sayacı artırır (ve bekleme süresini yükseltir). Başarıyla azalma, basit zamanlayıcı süresi dolumuna ek olarak uygulanır — her iki yol da bir modeli yeniden etkinleştirebilir.
+**Başarıyla azalan kurtarma:** kurtarma **yalnızca** zamanlayıcının süresinin
+dolmasına bağlı değildir. Sağlıklı bir yanıt, modelin hata sayısını azaltır;
+böylece pencerenin ortasında kurtarılan modelin artışı durur (ve kilitleme
+kaldırılır), bu işlem zamanlayıcının süresi dolmadan gerçekleşir. Başarılı bir
+birleşik hedefte `open-sse/services/combo.ts`, `decayModelFailureCount()`
+fonksiyonunu (`open-sse/services/accountFallback.ts`) çağırır; bu fonksiyon,
+depolanan `failureCount` değerini **yarıya indirir**
+(`Math.floor(failureCount / 2)`); değer `0` olduğunda kilitleme girdisi tamamen
+silinir. Karşılık gelen `recordModelLockoutFailure()`, artış penceresi içindeki
+hatalarda sayacı artırır (ve bekleme süresini yükseltir). Bu başarıyla azalma,
+normal zamanlayıcı süresinin dolmasına ek olarak işler — her iki yol da modeli
+yeniden etkinleştirebilir.
 
-**Durum:** kilitlemeler DB'de kalıcı olarak saklanmak yerine **bellekte**
-(`provider:connectionId:model` anahtarına sahip süreç başına `ModelLockoutEntry`
-`Map`'leri) tutulur — yeniden başlatma sırasında kaybolurlar. _Ayarlar_ kalıcıdır; etkin kilitleme _durumu_ geçicidir.
+**Durum:** kilitlemeler DB'de kalıcı hale getirilmez; **bellekte**
+(`provider:connectionId:model` anahtarlı süreç başına `ModelLockoutEntry`
+`Map`leri, `provider:connectionId:exact:model` anahtarlı tam kapsamlı kilitler)
+tutulur — yeniden başlatıldığında kaybolurlar. _Ayarlar_ kalıcıdır; etkin
+kilitleme _durumu_ geçicidir.
 
 ---
 
@@ -634,11 +653,12 @@ sınırı, tükenmiş kota ile aynı sinyaldir. Gerçek sınırlar:
 
 ## Hata Ayıklama
 
-- Bir sağlayıcının tüm anahtarları atlanıyor → hem devre kesici durumunu HEM DE her bağlantının `rateLimitedUntil`/`testStatus` değerini kontrol edin.
-- Sağlayıcı sıfırlama penceresinden sonra kalıcı olarak hariç tutuluyor → kod, `getStatus()`/`canExecute()` yerine ham `state` değerini okuyor.
-- Bir anahtar başarısız oluyor, diğerleri çalışmalı → devre kesici yerine bağlantı bekleme süresini tercih edin.
-- Yalnızca bir model başarısız oluyor → bağlantı bekleme süresi yerine model kilitlemesini tercih edin.
-- Durumun kendiliğinden düzelmesi gerekiyor ancak düzelmiyor → gelecekteki bir zaman damgası ve süresi dolmuş durumu yenileyen okuma yolu olup olmadığını kontrol edin. Kalıcı durumlar manuel değişiklikler gerektirir.
+- Ağırlıklı kombinasyon yanıtı `503 all_targets_cooling_down` (`Retry-After` ayarlanmış, `diagnostics.excluded` her hedefi `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable` ile listeliyor) → havuz yapılandırılmış ve bağlıdır; yalnızca her hedef bir dayanıklılık zamanlayıcısı tarafından hariç tutulmuştur. `[COMBO] Weighted selection: every target excluded before dispatch — …` uyarısı, nedenleri ve kalan saniyeleri belirtir. Aynı kombinasyondan gelen bir `404 no_executable_targets`, hiçbir dayanıklılık zamanlayıcısının devreye girmediği anlamına gelir (çalıştırılacak hiçbir şey yoktur veya her hesap kullanılabilirlik yoklamasında başarısız olmuştur). `targetResolution.ts` içinde toplanan hariç tutmalardan `open-sse/services/combo/pinRecovery.ts` içinde oluşturulur.
+- Bir sağlayıcıya ait tüm anahtarlar atlanıyorsa → hem devre kesici durumunu HEM DE her bağlantının `rateLimitedUntil`/`testStatus` değerini kontrol edin.
+- Sağlayıcı sıfırlama penceresinden sonra kalıcı olarak hariç tutuluyorsa → kod, `getStatus()`/`canExecute()` yerine ham `state` değerini okuyordur.
+- Bir anahtar başarısız olurken diğerlerinin çalışması gerekiyorsa → devre kesici yerine bağlantı bekleme süresini tercih edin.
+- Yalnızca bir model başarısız oluyorsa → bağlantı bekleme süresi yerine model kilitlemesini tercih edin.
+- Durumun kendiliğinden düzelmesi gerekiyor ancak düzelmiyorsa → gelecekteki bir zaman damgası ile süresi dolmuş durumu yenileyen okuma yolunu kontrol edin. Kalıcı durumlar manuel değişiklikler gerektirir.
 
 ---
 

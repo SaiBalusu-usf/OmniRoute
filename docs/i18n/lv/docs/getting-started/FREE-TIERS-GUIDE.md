@@ -4,7 +4,7 @@
 
 ---
 
-> **Īsumā**: OmniRoute reģistrē 352 pakalpojumu sniedzēju ID, un **152 pakalpojumu sniedzēju kataloga ieraksti ir atzīmēti ar `hasFree`**. Stingrākais auditētais bezmaksas modeļu katalogs aptver **34 periodiski atjaunojamu kopu atslēgas / 443 ierakstus** (436 aktīvus + 7 pārtrauktus). Pievienojiet vairākus piemērotus pakalpojumu sniedzējus, lai nodrošinātu plašākas rezerves iespējas; joprojām ir spēkā visas kvotas, apstiprināšanas noteikumi, privātuma politikas un maksas pārtēriņa nosacījumi.
+> **Īsumā**: OmniRoute reģistrē 357 pakalpojumu sniedzēju ID, un **152 pakalpojumu sniedzēju kataloga ieraksti ir atzīmēti ar `hasFree`**. Stingrākais auditētais bezmaksas modeļu katalogs aptver **35 periodiski pieejamu resursu kopu atslēgas / 482 ierakstus** (475 aktīvus + 7 pārtrauktus). Savienojiet vairākus piemērotus pakalpojumu sniedzējus, lai nodrošinātu plašākas rezerves iespējas; joprojām ir spēkā visas kvotas, apstiprināšanas noteikumi, privātuma politikas un maksas pārtēriņa nosacījumi.
 
 ---
 
@@ -160,18 +160,17 @@ pakalpojumu sniedzēja kvotas vai piekļuves politiku.
 
 ## Bezmaksas līmeņa aprēķini
 
-Aktīvais katalogs, kurā koplietojamie resursu pūli tiek uzskaitīti tikai vienreiz, pašlaik uzrāda:
+Aktuālais katalogs, kurā dublikāti koplietotajos resursu fondos ir novērsti, pašlaik uzrāda:
 
-| Metrika                                                                     |                           Pašreizējā auditētā vērtība | Skaidrojums                                                                                                                                                      |
-| --------------------------------------------------------------------------- | ----------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Regulāri piešķirtais kvantificētais apjoms                                  |                            **~1.47B marķieru mēnesī** | Koplietojamie pūli uzskaitīti vienreiz; summā nav iekļauti pakalpojumu sniedzēji bez augšējā ierobežojuma                                                        |
-| Pirmais mēnesis ar reģistrācijas piešķīrumiem                               |                                   **~2.07B marķieru** | Regulārais kopējais apjoms kopā ar vienreizējiem un regulāriem kredītiem                                                                                         |
-| Auditētais bezmaksas modeļu saraksts                                        | **34 regulāro pūlu atslēgas / 443 kataloga ieraksti** | 436 aktīvi + 7 vairs nepiedāvāti; atšķiras no 352 pakalpojumu sniedzēju kataloga                                                                                 |
-| Pārstāvētie regulārie/bezatslēgas pastāvīgi bezmaksas pakalpojumu sniedzēji |                                                **52** | Unikāli pakalpojumu sniedzēji regulārajos dienas/mēneša/kredītu/neierobežotajos un bezatslēgas kataloga veidos; rindas ar atbilstības nosacījumiem nav iekļautas |
-| Pakalpojumu sniedzēju kataloga ieraksti, kas atzīmēti ar `hasFree`          |                                         **152 / 352** | Plašāki pakalpojumu sniedzēju metadati; ne visiem ir kvantificējama regulāra kvota                                                                               |
+| Metrika                                                                 |                                    Pašreizējā auditētā vērtība | Interpretācija                                                                                                                                               |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Regulāri piešķirtais kvantificētais apjoms                              |                                       **~1.62B tokenu mēnesī** | Koplietotie resursu fondi uzskaitīti vienreiz; summā nav iekļauti pakalpojumu sniedzēji bez ierobežojumiem                                                   |
+| Pirmais mēnesis ar reģistrācijas piešķīrumiem                           |                                              **~2.22B tokenu** | Regulārā kopsumma plus vienreizējie un regulārie kredīti                                                                                                     |
+| Auditētais bezmaksas modeļu klāsts                                      | **35 regulāro resursu fondu atslēgas / 482 kataloga ieraksti** | 475 aktīvi + 7 pārtraukti; atšķiras no 357 pakalpojumu sniedzēju kataloga                                                                                    |
+| Pārstāvētie regulārie/bezatslēgas mūžam bezmaksas pakalpojumu sniedzēji |                                                         **53** | Unikāli pakalpojumu sniedzēji regulārajos dienas/mēneša/kredītu/neierobežotajos un bezatslēgas kataloga veidos; rindas ar atbilstības prasībām nav iekļautas |
+| Pakalpojumu sniedzēju kataloga ieraksti, kas atzīmēti ar `hasFree`      |                                                  **152 / 357** | Plašāki pakalpojumu sniedzēju metadati; ne visiem ir kvantificējama regulārā kvota                                                                           |
 
-Šīs vērtības tiek aprēķinātas no `open-sse/config/freeModelCatalog.ts`; informāciju par pūlu deduplikāciju, pakalpojumu noteikumu karodziņiem,
-vairs nepiedāvātiem ierakstiem un reģistrācijas kredītu metodoloģiju skatiet
+Šīs vērtības ir aprēķinātas no `open-sse/config/freeModelCatalog.ts`; informāciju par resursu fondu dublikātu novēršanu, pakalpojumu sniegšanas noteikumu karodziņiem, pārtrauktajiem ierakstiem un reģistrācijas kredītu metodoloģiju skatiet
 [Bezmaksas līmeņu uzziņā](../reference/FREE_TIERS.md).
 
 ---

@@ -33,7 +33,7 @@ Hàm factory tạo một đối tượng Plugin với các giá trị mặc đ�
 
 **Tham số:**
 
-- `name` (string, bắt buộc) — Tên plugin ở dạng kebab-case
+- `name` (string, bắt buộc) — Tên plugin ở định dạng kebab-case
 - `priority` (number, tùy chọn, mặc định: 100) — Giá trị thấp hơn sẽ chạy trước
 - `enabled` (boolean, tùy chọn, mặc định: true) — Có bật khi khởi động không?
 - `onRequest` (function, tùy chọn) — Chạy trước trình xử lý chat
@@ -54,7 +54,7 @@ onRequest: (ctx) => {
 
 ### `modifyBody(body): PluginResult`
 
-Sửa đổi nội dung yêu cầu trước khi yêu cầu đến nhà cung cấp.
+Sửa đổi phần thân yêu cầu trước khi yêu cầu được chuyển đến nhà cung cấp.
 
 ```ts
 onRequest: (ctx) => {
@@ -79,8 +79,8 @@ onRequest: (ctx) => {
 | `requestId` | `string`                  | Mã định danh yêu cầu duy nhất |
 | `model`     | `string`                  | Tên mô hình được yêu cầu      |
 | `provider`  | `string`                  | ID nhà cung cấp đích          |
-| `body`      | `Record<string, unknown>` | Nội dung yêu cầu              |
-| `headers`   | `Record<string, string>`  | Các header của yêu cầu        |
+| `body`      | `Record<string, unknown>` | Phần thân yêu cầu             |
+| `headers`   | `Record<string, string>`  | Các tiêu đề yêu cầu           |
 | `metadata`  | `Record<string, unknown>` | Siêu dữ liệu có thể thay đổi  |
 | `timestamp` | `number`                  | Dấu thời gian của yêu cầu     |
 
@@ -116,7 +116,7 @@ onRequest: (ctx) => {
 
 ### Độ ưu tiên của hook
 
-Có thể cấu hình độ ưu tiên cho các hook (giá trị thấp hơn = chạy trước):
+Các hook có thể được cấu hình với độ ưu tiên (thấp hơn = chạy trước):
 
 ```json
 {
@@ -140,9 +140,9 @@ Hoặc dưới dạng các giá trị boolean đơn giản (độ ưu tiên mặ
 
 ## Hệ thống quyền
 
-Các plugin chạy trong ngữ cảnh máy ảo được cách ly. Việc truy cập tài nguyên bên ngoài yêu cầu các quyền rõ ràng:
+Các plugin chạy trong ngữ cảnh máy ảo được cô lập. Việc truy cập tài nguyên bên ngoài yêu cầu các quyền rõ ràng:
 
-| Quyền        | Cấp quyền truy cập                                           |
+| Quyền        | Cấp quyền                                                    |
 | ------------ | ------------------------------------------------------------ |
 | `network`    | `fetch`, `AbortController`, `Headers`, `Request`, `Response` |
 | `file-read`  | `fs.readFile`, `fs.readdir`, `fs.stat`                       |
@@ -171,22 +171,22 @@ Các kiểu trường: `string`, `number`, `boolean`, `select`
 
 Các tùy chọn trường: `default`, `min`, `max`, `enum`, `description`
 
-Các giá trị cấu hình được lưu trong cơ sở dữ liệu và có thể truy cập thông qua trang cấu hình trên bảng điều khiển.
+Các giá trị cấu hình được lưu trữ trong cơ sở dữ liệu và có thể truy cập thông qua trang cấu hình của bảng điều khiển.
 
 ## Các sự kiện tích hợp sẵn
 
-| Sự kiện           | Thời điểm                                  | Dữ liệu truyền vào            |
+| Sự kiện           | Khi nào                                    | Payload                       |
 | ----------------- | ------------------------------------------ | ----------------------------- |
 | `onRequest`       | Trước trình xử lý trò chuyện               | Ngữ cảnh yêu cầu              |
 | `onResponse`      | Sau trình xử lý trò chuyện                 | Dữ liệu phản hồi              |
 | `onError`         | Khi trình xử lý gặp lỗi                    | Đối tượng lỗi                 |
 | `onModelSelect`   | Mô hình được chọn để định tuyến            | Thông tin mô hình             |
-| `onComboResolve`  | Việc định tuyến tổ hợp được xử lý          | Các đích của tổ hợp           |
-| `onRateLimit`     | Khi đạt giới hạn tốc độ                    | Thông tin giới hạn            |
-| `onQuotaExhaust`  | Khi hết hạn mức                            | Thông tin hạn mức             |
+| `onComboResolve`  | Định tuyến kết hợp được phân giải          | Các đích kết hợp              |
+| `onRateLimit`     | Đạt giới hạn tốc độ                        | Thông tin giới hạn            |
+| `onQuotaExhaust`  | Hạn ngạch đã cạn                           | Thông tin hạn ngạch           |
 | `onProviderError` | Nhà cung cấp trả về lỗi                    | Chi tiết lỗi                  |
 | `onStreamStart`   | Luồng SSE bắt đầu                          | Thông tin luồng               |
-| `onStreamEnd`     | Luồng SSE kết thúc                         | Số liệu thống kê của luồng    |
+| `onStreamEnd`     | Luồng SSE kết thúc                         | Thống kê luồng                |
 | `onInstall`       | Plugin được cài đặt                        | `{ name, version, manifest }` |
 | `onActivate`      | Plugin được kích hoạt                      | `{ name, version, manifest }` |
 | `onDeactivate`    | Plugin bị vô hiệu hóa                      | `{ name, version, manifest }` |
@@ -228,13 +228,16 @@ export default definePlugin({
     requests.set(key, timestamps);
 
     if (timestamps.length > maxRequests) {
-      return blockRequest({ error: "Rate limit exceeded", status: 429 });
+      return blockRequest({
+        error: "Đã vượt quá giới hạn tốc độ",
+        status: 429,
+      });
     }
   },
 });
 ```
 
-### Trình biến đổi phản hồi
+### Trình chuyển đổi phản hồi
 
 ```ts
 import { definePlugin } from "omniroute/plugins/sdk";

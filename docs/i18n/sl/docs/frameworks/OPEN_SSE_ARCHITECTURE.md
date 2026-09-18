@@ -169,19 +169,19 @@ Artefakti dnevnika klicev (če so omogočeni) se zapišejo v `${DATA_DIR}/call_l
 
 ### chatCore.ts (5977 vrstic)
 
-**Glavni obravnavalnik zahtev**. Kljub svoji velikosti ima jasno strukturo:
+**Glavni obdelovalnik zahtev**. Kljub velikosti ima jasno strukturo:
 
 ```ts
-// Psevdo-struktura datoteke chatCore.ts
+// Psevdostruktura datoteke chatCore.ts
 export async function handleChat(request: NextRequest) {
-  // 1. Avtentikacija + CORS
+  // 1. Preverjanje pristnosti + CORS
   await authenticateRequest(request);
   applyCorsHeaders(response);
 
   // 2. Preverjanje veljavnosti telesa
   const body = await parseRequestBody(request);
 
-  // 3. Zaznavanje formata + pretvorba
+  // 3. Zaznavanje oblike + pretvorba
   const sourceFormat = detectFormat(request);
   const targetFormat = getTargetFormat(providerId);
   if (needsTranslation(sourceFormat, targetFormat)) {
@@ -196,20 +196,20 @@ export async function handleChat(request: NextRequest) {
       await recordUsage(result);
       return result;
     } catch (err) {
-      // Nadaljevanje z naslednjim ciljem
+      // Nadaljuj z naslednjim ciljem
     }
   }
 
-  // 5. Rezervni izhod v sili
+  // 5. Rezervna možnost v sili
   return await emergencyFallback(body);
 }
 ```
 
-Čeprav gre za eno samo velikansko funkcijo, je organizirana v **komentirane razdelke**, ki ustrezajo 5-stopenjskemu cevovodu.
+Čeprav gre za eno samo ogromno funkcijo, je organizirana v **razdelke s komentarji**, ki ustrezajo petstopenjskemu cevovodu.
 
 ### combo.ts (4456 vrstic kode)
 
-**Usmerjevalni mehanizem**, ki kombinacijo razreši v urejen seznam ciljev.
+**Mehanizem za usmerjanje**, ki kombinacijo razreši v urejen seznam ciljev.
 
 ```ts
 // services/combo.ts
@@ -228,44 +228,44 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
 
 Podpira **19 strategij usmerjanja** (glejte `src/shared/constants/routingStrategies.ts`):
 
-| Strategija          | Delovanje                                                                      |
-| ------------------- | ------------------------------------------------------------------------------ |
-| `priority`          | Urejen seznam s prvim ciljem na prvem mestu                                    |
-| `weighted`          | Verjetnostna izbira glede na utež posameznega cilja                            |
-| `round-robin`       | Kroženje med cilji po vrstnem redu                                             |
-| `context-relay`     | Predajanje konteksta med cilji                                                 |
-| `fill-first`        | Zapolnitev kvote pred prehodom na naslednji cilj                               |
-| `p2c`               | Moč dveh izbir                                                                 |
-| `random`            | Enakomerna naključna izbira                                                    |
-| `least-used`        | Izbira cilja z najmanj nedavnimi uporabami                                     |
-| `cost-optimized`    | Najprej najcenejši razpoložljivi cilj                                          |
-| `reset-aware`       | Upoštevanje ponastavitvenih oken ponudnika                                     |
-| `reset-window`      | Usmerjanje na podlagi ponastavitvenega okna                                    |
-| `headroom`          | Najprej cilj z največjo preostalo kvoto                                        |
-| `strict-random`     | Resnično enakomerna izbira (brez uteževanja kakovosti)                         |
-| `auto`              | Uporaba 16-faktorskega ocenjevanja (`autoCombo/`)                              |
-| `lkgp`              | Najprej zadnji znani delujoči ponudnik                                         |
-| `context-optimized` | Najprimernejši cilj za zahteve z dolgim kontekstom                             |
-| `fusion`            | Vzporedno razpošiljanje skupini, nato sinteza prek ocenjevalnika (`fusion.ts`) |
+| Strategija          | Delovanje                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------ |
+| `priority`          | Urejen seznam s prvim ciljem na prvem mestu                                                      |
+| `weighted`          | Verjetnostna izbira glede na utež posameznega cilja                                              |
+| `round-robin`       | Kroženje skozi cilje po vrstnem redu                                                             |
+| `context-relay`     | Predajanje konteksta med cilji                                                                   |
+| `fill-first`        | Zapolnitev kvote pred prehodom na naslednji cilj                                                 |
+| `p2c`               | Izbira med dvema možnostma                                                                       |
+| `random`            | Enakomerna naključna izbira                                                                      |
+| `least-used`        | Izbira cilja z najmanj nedavnimi uporabami                                                       |
+| `cost-optimized`    | Najprej najcenejši razpoložljivi cilj                                                            |
+| `reset-aware`       | Upošteva časovna okna ponastavitve ponudnikov                                                    |
+| `reset-window`      | Usmerjanje na podlagi časovnega okna ponastavitve                                                |
+| `headroom`          | Najprej cilj z največ preostale razpoložljive kvote                                              |
+| `strict-random`     | Resnično enakomerna izbira (brez uteževanja glede na kakovost)                                   |
+| `auto`              | Uporabi ocenjevanje s 16 dejavniki (`autoCombo/`)                                                |
+| `lkgp`              | Najprej zadnji znani delujoči ponudnik                                                           |
+| `context-optimized` | Najprimernejši za zahteve z dolgim kontekstom                                                    |
+| `fusion`            | Vzporedno razpošlje zahtevo skupini, nato pa odgovore sintetizira prek ocenjevalca (`fusion.ts`) |
 
 ### base.ts (1170 vrstic kode)
 
-**Abstraktni izvajalnik**, ki ga razširja vseh 101 izvajalcev. Vsebuje:
+**Abstraktni izvajalnik**, ki ga razširja vseh 107 izvajalnikov. Vsebuje:
 
-- `buildUrl()` — privzeta gradnja URL-ja (podrazredi jo preglasijo za prilagojeno vedenje)
-- `buildHeaders()` — privzete glave (avtentikacija, vrsta vsebine)
-- `transformRequest()` — privzeto nespremenjeno posredovanje
-- `execute()` — glavna zanka HTTP s ponovnimi poskusi, postopnim podaljševanjem zakasnitve in varovalko
+- `buildUrl()` — privzeta sestava URL-ja (podrazredi jo preglasijo za prilagojeno vedenje)
+- `buildHeaders()` — privzete glave (preverjanje pristnosti, vrsta vsebine)
+- `transformRequest()` — privzeto posredovanje brez sprememb
+- `execute()` — glavna zanka HTTP s ponovnimi poskusi, eksponentnim zamikom in prekinjevalnikom
 
 ```ts
 // open-sse/executors/default.ts
 export class DefaultExecutor extends BaseExecutor {
   // Obravnava vse ponudnike, združljive z OpenAI/Anthropic
-  // Ponudniki registrirajo konfiguracije (URL, avtentikacijo, glave), vendar si delijo logiko izvajalnika
+  // Ponudniki registrirajo konfiguracije (URL, preverjanje pristnosti, glave), vendar si delijo logiko izvajalnika
 }
 ```
 
-Vedenje, specifično za ponudnika (avtentikacijske glave, osnovni URL, glave različic), je konfigurirano prek registra ponudnikov in ne z ločenimi razredi izvajalnikov.
+Vedenje, specifično za ponudnika (glave za preverjanje pristnosti, osnovni URL, glave različice), je konfigurirano prek registra ponudnikov in ne prek ločenih razredov izvajalnikov.
 
 ````
 
@@ -273,22 +273,22 @@ Vedenje, specifično za ponudnika (avtentikacijske glave, osnovni URL, glave raz
 
 ## Storitve (117 modulov)
 
-Storitve so **osredotočeni, enonamenski moduli**, ki jih upravljavci združujejo. Glavne kategorije:
+Storitve so **osredotočeni, namenski moduli**, ki jih obdelovalniki združujejo. Glavne kategorije:
 
 ### Usmerjanje in kombiniranje
 
 - `combo.ts` — vstopna točka za kombinirano usmerjene zahteve
 - `services/autoCombo/` — 16-faktorsko točkovanje, 8 strategij samodejnega usmerjanja
 - `wildcardRouter.ts` — ujema poti z nadomestnimi znaki (`gpt-*`)
-- `modelFamilyFallback.ts` — nadomestna možnost znotraj družine T5
+- `modelFamilyFallback.ts` — nadomestna izbira znotraj družine T5
 
 ### Omejevanje hitrosti in kvote
 
-- `rateLimitManager.ts` — žetonovno vedro za vsak ključ in ponudnika
+- `rateLimitManager.ts` — žetonovni vedro za vsako kombinacijo ključa in ponudnika
 - `usage.ts` — beleženje uporabe
 - `quotaCache.ts` — posnetki kvot v pomnilniku
 
-### Račun in žeton
+### Računi in žetoni
 
 - `tokenRefresh.ts` — osvežitev OAuth ob napaki 401
 - `accountFallback.ts` — preklop na nadomestni račun
@@ -303,8 +303,8 @@ Storitve so **osredotočeni, enonamenski moduli**, ki jih upravljavci združujej
 
 ### Odpornost
 
-- `resilience.ts` — orkestracija ponovnih poskusov, zakasnitve in odklopnika
-- `emergencyFallback.ts` — skrajna nadomestna možnost
+- `resilience.ts` — usklajevanje ponovnih poskusov, zakasnitev in odklopnika
+- `emergencyFallback.ts` — nadomestna možnost v skrajni sili
 - `modelDeprecation.ts` — samodejno usmerjanje na nasledniške modele
 
 ### Stanje
@@ -316,7 +316,7 @@ Storitve so **osredotočeni, enonamenski moduli**, ki jih upravljavci združujej
 ### Stiskanje
 
 - `compression/` (podimenik) — celoten cevovod stiskanja
-- 39 datotek, ki zajemajo pogone, pakete pravil in vmesnike
+- 39 datotek, ki zajemajo mehanizme, pakete pravil in prilagojevalnike
 
 ### Veščine
 
@@ -328,13 +328,13 @@ Storitve so **osredotočeni, enonamenski moduli**, ki jih upravljavci združujej
 
 ---
 
-## Izvajalniki (75+ datotek)
+## Izvajalniki (več kot 75 datotek)
 
 Ena datoteka na ponudnika. Vsi razširjajo `BaseExecutor` in preglasijo tisto, kar se razlikuje.
 
 ### Pogosti vzorci
 
-Ponudniki se razrešujejo prek `getExecutor(providerId)`, ki vrne konfigurirani izvajalnik. Ponudniki, združljivi z OpenAI/Anthropic, uporabljajo `DefaultExecutor` (`executors/default.ts`). Vedenje, specifično za ponudnika (osnovni URL, glave za preverjanje pristnosti, različica API-ja), je konfigurirano v `open-sse/config/providers/`, medtem ko se pretvorbe telesa zahteve izvajajo v `open-sse/translator/`.
+Ponudniki se razrešijo prek `getExecutor(providerId)`, ki vrne konfigurirani izvajalnik. Ponudniki, združljivi z OpenAI/Anthropic, uporabljajo `DefaultExecutor` (`executors/default.ts`). Vedenje, specifično za ponudnika (osnovni URL, glave za preverjanje pristnosti, različica API-ja), je konfigurirano v `open-sse/config/providers/`, medtem ko se pretvorbe telesa zahteve izvajajo v `open-sse/translator/`.
 
 **URL po meri** se nastavi prek konfiguracije ponudnika:
 
@@ -346,9 +346,9 @@ export default {
 }
 ````
 
-**Preverjanje pristnosti po meri** se izvaja prek konfiguracije preverjanja pristnosti v registru ponudnikov (ključ API, OAuth, profili glav).
+**Preverjanje pristnosti po meri** se obravnava prek konfiguracije preverjanja pristnosti v registru ponudnikov (ključ API, OAuth, profili glav).
 
-**Pretvorbe telesa zahteve po meri** (npr. Anthropicovo ločevanje `system` od `messages`) so registrirane za vsakega ponudnika v `open-sse/translator/`.
+**Pretvorbe telesa zahteve po meri** (npr. Anthropicovo ločevanje `system` od `messages`) se registrirajo za posameznega ponudnika v `open-sse/translator/`.
 
 ````
 
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-Razreševanje poteka prek `ExecutorRegistry` (`executors/registry.ts`): vsak specializirani izvajalnik je deklariran v vgrajeni tabeli datoteke `executors/index.ts` in ob nalaganju modula registriran prek `registerExecutor(alias, instance)`; `getExecutor()` preveri register in za vsakega ponudnika brez specializiranega vnosa uporabi predpomnjeni `DefaultExecutor`. Celotno preslikavo vzdevek → izvajalnik opredeljuje referenčni preizkus `tests/unit/executor-map-golden.test.ts`.
+Razreševanje poteka prek `ExecutorRegistry` (`executors/registry.ts`): vsak specializirani izvajalnik je deklariran v vgrajeni tabeli datoteke `executors/index.ts` in registriran prek `registerExecutor(alias, instance)` ob nalaganju modula; `getExecutor()` preveri register in za vsakega ponudnika brez specializiranega vnosa uporabi predpomnjeni `DefaultExecutor`. Celotna preslikava vzdevek → izvajalnik je opredeljena z referenčnim testom `tests/unit/executor-map-golden.test.ts`.
 
 ---
 

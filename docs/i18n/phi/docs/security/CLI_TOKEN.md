@@ -12,80 +12,89 @@ Nagpapatotoo ang mga command ng OmniRoute CLI sa lokal na management API gamit a
 
 Nagbibigay-daan ito sa mga CLI subcommand (`omniroute status`, `omniroute providers`, atbp.)
 na tumawag sa mga management endpoint nang hindi kinakailangang magbigay ang user ng JWT o
-password sa bawat pagpapatakbo.
+password sa bawat invocation.
 
 ## Paano ito gumagana
 
 1. Binabasa ng `getMachineTokenSync()` ang hardware machine ID sa pamamagitan ng `node-machine-id`
-   (bumabalik sa isang walang-lamang string kapag nabigo, na nagdi-disable sa CLI auth).
-2. Kinukuwenta nito ang `HMAC-SHA256(machine_id, salt)` at ibinabalik ang buong 64-char
-   hex digest — isang deterministiko at hindi maibabalik na token na nakatali sa machine na ito.
-3. Ipinapadala lamang ng CLI ang token bilang `x-omniroute-cli-token` kapag ang natukoy na
-   destinasyon ay isang tahasang loopback URL (`localhost`, `127.0.0.0/8`, o
-   loopback IPv6). Gumagamit ang mga request na may dalang token ng `redirect: error`, upang hindi
-   ito maipasa ng isang lokal na redirect sa ibang origin. Sa halip, gumagamit ang mga remote
-   context ng mga scoped access token. Kung hindi available ang derivation, hindi isinasama ng CLI
-   ang header at iniuulat ng `omniroute doctor` ang pagkabigo sa halip na ituring na valid ang
-   isang walang-lamang token.
+   (bumabalik sa isang empty string kapag nabigo, na nagdi-disable sa CLI auth).
+2. Kinukuwenta nito ang `HMAC-SHA256(machine_id, salt)` at ibinabalik ang buong 64-character
+   hex digest — isang deterministic at non-reversible na token na nakatali sa machine na ito.
+3. Ipinapadala lamang ng CLI ang token bilang `x-omniroute-cli-token` kapag ang na-resolve na
+   destination ay isang tahasang loopback URL (`localhost`, `127.0.0.0/8`, o
+   loopback IPv6). Gumagamit ang mga request na may token ng `redirect: error`, kaya hindi ito
+   maipapasa ng isang lokal na redirect sa ibang origin. Gumagamit naman ang mga remote context
+   ng mga scoped access token. Kung hindi available ang derivation, hindi isinasama ng CLI ang header
+   at iniuulat ng `omniroute doctor` ang pagkabigo sa halip na ituring na valid ang isang empty token.
 4. Muling kinukuwenta ng server (`src/server/authz/policies/management.ts`) ang
-   inaasahang token gamit ang parehong salt at inihahambing ito sa pamamagitan ng `timingSafeEqual`
-   upang pigilan ang pagkuha batay sa timing.
+   inaasahang token gamit ang parehong salt at ikinukumpara ito sa pamamagitan ng `timingSafeEqual`
+   upang maiwasan ang timing-based extraction.
 
 ## Mga katangian ng seguridad
 
-| Katangian                                      | Detalye                                                                                                                                                                                                                                          |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Loopback lamang**                            | Tinatanggap lamang kapag sinasabi ng pinagkakatiwalaang peer-locality stamp ng server (na hinango mula sa tunay na TCP peer address) na loopback ito. Hindi kailanman pinagkakatiwalaan ang client-controlled na `Host` header para sa locality. |
-| **Constant-time na paghahambing**              | Pinipigilan ng `crypto.timingSafeEqual` ang mga timing attack.                                                                                                                                                                                   |
-| **Hindi maibabalik**                           | Hindi mababawi ang machine-id mula sa output ng HMAC.                                                                                                                                                                                            |
-| **Walang pag-bypass sa proteksiyong `always`** | Sinusuri ang `isAlwaysProtectedPath()` bago ang pagsusuri sa CLI token. Palaging nangangailangan ng JWT ang `/api/shutdown` at `/api/settings/database`.                                                                                         |
-| **Hindi nae-export**                           | Hindi kailanman isinusulat sa disk o itinatala sa log ang token.                                                                                                                                                                                 |
+| Katangian                               | Detalye                                                                                                                                                                                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Loopback lamang**                     | Tinatanggap lamang kapag sinasabi ng pinagkakatiwalaang peer-locality stamp ng server (na nagmula sa tunay na TCP peer address) na loopback ito. Hindi kailanman pinagkakatiwalaan ang client-controlled na `Host` header para sa locality. |
+| **Constant-time na paghahambing**       | Pinipigilan ng `crypto.timingSafeEqual` ang mga timing attack.                                                                                                                                                                              |
+| **Non-reversible**                      | Hindi magagamit ang HMAC output upang mabawi ang machine-id.                                                                                                                                                                                |
+| **Walang bypass sa `always`-protected** | Sinusuri ang `isAlwaysProtectedPath()` bago ang CLI token check. Palaging nangangailangan ng JWT ang `/api/shutdown` at `/api/settings/database`.                                                                                           |
+| **Hindi nae-export**                    | Hindi kailanman isinusulat sa disk o itinatala sa log ang token.                                                                                                                                                                            |
 
-## Pag-rotate ng salt
+## Default na salt (random sa bawat installation)
 
-Itakda ang `OMNIROUTE_CLI_SALT` upang i-rotate ang hinangong token nang walang pagbabago sa code.
-Pagkatapos ng rotation, awtomatikong gagamitin ng lahat ng CLI process sa machine na ito ang bagong token.
-Kapaki-pakinabang ito pagkatapos ng pagtagas ng process list na maaaring naglantad sa
-nakaraang hinangong value.
+Kapag hindi nakatakda ang `OMNIROUTE_CLI_SALT`, ang salt ay isang random na 64-character hex string
+na isang beses lang binubuo at permanenteng sine-save sa `<DATA_DIR>/cli-token-salt.json` (mode `0600`) —
+hindi ang naka-check in na literal na `omniroute-cli-auth-v1`. Parehong binabasa ng `getActiveSalt()` sa
+`src/lib/machineToken.ts` at ng katumbas nito sa `bin/cli/utils/cliToken.mjs` ang
+iisang file, kaya nagkakaroon ang server at bawat CLI invocation sa installation na ito ng
+parehong value; ginagamit lamang ang naka-check in na literal bilang pinakahuling fallback kapag wala
+pang maitatag na persisted o env salt (halimbawa, isang bagong CLI-only installation
+bago pa man unang tumakbo ang server). Nilulutas nito ang isang kahinaan ng lumang fixed literal
+na default: karaniwang world-readable ang `/etc/machine-id`, kaya kung hindi, maaaring makuha
+ng sinumang lokal na user ang parehong token para sa bawat installation na hindi kailanman nagtakda ng
+`OMNIROUTE_CLI_SALT`.
+
+## Pagpapalit ng salt
+
+Itakda ang `OMNIROUTE_CLI_SALT` upang palitan ang nabuong token nang walang pagbabago sa code — palagi itong inuuna kaysa sa nakaimbak na salt ng bawat installation. Pagkatapos ng pagpapalit, awtomatikong gagamitin ng lahat ng proseso ng CLI sa machine na ito ang bagong token. Kapaki-pakinabang ito pagkatapos ng pagtagas sa listahan ng mga proseso na maaaring naglantad sa dating nabuong value.
 
 ```bash
-# Permanenteng rotation (idagdag sa shell profile)
+# Permanenteng pagpapalit (idagdag sa shell profile)
 export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 
 # Tiyaking ginagamit ang bagong token
 omniroute status
 ```
 
-Default na salt: `omniroute-cli-auth-v1`
+## Lumang format (SHA-256, 32-character) — tinatanggap pa rin
 
-## Legacy na format (SHA-256, 32-char) — tinatanggap pa rin
-
-Bago ang HMAC format sa itaas, hinango ng CLI ang token nito bilang
-`SHA-256(machineId + salt).hex[0..32]` (isang 32-char prefix) sa
+Bago ang HMAC format sa itaas, binubuo ng CLI ang token nito bilang
+`SHA-256(machineId + salt).hex[0..32]` (isang 32-character na prefix) sa
 `bin/cli/utils/cliToken.mjs` (`getLegacyCliTokenSync` sa `src/lib/machineToken.ts`).
 
 Para sa backward compatibility, tinatanggap ng server ang **parehong** format: binubuo ng verifier ang
 `expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` at inihahambing ang
 papasok na header sa bawat isa gamit ang `timingSafeEqual`
 (`src/server/authz/policies/management.ts` at `src/lib/middleware/cliTokenAuth.ts`).
-Kaya valid ang isang token kung tumutugma ito sa **alinman** sa 64-char HMAC digest o sa 32-char
-legacy SHA-256 prefix.
+Kaya valid ang isang token kung tumutugma ito sa **alinman** sa 64-character na HMAC digest o sa 32-character na
+lumang SHA-256 prefix.
 
-**Pag-opt out:** itakda ang `OMNIROUTE_DISABLE_CLI_TOKEN=true` (env o `.env`) upang ganap na i-disable ang
-mekanismo ng CLI token; pagkatapos nito, nangangailangan ang lahat ng access ng tahasang API key. Sa mga multi-user
-host, inirerekomenda ito dahil ang `machine-id` ay para sa bawat device (hindi para sa bawat user) at maaaring
-kuwentahin ng ibang user sa parehong host ang kaparehong token.
+**Pag-opt out:** itakda ang `OMNIROUTE_DISABLE_CLI_TOKEN=true` (env o `.env`) upang ganap na i-disable ang mekanismo ng CLI
+token; pagkatapos nito, nangangailangan ang lahat ng access ng tahasang API key. Inirerekomenda ito sa mga host na maraming user, dahil ang `machine-id` ay para sa bawat device (hindi para sa bawat user) at maaaring kalkulahin ng ibang
+user sa parehong host ang kaparehong token.
 
 ## Mga file
 
-| File                                      | Layunin                                       |
-| ----------------------------------------- | --------------------------------------------- |
-| `src/lib/machineToken.ts`                 | Derivation ng token (`getMachineTokenSync`)   |
-| `src/server/authz/headers.ts`             | `CLI_TOKEN_HEADER` constant                   |
-| `src/server/authz/policies/management.ts` | Pag-verify sa panig ng server                 |
-| `src/server/authz/routeGuard.ts`          | Pagsusuri sa loopback host (`isLoopbackHost`) |
+| File                                      | Layunin                                           |
+| ----------------------------------------- | ------------------------------------------------- |
+| `src/lib/machineToken.ts`                 | Pagbuo ng token (`getMachineTokenSync`)           |
+| `bin/cli/utils/cliToken.mjs`              | Katumbas na derivation sa panig ng CLI            |
+| `<DATA_DIR>/cli-token-salt.json`          | Nakaimbak na random na salt ng bawat installation |
+| `src/server/authz/headers.ts`             | Constant na `CLI_TOKEN_HEADER`                    |
+| `src/server/authz/policies/management.ts` | Pag-verify sa panig ng server                     |
+| `src/server/authz/routeGuard.ts`          | Pagsusuri ng loopback host (`isLoopbackHost`)     |
 
 ## Tingnan din
 
-- `docs/security/ROUTE_GUARD_TIERS.md` — mga antas ng proteksiyon sa route
-- `docs/architecture/AUTHZ_GUIDE.md` — kumpletong authorization pipeline
+- `docs/security/ROUTE_GUARD_TIERS.md` — mga antas ng proteksyon ng route
+- `docs/architecture/AUTHZ_GUIDE.md` — kumpletong pipeline ng awtorisasyon

@@ -1603,19 +1603,19 @@ Titik akhir khusus pentadbir untuk pengurusan operasi.
 
 ## Pengurusan Alat CLI
 
-Urus alat CLI yang berintegrasi dengan OmniRoute (antigravity, chipotle, commandCode,
-devin-cli, dll.). Lihat [Rujukan Penyedia](./PROVIDER_REFERENCE.md) untuk senarai penuh.
+Urus alat CLI yang berintegrasi dengan OmniRoute (antigravity, commandCode,
+devin-cli, dan sebagainya). Lihat [Rujukan Penyedia](./PROVIDER_REFERENCE.md) untuk senarai penuh.
 
-| Kaedah | Laluan                                  | Penerangan                                                                                                                                                       |
-| ------ | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | Status semua alat CLI (dipasang, versi, kali terakhir dilihat)                                                                                                   |
-| GET    | `/api/cli-tools/status`                 | Butiran status untuk satu alat CLI (pertanyaan `?tool=`)                                                                                                         |
-| POST   | `/api/cli-tools/apply`                  | Tulis konfigurasi terjana alat (`dryRun` menyediakan pratonton; `422` + `containerEphemeralTarget` apabila dikontena; `migration` mencatatkan YAML Codex legasi) |
-| GET    | `/api/cli-tools/backups`                | Senaraikan sandaran konfigurasi alat CLI                                                                                                                         |
-| POST   | `/api/cli-tools/backups`                | Cipta sandaran bagi semua konfigurasi alat CLI                                                                                                                   |
-| POST   | `/api/cli-tools/backups`                | Pulihkan: titik akhir yang sama dengan `{tool, backupId}` dalam badan akan memulihkan sandaran tersebut                                                          |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Status proksi MITM Antigravity (alat CLI "antigravity-mitm")                                                                                                     |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | Konfigurasikan alias antigravity-mitm                                                                                                                            |
+| Kaedah | Laluan                                  | Penerangan                                                                                                                                                        |
+| ------ | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/cli-tools/all-statuses`           | Status semua alat CLI (dipasang, versi, kali terakhir dikesan)                                                                                                    |
+| GET    | `/api/cli-tools/status`                 | Butiran status bagi satu alat CLI (pertanyaan `?tool=`)                                                                                                           |
+| POST   | `/api/cli-tools/apply`                  | Tulis konfigurasi alat yang dijana (`dryRun` menyediakan pratonton; `422` + `containerEphemeralTarget` apabila dikontena; `migration` mencatat YAML Codex legasi) |
+| GET    | `/api/cli-tools/backups`                | Senaraikan sandaran konfigurasi alat CLI                                                                                                                          |
+| POST   | `/api/cli-tools/backups`                | Cipta sandaran bagi semua konfigurasi alat CLI                                                                                                                    |
+| POST   | `/api/cli-tools/backups`                | Pulihkan: titik akhir yang sama dengan `{tool, backupId}` dalam isi permintaan akan memulihkan sandaran tersebut                                                  |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Status proksi MITM Antigravity (alat CLI "antigravity-mitm")                                                                                                      |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | Konfigurasikan alias antigravity-mitm                                                                                                                             |
 
 **Pengesahan:** Memerlukan sesi pengurusan.
 

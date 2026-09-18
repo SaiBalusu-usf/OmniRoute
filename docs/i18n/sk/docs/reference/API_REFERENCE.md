@@ -1611,21 +1611,21 @@ Koncové body určené iba správcom na prevádzkovú správu.
 
 ## Správa nástrojov CLI
 
-Spravujte nástroje CLI, ktoré sa integrujú so službou OmniRoute (antigravity, chipotle, commandCode,
+Spravujte nástroje CLI, ktoré sa integrujú s OmniRoute (antigravity, commandCode,
 devin-cli atď.). Úplný zoznam nájdete v [referenčnej príručke poskytovateľov](./PROVIDER_REFERENCE.md).
 
-| Metóda | Cesta                                   | Popis                                                                                                                                                                         |
-| ------ | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | Stav všetkých nástrojov CLI (nainštalovanie, verzia, posledné použitie)                                                                                                       |
-| GET    | `/api/cli-tools/status`                 | Podrobnosti o stave jedného nástroja CLI (parameter dopytu `?tool=`)                                                                                                          |
-| POST   | `/api/cli-tools/apply`                  | Zapísanie vygenerovanej konfigurácie nástroja (`dryRun` zobrazí náhľad; `422` + `containerEphemeralTarget` pri použití kontajnera; `migration` upozorní na starší Codex YAML) |
-| GET    | `/api/cli-tools/backups`                | Zoznam záloh konfigurácií nástrojov CLI                                                                                                                                       |
-| POST   | `/api/cli-tools/backups`                | Vytvorenie zálohy konfigurácií všetkých nástrojov CLI                                                                                                                         |
-| POST   | `/api/cli-tools/backups`                | Obnovenie: rovnaký koncový bod s `{tool, backupId}` v tele obnoví danú zálohu                                                                                                 |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Stav proxy MITM nástroja Antigravity (nástroj CLI „antigravity-mitm“)                                                                                                         |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | Konfigurácia aliasov nástroja antigravity-mitm                                                                                                                                |
+| Metóda | Cesta                                   | Popis                                                                                                                                                                      |
+| ------ | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/cli-tools/all-statuses`           | Stav všetkých nástrojov CLI (nainštalované, verzia, naposledy zaznamenané)                                                                                                 |
+| GET    | `/api/cli-tools/status`                 | Podrobnosti o stave jedného nástroja CLI (parameter dopytu `?tool=`)                                                                                                       |
+| POST   | `/api/cli-tools/apply`                  | Zapíše vygenerovanú konfiguráciu nástroja (`dryRun` zobrazí náhľad; `422` + `containerEphemeralTarget` pri použití kontajnera; `migration` upozorní na starší YAML Codexu) |
+| GET    | `/api/cli-tools/backups`                | Zoznam záloh konfigurácií nástrojov CLI                                                                                                                                    |
+| POST   | `/api/cli-tools/backups`                | Vytvorí zálohu konfigurácií všetkých nástrojov CLI                                                                                                                         |
+| POST   | `/api/cli-tools/backups`                | Obnovenie: rovnaký koncový bod s `{tool, backupId}` v tele požiadavky obnoví danú zálohu                                                                                   |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Stav proxy MITM nástroja Antigravity (nástroj CLI „antigravity-mitm“)                                                                                                      |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | Nakonfiguruje aliasy antigravity-mitm                                                                                                                                      |
 
-**Autorizácia:** Vyžaduje reláciu správy.
+**Autentifikácia:** Vyžaduje reláciu správy.
 
 ---
 

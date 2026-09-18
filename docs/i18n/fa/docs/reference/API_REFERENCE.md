@@ -1599,18 +1599,18 @@ GET /.well-known/agent.json
 
 ## مدیریت ابزارهای CLI
 
-ابزارهای CLI را که با OmniRoute یکپارچه میشوند (antigravity، chipotle، commandCode،
+ابزارهای CLI را که با OmniRoute یکپارچه میشوند (antigravity، commandCode،
 devin-cli و غیره) مدیریت کنید. برای مشاهده فهرست کامل، به [مرجع ارائهدهندگان](./PROVIDER_REFERENCE.md) مراجعه کنید.
 
 | متد  | مسیر                                    | توضیحات                                                                                                                                                                       |
 | ---- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GET  | `/api/cli-tools/all-statuses`           | وضعیت همه ابزارهای CLI (نصبشده، نسخه، آخرین مشاهده)                                                                                                                           |
 | GET  | `/api/cli-tools/status`                 | جزئیات وضعیت یک ابزار CLI (پرسوجوی `?tool=`)                                                                                                                                  |
-| POST | `/api/cli-tools/apply`                  | نوشتن پیکربندی تولیدشده ابزار (`dryRun` پیشنمایش ارائه میدهد؛ هنگام اجرا در کانتینر، `422` + `containerEphemeralTarget`؛ `migration` وجود یک YAML قدیمی Codex را اعلام میکند) |
-| GET  | `/api/cli-tools/backups`                | فهرستکردن نسخههای پشتیبان پیکربندی ابزارهای CLI                                                                                                                               |
+| POST | `/api/cli-tools/apply`                  | پیکربندی تولیدشده ابزار را مینویسد (`dryRun` پیشنمایش ارائه میدهد؛ در حالت کانتینری، `422` + `containerEphemeralTarget`؛ `migration` وجود یک YAML قدیمی Codex را اعلام میکند) |
+| GET  | `/api/cli-tools/backups`                | فهرست نسخههای پشتیبان پیکربندی ابزارهای CLI                                                                                                                                   |
 | POST | `/api/cli-tools/backups`                | ایجاد نسخه پشتیبان از پیکربندی همه ابزارهای CLI                                                                                                                               |
 | POST | `/api/cli-tools/backups`                | بازیابی: همین نقطه پایانی با `{tool, backupId}` در بدنه، آن نسخه پشتیبان را بازیابی میکند                                                                                     |
-| GET  | `/api/cli-tools/antigravity-mitm`       | وضعیت پروکسی MITM مربوط به Antigravity (ابزار CLI با نام "antigravity-mitm")                                                                                                  |
+| GET  | `/api/cli-tools/antigravity-mitm`       | وضعیت پروکسی MITM مربوط به Antigravity (ابزار CLI با نام «antigravity-mitm»)                                                                                                  |
 | POST | `/api/cli-tools/antigravity-mitm/alias` | پیکربندی نامهای مستعار antigravity-mitm                                                                                                                                       |
 
 **احراز هویت:** به نشست مدیریتی نیاز دارد.

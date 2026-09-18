@@ -67,96 +67,80 @@ eksponentielle backoff fra `minRetryCooldownMs → maxRetryCooldownMs`. Tilsides
 `OMNIROUTE_PROVIDER_BREAKER_{OAUTH,API_KEY}_{FAILURE_THRESHOLD,FAILURE_WINDOW_MS,COOLDOWN_MS}`.
 Regressionsbeskyttelse: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
-## 2. Forbindelses-cooldown
+## 2. Forbindelsesnedkøling
 
-**Omfang:** en enkelt providerforbindelse/-konto/-nøgle.
+**Omfang:** én enkelt udbyderforbindelse/konto/nøgle.
 
-**Formål:** spring én defekt nøgle over, mens andre forbindelser til samme provider fortsat håndterer anmodninger.
+**Formål:** springe én defekt nøgle over, mens andre forbindelser til samme udbyder fortsat betjener anmodninger.
 
 **Implementering:**
 
 - Markér som utilgængelig: `src/sse/services/auth.ts::markAccountUnavailable()`
 - Valg: `getProviderCredentials*` i samme fil
-- Beregning af cooldown: `open-sse/services/accountFallback.ts::checkFallbackError()`
+- Beregning af nedkøling: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Indstillinger: `src/lib/resilience/settings.ts`
 
 **Felter pr. forbindelse:**
 
-- `rateLimitedUntil` — tidsstempel for, hvornår cooldown udløber
+- `rateLimitedUntil` — tidsstempel for, hvornår nedkølingen udløber
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
 - `backoffLevel` — tæller for eksponentiel backoff
 
-**Standard-cooldowns:**
+**Standardnedkølinger:**
 
 - OAuth-basis: 5s
 - API-nøglebasis: 3s
-- API-nøgle 429: foretrækker upstream-`Retry-After`-/nulstillingsheadere eller tekst med et nulstillingstidspunkt, der kan fortolkes
+- API-nøgle 429: foretrækker upstream-`Retry-After`-/nulstillingsheadere eller tekst med nulstillingstidspunkt, der kan parses
 - Backoff: `baseCooldownMs * 2 ** failureIndex`
 
-**Beskyttelse mod thundering herd:** forhindrer samtidige fejl i at forlænge cooldown for meget eller øge `backoffLevel` mere end én gang.
+**Beskyttelse mod stampede-effekt:** forhindrer samtidige fejl i at forlænge nedkølingen for meget eller øge `backoffLevel` to gange.
 
-**Terminaltilstande (IKKE cooldowns):**
+**Terminaltilstande (IKKE nedkølinger):**
 
-- `banned` — angives ved registrering af nøgleord for blokering/kontoblokering (se [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (overgår til en terminaltilstand efter et begrænset antal genforsøg — `EXPIRED_RETRY_MAX = 3` med eksponentiel backoff — så midlertidige OAuth-fejl kan rette sig selv, før kontoen deaktiveres permanent)
+- `banned` — angives ved registrering af forbudte nøgleord/kontoblokering (se [BAN_DETECTION](../security/BAN_DETECTION.md)) og efter tre på hinanden følgende afvisninger pr. anmodning fra upstream (`request_rejected`, f.eks. Anthropic OAuth 403 "Request not allowed" — `open-sse/services/requestRejectedStreak.ts`); en enkelt afvisning nedkøler kun forbindelsen
+- `expired` (overgår til terminaltilstand efter et begrænset antal genforsøg — `EXPIRED_RETRY_MAX = 3` med eksponentiel backoff — så midlertidige OAuth-fejl kan rette sig selv, før kontoen deaktiveres permanent)
 - `credits_exhausted`
 
-Disse bevares, indtil legitimationsoplysningerne ændres, eller en operatør nulstiller dem. Overskriv ikke terminaltilstande med en midlertidig cooldown-tilstand.
+Disse bevares, indtil legitimationsoplysningerne ændres, eller en operatør nulstiller dem. Overskriv ikke terminaltilstande med en midlertidig nedkølingstilstand.
 
-**Doven genoprettelse:** Når `rateLimitedUntil` er overskredet, bliver forbindelsen kvalificeret igen. Efter vellykket brug rydder `clearAccountError()` alle fejlfelter.
+**Doven genoprettelse:** Når `rateLimitedUntil` er passeret, bliver forbindelsen kvalificeret igen. Ved vellykket brug rydder `clearAccountError()` alle fejlfelter.
 
 ### Sessionstilknytning (#7274)
 
-**Omfang:** én klientsession (`X-Session-Id`- / `x-codex-session-id`- / `x-omniroute-session`-header), der er fastgjort til én forbindelse, for **enhver** provider.
+**Omfang:** én klientsession (`X-Session-Id`- / `x-codex-session-id`- / `x-omniroute-session`-header) fastgjort til én forbindelse for **enhver** udbyder.
 
-**Formål:** fasthold en agent med flere interaktioner (Claude Code, aider, brugerdefinerede agenter) på samme konto på tværs af anmodninger, så tab af kontekst på tværs af konti og gentagne 429-fejl ved koldstart reduceres hos providere med sessionsstatus pr. konto.
+**Formål:** holde en agent med flere ture (Claude Code, aider, brugerdefinerede agenter) på samme konto på tværs af anmodninger, hvilket reducerer konteksttab på tværs af konti og gentagne 429-fejl ved koldstart hos udbydere med sessionsstatus pr. konto.
 
 **Implementering:**
 
 - TTL-bestemmelse: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Valg/oprettelse af fastgørelse: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
-- Udtrækning af header (generisk, enhver provider): `src/sse/services/auth.ts::extractSessionAffinityKey()`
-- Persisteret fastgørelsestabel: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Indstilling: `sessionAffinityTtlMs` (global TTL i ms, `0` deaktiverer) — `src/lib/db/settings.ts`. Omdøbt fra den Codex-specifikke `codexSessionAffinityTtlMs` ved migreringen `124_generic_session_affinity_ttl.sql`, som overfører en eventuel tidligere konfigureret Codex-TTL som den nye standard.
+- Headerudtrækning (generisk, enhver udbyder): `src/sse/services/auth.ts::extractSessionAffinityKey()`
+- Permanent fastgørelsestabel: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
+- Indstilling: `sessionAffinityTtlMs` (global TTL i ms, `0` deaktiverer) — `src/lib/db/settings.ts`. Omdøbt fra den Codex-specifikke `codexSessionAffinityTtlMs` via migreringen `124_generic_session_affinity_ttl.sql`, som overfører en eventuelt tidligere konfigureret Codex-TTL som den nye standard.
 
-Før #7274 returnerede `resolveSessionAffinityTtlMs()` omgående `0` for alle andre providere end `codex`, så TTL-indstillingen (og sessionsheaderne) ikke havde nogen effekt andre steder, selvom mekanismen til fastgørelse og udtrækningen af headere allerede var provideruafhængige. Rettelsen fjernede denne tidlige returnering; TTL'en gælder nu ensartet for alle providere, når den globalt er angivet til mere end `0`.
+Før #7274 afsluttede `resolveSessionAffinityTtlMs()` straks med `0` for alle andre udbydere end `codex`, så TTL-indstillingen (og sessionsheaderne) ikke havde nogen effekt andre steder, selvom fastgørelsesmekanismen og headerudtrækningen allerede var udbyderagnostiske. Rettelsen fjernede denne tidlige returnering; TTL'en gælder nu ensartet for alle udbydere, når den globalt er indstillet til mere end `0`.
 
-De tre headere til sessionstilknytning videresendes aldrig upstream — eksekveringskomponenterne bygger deres egne upstream-headere fra bunden i stedet for at videresende klientheadere, så dette forbliver et rent internt korrelations-id.
+De tre sessionstilknytningsheadere videresendes aldrig til upstream — eksekveringskomponenterne bygger deres egne upstream-headere fra bunden i stedet for at videresende klientheadere, så dette forbliver et rent internt korrelations-id.
 
-### Eksklusive forbindelseslejemål for administrerede sessioner
+### Eksklusive leases for administrerede sessionsforbindelser
 
-**Omfang:** én aktiv administreret HTTP-klient/-session ejer én kvalificeret OmniRoute-forbindelse.
+**Omfang:** én aktiv administreret HTTP-klient/session ejer én kvalificeret OmniRoute-forbindelse.
 
-**Formål:** lever varigt, eksklusivt ejerskab af forbindelser til klienter, der har brug for en hård routingafgrænsning
-på tværs af anmodninger. Dette adskiller sig fra sessionstilknytning, som er en blød kontinuitetspræference:
-Et eksklusivt lejemål gemmer livscyklustilstand i SQLite, håndhæver global entydighed for aktive ejere og
-aktive forbindelser og afviser en forældet generation før afsendelse til provideren.
+**Formål:** levere varigt, eksklusivt ejerskab over en forbindelse til klienter, der har brug for en fast routinggrænse på tværs af anmodninger. Dette adskiller sig fra sessionstilknytning, som er en blød kontinuitetspræference: En eksklusiv lease bevarer livscyklustilstanden i SQLite, håndhæver global entydighed for aktive ejere og aktive forbindelser og afviser en forældet generation før afsendelse til udbyderen.
 
-Funktionen er valgfri for hver API-nøgle. En administreret nøgle skal have scopet `lease:exclusive` og en
-eksplicit ikke-tom `allowedConnections`-liste. Enhver HTTP-klient kan bruge livscyklusslutpunktet; intet
-klientnavn, ingen user-agent, provider, OAuth-metode eller model er påkrævet. Lejemålet ejer en forbindelse,
-ikke en model, så et modelskift bevarer bindingen, så længe forbindelsen fortsat er kvalificeret på almindelig
-vis. De normale regler for model, kvote, tilstand, cooldown og tilladelsesliste er fortsat autoritative og kan
-flytte den samme generation til en anden ledig, kvalificeret forbindelse.
+Funktionen er valgfri pr. API-nøgle. En administreret nøgle skal have rettigheden `lease:exclusive` og en eksplicit, ikke-tom `allowedConnections`-liste. Enhver HTTP-klient kan bruge livscyklusendpointet; der kræves intet klientnavn, ingen user-agent, ingen udbyder, ingen OAuth-metode og ingen model. Leasen ejer en forbindelse, ikke en model, så et modelskift bevarer tilknytningen, så længe forbindelsen fortsat er kvalificeret efter de almindelige regler. De normale regler for model, kvote, tilstand, nedkøling og tilladelsesliste forbliver autoritative og kan flytte den samme generation til en anden ledig, kvalificeret forbindelse.
 
-Livscyklussen er `POST /api/v1/session-leases` med JSON-handlingerne `acquire`, `renew` og `release`.
-Administrerede inferensanmodninger angiver den uigennemsigtige `X-OmniRoute-Lease-Owner`-værdi og den nøjagtige
-`X-OmniRoute-Lease-Generation`. Ejeren bruger `vlo_` efterfulgt af 43 base64url-tegn; kun dens SHA-256-hash
-gemmes. Hvert afsluttende afsendelsesværn binder også det godkendte API-nøgle-id og aktive forbindelses-id.
-Kontrolheadere for lejemål fjernes fra logfiler, gemte øjebliksbilleder af anmodninger og
-upstream-headere til eksekveringskomponenter.
+Livscyklussen er `POST /api/v1/session-leases` med JSON-handlingerne `acquire`, `renew` og `release`. Administrerede inferensanmodninger medsender den uigennemsigtige `X-OmniRoute-Lease-Owner`-værdi og den præcise `X-OmniRoute-Lease-Generation`. Ejeren bruger `vlo_` efterfulgt af 43 base64url-tegn; kun dens SHA-256-hash gemmes. Hvert afsluttende afsendelseshegn binder også det godkendte API-nøgle-id og det aktive forbindelses-id. Kontrolheadere for leases fjernes fra logfiler, bevarede snapshots af anmodninger og upstream-headere til eksekveringskomponenter.
 
-Hvis almindelig routing har kvalificerede administrerede kandidater, men alle ledige kandidater er optaget af et
-fremmed aktivt lejemål, returnerer OmniRoute HTTP `429`, en kode for utilgængelig lejekapacitet, en
-tilstand for venten på kapacitet og en begrænset `Retry-After`, der er afledt af det tidligste relevante udløbstidspunkt.
-Almindelig tom kvalificering er ikke lejemålskonflikt og bevarer den eksisterende semantik for routingfejl.
+Hvis almindelig routing har kvalificerede administrerede kandidater, men alle ledige kandidater er optaget af en fremmed aktiv lease, returnerer OmniRoute HTTP `429`, en kode for utilgængelig leasekapacitet, en tilstand, der afventer kapacitet, og en begrænset `Retry-After`, som udledes af det tidligste relevante udløbstidspunkt. Almindelig tom kvalificering er ikke leasekonflikt og bevarer den eksisterende semantik for routingfejl.
 
 Relaterede mekanismer forbliver adskilte:
 
-- OAuth-sessionsbelægning er en proceslokal, blød fordeling for OAuth-konti.
-- Kontosemaforer tildeler tilladelser til samtidige anmodninger og afsluttes, når en anmodning er fuldført.
-- Eksklusive lejemål for administrerede sessioner er varigt livscyklusejerskab med et generationsværn.
+- OAuth-sessionsoptagelse er en blød proceslokal fordeling for OAuth-konti.
+- Kontosemaforer tildeler tilladelser til samtidige anmodninger og afsluttes, når en anmodning fuldføres.
+- Eksklusive leases for administrerede sessionsforbindelser er varigt livscyklusejerskab med et generationshegn.
 
 ---
 
@@ -164,66 +148,83 @@ Relaterede mekanismer forbliver adskilte:
 
 **Omfang:** kombinationen af udbyder + forbindelse + model.
 
-**Formål:** at undgå at deaktivere en hel forbindelse, når kun én model er utilgængelig eller kvotebegrænset.
+**Nøgleomfang efter status:** den fejlagtige status afgør, hvilken nøgle en låsning skriver
+til (`resolveLockoutScope()` i `open-sse/services/accountFallback/exactModelLock.ts`):
+
+- `429` / `403` / `402` — et kvote- eller rettighedssignal — låser **kvotefamilien**:
+  for codex hele `codex` / `spark`-omfanget (alle `gpt-5*`-modeller for
+  forbindelsen), for andre udbydere `getQuotaScopedModelForProvider()`.
+- `404` låser selve modellen (`getModelLockKey()` indsnævrer `not_found`).
+- Enhver anden status — `5xx`-transport-/serverfejl og OmniRoutes egen
+  syntetiserede `502` fra kvalitetsvalidering — låser kun den **eksakte**
+  kombination af udbyder/forbindelse/model. En dårlig strøm på én model er ikke
+  bevis på problemer med kontoens kvote; før denne regel fjernede ét tomt svar på
+  `codex/gpt-5.6-luna` alle `gpt-5*`-modeller for den pågældende forbindelse fra
+  routing i 2–30 min. (eskalerende), selvom dens kvote var uberørt.
+- En eksplicit `scope`-indstilling fra kalderen har altid forrang (Antigravity videregiver `"exact"`).
+
+**Formål:** undgå at deaktivere en hel forbindelse, når kun én model er utilgængelig eller kvotebegrænset.
 
 **Eksempler:**
 
-- Udbydere med kvoter pr. model, der returnerer 429
-- Lokale udbydere, der returnerer 404 for én manglende model
-- Udbyderspecifikke rettighedsfejl for tilstande/modeller (f.eks. Grok-tilstande)
+- Udbydere med kvoter pr. model, som returnerer 429
+- Lokale udbydere, som returnerer 404 for én manglende model
+- Udbyderspecifikke tilladelsesfejl for tilstand/model (f.eks. Grok-tilstande)
 
 **Implementering:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
-### Dashboard for modelnedkølingsperioder (v3.8.0)
+### Dashboard for modelafkølingsperioder (v3.8.0)
 
-Brugergrænseflade: Indstillinger → Modelnedkølingsperioder (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
+Brugergrænseflade: Indstillinger → Modelafkølingsperioder (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
 Viser aktive låsninger med: udbyder, forbindelse, model, årsag, expiresAt. Operatører kan manuelt genaktivere en model fra kortet.
 
-**REST API:**
+**REST-API:**
 
 - `GET /api/resilience/model-cooldowns` — vis aktive låsninger
 - `DELETE /api/resilience/model-cooldowns` — manuel genaktivering. Brødtekst: `{provider, connection, model}`. Godkendelse: administration.
 
-### Brugergrænseflade til låsningsindstillinger + genopretning via reduktion ved succes (v3.8.23)
+### Brugergrænseflade til låsningsindstillinger + gendannelse via succesnedtrapning (v3.8.23)
 
-Modellåsning gik fra altid aktiveret, hardcoded adfærd til en fuldt konfigurerbar funktion, der skal tilvælges, med sit eget indstillingskort og en selvhelende genopretningsmekanisme.
+Modellåsning gik fra altid aktiveret, hardkodet adfærd til en fuldt konfigurerbar
+tilvalgsfunktion med sit eget indstillingskort og en selvhelende gendannelsesmekanisme.
 
 **Indstillingskort:** Indstillinger → Modellåsning
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-Dette er **adskilt** fra det skrivebeskyttede `ModelCooldownsCard` ovenfor (som kun
-_oplister_ aktive låsninger) — det nye kort _konfigurerer parametrene_. Standardværdierne
+Dette er **forskelligt** fra det skrivebeskyttede `ModelCooldownsCard` ovenfor (som kun
+_oplister_ aktive låsninger) — det nye kort _konfigurerer parametrene_. Standardværdier
 findes i `DEFAULT_MODEL_LOCKOUT_SETTINGS`
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
-| Indstilling             | Standard                         | Betydning                                                         |
-| ----------------------- | -------------------------------- | ----------------------------------------------------------------- |
-| `enabled`               | `false`                          | Hovedkontakt — modellåsning er **deaktiveret som standard**.      |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Opstrømsstatusser, der tæller som en fejl afgrænset til en model. |
-| `baseCooldownMs`        | `120_000` (120 s)                | Indledende låsningsvarighed for den første fejl.                  |
-| `maxCooldownMs`         | `1_800_000` (30 min)             | Øvre grænse for den eskalerede nedkølingsperiode.                 |
-| `maxBackoffSteps`       | `10`                             | Maksimalt antal eskaleringstrin for eksponentiel backoff.         |
-| `useExponentialBackoff` | `true`                           | Om gentagne fejl eskalerer nedkølingsperioden eksponentielt.      |
+| Indstilling             | Standard                         | Betydning                                                       |
+| ----------------------- | -------------------------------- | --------------------------------------------------------------- |
+| `enabled`               | `false`                          | Hovedkontakt — modellåsning er **deaktiveret som standard**.    |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Upstream-statusser, der tæller som en fejl på modelniveau.      |
+| `baseCooldownMs`        | `120_000` (120 s)                | Indledende låsningsvarighed for den første fejl.                |
+| `maxCooldownMs`         | `1_800_000` (30 min)             | Øvre grænse for den eskalerede afkølingsperiode.                |
+| `maxBackoffSteps`       | `10`                             | Maksimalt antal eskaleringstrin for eksponentiel backoff.       |
+| `useExponentialBackoff` | `true`                           | Om gentagne fejl skal eskalere afkølingsperioden eksponentielt. |
 
-Indstillinger bevares via det normale indstillingslager og valideres via
+Indstillinger gemmes via det normale indstillingslager og valideres gennem
 skemaet for robusthedsindstillinger; kortet begrænser `baseCooldownMs`/`maxCooldownMs`
 (med `maxCooldownMs ≥ baseCooldownMs`) og `maxBackoffSteps`.
 
-**Genopretning via reduktion ved succes:** genopretning sker **ikke** udelukkende ved timerens udløb. Et korrekt
-svar reducerer modellens fejltæller, så en model, der er blevet genoprettet
-midt i perioden, stopper med at eskalere (og nulstilles), før timeren ellers ville gøre det. For et vellykket
+**Gendannelse via succesnedtrapning:** gendannelse sker **ikke** udelukkende ved timerudløb. Et fejlfrit
+svar nedtrapper modellens fejltæller, så en model, der gendannes
+midt i vinduet, stopper med at eskalere (og ryddes), før dens timer ellers ville udløbe. Ved et vellykket
 kombinationsmål kalder `open-sse/services/combo.ts` `decayModelFailureCount()`
 (`open-sse/services/accountFallback.ts`), som **halverer** den gemte
 `failureCount` (`Math.floor(failureCount / 2)`); når den når `0`, slettes låsningsposten
-helt. Modparten `recordModelLockoutFailure()`
-øger tælleren (og eskalerer nedkølingsperioden) ved fejl inden for
-eskaleringsvinduet. Denne reduktion ved succes fungerer ud over almindeligt timerudløb —
+helt. Den tilsvarende `recordModelLockoutFailure()`
+øger tælleren (og eskalerer afkølingsperioden) ved fejl inden for
+eskaleringsvinduet. Denne succesnedtrapning supplerer almindeligt timerudløb —
 begge mekanismer kan genaktivere en model.
 
-**Tilstand:** låsninger opbevares **i hukommelsen** (`Map`s pr. proces med
-`ModelLockoutEntry`, indekseret efter `provider:connectionId:model`) og lagres ikke permanent i
+**Tilstand:** låsninger opbevares **i hukommelsen** (`Map`-objekter pr. proces med
+`ModelLockoutEntry`, indekseret efter `provider:connectionId:model`, og låsninger med eksakt omfang efter
+`provider:connectionId:exact:model`) og gemmes ikke permanent i
 databasen — de går tabt ved genstart. _Indstillingerne_ gemmes permanent; den aktive
-låsnings_tilstand_ er midlertidig.
+_låsningstilstand_ er midlertidig.
 
 ---
 
@@ -636,11 +637,12 @@ hastighedsbegrænsning det samme signal som en opbrugt kvote. Reelle begrænsnin
 
 ## Fejlfinding
 
+- Svar fra en vægtet combo med `503 all_targets_cooling_down` (`Retry-After` er angivet, og `diagnostics.excluded` viser alle mål med `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → puljen er konfigureret og tilsluttet; alle mål er blot udelukket af en resiliens-timer. Advarslen `[COMBO] Weighted selection: every target excluded before dispatch — …` angiver årsagerne og det resterende antal sekunder. En `404 no_executable_targets` fra den samme combo betyder, at ingen resiliens-timer var involveret (der er intet at køre, eller alle konti bestod ikke tilgængelighedskontrollen). Indbygget i `open-sse/services/combo/pinRecovery.ts` ud fra de udelukkelser, der blev indsamlet i `targetResolution.ts`.
 - Alle nøgler for en udbyder springes over → kontrollér både circuit breaker-tilstanden OG hver forbindelses `rateLimitedUntil`/`testStatus`.
-- Udbyderen udelukkes permanent efter reset-vinduet → koden læser den rå `state` i stedet for `getStatus()`/`canExecute()`.
-- Én nøgle fejler, men andre bør virke → foretræk nedkøling af forbindelsen frem for circuit breaker.
+- Udbyderen er permanent udelukket efter nulstillingsvinduet → koden læser den rå `state` i stedet for `getStatus()`/`canExecute()`.
+- Én nøgle fejler, mens andre burde virke → foretræk nedkøling af forbindelsen frem for circuit breaker.
 - Kun én model fejler → foretræk modellåsning frem for nedkøling af forbindelsen.
-- Tilstanden burde genoprette sig selv, men gør det ikke → kontrollér for et fremtidigt tidsstempel samt en læsesti, der opdaterer en udløbet tilstand. Permanente statusser kræver manuelle ændringer.
+- Tilstanden burde genoprette sig selv, men gør det ikke → kontrollér, om der findes et fremtidigt tidsstempel samt en læsesti, der opdaterer en udløbet tilstand. Permanente statusser kræver manuelle ændringer.
 
 ---
 

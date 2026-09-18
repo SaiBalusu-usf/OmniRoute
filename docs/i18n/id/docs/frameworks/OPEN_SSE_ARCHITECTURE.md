@@ -169,7 +169,7 @@ Artefak log panggilan (jika diaktifkan) ditulis ke `${DATA_DIR}/call_logs/`.
 
 ### chatCore.ts (5977 baris)
 
-**Penangan permintaan utama**. Meskipun ukurannya besar, file ini memiliki struktur yang jelas:
+**Penangan permintaan utama**. Terlepas dari ukurannya, file ini memiliki struktur yang jelas:
 
 ```ts
 // Struktur semu chatCore.ts
@@ -205,11 +205,11 @@ export async function handleChat(request: NextRequest) {
 }
 ```
 
-Meskipun berupa satu fungsi raksasa, file ini disusun menjadi **bagian-bagian berkomentar** yang dipetakan ke pipeline 5 tahap.
+Meskipun berupa satu fungsi raksasa, file ini disusun menjadi **bagian-bagian yang diberi komentar** dan dipetakan ke pipeline 5 tahap.
 
 ### combo.ts (4456 LOC)
 
-**Mesin perutean** yang memetakan sebuah kombo ke target-target yang terurut.
+**Mesin perutean** yang menyelesaikan sebuah kombo menjadi target-target terurut.
 
 ```ts
 // services/combo.ts
@@ -228,33 +228,33 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
 
 Mendukung **19 strategi perutean** (lihat `src/shared/constants/routingStrategies.ts`):
 
-| Strategi            | Perilaku                                                                                                       |
-| ------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `priority`          | Daftar terurut dengan target pertama sebagai prioritas                                                         |
-| `weighted`          | Probabilistik berdasarkan bobot per target                                                                     |
-| `round-robin`       | Menggilir target secara berurutan                                                                              |
-| `context-relay`     | Meneruskan konteks antar-target                                                                                |
-| `fill-first`        | Memenuhi kuota sebelum berpindah ke target berikutnya                                                          |
-| `p2c`               | Pilihan terbaik dari dua target                                                                                |
-| `random`            | Acak seragam                                                                                                   |
-| `least-used`        | Memilih target dengan penggunaan terkini paling sedikit                                                        |
-| `cost-optimized`    | Target sehat termurah terlebih dahulu                                                                          |
-| `reset-aware`       | Mempertimbangkan jendela reset penyedia                                                                        |
-| `reset-window`      | Perutean berbasis jendela reset                                                                                |
-| `headroom`          | Sisa ruang kuota terbesar terlebih dahulu                                                                      |
-| `strict-random`     | Benar-benar seragam (tanpa pembobotan kualitas)                                                                |
-| `auto`              | Menggunakan penilaian 16 faktor (`autoCombo/`)                                                                 |
-| `lkgp`              | Penyedia terakhir yang diketahui berfungsi didahulukan                                                         |
-| `context-optimized` | Paling sesuai untuk permintaan berkonteks panjang                                                              |
-| `fusion`            | Menyebarkan permintaan ke sebuah panel secara paralel, lalu menyintesiskan hasil melalui penilai (`fusion.ts`) |
+| Strategi            | Perilaku                                                                                                |
+| ------------------- | ------------------------------------------------------------------------------------------------------- |
+| `priority`          | Daftar terurut dengan target pertama sebagai prioritas                                                  |
+| `weighted`          | Probabilistik berdasarkan bobot per target                                                              |
+| `round-robin`       | Berputar melalui target secara berurutan                                                                |
+| `context-relay`     | Meneruskan konteks antar-target                                                                         |
+| `fill-first`        | Menghabiskan kuota sebelum beralih ke target berikutnya                                                 |
+| `p2c`               | Pilihan berbasis power of two                                                                           |
+| `random`            | Acak seragam                                                                                            |
+| `least-used`        | Memilih target dengan penggunaan terkini paling sedikit                                                 |
+| `cost-optimized`    | Target sehat termurah terlebih dahulu                                                                   |
+| `reset-aware`       | Mempertimbangkan jendela reset penyedia                                                                 |
+| `reset-window`      | Perutean berbasis jendela reset                                                                         |
+| `headroom`          | Sisa ruang kuota terbesar terlebih dahulu                                                               |
+| `strict-random`     | Benar-benar seragam (tanpa pembobotan kualitas)                                                         |
+| `auto`              | Menggunakan penilaian 16 faktor (`autoCombo/`)                                                          |
+| `lkgp`              | Penyedia terakhir yang diketahui berfungsi terlebih dahulu                                              |
+| `context-optimized` | Paling sesuai untuk permintaan berkonteks panjang                                                       |
+| `fusion`            | Menyebarkan permintaan ke panel secara paralel, lalu menyintesiskan hasil melalui penilai (`fusion.ts`) |
 
 ### base.ts (1170 LOC)
 
-**Eksekutor abstrak** yang diperluas oleh seluruh 101 eksekutor. File ini berisi:
+**Eksekutor abstrak** yang diperluas oleh seluruh 107 eksekutor. File ini berisi:
 
-- `buildUrl()` — konstruksi URL default (subkelas melakukan override untuk kebutuhan khusus)
-- `buildHeaders()` — header default (autentikasi, tipe konten)
-- `transformRequest()` — meneruskan tanpa perubahan secara default
+- `buildUrl()` — konstruksi URL default (subkelas menimpanya untuk kebutuhan khusus)
+- `buildHeaders()` — header default (autentikasi, content-type)
+- `transformRequest()` — diteruskan apa adanya secara default
 - `execute()` — loop HTTP utama dengan percobaan ulang/backoff/breaker
 
 ```ts
@@ -265,7 +265,7 @@ export class DefaultExecutor extends BaseExecutor {
 }
 ```
 
-Perilaku khusus penyedia (header autentikasi, URL dasar, header versi) dikonfigurasi melalui registri penyedia, bukan melalui kelas eksekutor yang terpisah.
+Perilaku khusus penyedia (header autentikasi, URL dasar, header versi) dikonfigurasi melalui registri penyedia, bukan kelas eksekutor terpisah.
 
 ````
 
@@ -273,14 +273,14 @@ Perilaku khusus penyedia (header autentikasi, URL dasar, header versi) dikonfigu
 
 ## Layanan (117 modul)
 
-Layanan adalah **modul terfokus dengan satu tujuan** yang dirangkai oleh handler. Kategori utamanya:
+Layanan adalah **modul terfokus dengan satu tujuan** yang dikomposisikan oleh handler. Kategori utamanya:
 
 ### Perutean & Combo
 
 - `combo.ts` — titik masuk untuk permintaan yang dirutekan melalui combo
 - `services/autoCombo/` — penilaian 16 faktor, 8 strategi perutean otomatis
 - `wildcardRouter.ts` — mencocokkan rute wildcard (`gpt-*`)
-- `modelFamilyFallback.ts` — fallback dalam keluarga T5
+- `modelFamilyFallback.ts` — fallback T5 dalam keluarga yang sama
 
 ### Pembatasan Laju & Kuota
 
@@ -303,8 +303,8 @@ Layanan adalah **modul terfokus dengan satu tujuan** yang dirangkai oleh handler
 
 ### Ketahanan
 
-- `resilience.ts` — orkestrasi percobaan ulang, backoff, dan circuit breaker
-- `emergencyFallback.ts` — fallback sebagai upaya terakhir
+- `resilience.ts` — orkestrasi percobaan ulang, backoff, dan breaker
+- `emergencyFallback.ts` — fallback pilihan terakhir
 - `modelDeprecation.ts` — merutekan secara otomatis ke model penerus
 
 ### Status
@@ -316,7 +316,7 @@ Layanan adalah **modul terfokus dengan satu tujuan** yang dirangkai oleh handler
 ### Kompresi
 
 - `compression/` (subdirektori) — pipeline kompresi lengkap
-- 39 berkas yang mencakup mesin, paket aturan, dan adaptor
+- 39 file yang mencakup mesin, paket aturan, dan adaptor
 
 ### Keterampilan
 
@@ -328,13 +328,13 @@ Layanan adalah **modul terfokus dengan satu tujuan** yang dirangkai oleh handler
 
 ---
 
-## Eksekutor (75+ berkas)
+## Eksekutor (75+ file)
 
-Satu berkas per penyedia. Semuanya memperluas `BaseExecutor` dan mengganti perilaku yang berbeda.
+Satu file per penyedia. Semuanya memperluas `BaseExecutor` dan menimpa bagian yang berbeda.
 
 ### Pola Umum
 
-Penyedia di-resolve melalui `getExecutor(providerId)`, yang mengembalikan eksekutor yang telah dikonfigurasi. Penyedia yang kompatibel dengan OpenAI/Anthropic menggunakan `DefaultExecutor` (`executors/default.ts`). Perilaku khusus penyedia (URL dasar, header autentikasi, versi API) dikonfigurasi dalam `open-sse/config/providers/`, sedangkan transformasi isi permintaan ditangani dalam `open-sse/translator/`.
+Penyedia di-resolve melalui `getExecutor(providerId)`, yang mengembalikan eksekutor yang telah dikonfigurasi. Penyedia yang kompatibel dengan OpenAI/Anthropic menggunakan `DefaultExecutor` (`executors/default.ts`). Perilaku khusus penyedia (URL dasar, header autentikasi, versi API) dikonfigurasi dalam `open-sse/config/providers/`, sedangkan transformasi body permintaan ditangani dalam `open-sse/translator/`.
 
 **URL khusus** ditetapkan melalui konfigurasi penyedia:
 
@@ -346,9 +346,9 @@ export default {
 }
 ````
 
-**Autentikasi khusus** ditangani melalui konfigurasi autentikasi registri penyedia (kunci API, OAuth, profil header).
+**Autentikasi khusus** ditangani melalui konfigurasi autentikasi registry penyedia (kunci API, OAuth, profil header).
 
-Transformasi **isi permintaan khusus** (misalnya, Anthropic memisahkan `system` dari `messages`) didaftarkan per penyedia dalam `open-sse/translator/`.
+Transformasi **body permintaan khusus** (misalnya, Anthropic memisahkan `system` dari `messages`) didaftarkan per penyedia dalam `open-sse/translator/`.
 
 ````
 
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-Resolusi dilakukan melalui `ExecutorRegistry` (`executors/registry.ts`): setiap eksekutor khusus dideklarasikan dalam tabel bawaan di `executors/index.ts` dan didaftarkan melalui `registerExecutor(alias, instance)` saat modul dimuat; `getExecutor()` memeriksa registri dan menggunakan fallback berupa `DefaultExecutor` yang dimemoisasi untuk penyedia apa pun yang tidak memiliki entri khusus. Pemetaan lengkap alias → eksekutor dicirikan oleh pengujian golden `tests/unit/executor-map-golden.test.ts`.
+Resolusi dilakukan melalui `ExecutorRegistry` (`executors/registry.ts`): setiap eksekutor khusus dideklarasikan dalam tabel bawaan `executors/index.ts` dan didaftarkan melalui `registerExecutor(alias, instance)` saat modul dimuat; `getExecutor()` memeriksa registry dan beralih ke `DefaultExecutor` yang dimemoisasi untuk setiap penyedia tanpa entri khusus. Pemetaan lengkap alias → eksekutor dicirikan oleh pengujian golden `tests/unit/executor-map-golden.test.ts`.
 
 ---
 

@@ -4,10 +4,10 @@
 
 ---
 
-> **Nguồn chính xác:** `src/lib/agentSkills/` (danh mục, trình tạo, trình phân tích cú pháp) + thư mục `skills/` (các tệp SKILL.md)
+> **Nguồn tham chiếu chính xác:** `src/lib/agentSkills/` (danh mục, trình tạo, trình phân tích cú pháp) + thư mục `skills/` (các tệp SKILL.md)
 > **Cập nhật lần cuối:** 2026-08-02 — v3.8.50
 
-Agent Skills là các tệp SKILL.md có cấu trúc, hướng dẫn các agent bên ngoài, MCP client và trình điều phối A2A cách sử dụng REST API và CLI của OmniRoute. Không giống [Omni Skills](./SKILLS.md) (là các định nghĩa công cụ LLM được thực thi bên trong OmniRoute), Agent Skills là một _danh mục tài liệu_ — markdown tĩnh có thể được đưa trực tiếp vào ngữ cảnh của agent.
+Agent Skills là các tệp SKILL.md có cấu trúc, hướng dẫn các tác tử bên ngoài, ứng dụng khách MCP và trình điều phối A2A cách sử dụng REST API và CLI của OmniRoute. Không giống như [Omni Skills](./SKILLS.md) (là các định nghĩa công cụ LLM được thực thi bên trong OmniRoute), Agent Skills là một _danh mục tài liệu_ — markdown tĩnh có thể được đưa trực tiếp vào ngữ cảnh của tác tử.
 
 ---
 
@@ -16,21 +16,21 @@ Agent Skills là các tệp SKILL.md có cấu trúc, hướng dẫn các agent 
 Danh mục chứa **45 Agent Skills** (23 REST API + 21 CLI + 1 quy trình cấu hình). Mỗi skill có:
 
 - Một **ID chuẩn** (`omni-auth`, `cli-serve`, v.v.)
-- Một tệp **SKILL.md** tại `skills/{id}/SKILL.md` với YAML frontmatter (`name`, `description`) + nội dung markdown phong phú
-- Các **REST endpoint** (skill API) hoặc **CLI subcommand** (skill CLI) được lấy từ đặc tả OpenAPI và registry CLI
-- Một **URL GitHub raw** để tìm nạp trực tiếp: `https://raw.githubusercontent.com/diegosouzapw/OmniRoute/refs/heads/main/skills/{id}/SKILL.md`
+- Một tệp **SKILL.md** trong `skills/{id}/SKILL.md` với phần mở đầu YAML (`name`, `description`) + nội dung markdown phong phú
+- Các **endpoint REST** (skill API) hoặc **lệnh con CLI** (skill CLI) được lấy từ đặc tả OpenAPI và registry CLI
+- Một **URL raw trên GitHub** để truy xuất trực tiếp: `https://raw.githubusercontent.com/diegosouzapw/OmniRoute/refs/heads/main/skills/{id}/SKILL.md`
 
 ---
 
 ## Kiến trúc
 
 ```
-src/shared/constants/agentSkills.ts    — Danh sách tuyển chọn gồm 45 mục (name/desc/category/area/icon)
+src/shared/constants/agentSkills.ts    — Danh sách tuyển chọn gồm 45 mục (tên/mô tả/danh mục/lĩnh vực/biểu tượng)
 src/lib/agentSkills/
   catalog.ts                           — getCatalog(), getSkillById(), filterCatalog(), computeCoverage()
   generator.ts                         — generateAgentSkills() ghi SKILL.md vào skills/{id}/
-  openapiParser.ts                     — trích xuất các REST endpoint từ docs/openapi.yaml
-  cliRegistryParser.ts                 — trích xuất các CLI subcommand từ bin/cli-registry.ts
+  openapiParser.ts                     — trích xuất các endpoint REST từ docs/openapi.yaml
+  cliRegistryParser.ts                 — trích xuất các lệnh con CLI từ bin/cli-registry.ts
   schemas.ts                           — Các schema Zod: AgentSkillSchema, SkillCoverageSchema, v.v.
   types.ts                             — Các interface TypeScript: AgentSkill, SkillCoverage, v.v.
 
@@ -54,7 +54,7 @@ src/lib/a2a/skills/listCapabilities.ts        — Skill A2A: list-capabilities
 ```markdown
 ---
 name: omni-providers
-description: "Quản lý các kết nối nhà cung cấp: thêm, kiểm tra, xoay vòng và xóa thông tin xác thực."
+description: "Quản lý kết nối nhà cung cấp: thêm, kiểm tra, xoay vòng và xóa thông tin xác thực."
 ---
 
 <!-- được tạo bởi src/lib/agentSkills/generator.ts; các chỉnh sửa thủ công sẽ bị ghi đè -->
@@ -67,7 +67,7 @@ description: "Quản lý các kết nối nhà cung cấp: thêm, kiểm tra, xo
 
 ...
 
-## Endpoint
+## Các endpoint
 
 ...
 
@@ -90,10 +90,10 @@ Trình tạo giữ nguyên nội dung nằm giữa `<!-- skill:custom-start -->`
 
 | Điểm cuối                    | Phương thức | Mô tả                                                                | Xác thực |
 | :--------------------------- | :---------- | :------------------------------------------------------------------- | :------- |
-| `/api/agent-skills`          | GET         | Liệt kê danh mục (`?category=api\|cli\|config&area=<area>` tùy chọn) | không có |
-| `/api/agent-skills/{id}`     | GET         | Lấy siêu dữ liệu của một kỹ năng                                     | không có |
-| `/api/agent-skills/{id}/raw` | GET         | Truy xuất SKILL.md dưới dạng `text/markdown`                         | không có |
-| `/api/agent-skills/coverage` | GET         | Số liệu thống kê độ bao phủ (có bao nhiêu tệp SKILL.md)              | không có |
+| `/api/agent-skills`          | GET         | Liệt kê danh mục (tùy chọn `?category=api\|cli\|config&area=<area>`) | không    |
+| `/api/agent-skills/{id}`     | GET         | Lấy siêu dữ liệu của một kỹ năng                                     | không    |
+| `/api/agent-skills/{id}/raw` | GET         | Truy xuất SKILL.md dưới dạng `text/markdown`                         | không    |
+| `/api/agent-skills/coverage` | GET         | Thống kê độ bao phủ (có bao nhiêu tệp SKILL.md)                      | không    |
 | `/api/agent-skills/generate` | POST        | Kích hoạt trình tạo (dryRun/prune/onlyIds)                           | quản trị |
 
 Ví dụ — liệt kê tất cả kỹ năng API:
@@ -102,7 +102,7 @@ Ví dụ — liệt kê tất cả kỹ năng API:
 curl "http://localhost:20128/api/agent-skills?category=api"
 ```
 
-Ví dụ — truy xuất một tệp SKILL.md:
+Ví dụ — truy xuất một SKILL.md:
 
 ```bash
 curl -H "Accept: text/markdown" "http://localhost:20128/api/agent-skills/omni-providers/raw"
@@ -114,13 +114,13 @@ curl -H "Accept: text/markdown" "http://localhost:20128/api/agent-skills/omni-pr
 
 Ba công cụ MCP được đăng ký trong phạm vi `read:catalog`:
 
-| Công cụ                           | Mô tả                                                    |
-| :-------------------------------- | :------------------------------------------------------- |
-| `omniroute_agent_skills_list`     | Liệt kê kỹ năng (bộ lọc `category` / `area` tùy chọn)    |
-| `omniroute_agent_skills_get`      | Lấy siêu dữ liệu + SKILL.md của một kỹ năng theo `id`    |
-| `omniroute_agent_skills_coverage` | Số liệu thống kê độ bao phủ (số API/CLI hiện có/tổng số) |
+| Công cụ                           | Mô tả                                                 |
+| :-------------------------------- | :---------------------------------------------------- |
+| `omniroute_agent_skills_list`     | Liệt kê kỹ năng (bộ lọc `category` / `area` tùy chọn) |
+| `omniroute_agent_skills_get`      | Lấy siêu dữ liệu + SKILL.md của một kỹ năng theo `id` |
+| `omniroute_agent_skills_coverage` | Thống kê độ bao phủ (API/CLI hiện có/tổng số)         |
 
-Xem [MCP-SERVER.md](./MCP-SERVER.md) để biết cách cấu hình phạm vi và xác thực.
+Xem [MCP-SERVER.md](./MCP-SERVER.md) để biết cách kết nối phạm vi và xác thực.
 
 ---
 
@@ -140,7 +140,7 @@ Kỹ năng A2A `list-capabilities` trả về danh mục đầy đủ gồm 45 k
 }
 ```
 
-Xem [A2A-SERVER.md](./A2A-SERVER.md) để biết chi tiết về giao thức.
+Xem [A2A-SERVER.md](./A2A-SERVER.md) để biết chi tiết giao thức.
 
 ---
 
@@ -148,30 +148,30 @@ Xem [A2A-SERVER.md](./A2A-SERVER.md) để biết chi tiết về giao thức.
 
 ### Kỹ năng API (23)
 
-| ID                     | Lĩnh vực        | Điểm vào                                            |
-| :--------------------- | :-------------- | :-------------------------------------------------- |
-| `omni-auth`            | auth            | Quản lý xác thực + phiên                            |
-| `omni-providers`       | providers       | Quản lý kết nối nhà cung cấp                        |
-| `omni-models`          | models          | Danh mục mô hình và các khả năng                    |
-| `omni-combos-routing`  | combos-routing  | Chiến lược định tuyến kết hợp                       |
-| `omni-api-keys`        | api-keys        | Quản lý khóa API                                    |
-| `omni-usage-logs`      | usage-logs      | Nhật ký sử dụng và chi phí                          |
-| `omni-budget`          | budget          | Các biện pháp bảo vệ ngân sách                      |
-| `omni-settings`        | settings        | Cài đặt toàn cục                                    |
-| `omni-proxies`         | proxies         | Quản lý nhóm proxy                                  |
-| `omni-cache`           | cache           | Bộ nhớ đệm ngữ nghĩa + prompt                       |
-| `omni-compression`     | compression     | Các công cụ nén ngữ cảnh                            |
-| `omni-context-rtk`     | context-rtk     | Nén RTK                                             |
-| `omni-resilience`      | resilience      | Bộ ngắt mạch + thời gian chờ                        |
-| `omni-cli-tools`       | cli-tools       | Proxy REST cho các công cụ CLI                      |
-| `omni-tunnels`         | tunnels         | Quản lý đường hầm                                   |
-| `omni-sync-cloud`      | sync-cloud      | Đồng bộ hóa đám mây                                 |
-| `omni-db-backups`      | db-backups      | Sao lưu cơ sở dữ liệu                               |
-| `omni-webhooks`        | webhooks        | Bộ điều phối sự kiện webhook                        |
-| `omni-mcp`             | mcp             | Máy chủ MCP (110 công cụ, 3 phương thức truyền tải) |
-| `omni-agents-a2a`      | agents-a2a      | Giao thức tác nhân A2A                              |
-| `omni-version-manager` | version-manager | Quản lý phiên bản và bản cập nhật                   |
-| `omni-inference`       | inference       | Suy luận trực tiếp / hoàn thành                     |
+| ID                     | Lĩnh vực        | Điểm truy cập                                     |
+| :--------------------- | :-------------- | :------------------------------------------------ |
+| `omni-auth`            | auth            | Quản lý xác thực + phiên                          |
+| `omni-providers`       | providers       | Quản lý kết nối nhà cung cấp                      |
+| `omni-models`          | models          | Danh mục mô hình và các khả năng                  |
+| `omni-combos-routing`  | combos-routing  | Chiến lược định tuyến tổ hợp                      |
+| `omni-api-keys`        | api-keys        | Quản lý khóa API                                  |
+| `omni-usage-logs`      | usage-logs      | Nhật ký sử dụng và chi phí                        |
+| `omni-budget`          | budget          | Cơ chế bảo vệ ngân sách                           |
+| `omni-settings`        | settings        | Cài đặt toàn cục                                  |
+| `omni-proxies`         | proxies         | Quản lý nhóm proxy                                |
+| `omni-cache`           | cache           | Bộ nhớ đệm ngữ nghĩa + lời nhắc                   |
+| `omni-compression`     | compression     | Công cụ nén ngữ cảnh                              |
+| `omni-context-rtk`     | context-rtk     | Nén RTK                                           |
+| `omni-resilience`      | resilience      | Bộ ngắt mạch + thời gian hồi phục                 |
+| `omni-cli-tools`       | cli-tools       | Proxy REST cho công cụ CLI                        |
+| `omni-tunnels`         | tunnels         | Quản lý đường hầm                                 |
+| `omni-sync-cloud`      | sync-cloud      | Đồng bộ hóa đám mây                               |
+| `omni-db-backups`      | db-backups      | Sao lưu cơ sở dữ liệu                             |
+| `omni-webhooks`        | webhooks        | Bộ điều phối sự kiện webhook                      |
+| `omni-mcp`             | mcp             | Máy chủ MCP (110 công cụ, 3 giao thức truyền tải) |
+| `omni-agents-a2a`      | agents-a2a      | Giao thức tác nhân A2A                            |
+| `omni-version-manager` | version-manager | Quản lý phiên bản và cập nhật                     |
+| `omni-inference`       | inference       | Suy luận / hoàn thành trực tiếp                   |
 
 ### Kỹ năng CLI (21)
 
@@ -201,13 +201,13 @@ Xem [A2A-SERVER.md](./A2A-SERVER.md) để biết chi tiết về giao thức.
 
 ### Quy trình cấu hình (1)
 
-| ID                 | Khu vực          | Điểm vào                     |
+| ID                 | Khu vực          | Điểm truy cập                |
 | :----------------- | :--------------- | :--------------------------- |
 | `config-codex-cli` | config-codex-cli | Quy trình cấu hình Codex CLI |
 
 ---
 
-## Cách các tác nhân bên ngoài sử dụng Skills
+## Cách các tác nhân bên ngoài sử dụng các kỹ năng
 
 ### 1. Khám phá qua REST
 
@@ -222,7 +222,7 @@ curl "http://your-omniroute/api/agent-skills/omni-providers/raw" > omni-provider
 ### 2. Khám phá qua MCP
 
 ```typescript
-// Trong ứng dụng khách MCP Claude Desktop / Cursor:
+// Trong ứng dụng khách MCP của Claude Desktop / Cursor:
 const result = await client.callTool("omniroute_agent_skills_list", {
   category: "api",
 });
@@ -240,10 +240,10 @@ resp = requests.post("http://your-omniroute/a2a", json={
     "params": {"skill": "list-capabilities", "messages": [{"role": "user", "content": "list"}]}
 })
 table = resp.json()["result"]["artifacts"][0]["content"]
-# table là bảng markdown chứa tất cả 45 ID skill cùng các cột rawUrl
+# table là một bảng markdown chứa toàn bộ 45 ID kỹ năng cùng các cột rawUrl
 ```
 
-### 4. Truy xuất trực tiếp nội dung thô từ GitHub (không cần máy chủ)
+### 4. Tải trực tiếp nội dung thô từ GitHub (không yêu cầu máy chủ)
 
 ```bash
 BASE="https://raw.githubusercontent.com/diegosouzapw/OmniRoute/refs/heads/main/skills"
@@ -254,7 +254,7 @@ curl "${BASE}/omni-providers/SKILL.md"
 
 ## Trình tạo
 
-Trình tạo đọc danh mục đã tuyển chọn + đặc tả OpenAPI + sổ đăng ký CLI và ghi `skills/{id}/SKILL.md` cho từng mục:
+Trình tạo đọc danh mục được tuyển chọn + đặc tả OpenAPI + sổ đăng ký CLI và ghi `skills/{id}/SKILL.md` cho từng mục:
 
 ```bash
 # Xem trước (chạy thử, không ghi)
@@ -310,8 +310,8 @@ curl "http://localhost:20128/api/agent-skills/coverage"
 
 ## Liên quan
 
-- [SKILLS.md](./SKILLS.md) — Khung Omni Skills (chèn công cụ LLM + chợ ứng dụng)
-- [MCP-SERVER.md](./MCP-SERVER.md) — Danh mục công cụ MCP (các công cụ `omniroute_agent_skills_*`)
-- [A2A-SERVER.md](./A2A-SERVER.md) — Giao thức A2A (skill `list-capabilities`)
+- [SKILLS.md](./SKILLS.md) — khung Omni Skills (chèn công cụ LLM + chợ ứng dụng)
+- [MCP-SERVER.md](./MCP-SERVER.md) — danh mục công cụ MCP (các công cụ `omniroute_agent_skills_*`)
+- [A2A-SERVER.md](./A2A-SERVER.md) — giao thức A2A (kỹ năng `list-capabilities`)
 - `src/lib/agentSkills/` — danh mục, trình tạo, trình phân tích cú pháp
 - `skills/` — các tệp SKILL.md đã tạo (45 mục)

@@ -1610,19 +1610,19 @@ analitika son nöqtələri. Bunlar `/dashboard/analytics/*` səhifələrinin iş
 
 ## CLI Alətlərinin İdarə Edilməsi
 
-OmniRoute ilə inteqrasiya olunan CLI alətlərini (antigravity, chipotle, commandCode,
-devin-cli və s.) idarə edin. Tam siyahı üçün [Provayder Arayışına](./PROVIDER_REFERENCE.md) baxın.
+OmniRoute ilə inteqrasiya olunan CLI alətlərini (antigravity, commandCode,
+devin-cli və s.) idarə edin. Tam siyahı üçün [Provayder Arayışı](./PROVIDER_REFERENCE.md) bölməsinə baxın.
 
 | Metod | Yol                                     | Təsvir                                                                                                                                                                           |
 | ----- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET   | `/api/cli-tools/all-statuses`           | Bütün CLI alətlərinin statusu (quraşdırılıb-quraşdırılmaması, versiya, son görülmə vaxtı)                                                                                        |
+| GET   | `/api/cli-tools/all-statuses`           | Bütün CLI alətlərinin statusu (quraşdırılma vəziyyəti, versiya, son görülmə vaxtı)                                                                                               |
 | GET   | `/api/cli-tools/status`                 | Bir CLI aləti üçün ətraflı status (`?tool=` sorğusu)                                                                                                                             |
-| POST  | `/api/cli-tools/apply`                  | Alətin yaradılmış konfiqurasiyasını yazın (`dryRun` önizləmə təqdim edir; konteynerləşdirildikdə `422` + `containerEphemeralTarget`; `migration` köhnə Codex YAML-ını qeyd edir) |
-| GET   | `/api/cli-tools/backups`                | CLI aləti konfiqurasiyalarının ehtiyat nüsxələrini siyahılayın                                                                                                                   |
-| POST  | `/api/cli-tools/backups`                | Bütün CLI aləti konfiqurasiyalarının ehtiyat nüsxəsini yaradın                                                                                                                   |
-| POST  | `/api/cli-tools/backups`                | Bərpa: sorğu gövdəsində `{tool, backupId}` olmaqla eyni son nöqtə həmin ehtiyat nüsxəni bərpa edir                                                                               |
-| GET   | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM proksisinin statusu ("antigravity-mitm" CLI aləti)                                                                                                              |
-| POST  | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm aliaslarını konfiqurasiya edin                                                                                                                                  |
+| POST  | `/api/cli-tools/apply`                  | Alətin yaradılmış konfiqurasiyasını yazır (`dryRun` önizləmə təqdim edir; konteynerləşdirildikdə `422` + `containerEphemeralTarget`; `migration` köhnə Codex YAML-ını qeyd edir) |
+| GET   | `/api/cli-tools/backups`                | CLI aləti konfiqurasiyalarının ehtiyat nüsxələrini sadalayır                                                                                                                     |
+| POST  | `/api/cli-tools/backups`                | Bütün CLI aləti konfiqurasiyalarının ehtiyat nüsxəsini yaradır                                                                                                                   |
+| POST  | `/api/cli-tools/backups`                | Bərpa: sorğu gövdəsində `{tool, backupId}` olmaqla eyni son nöqtə həmin ehtiyat nüsxəsini bərpa edir                                                                             |
+| GET   | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM proksisinin statusu (`antigravity-mitm` CLI aləti)                                                                                                              |
+| POST  | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm aliaslarını konfiqurasiya edir                                                                                                                                  |
 
 **Autentifikasiya:** İdarəetmə sessiyası tələb olunur.
 

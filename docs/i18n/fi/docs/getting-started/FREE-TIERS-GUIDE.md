@@ -4,7 +4,7 @@
 
 ---
 
-> **TL;DR**: OmniRoute rekisteröi 352 palveluntarjoajatunnusta, joista **152 palveluntarjoajaluettelon tietuetta on merkitty `hasFree`-merkinnällä**. Tiukemmin auditoitu ilmaismallien luettelo kattaa **34 toistuvasti uusiutuvan resurssipoolin avainta / 443 tietuetta** (436 aktiivista + 7 käytöstä poistettua). Yhdistä useita sopivia palveluntarjoajia laajemman varakapasiteetin saamiseksi; kaikki kiintiöt, hyväksyntäsäännöt, tietosuojakäytännöt ja maksullista ylikäyttöä koskevat ehdot ovat edelleen voimassa.
+> **Lyhyesti**: OmniRoute rekisteröi 357 palveluntarjoajatunnusta, joista **152 palveluntarjoajaluettelon merkintää on merkitty `hasFree`-tunnisteella**. Tiukemmin auditoitu ilmaismalliluettelo kattaa **35 toistuvaa pool-avainta / 482 merkintää** (475 aktiivista + 7 lopetettua). Yhdistä useita sopivia palveluntarjoajia laajemman varakapasiteetin saamiseksi; kaikki kiintiöt, hyväksyntäsäännöt, tietosuojakäytännöt ja maksullista ylikäyttöä koskevat ehdot ovat edelleen voimassa.
 
 ---
 
@@ -158,20 +158,20 @@ kiintiön tai käyttöoikeuskäytännön kiertämiseksi.
 
 ---
 
-## Ilmaisen tason laskelmat
+## Ilmaistason laskelmat
 
-Reaaliaikainen, poolien perusteella deduplikoitu luettelo ilmoittaa tällä hetkellä seuraavat tiedot:
+Ajantasainen, resurssivarantojen perusteella deduplikoitu luettelo ilmoittaa tällä hetkellä:
 
-| Mittari                                                               |                               Nykyinen auditoitu arvo | Tulkinta                                                                                                                                                                                                |
-| --------------------------------------------------------------------- | ----------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Toistuva määrällinen kiintiö                                          |                             **~1,47 mrd. tokenia/kk** | Jaetut poolit lasketaan kerran; rajoittamattomat palveluntarjoajat eivät sisälly summaan                                                                                                                |
-| Ensimmäinen kuukausi rekisteröitymiskiintiöineen                      |                                **~2,07 mrd. tokenia** | Toistuva kokonaismäärä sekä kertaluonteiset ja toistuvat krediitit                                                                                                                                      |
-| Auditoitu ilmaismallien valikoima                                     | **34 toistuvaa pool-avainta / 443 luettelomerkintää** | 436 aktiivista + 7 lopetettua; eri asia kuin 352 palveluntarjoajan luettelo                                                                                                                             |
-| Edustetut toistuvat/avaimettomat pysyvästi ilmaiset palveluntarjoajat |                                                **52** | Yksilölliset palveluntarjoajat toistuvissa päivittäisissä, kuukausittaisissa, krediittipohjaisissa, rajoittamattomissa ja avaimettomissa luettelotyypeissä; kelpoisuuteen perustuvat rivit jätetty pois |
-| `hasFree`-merkityt palveluntarjoajaluettelon merkinnät                |                                         **152 / 352** | Laajemmat palveluntarjoajien metatiedot; kaikilla ei ole määrällisesti ilmaistavaa toistuvaa kiintiötä                                                                                                  |
+| Mittari                                                               |                                         Nykyinen auditoitu arvo | Tulkinta                                                                                                                                                                                                  |
+| --------------------------------------------------------------------- | --------------------------------------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Toistuva määrällinen käyttöoikeus                                     |                                       **~1.62 mrd. tokenia/kk** | Jaetut resurssivarannot lasketaan kerran; rajoittamattomat palveluntarjoajat eivät sisälly summaan                                                                                                        |
+| Ensimmäinen kuukausi rekisteröitymisetuineen                          |                                          **~2.22 mrd. tokenia** | Toistuva kokonaismäärä sekä kertaluonteiset ja toistuvat krediitit                                                                                                                                        |
+| Auditoitu ilmaismallivalikoima                                        | **35 toistuvaa resurssivarantoavainta / 482 luettelomerkintää** | 475 aktiivista + 7 lopetettua; erillinen 357 palveluntarjoajan luettelosta                                                                                                                                |
+| Edustetut toistuvat/avaimettomat ikuisesti ilmaiset palveluntarjoajat |                                                          **53** | Yksilölliset palveluntarjoajat toistuvissa päivittäisissä, kuukausittaisissa, krediittipohjaisissa, rajoittamattomissa ja avaimettomissa luettelotyypeissä; kelpoisuusehtojen rajaamat rivit jätetty pois |
+| Palveluntarjoajaluettelon merkinnät, joissa `hasFree`                 |                                                   **152 / 357** | Laajemmat palveluntarjoajien metatiedot; kaikilla ei ole määrällisesti ilmaistavissa olevaa toistuvaa kiintiötä                                                                                           |
 
 Nämä arvot lasketaan tiedostosta `open-sse/config/freeModelCatalog.ts`; katso
-[Ilmaisten tasojen viite](../reference/FREE_TIERS.md), jossa käsitellään poolien deduplikointia, käyttöehtomerkintöjä,
+[Ilmaistasojen viite](../reference/FREE_TIERS.md), jossa käsitellään resurssivarantojen deduplikointia, käyttöehtomerkintöjä,
 lopetettuja merkintöjä ja rekisteröitymiskrediittien laskentamenetelmää.
 
 ---

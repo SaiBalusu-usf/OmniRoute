@@ -1609,21 +1609,21 @@ Kizárólag adminisztrátorok számára elérhető végpontok az üzemeltetési 
 
 ## CLI-eszközök kezelése
 
-Az OmniRoute-tal integrálható CLI-eszközök (antigravity, chipotle, commandCode,
-devin-cli stb.) kezelése. A teljes listát lásd a [Szolgáltatói referenciában](./PROVIDER_REFERENCE.md).
+Az OmniRoute-tal integrálható CLI-eszközök (antigravity, commandCode,
+devin-cli stb.) kezelése. A teljes listát lásd a [szolgáltatói referenciában](./PROVIDER_REFERENCE.md).
 
-| Metódus | Útvonal                                 | Leírás                                                                                                                                                                          |
+| Metódus | Elérési út                              | Leírás                                                                                                                                                                          |
 | ------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GET     | `/api/cli-tools/all-statuses`           | Az összes CLI-eszköz állapota (telepítve van-e, verzió, utolsó észlelés)                                                                                                        |
-| GET     | `/api/cli-tools/status`                 | Egy CLI-eszköz részletes állapota (`?tool=` lekérdezés)                                                                                                                         |
-| POST    | `/api/cli-tools/apply`                  | Egy eszköz generált konfigurációjának kiírása (a `dryRun` előnézetet ad; konténeres környezetben `422` + `containerEphemeralTarget`; a `migration` egy régi Codex YAML-t jelez) |
+| GET     | `/api/cli-tools/status`                 | Egy CLI-eszköz részletes állapota (`?tool=` lekérdezési paraméter)                                                                                                              |
+| POST    | `/api/cli-tools/apply`                  | Egy eszköz generált konfigurációjának írása (a `dryRun` előnézetet készít; konténeres futtatáskor `422` + `containerEphemeralTarget`; a `migration` örökölt Codex YAML-t jelez) |
 | GET     | `/api/cli-tools/backups`                | A CLI-eszközök konfigurációs biztonsági mentéseinek listázása                                                                                                                   |
-| POST    | `/api/cli-tools/backups`                | Biztonsági mentés készítése az összes CLI-eszköz konfigurációjáról                                                                                                              |
-| POST    | `/api/cli-tools/backups`                | Visszaállítás: ugyanez a végpont a törzsben megadott `{tool, backupId}` alapján visszaállítja az adott biztonsági mentést                                                       |
-| GET     | `/api/cli-tools/antigravity-mitm`       | Az Antigravity MITM-proxy állapota (az „antigravity-mitm” CLI-eszköz)                                                                                                           |
-| POST    | `/api/cli-tools/antigravity-mitm/alias` | Az antigravity-mitm álneveinek konfigurálása                                                                                                                                    |
+| POST    | `/api/cli-tools/backups`                | Biztonsági mentés létrehozása az összes CLI-eszköz konfigurációjáról                                                                                                            |
+| POST    | `/api/cli-tools/backups`                | Visszaállítás: ugyanez a végpont a törzsben megadott `{tool, backupId}` használatával visszaállítja az adott biztonsági mentést                                                 |
+| GET     | `/api/cli-tools/antigravity-mitm`       | Az Antigravity MITM proxy állapota (az „antigravity-mitm” CLI-eszköz)                                                                                                           |
+| POST    | `/api/cli-tools/antigravity-mitm/alias` | Az antigravity-mitm aliasainak konfigurálása                                                                                                                                    |
 
-**Hitelesítés:** Felügyeleti munkamenet szükséges.
+**Hitelesítés:** Kezelői munkamenetet igényel.
 
 ---
 

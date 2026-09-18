@@ -169,7 +169,7 @@ Aufrufprotokoll-Artefakte werden (sofern aktiviert) unter `${DATA_DIR}/call_logs
 
 ### chatCore.ts (5977 Zeilen)
 
-Der **zentrale Request-Handler**. Trotz seines Umfangs weist er eine klare Struktur auf:
+Der **zentrale Request-Handler**. Trotz seiner Größe weist er eine klare Struktur auf:
 
 ```ts
 // Pseudostruktur von chatCore.ts
@@ -205,9 +205,9 @@ export async function handleChat(request: NextRequest) {
 }
 ```
 
-Obwohl es sich um eine einzige riesige Funktion handelt, ist sie in **kommentierte Abschnitte** gegliedert, die der fünfstufigen Pipeline entsprechen.
+Obwohl es sich um eine einzige riesige Funktion handelt, ist sie in **kommentierte Abschnitte** unterteilt, die der fünfstufigen Pipeline entsprechen.
 
-### combo.ts (4456 LOC)
+### combo.ts (4456 Codezeilen)
 
 Die **Routing-Engine**, die eine Combo in geordnete Ziele auflöst.
 
@@ -228,40 +228,40 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
 
 Unterstützt **19 Routing-Strategien** (siehe `src/shared/constants/routingStrategies.ts`):
 
-| Strategie           | Verhalten                                                                                       |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| `priority`          | Geordnete Liste, bei der das erste Ziel Vorrang hat                                             |
-| `weighted`          | Probabilistische Auswahl anhand der Gewichtung jedes Ziels                                      |
-| `round-robin`       | Ziele der Reihe nach zyklisch durchlaufen                                                       |
-| `context-relay`     | Kontext zwischen Zielen weiterreichen                                                           |
-| `fill-first`        | Kontingent ausschöpfen, bevor zum nächsten Ziel gewechselt wird                                 |
-| `p2c`               | Auswahl aus zwei zufälligen Optionen                                                            |
-| `random`            | Gleichverteilte Zufallsauswahl                                                                  |
-| `least-used`        | Das Ziel mit den wenigsten kürzlichen Nutzungen auswählen                                       |
-| `cost-optimized`    | Günstigstes fehlerfreies Ziel zuerst                                                            |
-| `reset-aware`       | Berücksichtigt die Reset-Zeitfenster des Providers                                              |
-| `reset-window`      | Routing auf Basis von Reset-Zeitfenstern                                                        |
-| `headroom`          | Ziel mit dem größten verbleibenden Kontingentspielraum zuerst                                   |
-| `strict-random`     | Echte Gleichverteilung (ohne Qualitätsgewichtung)                                               |
-| `auto`              | Bewertung anhand von 16 Faktoren verwenden (`autoCombo/`)                                       |
-| `lkgp`              | Zuletzt als funktionsfähig bekannter Provider zuerst                                            |
-| `context-optimized` | Am besten für Requests mit langem Kontext geeignet                                              |
-| `fusion`            | Parallel an ein Panel verteilen und anschließend durch einen Judge synthetisieren (`fusion.ts`) |
+| Strategie           | Verhalten                                                                                      |
+| ------------------- | ---------------------------------------------------------------------------------------------- |
+| `priority`          | Geordnete Liste mit dem ersten Ziel als Priorität                                              |
+| `weighted`          | Probabilistische Auswahl anhand der Gewichtung jedes Ziels                                     |
+| `round-robin`       | Ziele der Reihe nach zyklisch durchlaufen                                                      |
+| `context-relay`     | Kontext zwischen Zielen weiterreichen                                                          |
+| `fill-first`        | Kontingent ausschöpfen, bevor zum nächsten Ziel gewechselt wird                                |
+| `p2c`               | Auswahl aus zwei Optionen                                                                      |
+| `random`            | Gleichmäßige Zufallsauswahl                                                                    |
+| `least-used`        | Das Ziel mit den wenigsten kürzlichen Nutzungen auswählen                                      |
+| `cost-optimized`    | Günstigstes funktionsfähiges Ziel zuerst                                                       |
+| `reset-aware`       | Berücksichtigt die Reset-Zeitfenster des Providers                                             |
+| `reset-window`      | Routing auf Basis von Reset-Zeitfenstern                                                       |
+| `headroom`          | Ziel mit dem größten verbleibenden Kontingentspielraum zuerst                                  |
+| `strict-random`     | Echte Gleichverteilung ohne Qualitätsgewichtung                                                |
+| `auto`              | Bewertung anhand von 16 Faktoren verwenden (`autoCombo/`)                                      |
+| `lkgp`              | Zuletzt als funktionsfähig bekannter Provider zuerst                                           |
+| `context-optimized` | Am besten für Requests mit langem Kontext geeignet                                             |
+| `fusion`            | Parallel an ein Panel verteilen und anschließend über einen Judge synthetisieren (`fusion.ts`) |
 
-### base.ts (1170 LOC)
+### base.ts (1170 Codezeilen)
 
-Der **abstrakte Executor**, den alle 101 Executoren erweitern. Er enthält:
+Der **abstrakte Executor**, den alle 107 Executoren erweitern. Er enthält:
 
-- `buildUrl()` — standardmäßige URL-Konstruktion (Unterklassen überschreiben sie für benutzerdefiniertes Verhalten)
-- `buildHeaders()` — standardmäßige Header (Authentifizierung, Content-Type)
-- `transformRequest()` — standardmäßig unveränderte Weiterleitung
+- `buildUrl()` — standardmäßige URL-Konstruktion (Unterklassen überschreiben sie für benutzerdefinierte Anforderungen)
+- `buildHeaders()` — Standard-Header (Authentifizierung, Inhaltstyp)
+- `transformRequest()` — standardmäßig unveränderte Weitergabe
 - `execute()` — die zentrale HTTP-Schleife mit Wiederholungsversuchen, Backoff und Circuit Breaker
 
 ```ts
 // open-sse/executors/default.ts
 export class DefaultExecutor extends BaseExecutor {
   // Verarbeitet alle OpenAI-/Anthropic-kompatiblen Provider
-  // Provider registrieren Konfigurationen (URL, Authentifizierung, Header), verwenden jedoch dieselbe Executor-Logik
+  // Provider registrieren Konfigurationen (URL, Authentifizierung, Header), verwenden aber dieselbe Executor-Logik
 }
 ```
 
@@ -282,28 +282,28 @@ Dienste sind **fokussierte Module mit jeweils einem einzigen Zweck**, die von Ha
 - `wildcardRouter.ts` — gleicht Wildcard-Routen (`gpt-*`) ab
 - `modelFamilyFallback.ts` — T5-Fallback innerhalb der Modellfamilie
 
-### Ratenbegrenzung & Kontingent
+### Ratenbegrenzung & Kontingente
 
 - `rateLimitManager.ts` — Token-Bucket pro Schlüssel und Anbieter
 - `usage.ts` — Erfassung der Nutzung
-- `quotaCache.ts` — In-Memory-Snapshots von Kontingenten
+- `quotaCache.ts` — In-Memory-Momentaufnahmen der Kontingente
 
 ### Konto & Token
 
 - `tokenRefresh.ts` — OAuth-Aktualisierung bei 401
 - `accountFallback.ts` — Wechsel zu einem alternativen Konto
-- `sessionManager.ts` — Sitzungsstatus für mehrstufige Interaktionen
+- `sessionManager.ts` — Sitzungsstatus für Dialoge mit mehreren Interaktionen
 
 ### Intelligenz
 
-- `intentClassifier.ts` — klassifiziert die Absicht einer Anfrage
+- `intentClassifier.ts` — klassifiziert die Absicht der Anfrage
 - `taskAwareRouter.ts` — routet nach Aufgabentyp
-- `thinkingBudget.ts` — weist Tokens für Denkprozesse zu
+- `thinkingBudget.ts` — weist Denk-Token zu
 - `contextManager.ts` — fügt Routing-Kontext ein
 
 ### Ausfallsicherheit
 
-- `resilience.ts` — Orchestrierung von Wiederholungsversuchen, Backoff und Circuit Breaker
+- `resilience.ts` — Orchestrierung von Wiederholungsversuchen, Backoff und Circuit Breakern
 - `emergencyFallback.ts` — Fallback als letzter Ausweg
 - `modelDeprecation.ts` — automatisches Routing zu Nachfolgemodellen
 
@@ -311,14 +311,14 @@ Dienste sind **fokussierte Module mit jeweils einem einzigen Zweck**, die von Ha
 
 - `signatureCache.ts` — Deduplizierung anhand der Anfragesignatur
 - `volumeDetector.ts` — Lastabwurf
-- `contextHandoff.ts` — Sitzungsserialisierung
+- `contextHandoff.ts` — Serialisierung von Sitzungen
 
 ### Komprimierung
 
 - `compression/` (Unterverzeichnis) — vollständige Komprimierungspipeline
 - 39 Dateien für Engines, Regelpakete und Adapter
 
-### Fähigkeiten
+### Skills
 
 - (behandelt in [SKILLS.md](./SKILLS.md))
 
@@ -328,13 +328,13 @@ Dienste sind **fokussierte Module mit jeweils einem einzigen Zweck**, die von Ha
 
 ---
 
-## Executoren (mehr als 75 Dateien)
+## Executors (mehr als 75 Dateien)
 
-Eine Datei pro Anbieter. Alle erweitern `BaseExecutor` und überschreiben die jeweils abweichenden Teile.
+Eine Datei pro Anbieter. Sie erweitern alle `BaseExecutor` und überschreiben die jeweils abweichenden Teile.
 
-### Gängige Muster
+### Allgemeine Muster
 
-Anbieter werden über `getExecutor(providerId)` aufgelöst, wodurch der konfigurierte Executor zurückgegeben wird. OpenAI-/Anthropic-kompatible Anbieter verwenden `DefaultExecutor` (`executors/default.ts`). Anbieterspezifisches Verhalten (Basis-URL, Authentifizierungs-Header, API-Version) wird in `open-sse/config/providers/` konfiguriert, während Transformationen des Anfragekörpers in `open-sse/translator/` verarbeitet werden.
+Anbieter werden über `getExecutor(providerId)` aufgelöst, das den konfigurierten Executor zurückgibt. OpenAI-/Anthropic-kompatible Anbieter verwenden `DefaultExecutor` (`executors/default.ts`). Anbieterspezifisches Verhalten (Basis-URL, Authentifizierungsheader, API-Version) wird in `open-sse/config/providers/` konfiguriert, während Transformationen des Anfragekörpers in `open-sse/translator/` verarbeitet werden.
 
 Die **benutzerdefinierte URL** wird über die Anbieterkonfiguration festgelegt:
 
@@ -346,9 +346,9 @@ export default {
 }
 ````
 
-Die **benutzerdefinierte Authentifizierung** wird über die Authentifizierungskonfiguration der Anbieterregistrierung verarbeitet (API-Schlüssel, OAuth, Header-Profile).
+Die **benutzerdefinierte Authentifizierung** wird über die Authentifizierungskonfiguration der Anbieter-Registry gehandhabt (API-Schlüssel, OAuth, Header-Profile).
 
-Transformationen des **benutzerdefinierten Anfragekörpers** (z. B. die Trennung von `system` und `messages` bei Anthropic) werden anbieterspezifisch in `open-sse/translator/` registriert.
+Transformationen eines **benutzerdefinierten Anfragekörpers** (z. B. die Trennung von `system` und `messages` bei Anthropic) werden pro Anbieter in `open-sse/translator/` registriert.
 
 ````
 
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-Die Auflösung erfolgt über die `ExecutorRegistry` (`executors/registry.ts`): Jeder spezialisierte Executor wird in der integrierten Tabelle von `executors/index.ts` deklariert und beim Laden des Moduls über `registerExecutor(alias, instance)` registriert; `getExecutor()` konsultiert die Registrierung und greift für jeden Anbieter ohne spezialisierten Eintrag auf einen memoisierten `DefaultExecutor` zurück. Die vollständige Zuordnung von Alias → Executor wird durch den Golden-Test `tests/unit/executor-map-golden.test.ts` charakterisiert.
+Die Auflösung erfolgt über die `ExecutorRegistry` (`executors/registry.ts`): Jeder spezialisierte Executor wird in der integrierten Tabelle von `executors/index.ts` deklariert und beim Laden des Moduls über `registerExecutor(alias, instance)` registriert; `getExecutor()` fragt die Registry ab und greift für jeden Anbieter ohne spezialisierten Eintrag auf einen memoisierten `DefaultExecutor` zurück. Die vollständige Zuordnung von Alias zu Executor wird durch den Golden-Test `tests/unit/executor-map-golden.test.ts` charakterisiert.
 
 ---
 

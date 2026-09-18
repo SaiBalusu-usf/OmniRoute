@@ -1617,19 +1617,19 @@ GET /.well-known/agent.json
 
 ## ניהול כלי CLI
 
-ניהול כלי CLI המשתלבים עם OmniRoute‏ (antigravity, chipotle, commandCode,
+נהלו כלי CLI המשתלבים עם OmniRoute‏ (antigravity, commandCode,
 devin-cli וכו'). לרשימה המלאה, ראו [הפניית ספקים](./PROVIDER_REFERENCE.md).
 
-| שיטה | נתיב                                    | תיאור                                                                                                                                                      |
-| ---- | --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET  | `/api/cli-tools/all-statuses`           | מצבם של כל כלי ה-CLI (מותקן, גרסה, נראה לאחרונה)                                                                                                           |
-| GET  | `/api/cli-tools/status`                 | פרטי המצב של כלי CLI אחד (שאילתת `?tool=`)                                                                                                                 |
-| POST | `/api/cli-tools/apply`                  | כתיבת התצורה שנוצרה עבור כלי (`dryRun` מציג תצוגה מקדימה; `422` + `containerEphemeralTarget` בעת הרצה בקונטיינר; `migration` מציין קובץ YAML ישן של Codex) |
-| GET  | `/api/cli-tools/backups`                | הצגת רשימת הגיבויים של תצורות כלי ה-CLI                                                                                                                    |
-| POST | `/api/cli-tools/backups`                | יצירת גיבוי של כל תצורות כלי ה-CLI                                                                                                                         |
-| POST | `/api/cli-tools/backups`                | שחזור: אותה נקודת קצה עם `{tool, backupId}` בגוף הבקשה משחזרת את הגיבוי הזה                                                                                |
-| GET  | `/api/cli-tools/antigravity-mitm`       | מצב פרוקסי ה-MITM של Antigravity (כלי ה-CLI ‏"antigravity-mitm")                                                                                           |
-| POST | `/api/cli-tools/antigravity-mitm/alias` | הגדרת כינויים עבור antigravity-mitm                                                                                                                        |
+| שיטה | נתיב                                    | תיאור                                                                                                                                                        |
+| ---- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET  | `/api/cli-tools/all-statuses`           | הסטטוס של כל כלי ה-CLI (מותקן, גרסה, נראה לאחרונה)                                                                                                           |
+| GET  | `/api/cli-tools/status`                 | פרטי הסטטוס של כלי CLI אחד (שאילתת `?tool=`)                                                                                                                 |
+| POST | `/api/cli-tools/apply`                  | כתיבת התצורה שנוצרה עבור כלי (`dryRun` מציג תצוגה מקדימה; `422` + `containerEphemeralTarget` בסביבה מבוססת קונטיינר; `migration` מציין Codex YAML מדור קודם) |
+| GET  | `/api/cli-tools/backups`                | הצגת רשימת גיבויי התצורה של כלי CLI                                                                                                                          |
+| POST | `/api/cli-tools/backups`                | יצירת גיבוי של כל תצורות כלי ה-CLI                                                                                                                           |
+| POST | `/api/cli-tools/backups`                | שחזור: אותה נקודת קצה עם `{tool, backupId}` בגוף הבקשה משחזרת את הגיבוי                                                                                      |
+| GET  | `/api/cli-tools/antigravity-mitm`       | סטטוס שרת ה-proxy מסוג MITM של Antigravity (כלי ה-CLI‏ "antigravity-mitm")                                                                                   |
+| POST | `/api/cli-tools/antigravity-mitm/alias` | הגדרת כינויים עבור antigravity-mitm                                                                                                                          |
 
 **אימות:** נדרשת הפעלת ניהול.
 

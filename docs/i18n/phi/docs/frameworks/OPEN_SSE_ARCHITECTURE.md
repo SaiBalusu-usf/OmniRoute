@@ -178,7 +178,7 @@ export async function handleChat(request: NextRequest) {
   await authenticateRequest(request);
   applyCorsHeaders(response);
 
-  // 2. Pag-validate ng body
+  // 2. Pagpapatunay ng body
   const body = await parseRequestBody(request);
 
   // 3. Pagtukoy + pagsasalin ng format
@@ -188,7 +188,7 @@ export async function handleChat(request: NextRequest) {
     body = translateRequest(body, sourceFormat, targetFormat);
   }
 
-  // 4. Pag-route ng combo
+  // 4. Combo routing
   const targets = await resolveComboTargets(comboId, body);
   for (const target of targets) {
     try {
@@ -205,11 +205,11 @@ export async function handleChat(request: NextRequest) {
 }
 ```
 
-Sa kabila ng pagiging isang napakalaking function, nakaayos ito sa mga **seksiyong may komento** na tumutugma sa 5-yugtong pipeline.
+Sa kabila ng pagiging isang napakalaking function, nakaayos ito sa mga **seksyon na may komento** na tumutugma sa 5-yugtong pipeline.
 
 ### combo.ts (4456 LOC)
 
-Ang **routing engine** na nagre-resolve ng isang combo tungo sa mga target na nakaayos ayon sa pagkakasunod-sunod.
+Ang **routing engine** na nagre-resolve ng combo tungo sa mga target na nakaayos ayon sa pagkakasunod-sunod.
 
 ```ts
 // services/combo.ts
@@ -226,31 +226,31 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
 }
 ```
 
-Sinusuportahan ang **19 na estratehiya sa pag-route** (tingnan ang `src/shared/constants/routingStrategies.ts`):
+Sinusuportahan ang **19 na routing strategy** (tingnan ang `src/shared/constants/routingStrategies.ts`):
 
-| Estratehiya         | Gawi                                                                                                        |
-| ------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `priority`          | Listahang nakaayos na inuuna ang unang target                                                               |
-| `weighted`          | Probabilistiko batay sa timbang ng bawat target                                                             |
-| `round-robin`       | Paikot na dumaraan sa mga target ayon sa pagkakasunod-sunod                                                 |
-| `context-relay`     | Ipinapasa ang context sa iba't ibang target                                                                 |
-| `fill-first`        | Pinupuno ang quota bago lumipat sa susunod                                                                  |
-| `p2c`               | Kapangyarihan ng dalawang pagpipilian                                                                       |
-| `random`            | Pantay-pantay na random                                                                                     |
-| `least-used`        | Pinipili ang may pinakakaunting kamakailang paggamit                                                        |
-| `cost-optimized`    | Inuuna ang pinakamurang maayos na target                                                                    |
-| `reset-aware`       | Isinasaalang-alang ang mga reset window ng provider                                                         |
-| `reset-window`      | Pag-route batay sa reset window                                                                             |
-| `headroom`          | Inuuna ang may pinakamalaking natitirang puwang sa quota                                                    |
-| `strict-random`     | Tunay na pantay-pantay (walang pagtitimbang batay sa kalidad)                                               |
-| `auto`              | Gumagamit ng 16-factor na pagmamarka (`autoCombo/`)                                                         |
-| `lkgp`              | Inuuna ang huling provider na nalamang gumagana nang maayos                                                 |
-| `context-optimized` | Pinakamainam para sa mga request na may mahabang context                                                    |
-| `fusion`            | Sabay-sabay na ipinapadala sa isang panel, saka sini-synthesize sa pamamagitan ng isang judge (`fusion.ts`) |
+| Strategy            | Pag-uugali                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------- |
+| `priority`          | Listahang inuuna ang unang target                                                                       |
+| `weighted`          | Probabilistiko batay sa timbang ng bawat target                                                         |
+| `round-robin`       | Umikot sa mga target ayon sa pagkakasunod-sunod                                                         |
+| `context-relay`     | Ipasa ang context sa iba't ibang target                                                                 |
+| `fill-first`        | Punuin ang quota bago lumipat sa susunod                                                                |
+| `p2c`               | Kapangyarihan ng dalawang pagpipilian                                                                   |
+| `random`            | Pantay-pantay na random                                                                                 |
+| `least-used`        | Piliin ang may pinakakaunting kamakailang paggamit                                                      |
+| `cost-optimized`    | Unahin ang pinakamurang maayos na target                                                                |
+| `reset-aware`       | Isinasaalang-alang ang mga reset window ng provider                                                     |
+| `reset-window`      | Routing batay sa reset window                                                                           |
+| `headroom`          | Unahin ang may pinakamaraming natitirang quota headroom                                                 |
+| `strict-random`     | Talagang pantay-pantay (walang pagtitimbang ayon sa kalidad)                                            |
+| `auto`              | Gumamit ng 16-factor scoring (`autoCombo/`)                                                             |
+| `lkgp`              | Unahin ang huling provider na napatunayang maayos                                                       |
+| `context-optimized` | Pinakamainam para sa mga request na may mahabang context                                                |
+| `fusion`            | Ipadala sa isang panel nang sabay-sabay, pagkatapos ay pagsamahin sa pamamagitan ng judge (`fusion.ts`) |
 
 ### base.ts (1170 LOC)
 
-Ang **abstract executor** na ini-extend ng lahat ng 101 executor. Nilalaman nito ang:
+Ang **abstract executor** na pinapalawak ng lahat ng 107 executor. Naglalaman ito ng:
 
 - `buildUrl()` — default na pagbuo ng URL (ino-override ng mga subclass para sa custom na gawi)
 - `buildHeaders()` — mga default na header (auth, content-type)
@@ -261,7 +261,7 @@ Ang **abstract executor** na ini-extend ng lahat ng 101 executor. Nilalaman nito
 // open-sse/executors/default.ts
 export class DefaultExecutor extends BaseExecutor {
   // Pinangangasiwaan ang lahat ng provider na compatible sa OpenAI/Anthropic
-  // Nagrerehistro ang mga provider ng mga configuration (URL, auth, headers) ngunit iisa ang ginagamit nilang executor logic
+  // Nagrerehistro ang mga provider ng mga configuration (URL, auth, headers) ngunit iisa ang ginagamit na executor logic
 }
 ```
 
@@ -273,68 +273,68 @@ Ang gawi na partikular sa provider (mga auth header, base URL, mga version heade
 
 ## Mga Serbisyo (117 module)
 
-Ang mga serbisyo ay mga **nakatuon at iisang-layuning module** na pinagsasama-sama ng mga handler. Ang mga pangunahing kategorya:
+Ang mga serbisyo ay mga **nakatuon at may iisang layuning module** na pinagsasama-sama ng mga handler. Ang malalaking kategorya:
 
 ### Pagruruta at Combo
 
-- `combo.ts` — entry point para sa mga kahilingang niruruta ng combo
+- `combo.ts` — entry point para sa mga kahilingang niruruta sa pamamagitan ng combo
 - `services/autoCombo/` — 16-factor na pagmamarka, 8 awtomatikong estratehiya sa pagruruta
-- `wildcardRouter.ts` — nagtutugma ng mga wildcard route (`gpt-*`)
+- `wildcardRouter.ts` — tumutugma sa mga wildcard route (`gpt-*`)
 - `modelFamilyFallback.ts` — T5 fallback sa loob ng parehong pamilya
 
 ### Paglilimita sa Rate at Quota
 
-- `rateLimitManager.ts` — token bucket bawat key+provider
+- `rateLimitManager.ts` — token bucket kada key+provider
 - `usage.ts` — pagtatala ng paggamit
-- `quotaCache.ts` — mga snapshot ng quota sa memory
+- `quotaCache.ts` — mga in-memory na snapshot ng quota
 
 ### Account at Token
 
-- `tokenRefresh.ts` — OAuth refresh kapag may 401
+- `tokenRefresh.ts` — pag-refresh ng OAuth kapag may 401
 - `accountFallback.ts` — lumipat sa alternatibong account
 - `sessionManager.ts` — estado ng multi-turn na session
 
 ### Intelihensiya
 
-- `intentClassifier.ts` — inuuri ang layunin ng kahilingan
-- `taskAwareRouter.ts` — nagruruta ayon sa uri ng gawain
-- `thinkingBudget.ts` — naglalaan ng mga thinking token
-- `contextManager.ts` — nag-i-inject ng konteksto sa pagruruta
+- `intentClassifier.ts` — uriin ang layunin ng kahilingan
+- `taskAwareRouter.ts` — iruta ayon sa uri ng gawain
+- `thinkingBudget.ts` — maglaan ng mga token para sa pag-iisip
+- `contextManager.ts` — mag-inject ng konteksto sa pagruruta
 
 ### Katatagan
 
 - `resilience.ts` — orkestrasyon ng retry, backoff, at breaker
 - `emergencyFallback.ts` — fallback bilang huling opsyon
-- `modelDeprecation.ts` — awtomatikong nagruruta sa mga kahaliling model
+- `modelDeprecation.ts` — awtomatikong iruta sa mga kapalit na modelo
 
 ### Estado
 
-- `signatureCache.ts` — deduplication ayon sa signature ng kahilingan
+- `signatureCache.ts` — pag-aalis ng mga duplikado ayon sa signature ng kahilingan
 - `volumeDetector.ts` — pagbabawas ng load
 - `contextHandoff.ts` — serialization ng session
 
 ### Compression
 
 - `compression/` (subdirectory) — kumpletong pipeline ng compression
-- 39 file na sumasaklaw sa mga engine, rule pack, at adapter
+- 39 na file na sumasaklaw sa mga engine, rule pack, at adapter
 
 ### Mga Skill
 
-- (tinalakay sa [SKILLS.md](./SKILLS.md))
+- (tinatalakay sa [SKILLS.md](./SKILLS.md))
 
-### Memory
+### Memorya
 
-- (tinalakay sa [MEMORY.md](./MEMORY.md))
+- (tinatalakay sa [MEMORY.md](./MEMORY.md))
 
 ---
 
 ## Mga Executor (75+ file)
 
-Isang file bawat provider. Lahat ng ito ay nag-e-extend sa `BaseExecutor` at nag-o-override sa mga bahaging naiiba.
+Isang file kada provider. Lahat ng ito ay nag-e-extend sa `BaseExecutor` at nag-o-override sa mga bahaging naiiba.
 
 ### Mga Karaniwang Pattern
 
-Nire-resolve ang mga provider sa pamamagitan ng `getExecutor(providerId)`, na nagbabalik ng naka-configure na executor. Ginagamit ng mga provider na compatible sa OpenAI/Anthropic ang `DefaultExecutor` (`executors/default.ts`). Kino-configure sa `open-sse/config/providers/` ang gawi na partikular sa provider (base URL, mga auth header, bersyon ng API), habang pinangangasiwaan sa `open-sse/translator/` ang mga transformation ng request body.
+Nire-resolve ang mga provider sa pamamagitan ng `getExecutor(providerId)`, na nagbabalik ng naka-configure na executor. Ginagamit ng mga provider na compatible sa OpenAI/Anthropic ang `DefaultExecutor` (`executors/default.ts`). Kino-configure sa `open-sse/config/providers/` ang gawi na partikular sa provider (base URL, mga auth header, bersyon ng API), habang pinangangasiwaan sa `open-sse/translator/` ang mga transformation sa request body.
 
 Itinatakda ang **Custom URL** sa pamamagitan ng configuration ng provider:
 
@@ -346,9 +346,9 @@ export default {
 }
 ````
 
-Pinangangasiwaan ang **custom auth** sa pamamagitan ng auth configuration ng provider registry (API key, OAuth, mga header profile).
+Pinangangasiwaan ang **custom auth** sa pamamagitan ng auth configuration ng registry ng provider (API key, OAuth, mga header profile).
 
-Ang mga transformation ng **custom request body** (hal., paghihiwalay ng Anthropic sa `system` mula sa `messages`) ay nirerehistro para sa bawat provider sa `open-sse/translator/`.
+Ang mga transformation sa **custom request body** (halimbawa, paghihiwalay ng Anthropic sa `system` mula sa `messages`) ay nirerehistro kada provider sa `open-sse/translator/`.
 
 ````
 
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-Dumaraan ang resolution sa `ExecutorRegistry` (`executors/registry.ts`): idinedeklara ang bawat specialized executor sa built-in na talahanayan ng `executors/index.ts` at nirerehistro sa pamamagitan ng `registerExecutor(alias, instance)` kapag nag-load ang module; kinokonsulta ng `getExecutor()` ang registry at bumabalik sa isang memoized na `DefaultExecutor` para sa anumang provider na walang specialized entry. Inilalarawan ng golden test na `tests/unit/executor-map-golden.test.ts` ang kumpletong mapping ng alias → executor.
+Dumadaan ang resolution sa `ExecutorRegistry` (`executors/registry.ts`): idinedeklara ang bawat espesyal na executor sa built-in na talahanayan ng `executors/index.ts` at nirerehistro sa pamamagitan ng `registerExecutor(alias, instance)` kapag nilo-load ang module; kinokonsulta ng `getExecutor()` ang registry at bumabalik sa isang memoized na `DefaultExecutor` para sa anumang provider na walang espesyal na entry. Inilalarawan ng golden test na `tests/unit/executor-map-golden.test.ts` ang kumpletong mapping ng alias → executor.
 
 ---
 

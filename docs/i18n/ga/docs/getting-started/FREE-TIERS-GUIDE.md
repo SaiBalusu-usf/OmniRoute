@@ -4,7 +4,7 @@
 
 ---
 
-> **Go hachomair**: Cláraíonn OmniRoute 352 aitheantas soláthraí, agus tá **152 iontráil i gcatalóg na soláthraithe marcáilte mar `hasFree`**. Cuimsíonn catalóg iniúchta níos déine na samhlacha saor in aisce **34 eochair chomhthiomsaithe athfhillteacha / 443 iontráil** (436 gníomhach + 7 scortha). Ceangail roinnt soláthraithe oiriúnacha chun acmhainn chúltaca níos leithne a fháil; tá gach cuóta, riail cheadaithe, polasaí príobháideachais agus coinníoll maidir le ró-úsáid íoctha fós i bhfeidhm.
+> **Go hachomair**: Cláraíonn OmniRoute 357 aitheantas soláthraí, agus tá **152 iontráil sa chatalóg soláthraithe marcáilte mar `hasFree`**. Cuimsíonn an chatalóg níos déine de shamhlacha saor in aisce a ndearnadh iniúchadh uirthi **35 eochair linn athfhillteacha / 482 iontráil** (475 gníomhach + 7 scortha). Ceangail roinnt soláthraithe oiriúnacha chun acmhainn chúltaca níos leithne a fháil; tá feidhm fós ag gach cuóta, riail cheadaithe, beartas príobháideachais agus coinníoll maidir le ró-úsáid íoctha.
 
 ---
 
@@ -160,19 +160,19 @@ chuóta nó ar bheartas rochtana soláthraí.
 
 ## Matamaitic na Sraithe Saor in Aisce
 
-Tuairiscíonn an chatalóg bheo, ina ndéantar linnte a dhídhúbailt, na luachanna seo faoi láthair:
+Tuairiscíonn an chatalóg bheo, agus dí-dhúbailt déanta de réir linnte, na luachanna seo a leanas faoi láthair:
 
-| Méadrach                                                        |                                         Luach iniúchta reatha | Léirmhíniú                                                                                                                                                                                 |
-| --------------------------------------------------------------- | ------------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Deontas cainníochtaithe athfhillteach                           |                                       **~1.47B comhartha/mí** | Ní chomhairtear linnte comhroinnte ach uair amháin; fágtar soláthraithe gan teorainn as an tsuim                                                                                           |
-| An chéad mhí le deontais chlárúcháin                            |                                          **~2.07B comhartha** | Iomlán athfhillteach móide creidmheasanna aonuaire agus athfhillteacha                                                                                                                     |
-| Fardal iniúchta de shamhlacha saor in aisce                     | **34 eochair linne athfhillteacha / 443 iontráil chatalóige** | 436 gníomhach + 7 scortha; éagsúil ón gcatalóg ina bhfuil 352 soláthraí                                                                                                                    |
-| Soláthraithe athfhillteacha/saor go deo gan eochair a léirítear |                                                        **52** | Soláthraithe uathúla thar chineálacha catalóige athfhillteacha laethúla/míosúla/creidmheasa/gan teorainn agus gan eochair; fágtar sraitheanna atá faoi réir incháilitheachta as an áireamh |
-| Iontrálacha i gcatalóg na soláthraithe atá marcáilte `hasFree`  |                                                 **152 / 352** | Meiteashonraí níos leithne faoi sholáthraithe; níl cuóta athfhillteach inchainníochtaithe acu uile                                                                                         |
+| Méadracht                                                                             |                                          Luach iniúchta reatha | Léirmhíniú                                                                                                                                                                            |
+| ------------------------------------------------------------------------------------- | -------------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deontas cainníochtaithe athfhillteach                                                 |                                        **~1.62B comhartha/mí** | Ní áirítear linnte comhroinnte ach uair amháin; fágtar soláthraithe gan teorainn as an tsuim                                                                                          |
+| An chéad mhí le deontais chlárúcháin                                                  |                                           **~2.22B comhartha** | An t-iomlán athfhillteach móide creidmheasanna aonuaire agus athfhillteacha                                                                                                           |
+| Fardal iniúchta na samhlacha saor in aisce                                            | **35 eochair linnte athfhillteacha / 482 iontráil chatalóige** | 475 gníomhach + 7 scortha; éagsúil ón gcatalóg 357 soláthraí                                                                                                                          |
+| Soláthraithe athfhillteacha/gan eochair atá saor go deo agus a bhfuil ionadaíocht acu |                                                         **53** | Soláthraithe uathúla ar fud cineálacha catalóige athfhillteacha laethúla/míosúla/creidmheasa/gan teorainn agus gan eochair; fágtar rónna atá faoi réir incháilitheachta as an áireamh |
+| Iontrálacha i gcatalóg na soláthraithe marcáilte `hasFree`                            |                                                  **152 / 357** | Meiteashonraí níos leithne faoi sholáthraithe; níl cuóta athfhillteach inchainníochtaithe acu uile                                                                                    |
 
-Ríomhtar na luachanna seo ó `open-sse/config/freeModelCatalog.ts`; féach ar an
-[Tagairt do Shraitheanna Saor in Aisce](../reference/FREE_TIERS.md) le haghaidh dídhúbailt linnte, bratacha ToS,
-iontrálacha scortha, agus modheolaíocht na gcreidmheasanna clárúcháin.
+Ríomhtar na luachanna seo ó `open-sse/config/freeModelCatalog.ts`; féach an
+[Tagairt do Shraitheanna Saor in Aisce](../reference/FREE_TIERS.md) le haghaidh dí-dhúbailt linnte, bratacha ToS,
+iontrálacha scortha, agus mhodheolaíocht na gcreidmheasanna clárúcháin.
 
 ---
 

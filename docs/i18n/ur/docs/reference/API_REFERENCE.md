@@ -1614,23 +1614,23 @@ GET /.well-known/agent.json
 
 ---
 
-## CLI ٹولز کا انتظام
+## CLI ٹولز کا نظم
 
-OmniRoute کے ساتھ انضمام کرنے والے CLI ٹولز (antigravity، chipotle، commandCode،
-devin-cli وغیرہ) کا انتظام کریں۔ مکمل فہرست کے لیے [پرووائیڈر حوالہ](./PROVIDER_REFERENCE.md) دیکھیں۔
+OmniRoute کے ساتھ ضم ہونے والے CLI ٹولز (antigravity، commandCode،
+devin-cli وغیرہ) کا نظم کریں۔ مکمل فہرست کے لیے [فراہم کنندہ کا حوالہ](./PROVIDER_REFERENCE.md) دیکھیں۔
 
-| طریقہ | پاتھ                                    | تفصیل                                                                                                                                                                           |
-| ----- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET   | `/api/cli-tools/all-statuses`           | تمام CLI ٹولز کی حالت (انسٹال شدہ، ورژن، آخری بار دیکھا گیا)                                                                                                                    |
-| GET   | `/api/cli-tools/status`                 | ایک CLI ٹول کی حالت کی تفصیل (`?tool=` کوئری)                                                                                                                                   |
-| POST  | `/api/cli-tools/apply`                  | کسی ٹول کی تیار کردہ کنفیگریشن لکھیں (`dryRun` پیش منظر دکھاتا ہے؛ کنٹینرائزڈ ہونے پر `422` + `containerEphemeralTarget`؛ `migration` ایک لیگیسی Codex YAML کی نشاندہی کرتا ہے) |
-| GET   | `/api/cli-tools/backups`                | CLI ٹول کنفیگریشن بیک اپس کی فہرست دکھائیں                                                                                                                                      |
-| POST  | `/api/cli-tools/backups`                | تمام CLI ٹول کنفیگریشنز کا بیک اپ بنائیں                                                                                                                                        |
-| POST  | `/api/cli-tools/backups`                | بحال کریں: باڈی میں `{tool, backupId}` کے ساتھ یہی اینڈ پوائنٹ اس بیک اپ کو بحال کرتا ہے                                                                                        |
-| GET   | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM پراکسی کی حالت ("antigravity-mitm" CLI ٹول)                                                                                                                    |
-| POST  | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm عرفیات کنفیگر کریں                                                                                                                                             |
+| طریقہ | پاتھ                                    | وضاحت                                                                                                                                                                          |
+| ----- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET   | `/api/cli-tools/all-statuses`           | تمام CLI ٹولز کی حالت (انسٹال شدہ، ورژن، آخری بار دیکھے جانے کا وقت)                                                                                                           |
+| GET   | `/api/cli-tools/status`                 | ایک CLI ٹول کی حالت کی تفصیل (`?tool=` کوئری)                                                                                                                                  |
+| POST  | `/api/cli-tools/apply`                  | کسی ٹول کی تیار کردہ کنفیگریشن لکھیں (`dryRun` پیش منظر دکھاتا ہے؛ کنٹینرائزڈ ہونے پر `422` + `containerEphemeralTarget`؛ `migration` کسی پرانی Codex YAML کی نشاندہی کرتا ہے) |
+| GET   | `/api/cli-tools/backups`                | CLI ٹول کی کنفیگریشن کے بیک اپس کی فہرست                                                                                                                                       |
+| POST  | `/api/cli-tools/backups`                | تمام CLI ٹول کنفیگریشنز کا بیک اپ بنائیں                                                                                                                                       |
+| POST  | `/api/cli-tools/backups`                | بحال کریں: باڈی میں `{tool, backupId}` کے ساتھ یہی اینڈ پوائنٹ اس بیک اپ کو بحال کرتا ہے                                                                                       |
+| GET   | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM پراکسی کی حالت ("antigravity-mitm" CLI ٹول)                                                                                                                   |
+| POST  | `/api/cli-tools/antigravity-mitm/alias` | antigravity-mitm عرفیات کنفیگر کریں                                                                                                                                            |
 
-**توثیق:** مینجمنٹ سیشن درکار ہے۔
+**توثیق:** انتظامی سیشن درکار ہے۔
 
 ---
 

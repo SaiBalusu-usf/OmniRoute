@@ -4,7 +4,7 @@
 
 ---
 
-> **Na nkenke**: OmniRoute na-edebanye NJ ndị na-eweta ọrụ 352, ebe e nwere **ndekọ 152 n’ime katalọgụ ndị na-eweta ọrụ akara `hasFree`**. Katalọgụ ụdị efu e nyochara nke ọma karị na-ekpuchi **igodo ọdọ mmiri na-emegharị ugboro 34 / ndekọ 443** (436 na-arụ ọrụ + 7 a kwụsịrị). Jikọọ ọtụtụ ndị na-eweta ọrụ dabara adaba iji nweta ikike ndabere sara mbara; oke ojiji, iwu nkwado, amụma nzuzo, na ọnọdụ ịkwụ ụgwọ ma ojiji gafee oke ka na-emetụta.
+> **Na nkenke**: OmniRoute na-edebanye ID ndị na-eweta ọrụ 357, ebe **ntinye 152 na katalọgụ ndị na-eweta ọrụ nwere akara `hasFree`**. Katalọgụ ụdị efu ahụ e nyochachara nke ọma karị nwere **igodo pool na-emegharị ugboro ugboro 35 / ntinye 482** (475 na-arụ ọrụ + 7 a kwụsịrị). Jikọọ ọtụtụ ndị na-eweta ọrụ kwesịrị ekwesị iji nweta ikike fallback sara mbara karị; oke ojiji, iwu nkwado, amụma nzuzo, na ọnọdụ ịkwụ ụgwọ maka ojiji gafere oke ka na-emetụta.
 
 ---
 
@@ -158,21 +158,21 @@ oke ojiji ma ọ bụ iwu nnweta nke onye na-eweta ọrụ.
 
 ---
 
-## Mgbakọ Ọkwa Efuru
+## Mgbakọ Ọkwa N'efu
 
-Katalọgụ dị ugbu a, nke na-arụ ọrụ ozugbo ma na-ewepụ nkwugharị n'ime pool, na-akọ ugbu a:
+Katalọgụ dị ugbu a, nke na-arụ ọrụ ma wepụkwa ngụkọ ugboro abụọ n'ime otu ọdọ, na-akọ ugbu a:
 
-| Ihe a na-atụ                                                                                   |                                        Uru enyochara ugbu a | Nkọwa                                                                                                                                            |
-| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Oke a tụrụ ọnụ ọgụgụ nke na-emegharị kwa oge                                                   |                                       **~1.47B token/ọnwa** | A gụrụ pool ndị a na-ekekọrịta naanị otu ugboro; e wepụla ndị na-eweta ọrụ na-enweghị oke na nchikota ahụ                                        |
-| Ọnwa mbụ nwere onyinye ndebanye aha                                                            |                                            **~2.07B token** | Ngụkọta na-emegharị kwa oge tinyere kredit otu oge na kredit na-emegharị kwa oge                                                                 |
-| Ndepụta ụdị efu enyochara                                                                      | **igodo pool 34 na-emegharị kwa oge / ntinye katalọgụ 443** | 436 na-arụ ọrụ + 7 kwụsịrị; ọ dị iche na katalọgụ ndị na-eweta ọrụ 352                                                                           |
-| Ndị na-eweta ọrụ efu-mgbe-ebighị-ebi, na-emegharị kwa oge/na-achọghị igodo, ndị nọchitere anya |                                                      **52** | Ndị na-eweta ọrụ pụrụ iche n'ofe ụdị katalọgụ kwa ụbọchị/kwa ọnwa/kredit/enweghị oke na ndị na-achọghị igodo; e wepụla ahịrị ndị dabere na ntozu |
-| Ntinye katalọgụ ndị na-eweta ọrụ e nyere akara `hasFree`                                       |                                               **152 / 352** | Metadata sara mbara nke ndị na-eweta ọrụ; ọ bụghị ha niile nwere oke na-emegharị kwa oge nke a pụrụ ịtụ ọnụ ọgụgụ ya                             |
+| Ihe a na-atụ                                                                                        |                                         Uru enyochara ugbu a | Nkọwa                                                                                                                                           |
+| --------------------------------------------------------------------------------------------------- | -----------------------------------------------------------: | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Onyinye a tụrụ ọnụ ọgụgụ ya nke na-emegharị oge niile                                               |                                        **~1.62B token/ọnwa** | A gụrụ ọdọ ndị a na-ekekọrịta naanị otu ugboro; ewepụghị ndị na-enye ọrụ na-enweghị oke na nchikọta ahụ                                         |
+| Ọnwa mbụ nwere onyinye ndebanye aha                                                                 |                                             **~2.22B token** | Ngụkọta na-emegharị oge niile tinyere kredit otu oge na ndị na-emegharị oge niile                                                               |
+| Ndepụta model n'efu e nyochara                                                                      | **Igodo ọdọ 35 na-emegharị oge niile / ndenye katalọgụ 482** | 475 na-arụ ọrụ + 7 a kwụsịrị; ọ dị iche na katalọgụ ndị na-enye ọrụ 357                                                                         |
+| Ndị na-enye ọrụ n'efu-ruo-mgbe-ebighị-ebi na-emegharị oge niile/na-achọghị igodo ndị nọchitere anya |                                                       **53** | Ndị na-enye ọrụ pụrụ iche n'ofe ụdị katalọgụ kwa ụbọchị/kwa ọnwa/kredit/enweghị oke na ndị na-achọghị igodo; ewepụghị ahịrị ndị dabere na ntozu |
+| Ndenye katalọgụ ndị na-enye ọrụ akara `hasFree`                                                     |                                                **152 / 357** | Metadata sara mbara nke ndị na-enye ọrụ; ọ bụghị ha niile nwere oke na-emegharị oge niile nke a pụrụ ịtụ ọnụ ọgụgụ ya                           |
 
 A na-agbakọ uru ndị a site na `open-sse/config/freeModelCatalog.ts`; lee
-[Ntụaka Ọkwa Efuru](../reference/FREE_TIERS.md) maka iwepụ nkwugharị pool, akara ToS,
-ntinye ndị kwụsịrị, na usoro kredit ndebanye aha.
+[Ọrụ Ntụaka Ọkwa N'efu](../reference/FREE_TIERS.md) maka iwepụ ngụkọ ugboro abụọ n'ime ọdọ, ọkọlọtọ ToS,
+ndenye ndị a kwụsịrị, na usoro kredit ndebanye aha.
 
 ---
 

@@ -4,7 +4,7 @@
 
 ---
 
-> **TL;DR**: Nagrerehistro ang OmniRoute ng 352 ID ng provider, na may **152 entry sa catalog ng provider na minarkahang `hasFree`**. Saklaw ng mas mahigpit at na-audit na catalog ng mga libreng modelo ang **34 umuulit na pool key / 443 entry** (436 aktibo + 7 itinigil). Ikonekta ang ilang naaangkop na provider para sa mas malawak na fallback capacity; nalalapat pa rin ang bawat quota, panuntunan sa pag-apruba, patakaran sa privacy, at kondisyon para sa bayad na sobrang paggamit.
+> **TL;DR**: Nagrerehistro ang OmniRoute ng 357 provider ID, na may **152 entry sa provider catalog na minarkahang `hasFree`**. Saklaw ng mas mahigpit na na-audit na catalog ng libreng modelo ang **35 umuulit na pool key / 482 entry** (475 aktibo + 7 itinigil). Kumonekta sa ilang angkop na provider para sa mas malawak na kapasidad ng fallback; nalalapat pa rin ang bawat quota, tuntunin sa pag-apruba, patakaran sa privacy, at kondisyon sa bayad na overage.
 
 ---
 
@@ -158,21 +158,21 @@ quota o patakaran sa access ng provider.
 
 ---
 
-## Pagkalkula ng Libreng Tier
+## Matematika ng Libreng Tier
 
-Kasalukuyang iniulat ng live at naka-pool-deduplicate na catalog ang sumusunod:
+Kasalukuyang iniulat ng live na catalog na na-deduplicate ayon sa pool ang sumusunod:
 
-| Sukatan                                                                          |                   Kasalukuyang na-audit na halaga | Interpretasyon                                                                                                                                                                       |
-| -------------------------------------------------------------------------------- | ------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Nauulit na nasusukat na grant                                                    |                            **~1.47B token/buwan** | Isang beses lang binilang ang mga nakabahaging pool; hindi isinama sa kabuuan ang mga provider na walang takdang limitasyon                                                          |
-| Unang buwan na may mga grant sa pag-sign up                                      |                                  **~2.07B token** | Nauulit na kabuuan kasama ang minsanan at nauulit na mga credit                                                                                                                      |
-| Na-audit na imbentaryo ng mga libreng modelo                                     | **34 na nauulit na pool key / 443 catalog entry** | 436 aktibo + 7 itinigil; hiwalay sa catalog na may 352 provider                                                                                                                      |
-| Mga nauulit/keyless na provider na libreng gamitin magpakailanman na kinakatawan |                                            **52** | Mga natatanging provider sa mga uri ng catalog na nauulit araw-araw/buwan-buwan/credit/walang limitasyon at keyless; hindi kasama ang mga row na nakadepende sa pagiging kwalipikado |
-| Mga entry sa provider catalog na may markang `hasFree`                           |                                     **152 / 352** | Mas malawak na metadata ng provider; hindi lahat ay may nasusukat na nauulit na quota                                                                                                |
+| Sukatan                                                                   |                       Kasalukuyang na-audit na halaga | Interpretasyon                                                                                                                                                                                      |
+| ------------------------------------------------------------------------- | ----------------------------------------------------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Paulit-ulit na nasusukat na grant                                         |                                **~1.62B token/buwan** | Isang beses lang binilang ang mga nakabahaging pool; hindi isinama sa kabuuan ang mga provider na walang limitasyon                                                                                 |
+| Unang buwan na may mga grant sa pag-sign up                               |                                      **~2.22B token** | Paulit-ulit na kabuuan kasama ang minsanan at paulit-ulit na mga credit                                                                                                                             |
+| Na-audit na imbentaryo ng libreng modelo                                  | **35 paulit-ulit na pool key / 482 entry sa catalog** | 475 aktibo + 7 itinigil; naiiba sa catalog na may 357 provider                                                                                                                                      |
+| Mga kinatawang provider na paulit-ulit/walang key at libre magpakailanman |                                                **53** | Mga natatanging provider sa mga uri ng catalog na paulit-ulit na pang-araw-araw/pangbuwan/credit/walang limitasyon at walang key; hindi kasama ang mga row na may kundisyon sa pagiging kwalipikado |
+| Mga entry sa catalog ng provider na minarkahang `hasFree`                 |                                         **152 / 357** | Mas malawak na metadata ng provider; hindi lahat ay may nasusukat na paulit-ulit na quota                                                                                                           |
 
-Kinakalkula ang mga halagang ito mula sa `open-sse/config/freeModelCatalog.ts`; tingnan ang
-[Sanggunian sa Mga Libreng Tier](../reference/FREE_TIERS.md) para sa pag-deduplicate ng pool, mga flag ng ToS,
-mga itinigil na entry, at pamamaraan para sa mga credit sa pag-sign up.
+Kinukuwenta ang mga halagang ito mula sa `open-sse/config/freeModelCatalog.ts`; tingnan ang
+[Sanggunian sa Mga Libreng Tier](../reference/FREE_TIERS.md) para sa deduplikasyon ng pool, mga flag ng ToS,
+mga itinigil na entry, at metodolohiya ng credit sa pag-sign up.
 
 ---
 

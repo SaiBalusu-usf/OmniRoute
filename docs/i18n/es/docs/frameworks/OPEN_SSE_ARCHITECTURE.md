@@ -205,7 +205,7 @@ export async function handleChat(request: NextRequest) {
 }
 ```
 
-A pesar de ser una única función enorme, está organizada en **secciones comentadas** que corresponden a la canalización de 5 etapas.
+A pesar de ser una única función gigantesca, está organizada en **secciones comentadas** que corresponden al proceso de 5 etapas.
 
 ### combo.ts (4456 LOC)
 
@@ -228,34 +228,34 @@ export async function handleComboChat(body, comboId): Promise<ChatResult> {
 
 Admite **19 estrategias de enrutamiento** (consulta `src/shared/constants/routingStrategies.ts`):
 
-| Estrategia          | Comportamiento                                                                       |
-| ------------------- | ------------------------------------------------------------------------------------ |
-| `priority`          | Lista ordenada con el primer destino como prioridad                                  |
-| `weighted`          | Selección probabilística según el peso de cada destino                               |
-| `round-robin`       | Recorre los destinos en orden de forma cíclica                                       |
-| `context-relay`     | Transfiere el contexto entre destinos                                                |
-| `fill-first`        | Agota la cuota antes de pasar al siguiente                                           |
-| `p2c`               | Potencia de dos opciones                                                             |
-| `random`            | Selección aleatoria uniforme                                                         |
-| `least-used`        | Elige el que tenga menos usos recientes                                              |
-| `cost-optimized`    | Primero el destino disponible más barato                                             |
-| `reset-aware`       | Tiene en cuenta las ventanas de restablecimiento del proveedor                       |
-| `reset-window`      | Enrutamiento basado en ventanas de restablecimiento                                  |
-| `headroom`          | Primero el que tenga mayor margen de cuota restante                                  |
-| `strict-random`     | Verdaderamente uniforme (sin ponderación por calidad)                                |
-| `auto`              | Utiliza una puntuación de 16 factores (`autoCombo/`)                                 |
-| `lkgp`              | Primero el último proveedor que se sabe que funcionó                                 |
-| `context-optimized` | El mejor para solicitudes de contexto largo                                          |
-| `fusion`            | Distribuye en paralelo a un panel y después sintetiza mediante un juez (`fusion.ts`) |
+| Estrategia          | Comportamiento                                                                     |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| `priority`          | Lista ordenada con prioridad para el primer destino                                |
+| `weighted`          | Selección probabilística según el peso de cada destino                             |
+| `round-robin`       | Recorre los destinos en orden de forma cíclica                                     |
+| `context-relay`     | Transfiere el contexto entre destinos                                              |
+| `fill-first`        | Agota la cuota antes de pasar al siguiente                                         |
+| `p2c`               | Potencia de dos opciones                                                           |
+| `random`            | Selección aleatoria uniforme                                                       |
+| `least-used`        | Elige el destino con menos usos recientes                                          |
+| `cost-optimized`    | Primero, el destino operativo más barato                                           |
+| `reset-aware`       | Tiene en cuenta los períodos de restablecimiento del proveedor                     |
+| `reset-window`      | Enrutamiento basado en el período de restablecimiento                              |
+| `headroom`          | Primero, el destino con mayor margen de cuota restante                             |
+| `strict-random`     | Selección verdaderamente uniforme (sin ponderación por calidad)                    |
+| `auto`              | Usa una puntuación de 16 factores (`autoCombo/`)                                   |
+| `lkgp`              | Primero, el último proveedor conocido que funcionaba                               |
+| `context-optimized` | El más adecuado para solicitudes con contexto largo                                |
+| `fusion`            | Distribuye en paralelo a un panel y luego sintetiza mediante un juez (`fusion.ts`) |
 
 ### base.ts (1170 LOC)
 
-El **ejecutor abstracto** que extienden los 101 ejecutores. Contiene:
+El **ejecutor abstracto** que extienden los 107 ejecutores. Contiene:
 
 - `buildUrl()` — construcción predeterminada de la URL (las subclases la sobrescriben para personalizarla)
 - `buildHeaders()` — encabezados predeterminados (autenticación, tipo de contenido)
 - `transformRequest()` — transferencia directa de forma predeterminada
-- `execute()` — el bucle HTTP principal con reintentos, espera incremental y disyuntor
+- `execute()` — el bucle HTTP principal con reintentos, espera exponencial y disyuntor
 
 ```ts
 // open-sse/executors/default.ts
@@ -265,7 +265,7 @@ export class DefaultExecutor extends BaseExecutor {
 }
 ```
 
-El comportamiento específico de cada proveedor (encabezados de autenticación, URL base, encabezados de versión) se configura mediante el registro de proveedores, no mediante clases de ejecutor independientes.
+El comportamiento específico de cada proveedor (encabezados de autenticación, URL base y encabezados de versión) se configura mediante el registro de proveedores, no mediante clases de ejecutor separadas.
 
 ````
 
@@ -290,22 +290,22 @@ Los servicios son **módulos específicos y de propósito único** que los manej
 
 ### Cuenta y token
 
-- `tokenRefresh.ts` — renovación de OAuth ante un error 401
+- `tokenRefresh.ts` — renovación de OAuth al recibir 401
 - `accountFallback.ts` — cambio a una cuenta alternativa
-- `sessionManager.ts` — estado de sesión de múltiples turnos
+- `sessionManager.ts` — estado de sesión multiconversación
 
 ### Inteligencia
 
 - `intentClassifier.ts` — clasifica la intención de la solicitud
-- `taskAwareRouter.ts` — enruta por tipo de tarea
+- `taskAwareRouter.ts` — enruta según el tipo de tarea
 - `thinkingBudget.ts` — asigna tokens de razonamiento
-- `contextManager.ts` — inyecta el contexto de enrutamiento
+- `contextManager.ts` — inyecta contexto de enrutamiento
 
 ### Resiliencia
 
-- `resilience.ts` — orquestación de reintentos, espera exponencial y disyuntores
+- `resilience.ts` — orquestación de reintentos, espera incremental y disyuntores
 - `emergencyFallback.ts` — respaldo de último recurso
-- `modelDeprecation.ts` — enruta automáticamente a modelos sucesores
+- `modelDeprecation.ts` — enrutamiento automático a modelos sucesores
 
 ### Estado
 
@@ -315,16 +315,16 @@ Los servicios son **módulos específicos y de propósito único** que los manej
 
 ### Compresión
 
-- `compression/` (subdirectorio) — canalización de compresión completa
+- `compression/` (subdirectorio) — canalización completa de compresión
 - 39 archivos que abarcan motores, paquetes de reglas y adaptadores
 
 ### Habilidades
 
-- (explicadas en [SKILLS.md](./SKILLS.md))
+- (descrito en [SKILLS.md](./SKILLS.md))
 
 ### Memoria
 
-- (explicada en [MEMORY.md](./MEMORY.md))
+- (descrito en [MEMORY.md](./MEMORY.md))
 
 ---
 
@@ -334,7 +334,7 @@ Un archivo por proveedor. Todos extienden `BaseExecutor` y sobrescriben lo que d
 
 ### Patrones comunes
 
-Los proveedores se resuelven mediante `getExecutor(providerId)`, que devuelve el ejecutor configurado. Los proveedores compatibles con OpenAI/Anthropic utilizan `DefaultExecutor` (`executors/default.ts`). El comportamiento específico de cada proveedor (URL base, encabezados de autenticación, versión de la API) se configura en `open-sse/config/providers/`, mientras que las transformaciones del cuerpo de la solicitud se gestionan en `open-sse/translator/`.
+Los proveedores se resuelven mediante `getExecutor(providerId)`, que devuelve el ejecutor configurado. Los proveedores compatibles con OpenAI/Anthropic utilizan `DefaultExecutor` (`executors/default.ts`). El comportamiento específico de cada proveedor (URL base, cabeceras de autenticación, versión de la API) se configura en `open-sse/config/providers/`, mientras que las transformaciones del cuerpo de la solicitud se gestionan en `open-sse/translator/`.
 
 La **URL personalizada** se establece mediante la configuración del proveedor:
 
@@ -346,7 +346,7 @@ export default {
 }
 ````
 
-La **autenticación personalizada** se gestiona mediante la configuración de autenticación del registro de proveedores (clave de API, OAuth, perfiles de encabezados).
+La **autenticación personalizada** se gestiona mediante la configuración de autenticación del registro de proveedores (clave de API, OAuth, perfiles de cabeceras).
 
 Las transformaciones **personalizadas del cuerpo de la solicitud** (por ejemplo, cuando Anthropic separa `system` de `messages`) se registran por proveedor en `open-sse/translator/`.
 
@@ -366,7 +366,7 @@ const result = await executor.execute({
 });
 ````
 
-La resolución pasa por `ExecutorRegistry` (`executors/registry.ts`): cada ejecutor especializado se declara en la tabla integrada de `executors/index.ts` y se registra mediante `registerExecutor(alias, instance)` al cargar el módulo; `getExecutor()` consulta el registro y recurre a un `DefaultExecutor` memoizado para cualquier proveedor sin una entrada especializada. La asignación completa de alias → ejecutor está definida por la prueba de referencia `tests/unit/executor-map-golden.test.ts`.
+La resolución se realiza mediante `ExecutorRegistry` (`executors/registry.ts`): cada ejecutor especializado se declara en la tabla integrada de `executors/index.ts` y se registra mediante `registerExecutor(alias, instance)` al cargar el módulo; `getExecutor()` consulta el registro y recurre a un `DefaultExecutor` memoizado para cualquier proveedor sin una entrada especializada. La asignación completa de alias → ejecutor se especifica mediante la prueba de referencia `tests/unit/executor-map-golden.test.ts`.
 
 ---
 

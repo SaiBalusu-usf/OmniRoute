@@ -4,7 +4,7 @@
 
 ---
 
-> **TL;DR**: O OmniRoute regista 352 IDs de fornecedores, com **152 entradas no catálogo de fornecedores assinaladas como `hasFree`**. O catálogo auditado mais rigoroso de modelos gratuitos abrange **34 chaves de pools recorrentes / 443 entradas** (436 ativas + 7 descontinuadas). Ligue vários fornecedores adequados para obter maior capacidade de contingência; continuam a aplicar-se todas as quotas, regras de aprovação, políticas de privacidade e condições de utilização paga excedentária.
+> **TL;DR**: O OmniRoute regista 357 IDs de fornecedores, com **152 entradas no catálogo de fornecedores marcadas como `hasFree`**. O catálogo auditado mais rigoroso de modelos gratuitos abrange **35 chaves de pools recorrentes / 482 entradas** (475 ativas + 7 descontinuadas). Ligue vários fornecedores adequados para obter uma maior capacidade de recurso; todas as quotas, regras de aprovação, políticas de privacidade e condições de excedentes pagos continuam a aplicar-se.
 
 ---
 
@@ -158,20 +158,20 @@ quota ou a política de acesso de um fornecedor.
 
 ---
 
-## Cálculo do nível gratuito
+## Cálculo dos níveis gratuitos
 
 O catálogo ativo, com eliminação de duplicados por pool, apresenta atualmente:
 
-| Métrica                                                                  |                                         Valor atual auditado | Interpretação                                                                                                                                                 |
-| ------------------------------------------------------------------------ | -----------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Atribuição recorrente quantificada                                       |                          **~1,47 mil milhões de tokens/mês** | Os pools partilhados são contabilizados uma única vez; exclui da soma os fornecedores sem limite definido                                                     |
-| Primeiro mês com atribuições de registo                                  |                              **~2,07 mil milhões de tokens** | Total recorrente acrescido de créditos únicos e recorrentes                                                                                                   |
-| Inventário auditado de modelos gratuitos                                 | **34 chaves de pool recorrentes / 443 entradas de catálogo** | 436 ativas + 7 descontinuadas; distinto do catálogo de 352 fornecedores                                                                                       |
-| Fornecedores gratuitos permanentes, recorrentes/sem chave, representados |                                                       **52** | Fornecedores únicos nos tipos de catálogo recorrente diário/mensal/crédito/sem limite e sem chave; excluem-se as linhas sujeitas a critérios de elegibilidade |
-| Entradas do catálogo de fornecedores assinaladas como `hasFree`          |                                                **152 / 352** | Metadados gerais de fornecedores; nem todos têm uma quota recorrente quantificável                                                                            |
+| Métrica                                                                |                                         Valor atual auditado | Interpretação                                                                                                                                                             |
+| ---------------------------------------------------------------------- | -----------------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Atribuição quantificada recorrente                                     |                                        **~1.62B tokens/mês** | Pools partilhados contabilizados uma única vez; exclui da soma os fornecedores sem limites                                                                                |
+| Primeiro mês com atribuições de registo                                |                                            **~2.22B tokens** | Total recorrente acrescido de créditos únicos e recorrentes                                                                                                               |
+| Inventário auditado de modelos gratuitos                               | **35 chaves de pool recorrentes / 482 entradas de catálogo** | 475 ativas + 7 descontinuadas; distinto do catálogo de 357 fornecedores                                                                                                   |
+| Fornecedores recorrentes/sem chave gratuitos para sempre representados |                                                       **53** | Fornecedores únicos abrangendo tipos de catálogo recorrentes diários/mensais/por créditos/sem limites e sem chave; linhas sujeitas a critérios de elegibilidade excluídas |
+| Entradas do catálogo de fornecedores marcadas como `hasFree`           |                                                **152 / 357** | Metadados de fornecedores mais abrangentes; nem todos têm uma quota recorrente quantificável                                                                              |
 
 Estes valores são calculados a partir de `open-sse/config/freeModelCatalog.ts`; consulte a
-[Referência dos níveis gratuitos](../reference/FREE_TIERS.md) para obter informações sobre a eliminação de duplicados por pool, os indicadores dos Termos de Serviço,
+[Referência de níveis gratuitos](../reference/FREE_TIERS.md) para obter informações sobre a eliminação de duplicados por pool, os indicadores de ToS,
 as entradas descontinuadas e a metodologia dos créditos de registo.
 
 ---

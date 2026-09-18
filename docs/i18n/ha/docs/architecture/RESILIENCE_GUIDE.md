@@ -67,164 +67,179 @@ ja-da-baya mai ƙaruwa na `minRetryCooldownMs → maxRetryCooldownMs`. Ƙimomin 
 `OMNIROUTE_PROVIDER_BREAKER_{OAUTH,API_KEY}_{FAILURE_THRESHOLD,FAILURE_WINDOW_MS,COOLDOWN_MS}`.
 Kariyar hana komawar matsala: `tests/unit/provider-cooldown-window-gate.test.ts`.
 
-## 2. Lokacin Dakatar da Haɗi
+## 2. Lokacin Jiran Sake Haɗi
 
-**Iyaka:** haɗin mai samarwa/asusu/maɓalli guda ɗaya.
+**Iyaka:** haɗin mai bayarwa/asusu/maɓalli guda ɗaya.
 
-**Manufa:** tsallake maɓalli mara kyau guda ɗaya yayin da sauran haɗe-haɗen mai samarwa ɗaya suke ci gaba da aiki.
+**Manufa:** tsallake maɓalli guda ɗaya mai matsala yayin da sauran haɗin mai bayarwar ɗaya suke ci gaba da aiki.
 
 **Aiwatarwa:**
 
 - Sanya a matsayin mara samuwa: `src/sse/services/auth.ts::markAccountUnavailable()`
-- Zaɓi: `getProviderCredentials*` a cikin fayil ɗaya
-- Lissafin lokacin dakatarwa: `open-sse/services/accountFallback.ts::checkFallbackError()`
+- Zaɓi: `getProviderCredentials*` a cikin wannan fayil ɗin
+- Lissafin lokacin jira: `open-sse/services/accountFallback.ts::checkFallbackError()`
 - Saituna: `src/lib/resilience/settings.ts`
 
 **Filaye na kowane haɗi:**
 
-- `rateLimitedUntil` — hatimin lokaci har lokacin dakatarwa ya ƙare
+- `rateLimitedUntil` — tambarin lokaci har lokacin jira ya ƙare
 - `testStatus: "unavailable"`
 - `lastError`, `lastErrorType`, `errorCode`
-- `backoffLevel` — ma'aunin jinkirin da ke ƙaruwa ninki-ninki
+- `backoffLevel` — ma'aunin ƙarin jinkiri na ninkawa
 
-**Tsoffin lokutan dakatarwa:**
+**Tsoffin lokutan jira:**
 
 - Tushen OAuth: 5s
 - Tushen API-key: 3s
-- API-key 429: yana fifita `Retry-After`/taken sake saiti/saƙon sake saiti da ake iya tantancewa daga tushen sama
-- Jinkirin sake gwadawa: `baseCooldownMs * 2 ** failureIndex`
+- API-key 429: yana fifita `Retry-After` na upstream/kanun sake saitawa/rubutun sake saitawa da za a iya fassarawa
+- Ƙarin jinkiri: `baseCooldownMs * 2 ** failureIndex`
 
-**Kariyar hana cunkoson buƙatu lokaci guda:** tana hana gazawa masu faruwa lokaci guda tsawaita lokacin dakatarwa fiye da kima ko ƙara `backoffLevel` sau biyu.
+**Kariyar hana cunkoson buƙatu lokaci guda:** tana hana gazawar da ke faruwa lokaci guda daga tsawaita lokacin jira fiye da kima ko ƙara `backoffLevel` sau biyu.
 
-**Yanayin ƙarshe (BA lokutan dakatarwa ba):**
+**Yanayin ƙarshe (BA lokutan jira ba):**
 
-- `banned` — ana saita shi ta hanyar gano kalmar da aka hana / haramcin asusu (duba [BAN_DETECTION](../security/BAN_DETECTION.md))
-- `expired` (yana komawa yanayin ƙarshe bayan iyakantattun sake-gwaje — `EXPIRED_RETRY_MAX = 3` tare da jinkirin da ke ƙaruwa ninki-ninki — domin kurakuran OAuth na ɗan lokaci su iya gyaruwa da kansu kafin a kashe asusun na dindindin)
+- `banned` — ana saita shi ta hanyar gano kalmar-hana / hana asusu (duba [BAN_DETECTION](../security/BAN_DETECTION.md)), da kuma ƙin amincewar upstream sau uku a jere ga kowace buƙata (`request_rejected`, misali Anthropic OAuth 403 "Ba a yarda da buƙatar ba" — `open-sse/services/requestRejectedStreak.ts`); ƙin amincewa guda ɗaya kawai yana sanya haɗin cikin lokacin jira
+- `expired` (yana komawa yanayin ƙarshe bayan iyakantattun sake-gwaji — `EXPIRED_RETRY_MAX = 3` tare da ƙarin jinkiri na ninkawa — domin kurakuran OAuth na ɗan lokaci su iya gyara kansu kafin a kashe asusun na dindindin)
 - `credits_exhausted`
 
-Waɗannan suna dawwama har sai bayanan shaidar shiga sun canza ko wani mai gudanarwa ya sake saita su. Kada a maye gurbin yanayin ƙarshe da yanayin dakatarwa na ɗan lokaci.
+Waɗannan suna ci gaba da kasancewa har sai bayanan shaidarka sun canza ko mai gudanarwa ya sake saita su. Kada a maye gurbin yanayin ƙarshe da yanayin jira na ɗan lokaci.
 
-**Farfadowa yayin buƙata:** idan lokacin `rateLimitedUntil` ya wuce, haɗin zai sake cancantar zaɓi. Bayan amfani mai nasara, `clearAccountError()` yana share duk filayen kuskure.
+**Farfadowa lokacin buƙata:** idan lokacin `rateLimitedUntil` ya wuce, haɗin zai sake cancanta. Bayan amfani mai nasara, `clearAccountError()` yana share duk filayen kuskure.
 
-### Mannewar zama (#7274)
+### Dorewar zama kan haɗi ɗaya (#7274)
 
-**Iyaka:** zaman abokin ciniki guda ɗaya (taken `X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`) da aka ɗaure da haɗi guda ɗaya, ga **kowane** mai samarwa.
+**Iyaka:** zaman abokin ciniki guda ɗaya (kan `X-Session-Id` / `x-codex-session-id` / `x-omniroute-session`) da aka ɗaure da haɗi guda ɗaya, ga **kowane** mai bayarwa.
 
-**Manufa:** riƙe wakili mai tattaunawa mai matakai da yawa (Claude Code, aider, wakilai na musamman) a kan asusu ɗaya tsakanin buƙatu, tare da rage asarar mahallin da ke faruwa saboda sauya asusu da maimaitattun 429 na fara-aiki daga sanyi a kan masu samarwa masu yanayin zama na kowane asusu.
+**Manufa:** riƙe wakili mai tattaunawa matakai da yawa (Claude Code, aider, wakilai na musamman) a kan asusu ɗaya tsakanin buƙatu, domin rage asarar mahalli sakamakon sauya asusu da maimaituwar 429 na farawa daga sanyi a wurin masu bayarwa masu yanayin zama na kowane asusu.
 
 **Aiwatarwa:**
 
 - Ƙayyade TTL: `src/sse/services/sessionAffinityPin.ts::resolveSessionAffinityTtlMs()`
 - Zaɓi/ƙirƙirar ɗauri: `src/sse/services/sessionAffinityPin.ts::selectSessionAffinityConnection()`
-- Ciro take (na gama-gari, ga kowane mai samarwa): `src/sse/services/auth.ts::extractSessionAffinityKey()`
-- Teburin ɗauri mai dorewa: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
-- Saiti: `sessionAffinityTtlMs` (TTL na gama-gari a ms, `0` yana kashe shi) — `src/lib/db/settings.ts`. An sauya masa suna daga `codexSessionAffinityTtlMs` na Codex kaɗai ta ƙaura `124_generic_session_affinity_ttl.sql`, wadda ke ɗauko duk wani TTL na Codex da aka saita a baya a matsayin sabon tsohon ƙima.
+- Ciro kanun bayanai (na gaba ɗaya, kowane mai bayarwa): `src/sse/services/auth.ts::extractSessionAffinityKey()`
+- Teburin ɗauri da ake adanawa: `sessionAccountAffinity` (`src/lib/db/sessionAccountAffinity.ts`)
+- Saiti: `sessionAffinityTtlMs` (TTL na gaba ɗaya a ms, `0` yana kashe shi) — `src/lib/db/settings.ts`. An sake masa suna daga `codexSessionAffinityTtlMs` na Codex kawai ta hanyar ƙaura `124_generic_session_affinity_ttl.sql`, wanda ke ɗaukar duk wani Codex TTL da aka riga aka saita ya zama sabon tsohon ƙima.
 
-Kafin #7274, `resolveSessionAffinityTtlMs()` yana katsewa nan take zuwa `0` ga kowane mai samarwa in ban da `codex`, don haka saitin TTL (da taken zaman) ba su da wani tasiri a ko'ina ba duk da cewa tsarin ɗauri da ciro take sun riga sun kasance masu zaman kansu daga mai samarwa. Gyaran ya cire wannan dawowar da wuri; yanzu TTL yana aiki daidai ga kowane mai samarwa da zarar an saita shi a matakin gama-gari sama da `0`.
+Kafin #7274, `resolveSessionAffinityTtlMs()` yana dakatar da wuri ya mayar da `0` ga kowane mai bayarwa ban da `codex`, don haka saitin TTL (da kanun zaman) ba su da tasiri a ko'ina dabam duk da cewa tsarin ɗauri da ciro kanun bayanai sun riga sun kasance masu zaman kansu daga mai bayarwa. Gyaran ya cire wannan mayarwa ta wuri; yanzu TTL yana aiki iri ɗaya ga kowane mai bayarwa da zarar an saita shi a matakin gaba ɗaya sama da `0`.
 
-Ba a taɓa tura taken mannewar zama guda ukun zuwa tushen sama ba — masu aiwatarwa suna gina nasu taken tushen sama daga tushe maimakon wuce taken abokin ciniki kai tsaye, don haka wannan yana ci gaba da kasancewa ID na dangantaka na ciki kaɗai.
+Ba a taɓa tura kanun dorewar zama guda ukun zuwa upstream ba — masu aiwatarwa suna gina nasu kanun upstream daga tushe maimakon wuce kanun abokin ciniki kai tsaye, don haka wannan ya kasance ID na alaƙar ciki kawai.
 
-### Keɓantattun hayar haɗin zama da ake sarrafawa
+### Hayar haɗin zaman da ake sarrafawa ta keɓance
 
-**Iyaka:** abokin cinikin HTTP/zama da ake sarrafawa guda ɗaya mai aiki yana mallakar haɗin OmniRoute guda ɗaya da ya cancanta.
+**Iyaka:** abokin cinikin HTTP/zama guda ɗaya da ke aiki yana mallakar haɗin OmniRoute guda ɗaya da ya cancanta.
 
-**Manufa:** samar da keɓantacciyar mallakar haɗi mai dorewa ga abokan cinikin da ke buƙatar shingen turawa mai tsauri
-tsakanin buƙatu. Wannan ya bambanta da mannewar zama, wanda fifikon ci gaba ne mai sassauci:
-haya ta keɓantacciyar mallaka tana adana yanayin zagayowar rayuwa a SQLite, tana tabbatar da keɓantuwar mai-mallaka mai aiki da
-haɗi mai aiki a matakin gama-gari, sannan tana ƙin tsohon tsari kafin turawa ga mai samarwa.
+**Manufa:** samar da mallakar haɗi ta keɓance mai ɗorewa ga abokan ciniki da ke buƙatar ƙaƙƙarfan shingen karkatarwa
+tsakanin buƙatu. Wannan ya bambanta da dorewar zama kan haɗi ɗaya, wadda fifikon ci gaba ne mai sassauci:
+haya ta keɓance tana adana yanayin zagayowar rayuwa a SQLite, tana tilasta keɓantuwar mai-mallaka mai aiki da
+haɗi mai aiki a matakin gaba ɗaya, kuma tana ƙin tsohuwar tsara kafin aika zuwa mai bayarwa.
 
-Ana kunna wannan fasalin ne da zaɓi ga kowane API key. Dole ne maɓallin da ake sarrafawa ya kasance da iyakar `lease:exclusive` da
-jerin `allowedConnections` bayyananne wanda ba fanko ba. Duk wani abokin cinikin HTTP zai iya amfani da maƙurar zagayowar rayuwa; ba a
-buƙatar sunan abokin ciniki, user-agent, mai samarwa, hanyar OAuth, ko model. Hayar tana mallakar haɗi,
-ba model ba, don haka canjin model yana riƙe ɗaurin muddin haɗin yana ci gaba da
-cancanta bisa ƙa'ida. Dokokin model, ƙayyadaddun amfani, lafiya, lokacin dakatarwa, da allowlist na yau da kullum suna ci gaba da kasancewa masu iko kuma za su iya
-mayar da wannan tsarin zuwa wani haɗi mai 'yanci da ya cancanta.
+Ana kunna fasalin ne bisa zaɓi ga kowane API key. Dole ne maɓallin da ake sarrafawa ya kasance da izinin `lease:exclusive` da
+jerin `allowedConnections` marar komai da aka fayyace sarai. Kowane abokin cinikin HTTP zai iya amfani da maƙurar zagayowar rayuwa; ba a
+buƙatar sunan abokin ciniki, user-agent, mai bayarwa, hanyar OAuth, ko model. Hayar tana mallakar haɗi ne,
+ba model ba, don haka sauya model yana riƙe ɗaurin muddin haɗin yana ci gaba da cancanta
+kamar yadda aka saba. Dokokin model, ƙayyadadden amfani, lafiya, lokacin jira, da jerin izini na yau da kullum suna ci gaba da zama
+masu iko kuma suna iya mayar da tsara ɗaya zuwa wani haɗi kyauta da ya cancanta.
 
 Zagayowar rayuwar ita ce `POST /api/v1/session-leases` tare da ayyukan JSON `acquire`, `renew`, da `release`.
-Buƙatun inference da ake sarrafawa suna gabatar da ƙimar `X-OmniRoute-Lease-Owner` marar bayyanar ma'ana da kuma ainihin
-`X-OmniRoute-Lease-Generation`. Mai mallakar yana amfani da `vlo_` sannan haruffan base64url guda 43; ana adana
-hash ɗinsa na SHA-256 kaɗai. Kowane shingen turawa na ƙarshe kuma yana ɗaure ID na API key da aka tabbatar da kuma
-ID na haɗi mai aiki. Ana cire taken sarrafa haya daga logs, hotunan buƙatu da aka adana, da
-taken masu aiwatarwa na tushen sama.
+Buƙatun inference da ake sarrafawa suna gabatar da ƙimar `X-OmniRoute-Lease-Owner` da ba ta bayyana ma'ana ba da kuma daidaitaccen
+`X-OmniRoute-Lease-Generation`. Mai-mallakar yana amfani da `vlo_` sannan haruffan base64url guda 43; hash ɗinsa na
+SHA-256 kawai ake adanawa. Kowane shingen aikawa na ƙarshe yana kuma ɗaure ID na API key da aka tantance da kuma
+ID na haɗin da ke aiki. Ana cire kanun sarrafa haya daga logs, hotunan buƙata da aka riƙe, da
+kanun masu aiwatar da upstream.
 
-Idan tsarin turawa na yau da kullum yana da 'yan takarar da ake sarrafawa masu cancanta amma kowane ɗan takara mai 'yanci yana hannun
-wata haya mai aiki ta wani daban, OmniRoute yana dawo da HTTP `429`, lambar lease-capacity-unavailable, yanayin
-jiran samun gurbi, da iyakantaccen `Retry-After` da aka samo daga lokacin ƙarewa mafi kusa da ya dace.
-Rashin cancanta na yau da kullum ba takaddamar haya ba ce kuma yana riƙe ma'anar kuskuren turawa da yake da ita.
+Idan karkatarwa ta yau da kullum tana da 'yan takarar da ake sarrafawa masu cancanta amma kowanne ɗan takara kyauta yana hannun
+wata haya mai aiki ta daban, OmniRoute yana mayar da HTTP `429`, lambar rashin-samuwar ƙarfin haya,
+yanayin jiran samun ƙarfin aiki, da iyakantaccen `Retry-After` da aka samo daga lokacin ƙarewa mafi kusa da ya dace.
+Rashin cancantar komai na yau da kullum ba takaddamar haya ba ce kuma yana riƙe ma'anonin kuskuren karkatarwa da ake da su.
 
-Hanyoyin da suke da alaƙa suna ci gaba da kasancewa daban:
+Hanyoyin da ke da alaƙa suna ci gaba da kasancewa daban:
 
-- Mamaye zaman OAuth rarrabawa ce mai sassauci ta cikin tsari ga asusun OAuth.
-- Semaphores na asusu suna bayar da izinin buƙatu masu gudana lokaci guda kuma suna ƙarewa idan buƙata ta kammala.
-- Keɓantattun hayar haɗin zama da ake sarrafawa mallakar zagayowar rayuwa ce mai dorewa tare da shingen tsari.
+- Mamayar zaman OAuth rabon asusun OAuth ne mai sassauci da ke takaita ga process.
+- Semaphores na asusu suna ba da izinin yawan buƙatun da za su gudana lokaci guda kuma suna ƙarewa idan buƙata ta kammala.
+- Hayar haɗin zaman da ake sarrafawa ta keɓance mallakar zagayowar rayuwa ce mai ɗorewa tare da shingen tsara.
 
 ---
 
 ## 3. Kulle Samfuri
 
-**Iyaka:** haɗin provider + connection + model.
+**Iyaka:** haɗuwar mai bayarwa + haɗi + samfuri.
 
-**Manufa:** guje wa kashe connection gaba ɗaya alhali model ɗaya ne kawai babu shi ko aka iyakance masa quota.
+**Iyakokin maɓalli bisa matsayi:** matsayin da ya gaza ne ke tantance maɓallin da za a rubuta kullewa
+a ciki (`resolveLockoutScope()` cikin `open-sse/services/accountFallback/exactModelLock.ts`):
+
+- `429` / `403` / `402` — alamar ƙayyadadden amfani ko izinin amfani — suna kulle **rukunin ƙayyadadden amfani**:
+  ga codex, dukkan iyakar `codex` / `spark` (kowane samfurin `gpt-5*` na
+  haɗin), ga sauran masu bayarwa kuma `getQuotaScopedModelForProvider()`.
+- `404` yana kulle samfurin kai tsaye (`getModelLockKey()` yana taƙaita `not_found`).
+- Duk wani matsayi dabam — gazawar sufuri/sabar ta `5xx` da kuma
+  `502` da OmniRoute da kansa ya ƙirƙira daga tabbatar da inganci — yana kulle **ainihin**
+  haɗuwar mai bayarwa/haɗi/samfuri kawai. Mummunan rafi a samfurin guda ba hujja ba ce
+  game da ƙayyadadden amfanin asusun; kafin wannan ƙa'ida, amsa mara komai guda ɗaya daga
+  `codex/gpt-5.6-luna` tana cire kowane samfurin `gpt-5*` na wannan haɗin daga
+  turawa na minti 2–30 (yana ƙaruwa), alhali ba a taɓa ƙayyadadden amfaninsa ba.
+- Zaɓin `scope` da mai kira ya bayyana a sarari koyaushe ne ke da fifiko (Antigravity yana tura `"exact"`).
+
+**Manufa:** guje wa kashe dukkan haɗi alhali samfuri guda ɗaya ne kawai babu shi ko ƙayyadadden amfaninsa ya cika.
 
 **Misalai:**
 
-- Providers masu quota na kowane model da ke mayar da 429
-- Providers na gida da ke mayar da 404 saboda model ɗaya da ya ɓace
-- Gazawar izinin mode/model da ta keɓanta ga provider (misali, modes na Grok)
+- Masu bayarwa masu ƙayyadadden amfani na kowane samfuri da suke mayar da 429
+- Masu bayarwa na gida da suke mayar da 404 saboda samfuri guda ɗaya da ya ɓace
+- Gazawar izinin yanayi/samfuri na musamman ga mai bayarwa (misali, yanayin Grok)
 
 **Aiwatarwa:** `open-sse/services/accountFallback.ts` — `lockModel()`, `clearModelLock()`, `getAllModelLockouts()`.
 
-### Dashboard na Lokutan Jira na Model (v3.8.0)
+### Allon Sanyaya Samfura (v3.8.0)
 
-UI: Settings → Model Cooldowns (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
+UI: Saituna → Sanyaya Samfura (`src/app/(dashboard)/dashboard/settings/components/ModelCooldownsCard.tsx`)
 
-Yana jera lockouts masu aiki tare da: provider, connection, model, dalili, expiresAt. Masu gudanarwa za su iya sake kunna model da hannu daga card ɗin.
+Yana jera kulle-kulle masu aiki tare da: mai bayarwa, haɗi, samfuri, dalili, expiresAt. Masu gudanarwa za su iya sake kunna samfuri da hannu daga katin.
 
 **REST API:**
 
-- `GET /api/resilience/model-cooldowns` — jera lockouts masu aiki
-- `DELETE /api/resilience/model-cooldowns` — sake kunnawa da hannu. Body: `{provider, connection, model}`. Auth: management.
+- `GET /api/resilience/model-cooldowns` — jera kulle-kulle masu aiki
+- `DELETE /api/resilience/model-cooldowns` — sake kunnawa da hannu. Jiki: `{provider, connection, model}`. Tantancewa: gudanarwa.
 
-### UI na saitunan lockout + farfaɗowa ta success-decay (v3.8.23)
+### UI na saitunan kullewa + farfaɗowa ta raguwar gazawa bayan nasara (v3.8.23)
 
-Model lockout ya sauya daga halayya mai hardcoded wadda take aiki koyaushe zuwa fasali mai cikakken daidaitawa,
-wanda sai an zaɓi kunna shi, mai card na saitunansa da kuma hanyar farfaɗowa mai gyara kanta.
+Kulle samfur ya sauya daga ɗabi'ar da aka dasa kai tsaye kuma take kunne koyaushe zuwa wata dama
+mai cikakken daidaitawa, wadda sai an zaɓi kunna ta, tare da katin saitunanta da hanyar farfaɗowa mai gyara kanta.
 
-**Card na saituna:** Settings → Model Lockout
+**Katin saituna:** Saituna → Kulle Samfuri
 (`src/app/(dashboard)/dashboard/settings/components/ModelLockoutCard.tsx`).
-Wannan ya **bambanta** da `ModelCooldownsCard` mai read-only da ke sama (wanda kawai
-ke _jera_ lockouts masu aiki) — sabon card ɗin yana _daidaita sigogin_. Tsoffin ƙimomi
+Wannan **ya bambanta** da `ModelCooldownsCard` na karantawa kawai da ke sama (wanda kawai
+ke _jera_ kulle-kulle masu aiki) — sabon katin yana _daidaita sigogin_. Tsoffin ƙimomi
 suna cikin `DEFAULT_MODEL_LOCKOUT_SETTINGS`
 (`src/lib/resilience/modelLockoutSettings.ts`):
 
-| Saiti                   | Tsohuwar ƙima                    | Ma'ana                                                                    |
-| ----------------------- | -------------------------------- | ------------------------------------------------------------------------- |
-| `enabled`               | `false`                          | Babban maɓallin kunnawa — model lockout yana **a kashe a tsohuwar ƙima**. |
-| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Upstream statuses waɗanda ake ƙirga a matsayin gazawa da ta shafi model.  |
-| `baseCooldownMs`        | `120_000` (120 s)                | Tsawon lockout na farko don gazawar farko.                                |
-| `maxCooldownMs`         | `1_800_000` (30 min)             | Iyakar lokacin jira bayan an ƙara shi.                                    |
-| `maxBackoffSteps`       | `10`                             | Matsakaicin matakan ƙaruwar exponential-backoff.                          |
-| `useExponentialBackoff` | `true`                           | Ko gazawa mai maimaituwa za ta ƙara lokacin jira ta hanyar exponential.   |
+| Saiti                   | Tsohuwar ƙima                    | Ma'ana                                                                         |
+| ----------------------- | -------------------------------- | ------------------------------------------------------------------------------ |
+| `enabled`               | `false`                          | Babban makunnin — kulle samfur **a kashe yake ta tsohuwa**.                    |
+| `errorCodes`            | `[403, 404, 429, 502, 503, 504]` | Matsayin ɓangaren sama da ake ƙidayawa a matsayin gazawar da ta shafi samfuri. |
+| `baseCooldownMs`        | `120_000` (120 s)                | Tsawon lokacin kullewa na farko saboda gazawar farko.                          |
+| `maxCooldownMs`         | `1_800_000` (30 min)             | Iyakar lokacin sanyaya da aka ƙara.                                            |
+| `maxBackoffSteps`       | `10`                             | Matsakaicin matakan ƙarin jinkiri na ninkawa.                                  |
+| `useExponentialBackoff` | `true`                           | Ko maimaituwar gazawa za ta ƙara lokacin sanyaya ta hanyar ninkawa.            |
 
-Ana adana saituna ta hanyar settings store na yau da kullum kuma ana tantance su ta
-resilience settings schema; card ɗin yana taƙaita `baseCooldownMs`/`maxCooldownMs`
+Saituna suna dawwama ta ma'ajiyar saituna ta yau da kullum kuma ana tabbatar da su ta hanyar
+tsarin saitunan juriya; katin yana iyakance `baseCooldownMs`/`maxCooldownMs`
 (tare da `maxCooldownMs ≥ baseCooldownMs`) da `maxBackoffSteps`.
 
-**Farfaɗowa ta success-decay:** farfaɗowa **ba** ƙarewar timer kaɗai ba ce. Response mai lafiya
-yana rage adadin gazawar model a hankali, ta yadda model da ya farfaɗo
-a tsakiyar window zai daina ƙaruwa (kuma a cire lockout ɗinsa) kafin timer ɗinsa ya ƙare. Idan combo target
-ya yi nasara, `open-sse/services/combo.ts` yana kiran `decayModelFailureCount()`
+**Farfaɗowa ta raguwar gazawa bayan nasara:** farfaɗowa **ba** ta dogara kawai da ƙarewar lokaci ba. Amsa
+mai lafiya tana rage adadin gazawar samfurin mataki-mataki domin samfurin da ya farfaɗo
+a tsakiyar zangon ya daina ƙaruwa (kuma a cire kullensa) kafin lokacinsa ya ƙare. Idan
+manufar haɗin ta yi nasara, `open-sse/services/combo.ts` yana kiran `decayModelFailureCount()`
 (`open-sse/services/accountFallback.ts`), wanda ke **raba** `failureCount` da aka adana
-zuwa rabi (`Math.floor(failureCount / 2)`); idan ya kai `0`, ana goge lockout
-entry ɗin gaba ɗaya. Takwaransa `recordModelLockoutFailure()`
-yana ƙara count ɗin (kuma yana ƙara lokacin jira) idan an samu gazawa a cikin
-escalation window. Wannan success-decay ƙari ne ga ƙarewar timer ta yau da kullum —
-kowace hanya na iya sake kunna model.
+zuwa rabi (`Math.floor(failureCount / 2)`); idan ya kai `0`, ana share bayanin kullewar
+gaba ɗaya. A ɗaya ɓangaren, `recordModelLockoutFailure()` yana ƙara adadin (kuma yana ƙara
+lokacin sanyaya) idan aka samu gazawa cikin zangon ƙaruwa. Wannan raguwar gazawa bayan nasara
+ƙari ne ga ƙarewar lokaci kai tsaye — kowace hanya za ta iya sake kunna samfuri.
 
-**State:** ana riƙe lockouts **a cikin memory** (`Map`s na kowane process na
-`ModelLockoutEntry` waɗanda `provider:connectionId:model` ya zama key ɗinsu), ba a adana su a
-DB — ana rasa su idan an restart. Ana adana _settings_; amma
-_state_ na lockout mai aiki na wucin gadi ne.
+**Matsayi:** ana riƙe kulle-kulle **a cikin ƙwaƙwalwa** (`Map`s na kowane tsari na
+`ModelLockoutEntry` masu maɓallin `provider:connectionId:model`, kullen ainihin iyaka kuma da
+`provider:connectionId:exact:model`), ba a adana su a
+DB — suna ɓacewa idan an sake farawa. Ana adana _saitunan_; amma _matsayin_ kullewa mai aiki
+na wucin gadi ne.
 
 ---
 
@@ -603,13 +618,14 @@ da aka rarraba bisa IP alama ɗaya ce da quota da ya ƙare. Iyakokin gaskiya:
 
 ---
 
-## Gyaran Kurakurai
+## Gano kurakurai
 
-- An tsallake dukkan maɓallan wani mai samarwa → bincika yanayin circuit breaker DA KUMA `rateLimitedUntil`/`testStatus` na kowane haɗi.
-- An cire mai samarwa na dindindin bayan lokacin reset → lambar tana karanta ɗanyen `state` maimakon `getStatus()`/`canExecute()`.
-- Maɓalli ɗaya ya gaza, ya kamata sauran su yi aiki → fifita lokacin sanyaya haɗi a kan circuit breaker.
-- Model ɗaya kawai ya gaza → fifita kulle model a kan lokacin sanyaya haɗi.
-- Ya kamata yanayin ya farfaɗo da kansa amma bai yi ba → bincika timestamp na gaba + hanyar karantawa da ke sabunta yanayin da wa'adinsa ya ƙare. Matsayi na dindindin na buƙatar sauye-sauye da hannu.
+- Amsoshin haɗin mai nauyi `503 all_targets_cooling_down` (`Retry-After` an saita shi, `diagnostics.excluded` yana jera kowace manufa tare da `model_lockout` / `circuit_open` / `provider_cooldown` / `unavailable`) → an saita kuma an haɗa rukunin, sai dai kowace manufa an ware ta ne saboda ma’aunin lokacin jure matsala; gargaɗin `[COMBO] Weighted selection: every target excluded before dispatch — …` yana bayyana dalilan da daƙiƙun da suka rage. `404 no_executable_targets` daga wannan haɗin yana nufin babu wani ma’aunin lokacin jure matsala da ya shiga tsakani (babu abin da za a gudanar, ko kuma kowane asusu ya gaza gwajin samuwa). An gina shi a cikin `open-sse/services/combo/pinRecovery.ts` daga abubuwan da aka ware waɗanda aka tattara a `targetResolution.ts`.
+- An tsallake dukkan maɓallan wani mai bayarwa → bincika duka halin circuit breaker DA `rateLimitedUntil`/`testStatus` na kowace haɗuwa.
+- An ware mai bayarwa na dindindin bayan lokacin sake saiti → lambar tana karanta ɗanyen `state` maimakon `getStatus()`/`canExecute()`.
+- Maɓalli ɗaya ya gaza, amma sauran ya kamata su yi aiki → fifita lokacin dakatarwar haɗuwa a kan circuit breaker.
+- Samfuri ɗaya kawai ya gaza → fifita kulle samfur a kan lokacin dakatarwar haɗuwa.
+- Ya kamata hali ya farfaɗo da kansa amma bai yi ba → bincika timestamp na nan gaba + hanyar karantawa da ke sabunta halin da lokacinsa ya ƙare. Matsayi na dindindin suna buƙatar sauye-sauye da hannu.
 
 ---
 

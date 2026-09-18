@@ -1594,19 +1594,19 @@ Endpointuri accesibile exclusiv administratorilor pentru gestionarea operaționa
 
 ## Gestionarea instrumentelor CLI
 
-Gestionați instrumentele CLI care se integrează cu OmniRoute (antigravity, chipotle, commandCode,
+Gestionați instrumentele CLI care se integrează cu OmniRoute (antigravity, commandCode,
 devin-cli etc.). Consultați [Referința furnizorilor](./PROVIDER_REFERENCE.md) pentru lista completă.
 
-| Metodă | Cale                                    | Descriere                                                                                                                                                                                          |
-| ------ | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET    | `/api/cli-tools/all-statuses`           | Starea tuturor instrumentelor CLI (instalare, versiune, ultima detectare)                                                                                                                          |
-| GET    | `/api/cli-tools/status`                 | Detalii despre starea unui instrument CLI (interogare `?tool=`)                                                                                                                                    |
-| POST   | `/api/cli-tools/apply`                  | Scrie configurația generată a unui instrument (`dryRun` afișează o previzualizare; `422` + `containerEphemeralTarget` când rulează în container; `migration` indică un fișier YAML Codex moștenit) |
-| GET    | `/api/cli-tools/backups`                | Listează copiile de rezervă ale configurațiilor instrumentelor CLI                                                                                                                                 |
-| POST   | `/api/cli-tools/backups`                | Creează o copie de rezervă a configurațiilor tuturor instrumentelor CLI                                                                                                                            |
-| POST   | `/api/cli-tools/backups`                | Restaurare: același endpoint, cu `{tool, backupId}` în corp, restaurează copia de rezervă respectivă                                                                                               |
-| GET    | `/api/cli-tools/antigravity-mitm`       | Starea proxy-ului MITM Antigravity (instrumentul CLI „antigravity-mitm”)                                                                                                                           |
-| POST   | `/api/cli-tools/antigravity-mitm/alias` | Configurează aliasurile antigravity-mitm                                                                                                                                                           |
+| Metodă | Cale                                    | Descriere                                                                                                                                                                                         |
+| ------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/cli-tools/all-statuses`           | Starea tuturor instrumentelor CLI (instalare, versiune, ultima utilizare)                                                                                                                         |
+| GET    | `/api/cli-tools/status`                 | Detalii despre starea unui instrument CLI (interogare `?tool=`)                                                                                                                                   |
+| POST   | `/api/cli-tools/apply`                  | Scrie configurația generată a unui instrument (`dryRun` oferă o previzualizare; `422` + `containerEphemeralTarget` când rulează într-un container; `migration` semnalează un YAML Codex moștenit) |
+| GET    | `/api/cli-tools/backups`                | Listează copiile de rezervă ale configurațiilor instrumentelor CLI                                                                                                                                |
+| POST   | `/api/cli-tools/backups`                | Creează o copie de rezervă a tuturor configurațiilor instrumentelor CLI                                                                                                                           |
+| POST   | `/api/cli-tools/backups`                | Restaurează: același punct final, cu `{tool, backupId}` în corpul cererii, restaurează copia de rezervă respectivă                                                                                |
+| GET    | `/api/cli-tools/antigravity-mitm`       | Starea proxy-ului MITM Antigravity (instrumentul CLI „antigravity-mitm”)                                                                                                                          |
+| POST   | `/api/cli-tools/antigravity-mitm/alias` | Configurează aliasurile antigravity-mitm                                                                                                                                                          |
 
 **Autentificare:** Necesită o sesiune de administrare.
 

@@ -4,7 +4,7 @@
 
 ---
 
-> **Kort sagt**: OmniRoute registrerar 352 leverantörs-ID:n, med **152 poster i leverantörskatalogen markerade med `hasFree`**. Den striktare, granskade katalogen över kostnadsfria modeller omfattar **34 återkommande poolnycklar/443 poster** (436 aktiva + 7 avvecklade). Anslut flera lämpliga leverantörer för större reservkapacitet; samtliga kvoter, godkännanderegler, integritetspolicyer och villkor för avgiftsbelagd överanvändning gäller fortfarande.
+> **Kort sagt**: OmniRoute registrerar 357 leverantörs-ID:n, med **152 poster i leverantörskatalogen markerade som `hasFree`**. Den striktare granskade katalogen över kostnadsfria modeller omfattar **35 återkommande poolnycklar / 482 poster** (475 aktiva + 7 utgångna). Anslut flera lämpliga leverantörer för större reservkapacitet; alla kvoter, godkännanderegler, integritetspolicyer och villkor för avgiftsbelagd överförbrukning gäller fortfarande.
 
 ---
 
@@ -160,19 +160,19 @@ leverantörs kvot- eller åtkomstpolicy.
 
 ## Matematik för gratisnivån
 
-Den aktiva, pooldeduplicerade katalogen rapporterar för närvarande:
+Den aktuella, pooldeduplicerade katalogen rapporterar för närvarande:
 
-| Mått                                                                         |                             Aktuellt granskat värde | Tolkning                                                                                                                                       |
-| ---------------------------------------------------------------------------- | --------------------------------------------------: | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Återkommande kvantifierad tilldelning                                        |                    **~1,47 miljarder tokens/månad** | Delade pooler räknas en gång; leverantörer utan tak ingår inte i summan                                                                        |
-| Första månaden med registreringstilldelningar                                |                          **~2,07 miljarder tokens** | Återkommande total plus engångskrediter och återkommande krediter                                                                              |
-| Granskat lager av gratismodeller                                             | **34 återkommande poolnycklar / 443 katalogposter** | 436 aktiva + 7 avvecklade; skiljer sig från katalogen med 352 leverantörer                                                                     |
-| Representerade återkommande/nyckellösa leverantörer som är gratis för alltid |                                              **52** | Unika leverantörer i återkommande dagliga/månatliga/kreditbaserade/obegränsade och nyckellösa katalogtyper; rader med behörighetskrav undantas |
-| Leverantörskatalogposter markerade med `hasFree`                             |                                       **152 / 352** | Bredare leverantörsmetadata; alla har inte en kvantifierbar återkommande kvot                                                                  |
+| Mått                                                                 |                             Aktuellt granskat värde | Tolkning                                                                                                                                         |
+| -------------------------------------------------------------------- | --------------------------------------------------: | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Återkommande kvantifierat tilldelning                                |                             **~1.62B tokens/månad** | Delade pooler räknas en gång; leverantörer utan tak ingår inte i summan                                                                          |
+| Första månaden med registreringstilldelningar                        |                                   **~2.22B tokens** | Återkommande totalsumma plus engångskrediter och återkommande krediter                                                                           |
+| Granskat lager av gratismodeller                                     | **35 återkommande poolnycklar / 482 katalogposter** | 475 aktiva + 7 avvecklade; skiljer sig från katalogen med 357 leverantörer                                                                       |
+| Representerade återkommande/nyckellösa gratisleverantörer för alltid |                                              **53** | Unika leverantörer för katalogtyperna återkommande dagliga/månatliga/kreditbaserade/utan tak samt nyckellösa; behörighetsstyrda rader exkluderas |
+| Leverantörskatalogposter markerade med `hasFree`                     |                                       **152 / 357** | Bredare leverantörsmetadata; alla har inte en kvantifierbar återkommande kvot                                                                    |
 
 Dessa värden beräknas från `open-sse/config/freeModelCatalog.ts`; se
 [Referens för gratisnivåer](../reference/FREE_TIERS.md) för pooldeduplicering, ToS-flaggor,
-avvecklade poster och metodiken för registreringskrediter.
+avvecklade poster och metodik för registreringskrediter.
 
 ---
 

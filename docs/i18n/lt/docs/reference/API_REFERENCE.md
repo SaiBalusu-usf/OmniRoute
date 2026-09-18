@@ -1619,21 +1619,21 @@ Tik administratoriams skirti operacinio valdymo galiniai taškai.
 
 ## CLI įrankių valdymas
 
-Valdykite CLI įrankius, integruojamus su „OmniRoute“ (antigravity, chipotle, commandCode,
-devin-cli ir kt.). Visą sąrašą rasite [Teikėjų žinyne](./PROVIDER_REFERENCE.md).
+Valdykite CLI įrankius, integruojamus su OmniRoute (antigravity, commandCode,
+devin-cli ir kt.). Visą sąrašą rasite [teikėjų žinyne](./PROVIDER_REFERENCE.md).
 
-| Metodas | Kelias                                  | Aprašymas                                                                                                                                                                           |
-| ------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GET     | `/api/cli-tools/all-statuses`           | Visų CLI įrankių būsena (įdiegimas, versija, kada paskutinį kartą aptiktas)                                                                                                         |
-| GET     | `/api/cli-tools/status`                 | Išsami vieno CLI įrankio būsena (`?tool=` užklausa)                                                                                                                                 |
-| POST    | `/api/cli-tools/apply`                  | Įrašyti sugeneruotą įrankio konfigūraciją (`dryRun` pateikia peržiūrą; naudojant konteinerį grąžinama `422` + `containerEphemeralTarget`; `migration` nurodo pasenusį „Codex“ YAML) |
-| GET     | `/api/cli-tools/backups`                | Pateikti CLI įrankių konfigūracijų atsarginių kopijų sąrašą                                                                                                                         |
-| POST    | `/api/cli-tools/backups`                | Sukurti visų CLI įrankių konfigūracijų atsarginę kopiją                                                                                                                             |
-| POST    | `/api/cli-tools/backups`                | Atkurti: tas pats galinis taškas atkuria atsarginę kopiją, kai užklausos turinyje pateikiama `{tool, backupId}`                                                                     |
-| GET     | `/api/cli-tools/antigravity-mitm`       | „Antigravity“ MITM tarpinio serverio būsena (`antigravity-mitm` CLI įrankis)                                                                                                        |
-| POST    | `/api/cli-tools/antigravity-mitm/alias` | Konfigūruoti `antigravity-mitm` alternatyviuosius vardus                                                                                                                            |
+| Metodas | Kelias                                  | Aprašymas                                                                                                                                                             |
+| ------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET     | `/api/cli-tools/all-statuses`           | Visų CLI įrankių būsena (įdiegimas, versija, paskutinio aptikimo laikas)                                                                                              |
+| GET     | `/api/cli-tools/status`                 | Išsami vieno CLI įrankio būsena (`?tool=` užklausa)                                                                                                                   |
+| POST    | `/api/cli-tools/apply`                  | Įrašo sugeneruotą įrankio konfigūraciją (`dryRun` pateikia peržiūrą; `422` + `containerEphemeralTarget`, kai veikia konteineryje; `migration` nurodo seną Codex YAML) |
+| GET     | `/api/cli-tools/backups`                | Pateikia CLI įrankių konfigūracijų atsarginių kopijų sąrašą                                                                                                           |
+| POST    | `/api/cli-tools/backups`                | Sukuria visų CLI įrankių konfigūracijų atsarginę kopiją                                                                                                               |
+| POST    | `/api/cli-tools/backups`                | Atkuria: tas pats galinis taškas, kai užklausos turinyje pateikiama `{tool, backupId}`, atkuria nurodytą atsarginę kopiją                                             |
+| GET     | `/api/cli-tools/antigravity-mitm`       | Antigravity MITM tarpinio serverio būsena („antigravity-mitm“ CLI įrankis)                                                                                            |
+| POST    | `/api/cli-tools/antigravity-mitm/alias` | Konfigūruoja antigravity-mitm alternatyviuosius vardus                                                                                                                |
 
-**Autentifikavimas:** Reikalinga valdymo sesija.
+**Autentifikavimas:** reikalinga valdymo sesija.
 
 ---
 

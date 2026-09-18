@@ -6,87 +6,92 @@
 
 ## Descripción general
 
-Los comandos de OmniRoute CLI se autentican en la API de administración local mediante un token
-`HMAC-SHA256(machine-id, salt)` enviado a través del encabezado de solicitud
+Los comandos de OmniRoute CLI se autentican en la API de administración local mediante un
+token `HMAC-SHA256(machine-id, salt)` enviado a través del encabezado de solicitud
 `x-omniroute-cli-token`.
 
 Esto permite que los subcomandos de la CLI (`omniroute status`, `omniroute providers`, etc.)
-llamen a los endpoints de administración sin requerir que el usuario proporcione un JWT o una
-contraseña en cada invocación.
+llamen a los endpoints de administración sin exigir que el usuario proporcione un JWT o una
+contraseña en cada ejecución.
 
 ## Cómo funciona
 
-1. `getMachineTokenSync()` lee el ID de hardware de la máquina mediante `node-machine-id`
+1. `getMachineTokenSync()` lee el identificador de hardware de la máquina mediante `node-machine-id`
    (si falla, utiliza una cadena vacía, lo que deshabilita la autenticación de la CLI).
-2. Calcula `HMAC-SHA256(machine_id, salt)` y devuelve el resumen hexadecimal completo de
-   64 caracteres: un token determinista y no reversible vinculado a esta máquina.
-3. La CLI envía el token como `x-omniroute-cli-token` únicamente cuando el destino resuelto
-   es una URL de loopback explícita (`localhost`, `127.0.0.0/8` o IPv6 de loopback).
-   Las solicitudes que contienen el token utilizan `redirect: error`, de modo que una
-   redirección local no pueda reenviarlo a otro origen. Los contextos remotos utilizan tokens
-   de acceso con ámbito limitado. Si la derivación no está disponible, la CLI omite el encabezado
-   y `omniroute doctor` informa del error en lugar de tratar un token vacío como válido.
+2. Calcula `HMAC-SHA256(machine_id, salt)` y devuelve el resumen hexadecimal completo de 64 caracteres:
+   un token determinista y no reversible vinculado a esta máquina.
+3. La CLI envía el token como `x-omniroute-cli-token` únicamente cuando el destino
+   resuelto es una URL de loopback explícita (`localhost`, `127.0.0.0/8` o
+   IPv6 de loopback). Las solicitudes que incluyen el token utilizan `redirect: error`, por lo que una
+   redirección local no puede reenviarlo a otro origen. Los contextos remotos utilizan tokens
+   de acceso con ámbito limitado. Si no es posible derivarlo, la CLI omite el encabezado
+   y `omniroute doctor` informa del fallo en lugar de considerar válido un token vacío.
 4. El servidor (`src/server/authz/policies/management.ts`) vuelve a calcular el
    token esperado con el mismo salt y lo compara mediante `timingSafeEqual` para
-   impedir su extracción mediante análisis de tiempos.
+   impedir su extracción mediante ataques de temporización.
 
 ## Propiedades de seguridad
 
-| Propiedad                              | Detalle                                                                                                                                                                                                                                      |
-| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Solo loopback**                      | Solo se acepta cuando la marca de localidad del par de confianza del servidor (derivada de la dirección real del par TCP) indica loopback. Nunca se confía en el encabezado `Host`, controlado por el cliente, para determinar la localidad. |
-| **Comparación en tiempo constante**    | `crypto.timingSafeEqual` impide los ataques de temporización.                                                                                                                                                                                |
-| **No reversible**                      | La salida HMAC no permite recuperar el ID de la máquina.                                                                                                                                                                                     |
-| **Sin omisión de protección `always`** | `isAlwaysProtectedPath()` se evalúa antes de comprobar el token de la CLI. `/api/shutdown` y `/api/settings/database` siempre requieren un JWT.                                                                                              |
-| **No exportable**                      | El token nunca se escribe en disco ni se registra.                                                                                                                                                                                           |
+| Propiedad                              | Detalle                                                                                                                                                                                                                                    |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Solo loopback**                      | Solo se acepta cuando la marca de localidad del par de confianza del servidor (derivada de la dirección real del par TCP) indica loopback. Nunca se confía en el encabezado `Host` controlado por el cliente para determinar la localidad. |
+| **Comparación en tiempo constante**    | `crypto.timingSafeEqual` impide los ataques de temporización.                                                                                                                                                                              |
+| **No reversible**                      | La salida de HMAC no permite recuperar el identificador de la máquina.                                                                                                                                                                     |
+| **Sin elusión de protección `always`** | `isAlwaysProtectedPath()` se evalúa antes de comprobar el token de la CLI. `/api/shutdown` y `/api/settings/database` siempre requieren un JWT.                                                                                            |
+| **No exportable**                      | El token nunca se escribe en el disco ni se registra.                                                                                                                                                                                      |
 
-## Rotación del salt
+## Salt predeterminado (aleatorio por instalación)
 
-Establezca `OMNIROUTE_CLI_SALT` para rotar el token derivado sin realizar cambios en el código.
-Después de la rotación, todos los procesos de la CLI de esta máquina utilizarán automáticamente
-el nuevo token. Esto resulta útil tras una filtración de la lista de procesos que pudiera haber
-expuesto el valor derivado anterior.
+Cuando `OMNIROUTE_CLI_SALT` no está definido, el salt es una cadena hexadecimal aleatoria de 64 caracteres
+que se genera una sola vez y se guarda en `<DATA_DIR>/cli-token-salt.json` (modo `0600`), no
+el literal `omniroute-cli-auth-v1` incluido en el repositorio. Tanto `getActiveSalt()` en
+`src/lib/machineToken.ts` como su equivalente en `bin/cli/utils/cliToken.mjs` leen el
+mismo archivo, por lo que el servidor y cada ejecución de la CLI en esta instalación convergen en el
+mismo valor; el literal incluido en el repositorio solo se utiliza como último recurso cuando aún no
+se puede establecer un salt persistente o procedente del entorno (por ejemplo, en una instalación nueva
+que solo incluya la CLI antes de que el servidor se haya ejecutado alguna vez). Esto corrige una debilidad
+del antiguo valor literal fijo predeterminado: `/etc/machine-id` suele ser legible por cualquier usuario,
+por lo que, de otro modo, cualquier usuario local podría derivar el mismo token para todas las instalaciones
+que nunca hubieran definido `OMNIROUTE_CLI_SALT`.
+
+## Rotación de la sal
+
+Establezca `OMNIROUTE_CLI_SALT` para rotar el token derivado sin realizar cambios en el código; siempre tiene prioridad sobre la sal persistente de cada instalación. Después de la rotación, todos los procesos de la CLI en esta máquina utilizarán automáticamente el nuevo token. Resulta útil después de una filtración de la lista de procesos que pueda haber expuesto el valor derivado anterior.
 
 ```bash
 # Rotación persistente (añadir al perfil del shell)
 export OMNIROUTE_CLI_SALT="my-secret-salt-2026"
 
-# Verificar que el nuevo token está en uso
+# Verificar que se está utilizando el nuevo token
 omniroute status
 ```
 
-Salt predeterminado: `omniroute-cli-auth-v1`
-
 ## Formato heredado (SHA-256, 32 caracteres) — todavía aceptado
 
-Antes del formato HMAC descrito anteriormente, la CLI derivaba su token como
+Antes del formato HMAC anterior, la CLI derivaba su token como
 `SHA-256(machineId + salt).hex[0..32]` (un prefijo de 32 caracteres) en
 `bin/cli/utils/cliToken.mjs` (`getLegacyCliTokenSync` en `src/lib/machineToken.ts`).
 
-Para mantener la compatibilidad con versiones anteriores, el servidor acepta **ambos**
-formatos: el verificador construye
+Para mantener la compatibilidad con versiones anteriores, el servidor acepta **ambos** formatos: el verificador construye
 `expectedTokens = [getMachineTokenSync(), getLegacyCliTokenSync()]` y compara el
 encabezado entrante con cada uno mediante `timingSafeEqual`
 (`src/server/authz/policies/management.ts` y `src/lib/middleware/cliTokenAuth.ts`).
-Por tanto, un token es válido si coincide con **cualquiera** de los dos: el resumen HMAC
-de 64 caracteres o el prefijo SHA-256 heredado de 32 caracteres.
+Por tanto, un token es válido si coincide con **cualquiera de los dos**: el resumen HMAC de 64 caracteres o el prefijo SHA-256 heredado de 32 caracteres.
 
-**Desactivación:** establezca `OMNIROUTE_DISABLE_CLI_TOKEN=true` (en el entorno o en `.env`)
-para deshabilitar por completo el mecanismo de tokens de la CLI; todo acceso requerirá entonces
-una clave de API explícita. Esto se recomienda en hosts multiusuario, ya que `machine-id`
-corresponde al dispositivo (no al usuario) y otro usuario del mismo host podría calcular
-el mismo token.
+**Desactivación:** establezca `OMNIROUTE_DISABLE_CLI_TOKEN=true` (en el entorno o en `.env`) para deshabilitar por completo el mecanismo de tokens de la CLI; en ese caso, todo acceso requiere una clave de API explícita. Esto se recomienda en hosts multiusuario, ya que `machine-id` es específico del dispositivo (no del usuario) y otro usuario del mismo host podría calcular el mismo token.
 
 ## Archivos
 
-| Archivo                                   | Propósito                                            |
-| ----------------------------------------- | ---------------------------------------------------- |
-| `src/lib/machineToken.ts`                 | Derivación del token (`getMachineTokenSync`)         |
-| `src/server/authz/headers.ts`             | Constante `CLI_TOKEN_HEADER`                         |
-| `src/server/authz/policies/management.ts` | Verificación del lado del servidor                   |
-| `src/server/authz/routeGuard.ts`          | Comprobación del host de loopback (`isLoopbackHost`) |
+| Archivo                                   | Propósito                                                   |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| `src/lib/machineToken.ts`                 | Derivación del token (`getMachineTokenSync`)                |
+| `bin/cli/utils/cliToken.mjs`              | Réplica de la misma derivación del lado de la CLI           |
+| `<DATA_DIR>/cli-token-salt.json`          | Sal aleatoria persistente por instalación                   |
+| `src/server/authz/headers.ts`             | Constante `CLI_TOKEN_HEADER`                                |
+| `src/server/authz/policies/management.ts` | Verificación del lado del servidor                          |
+| `src/server/authz/routeGuard.ts`          | Comprobación del host de bucle invertido (`isLoopbackHost`) |
 
 ## Véase también
 
 - `docs/security/ROUTE_GUARD_TIERS.md` — niveles de protección de rutas
-- `docs/architecture/AUTHZ_GUIDE.md` — canalización completa de autorización
+- `docs/architecture/AUTHZ_GUIDE.md` — proceso completo de autorización
