@@ -2435,7 +2435,12 @@ export async function handleChatCore({
         }
       } else {
         // Same guard as the CC-bridge path: only preserve tool_result blocks
-        // for Anthropic-native targets. See issue #13971.
+        // for Anthropic-native targets. See issue #13971. This branch only runs
+        // under isClaudePassthrough (sourceFormat === targetFormat === CLAUDE,
+        // defined above), so targetFormat === FORMATS.CLAUDE always holds here —
+        // the guard is a no-op on this call site, kept for symmetry with the
+        // CC-bridge one above rather than a change to code the issue said not
+        // to touch.
         normalizeClaudeUpstreamMessages(translatedBody, {
           preserveToolResultBlocks: targetFormat === FORMATS.CLAUDE,
         });
