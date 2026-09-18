@@ -170,3 +170,44 @@ test("GET /v1/providers/:provider/models rejects non-matching connection-like st
   const body = await res.json();
   assert.equal(body.error?.code, "invalid_provider");
 });
+
+test("#14092: GET /v1/providers/:provider/models strips stale content-length and transfer-encoding headers from catalog response", async () => {
+  // When getUnifiedModelsResponse returns headers with content-length, content-encoding, or transfer-encoding,
+  // the provider-scoped route must strip them so that the re-serialized filtered body is not
+  // sent with the full catalog's content-length (which would hang clients waiting for more bytes).
+  const { stripStaleEncodingHeaders } =
+    await import("@omniroute/open-sse/utils/upstreamResponseHeaders.ts");
+  const headers = new Headers({
+    "content-type": "application/json",
+    "content-length": "999999",
+    "transfer-encoding": "chunked",
+    "content-encoding": "gzip",
+    "x-custom-catalog-header": "test-val",
+  });
+  const stripped = stripStaleEncodingHeaders(headers);
+  assert.equal(stripped.get("content-length"), null, "content-length header must be stripped");
+  assert.equal(
+    stripped.get("transfer-encoding"),
+    null,
+    "transfer-encoding header must be stripped"
+  );
+  assert.equal(stripped.get("content-encoding"), null, "content-encoding header must be stripped");
+  assert.equal(
+    stripped.get("x-custom-catalog-header"),
+    "test-val",
+    "other non-stale headers should be preserved"
+  );
+
+  const res = await callGET("openai");
+  assert.equal(res.status, 200);
+  assert.equal(
+    res.headers.get("content-length"),
+    null,
+    "route response must not have stale content-length"
+  );
+  assert.equal(
+    res.headers.get("transfer-encoding"),
+    null,
+    "route response must not have stale transfer-encoding"
+  );
+});
