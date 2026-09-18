@@ -24,7 +24,7 @@ local COLORS = {
 	cyan = Color3.fromRGB(72, 235, 225),
 	lime = Color3.fromRGB(188, 255, 83),
 	orange = Color3.fromRGB(255, 147, 52),
-	red = Color3.fromRGB(255, 71, 86),
+	red = Color3.fromRGB(220, 72, 82),
 	purple = Color3.fromRGB(145, 95, 255),
 }
 
@@ -38,9 +38,11 @@ map.Name = MAP_NAME
 map.Parent = workspace
 
 Lighting.ClockTime = 18.5
-Lighting.Brightness = 2
-Lighting.Ambient = Color3.fromRGB(80, 55, 105)
-Lighting.OutdoorAmbient = Color3.fromRGB(60, 45, 85)
+Lighting.Brightness = 1.2
+Lighting.Ambient = Color3.fromRGB(52, 43, 72)
+Lighting.OutdoorAmbient = Color3.fromRGB(38, 34, 58)
+Lighting.EnvironmentDiffuseScale = 0.65
+Lighting.EnvironmentSpecularScale = 0.25
 
 local state = {
 	round = 1,
@@ -66,27 +68,9 @@ local function part(name, size, cframe, color, material, parent)
 	return item
 end
 
-local function labelOn(partObject, text, color, studsOffset)
-	local billboard = Instance.new("BillboardGui")
-	billboard.Name = "Sign"
-	billboard.Size = UDim2.fromOffset(250, 56)
-	billboard.StudsOffset = Vector3.new(0, studsOffset or 2.5, 0)
-	billboard.AlwaysOnTop = true
-	billboard.Parent = partObject
-	local label = Instance.new("TextLabel")
-	label.BackgroundTransparency = 1
-	label.Size = UDim2.fromScale(1, 1)
-	label.Font = Enum.Font.GothamBlack
-	label.Text = text
-	label.TextColor3 = color or COLORS.cream
-	label.TextScaled = true
-	label.TextStrokeTransparency = 0.35
-	label.Parent = billboard
-	return label
-end
-
 local function neon(name, size, cframe, color, parent)
-	local item = part(name, size, cframe, color, Enum.Material.Neon, parent)
+	local item = part(name, size, cframe, color, Enum.Material.SmoothPlastic, parent)
+	item.Reflectance = 0
 	item.CanCollide = false
 	return item
 end
@@ -143,9 +127,8 @@ end
 
 local function createCheckpoint(index)
 	local info = CHECKPOINTS[index]
-	local pad = part("Checkpoint_" .. index, Vector3.new(10, 0.5, 10), CFrame.new(info.position), COLORS.cyan, Enum.Material.Neon)
+	local pad = part("Checkpoint_" .. index, Vector3.new(10, 0.5, 10), CFrame.new(info.position), COLORS.cyan, Enum.Material.SmoothPlastic)
 	pad.CanTouch = true
-	labelOn(pad, "CHECKPOINT " .. index .. "\n" .. info.name, COLORS.cream, 3)
 	pad.Touched:Connect(function(hit)
 		local player = getCharacterPlayer(hit)
 		if player and (player:GetAttribute("Checkpoint") or 1) < index then
@@ -157,7 +140,7 @@ local function createCheckpoint(index)
 end
 
 local function createHazard(name, size, cframe, color, damage)
-	local hazard = part(name, size, cframe, color or COLORS.red, Enum.Material.Neon)
+	local hazard = part(name, size, cframe, color or COLORS.red, Enum.Material.SmoothPlastic)
 	hazard.Touched:Connect(function(hit)
 		local character = hit and hit.Parent
 		local humanoid = character and character:FindFirstChildOfClass("Humanoid")
@@ -199,13 +182,11 @@ end
 part("HubFloor", Vector3.new(52, 1, 42), CFrame.new(0, 0, 0), COLORS.ink, Enum.Material.Concrete)
 part("HubBackWall", Vector3.new(52, 16, 1), CFrame.new(0, 8, 21), COLORS.purple, Enum.Material.Brick)
 part("HubLeftWall", Vector3.new(1, 16, 42), CFrame.new(-26, 8, 0), COLORS.pink, Enum.Material.Brick)
-labelOn(part("TitleSign", Vector3.new(1, 1, 1), CFrame.new(0, 10, 19), COLORS.ink), "BRAINROT ESCAPE", COLORS.cream, 0)
 for i, position in ipairs({Vector3.new(-17, 2, -10), Vector3.new(0, 2, -10), Vector3.new(17, 2, -10)}) do
-	local pillar = part("HubPillar" .. i, Vector3.new(4, 8, 4), CFrame.new(position), ({COLORS.pink, COLORS.cyan, COLORS.orange})[i], Enum.Material.Neon)
+	local pillar = part("HubPillar" .. i, Vector3.new(4, 8, 4), CFrame.new(position), ({COLORS.pink, COLORS.cyan, COLORS.orange})[i], Enum.Material.SmoothPlastic)
 	sparkle(position + Vector3.new(0, 5, 0), ({COLORS.pink, COLORS.cyan, COLORS.orange})[i])
 end
-local startPad = part("StartPad", Vector3.new(12, 0.5, 8), START_CFRAME, COLORS.lime, Enum.Material.Neon)
-labelOn(startPad, "RUN THE FACTORY\nWASD + SPACE", COLORS.ink, 3)
+local startPad = part("StartPad", Vector3.new(12, 0.5, 8), START_CFRAME, COLORS.lime, Enum.Material.SmoothPlastic)
 createPrompt(startPad, "Start Run", "Factory Escape", function(player)
 	teleportToCheckpoint(player, player:GetAttribute("Checkpoint") or 1)
 	award(player, 5, "run started")
@@ -232,17 +213,22 @@ for i, platformInfo in ipairs(platforms) do
 		createCollectible(platformInfo[1] + Vector3.new(0, 3, 0), 3, "Byte_" .. i)
 	end
 end
+-- Waist-high rails make the intended route readable without blocking jumps.
+for _, railInfo in ipairs({
+	{Vector3.new(38, 7, -14), Vector3.new(150, 3, 0.6)},
+	{Vector3.new(38, 7, -2), Vector3.new(150, 3, 0.6)},
+}) do
+	part("RouteRail", railInfo[2], CFrame.new(railInfo[1]), COLORS.purple, Enum.Material.Metal)
+end
 createHazard("FactoryVoid", Vector3.new(150, 1, 60), CFrame.new(75, -8, 0), COLORS.red, 100)
 for i = 1, 4 do
-	local beam = part("LaserBeam_" .. i, Vector3.new(1, 3, 9), CFrame.new(45 + i * 12, 10, -8), COLORS.red, Enum.Material.Neon)
-	beam.CFrame *= CFrame.Angles(0, 0, math.rad(i % 2 == 0 and 18 or -18))
+	local beam = part("LaserBeam_" .. i, Vector3.new(1, 2.5, 5), CFrame.new(45 + i * 12, 11.5, -17), COLORS.red, Enum.Material.SmoothPlastic)
 	createHazard("LaserHazard_" .. i, beam.Size, beam.CFrame, COLORS.red, 45)
 end
 
 -- Banana / slippery corridor: low friction floor, sliding bumpers, and a safe lane.
 local corridorFloor = part("SlipperyCorridor", Vector3.new(34, 1, 16), CFrame.new(98, 3, -8), Color3.fromRGB(255, 219, 74), Enum.Material.Ice)
 corridorFloor.CustomPhysicalProperties = PhysicalProperties.new(0.7, 0.03, 0.1, 1, 1)
-labelOn(corridorFloor, "BANANA HALL\nLOW FRICTION!", COLORS.ink, 3)
 for i = 1, 6 do
 	local banana = neon("BananaBumper_" .. i, Vector3.new(3, 3, 3), CFrame.new(84 + i * 5, 5, -8 + (i % 2) * 5), COLORS.orange)
 	banana.Shape = Enum.PartType.Ball
@@ -263,7 +249,6 @@ createCollectible(Vector3.new(99, 6, -13), 12, "Golden Peel")
 local fusionRoom = part("FusionRoom", Vector3.new(38, 14, 28), CFrame.new(137, 10, 12), COLORS.purple, Enum.Material.Slate)
 fusionRoom.Transparency = 0.2
 fusionRoom.CanCollide = false
-labelOn(fusionRoom, "FUSION ROOM\nBRING 3 SPARKS", COLORS.cream, 9)
 local fusionDoor = part("FusionDoor", Vector3.new(14, 12, 1), CFrame.new(119, 9, 12), COLORS.ink, Enum.Material.Metal)
 local fusionSparks = {
 	{Vector3.new(128, 15, 4), "Fizz Spark"},
@@ -286,7 +271,6 @@ for index, sparkInfo in ipairs(fusionSparks) do
 	table.insert(fusionSparkParts, {part = spark, prompt = sparkPrompt})
 end
 local fusionConsole = neon("FusionConsole", Vector3.new(4, 4, 2), CFrame.new(137, 4, 12), COLORS.cyan)
-labelOn(fusionConsole, "FUSE", COLORS.ink, 3)
 createPrompt(fusionConsole, "Fuse Sparks", "Fusion Console", function(player)
 	local carried = player:GetAttribute("FusionSparks") or 0
 	if carried >= 3 then
@@ -305,36 +289,25 @@ end)
 
 -- Restaurant mini-game: serve three hungry customers in a short loop.
 local restaurant = part("Restaurant", Vector3.new(30, 10, 22), CFrame.new(174, 8, -16), COLORS.orange, Enum.Material.WoodPlanks)
-labelOn(restaurant, "BYTE BISTRO\nSERVE THE CREW", COLORS.ink, 8)
 local orders = {"Fizz noodles", "Pixel pizza", "Wobble waffle"}
 local orderIndex = 1
-local orderBoard = neon("OrderBoard", Vector3.new(7, 4, 1), CFrame.new(174, 5, -27), COLORS.ink)
-labelOn(orderBoard, "ORDER: " .. orders[orderIndex], COLORS.cream, 2.8)
 local servingCounter = neon("ServingCounter", Vector3.new(8, 3, 3), CFrame.new(174, 4, -12), COLORS.cyan)
 createPrompt(servingCounter, "Serve", "Byte Bistro order", function(player)
-	local board = orderBoard:FindFirstChild("Sign")
-	local boardLabel = board and board:FindFirstChildOfClass("TextLabel")
 	award(player, 12, "served " .. orders[orderIndex])
 	orderIndex = orderIndex % #orders + 1
-	if boardLabel then
-		boardLabel.Text = "ORDER: " .. orders[orderIndex]
-	end
 end)
 for i = 1, 3 do
-	local customer = part("Customer_" .. i, Vector3.new(3, 5, 3), CFrame.new(165 + i * 6, 4, -20), ({COLORS.pink, COLORS.cyan, COLORS.lime})[i], Enum.Material.Neon)
+	local customer = part("Customer_" .. i, Vector3.new(3, 5, 3), CFrame.new(165 + i * 6, 4, -20), ({COLORS.pink, COLORS.cyan, COLORS.lime})[i], Enum.Material.SmoothPlastic)
 	customer.Shape = Enum.PartType.Ball
-	labelOn(customer, ({"Nibble Noodle", "Toastie Byte", "Mochi Motor"})[i], COLORS.ink, 3)
 end
 
 -- Boss arena and original boss: The Overcooked Crown.
 local arenaFloor = part("BossArena", Vector3.new(48, 1, 42), CFrame.new(210, 0, 12), COLORS.ink, Enum.Material.Basalt)
-labelOn(arenaFloor, "THE OVERCOOKED CROWN\nSTRIKE TO POP THE PAN!", COLORS.cream, 7)
-local bossGate = part("BossGate", Vector3.new(2, 12, 28), CFrame.new(185, 7, 12), COLORS.pink, Enum.Material.Neon)
+local bossGate = part("BossGate", Vector3.new(2, 12, 28), CFrame.new(185, 7, 12), COLORS.pink, Enum.Material.SmoothPlastic)
 part("BossLift", Vector3.new(20, 1, 28), CFrame.new(174, 8, 12), COLORS.purple, Enum.Material.Metal)
-local bossCore = part("OvercookedCrown", Vector3.new(8, 8, 8), CFrame.new(210, 9, 12), COLORS.orange, Enum.Material.Neon)
+local bossCore = part("OvercookedCrown", Vector3.new(8, 8, 8), CFrame.new(210, 9, 12), COLORS.orange, Enum.Material.SmoothPlastic)
 bossCore.Shape = Enum.PartType.Ball
 local crownTop = neon("CrownTop", Vector3.new(12, 2, 4), CFrame.new(210, 14, 12), COLORS.lime)
-labelOn(bossCore, "CROWN", COLORS.ink, 6)
 local strikePrompt = createPrompt(bossCore, "Strike", "Overcooked Crown", function(player)
 	if not state.bossAlive then
 		return
@@ -440,8 +413,9 @@ local function createHud(player)
 	panel.Name = "Panel"
 	panel.BackgroundColor3 = COLORS.ink
 	panel.BackgroundTransparency = 0.15
-	panel.Size = UDim2.fromOffset(300, 116)
-	panel.Position = UDim2.fromOffset(18, 18)
+	panel.Size = UDim2.fromOffset(220, 78)
+	panel.Position = UDim2.new(0, 14, 1, -104)
+	panel.AnchorPoint = Vector2.new(0, 1)
 	panel.Parent = gui
 	local corner = Instance.new("UICorner")
 	corner.CornerRadius = UDim.new(0, 14)
@@ -450,23 +424,23 @@ local function createHud(player)
 	local status = Instance.new("TextLabel")
 	status.Name = "Status"
 	status.BackgroundTransparency = 1
-	status.Size = UDim2.new(1, -20, 0, 70)
-	status.Position = UDim2.fromOffset(10, 8)
+	status.Size = UDim2.new(1, -14, 1, -10)
+	status.Position = UDim2.fromOffset(7, 5)
 	status.Font = Enum.Font.GothamBold
 	status.TextColor3 = COLORS.cream
 	status.TextXAlignment = Enum.TextXAlignment.Left
 	status.TextYAlignment = Enum.TextYAlignment.Top
-	status.TextSize = 16
+	status.TextSize = 13
 	status.Parent = panel
 
 	local toast = Instance.new("TextLabel")
 	toast.Name = "Toast"
 	toast.BackgroundColor3 = COLORS.pink
-	toast.Size = UDim2.fromOffset(420, 48)
-	toast.Position = UDim2.new(0.5, -210, 0, 22)
+	toast.Size = UDim2.fromOffset(250, 32)
+	toast.Position = UDim2.new(0, 18, 1, -58)
 	toast.Font = Enum.Font.GothamBlack
 	toast.TextColor3 = COLORS.ink
-	toast.TextScaled = true
+	toast.TextSize = 14
 	toast.Visible = false
 	toast.Parent = gui
 	local toastCorner = Instance.new("UICorner")
@@ -478,15 +452,14 @@ local function createHud(player)
 		local points = stats and stats:FindFirstChild("BrainrotPoints")
 		local checkpoint = player:GetAttribute("Checkpoint") or 1
 		local sparks = player:GetAttribute("FusionSparks") or 0
-		local bossText = state.bossAlive and string.format("Boss: %d%%", state.bossHealth) or "Boss: waiting"
+		local bossText = state.bossAlive and string.format("Boss %d%%", state.bossHealth) or "Boss idle"
 		status.Text = string.format(
-			"FACTORY FRENZY  |  Round %d\nPoints: %d   Checkpoint: %d/5\nSparks: %d/3   %s\nEvent: %s",
+			"Round %d  |  %d points\nCheckpoint %d/5  |  Sparks %d/3\n%s",
 			state.round,
 			points and points.Value or 0,
 			checkpoint,
 			sparks,
-			bossText,
-			state.event
+			bossText
 		)
 	end
 	task.spawn(function()

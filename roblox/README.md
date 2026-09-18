@@ -32,6 +32,11 @@ safe to restart Play mode while iterating.
 - A random event starts about every 45 seconds: Banana Rain, Double Points,
   Laser Shuffle, or Tiny Gravity. The event name is shown in the HUD.
 
+The HUD is intentionally compact in the lower-left corner and only shows round,
+points, checkpoint, sparks, and boss state. Short rewards and event notices appear
+as temporary toasts along the bottom edge. World-space BillboardGui labels are not
+used, so the play path stays clear.
+
 ## Validation
 
 There is no Roblox Studio runtime in this repository, so validation is intentionally
