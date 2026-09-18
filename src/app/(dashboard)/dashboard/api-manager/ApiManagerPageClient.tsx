@@ -33,7 +33,9 @@ import { BypassProviderQuotaToggle } from "./components/BypassProviderQuotaToggl
 import { ApiKeyCompressionToggle } from "./components/ApiKeyCompressionToggle";
 import { AllowedCombosSection } from "./components/AllowedCombosSection";
 import ProviderModelPermissionList from "./components/ProviderModelPermissionList";
-import ProviderConnectionPermissionList from "./components/ProviderConnectionPermissionList";
+import ProviderConnectionPermissionList, {
+  type ProviderConnection,
+} from "./components/ProviderConnectionPermissionList";
 import RoutingEntryLink from "@/shared/components/routing/RoutingEntryLink";
 import { ALL_COMBOS_ACCESS_RULE } from "@/shared/constants/comboAccess";
 
@@ -145,13 +147,6 @@ interface ApiKey {
   weeklyUsageLimitUsd?: number | null;
   allowedQuotas?: string[] | null;
   createdAt: string;
-}
-
-interface ProviderConnection {
-  id: string;
-  name: string;
-  provider: string;
-  isActive: boolean;
 }
 
 interface KeyUsageStats {
