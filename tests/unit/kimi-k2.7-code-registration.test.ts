@@ -61,6 +61,7 @@ test("Kimi Coding registry advertises K2.8 Preview", () => {
   assert.ok(model);
   assert.equal(model.name, "Kimi K2.8 Preview");
   assert.equal(model.contextLength, 1048576);
+  assert.equal(getRegistryEntry("kimi-coding")?.defaultContextLength, 1048576);
 });
 
 test("moonshot (OpenAI endpoint) advertises kimi-k2.7-code + highspeed", () => {
