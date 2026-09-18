@@ -37,6 +37,12 @@ points, checkpoint, sparks, and boss state. Short rewards and event notices appe
 as temporary toasts along the bottom edge. World-space BillboardGui labels are not
 used, so the play path stays clear.
 
+Rewards are server-authoritative and round-scoped: each player can claim each
+collectible once per round, checkpoint bonuses are once per checkpoint per round,
+the restaurant bonus is once per round, fusion is once per round, and the boss clear
+reward is once per player per round. Touch spam, prompt spam, respawns, and another
+player collecting the same world item do not duplicate rewards.
+
 ## Validation
 
 There is no Roblox Studio runtime in this repository, so validation is intentionally

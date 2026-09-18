@@ -53,6 +53,10 @@ local state = {
 	bossModel = nil,
 }
 local fusionSparkParts = {}
+local claimedCollectibles = {}
+local awardedCheckpoints = {}
+local awardedBossRound = {}
+local bossHitCooldown = {}
 
 local function part(name, size, cframe, color, material, parent)
 	local item = Instance.new("Part")
@@ -90,6 +94,16 @@ local function getCharacterPlayer(hit)
 	if not character then
 		return nil
 	end
+
+	local function isActivePlayer(player)
+		return player and player.Parent == Players and player.Character ~= nil
+	end
+
+	local function getRoundClaims(player)
+		claimedCollectibles[player.UserId] = claimedCollectibles[player.UserId] or {}
+		claimedCollectibles[player.UserId][state.round] = claimedCollectibles[player.UserId][state.round] or {}
+		return claimedCollectibles[player.UserId][state.round]
+	end
 	return Players:GetPlayerFromCharacter(character)
 end
 
@@ -104,6 +118,9 @@ local function teleportToCheckpoint(player, checkpointIndex)
 end
 
 local function award(player, amount, reason)
+	if not isActivePlayer(player) then
+		return
+	end
 	if state.event == "Double Points" then
 		amount *= 2
 	end
@@ -133,7 +150,12 @@ local function createCheckpoint(index)
 		local player = getCharacterPlayer(hit)
 		if player and (player:GetAttribute("Checkpoint") or 1) < index then
 			teleportToCheckpoint(player, index)
-			award(player, 15, "checkpoint secured")
+			awardedCheckpoints[player.UserId] = awardedCheckpoints[player.UserId] or {}
+			local key = string.format("%d:%d", state.round, index)
+			if not awardedCheckpoints[player.UserId][key] then
+				awardedCheckpoints[player.UserId][key] = true
+				award(player, 15, "checkpoint secured")
+			end
 		end
 	end)
 	return pad
@@ -151,16 +173,15 @@ local function createHazard(name, size, cframe, color, damage)
 	return hazard
 end
 
-local function createCollectible(position, value, collectibleName)
-	local token = neon(collectibleName or "BrainrotByte", Vector3.new(1.6, 1.6, 1.6), CFrame.new(position), COLORS.lime)
+local function createCollectible(id, position, value, collectibleName)
+	local token = neon(collectibleName or id, Vector3.new(1.6, 1.6, 1.6), CFrame.new(position), COLORS.lime)
 	token.Shape = Enum.PartType.Ball
-	local claimed = false
 	token.Touched:Connect(function(hit)
 		local player = getCharacterPlayer(hit)
-		if player and not claimed then
-			claimed = true
+		local claims = player and getRoundClaims(player)
+		if player and claims and not claims[id] then
+			claims[id] = true
 			award(player, value, "collected " .. (collectibleName or "Brainrot Byte"))
-			token:Destroy()
 		end
 	end)
 	return token
@@ -210,7 +231,7 @@ local platforms = {
 for i, platformInfo in ipairs(platforms) do
 	local platform = part("ObbyPlatform_" .. i, platformInfo[2], CFrame.new(platformInfo[1]), i % 2 == 0 and COLORS.cyan or COLORS.orange, Enum.Material.Metal)
 	if i < 8 then
-		createCollectible(platformInfo[1] + Vector3.new(0, 3, 0), 3, "Byte_" .. i)
+		createCollectible("byte-" .. i, platformInfo[1] + Vector3.new(0, 3, 0), 3, "Brainrot Byte")
 	end
 end
 -- Waist-high rails make the intended route readable without blocking jumps.
@@ -243,7 +264,7 @@ for i = 1, 6 do
 		end
 	end)
 end
-createCollectible(Vector3.new(99, 6, -13), 12, "Golden Peel")
+createCollectible("golden-peel", Vector3.new(99, 6, -13), 12, "Golden Peel")
 
 -- Fusion room: three original ingredients open the boss lift.
 local fusionRoom = part("FusionRoom", Vector3.new(38, 14, 28), CFrame.new(137, 10, 12), COLORS.purple, Enum.Material.Slate)
@@ -256,12 +277,15 @@ local fusionSparks = {
 	{Vector3.new(150, 15, 4), "Neon Spark"},
 }
 for index, sparkInfo in ipairs(fusionSparks) do
-	local spark = createCollectible(sparkInfo[1], 8, sparkInfo[2])
+	local spark = createCollectible("spark-" .. index, sparkInfo[1], 8, sparkInfo[2])
 	spark:SetAttribute("FusionSpark", true)
 	spark.CanTouch = false
 	local sparkPrompt = createPrompt(spark, "Collect", sparkInfo[2], function(player)
 		local current = player:GetAttribute("FusionSparks") or 0
-		if current < 3 then
+		local claims = getRoundClaims(player)
+		local id = "spark-" .. index
+		if current < 3 and not claims[id] then
+			claims[id] = true
 			player:SetAttribute("FusionSparks", current + 1)
 			award(player, 8, sparkInfo[2])
 			spark.Transparency = 1
@@ -273,7 +297,8 @@ end
 local fusionConsole = neon("FusionConsole", Vector3.new(4, 4, 2), CFrame.new(137, 4, 12), COLORS.cyan)
 createPrompt(fusionConsole, "Fuse Sparks", "Fusion Console", function(player)
 	local carried = player:GetAttribute("FusionSparks") or 0
-	if carried >= 3 then
+	if carried >= 3 and (player:GetAttribute("FusedRound") or 0) ~= state.round then
+		player:SetAttribute("FusedRound", state.round)
 		player:SetAttribute("FusionSparks", 0)
 		fusionDoor.CanCollide = false
 		fusionDoor.Transparency = 0.75
@@ -293,7 +318,10 @@ local orders = {"Fizz noodles", "Pixel pizza", "Wobble waffle"}
 local orderIndex = 1
 local servingCounter = neon("ServingCounter", Vector3.new(8, 3, 3), CFrame.new(174, 4, -12), COLORS.cyan)
 createPrompt(servingCounter, "Serve", "Byte Bistro order", function(player)
-	award(player, 12, "served " .. orders[orderIndex])
+	if (player:GetAttribute("ServedRound") or 0) ~= state.round then
+		player:SetAttribute("ServedRound", state.round)
+		award(player, 12, "served " .. orders[orderIndex])
+	end
 	orderIndex = orderIndex % #orders + 1
 end)
 for i = 1, 3 do
@@ -309,9 +337,14 @@ local bossCore = part("OvercookedCrown", Vector3.new(8, 8, 8), CFrame.new(210, 9
 bossCore.Shape = Enum.PartType.Ball
 local crownTop = neon("CrownTop", Vector3.new(12, 2, 4), CFrame.new(210, 14, 12), COLORS.lime)
 local strikePrompt = createPrompt(bossCore, "Strike", "Overcooked Crown", function(player)
-	if not state.bossAlive then
+	if not state.bossAlive or not isActivePlayer(player) then
 		return
 	end
+	local now = os.clock()
+	if now - (bossHitCooldown[player.UserId] or 0) < 0.35 then
+		return
+	end
+	bossHitCooldown[player.UserId] = now
 	state.bossHealth = math.max(0, state.bossHealth - 8)
 	award(player, 2, "boss hit")
 	if state.bossHealth <= 0 then
@@ -320,7 +353,10 @@ local strikePrompt = createPrompt(bossCore, "Strike", "Overcooked Crown", functi
 		crownTop.Transparency = 1
 		strikePrompt.Enabled = false
 		for _, participant in ipairs(Players:GetPlayers()) do
-			award(participant, 75, "CROWN POPPED")
+			if awardedBossRound[participant.UserId] ~= state.round then
+				awardedBossRound[participant.UserId] = state.round
+				award(participant, 75, "CROWN POPPED")
+			end
 		end
 		state.event = "Factory cleared! Next round soon"
 		state.eventEndsAt = os.clock() + 10
@@ -340,6 +376,8 @@ end
 local function startBoss()
 	state.bossAlive = true
 	state.bossHealth = 100 + (state.round - 1) * 25
+	awardedBossRound = {}
+	bossHitCooldown = {}
 	bossCore.Transparency = 0
 	crownTop.Transparency = 0
 	bossGate.CanCollide = false
@@ -480,6 +518,8 @@ Players.PlayerAdded:Connect(function(player)
 	points.Parent = stats
 	player:SetAttribute("Checkpoint", 1)
 	player:SetAttribute("FusionSparks", 0)
+	player:SetAttribute("FusedRound", 0)
+	player:SetAttribute("ServedRound", 0)
 	createHud(player)
 	player.CharacterAdded:Connect(function(character)
 		task.wait()
@@ -487,6 +527,14 @@ Players.PlayerAdded:Connect(function(player)
 		local checkpoint = CHECKPOINTS[player:GetAttribute("Checkpoint") or 1]
 		root.CFrame = CFrame.new(checkpoint.position + Vector3.new(0, 4, 0))
 	end)
+
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+	claimedCollectibles[player.UserId] = nil
+	awardedCheckpoints[player.UserId] = nil
+	awardedBossRound[player.UserId] = nil
+	bossHitCooldown[player.UserId] = nil
 end)
 
 -- Round pacing keeps the slice replayable: boss, reward, reset, repeat.
@@ -504,6 +552,8 @@ task.spawn(function()
 		for _, player in ipairs(Players:GetPlayers()) do
 			player:SetAttribute("Checkpoint", 1)
 			player:SetAttribute("FusionSparks", 0)
+			player:SetAttribute("FusedRound", 0)
+			player:SetAttribute("ServedRound", 0)
 			teleportToCheckpoint(player, 1)
 		end
 		for _, sparkInfo in ipairs(fusionSparkParts) do
