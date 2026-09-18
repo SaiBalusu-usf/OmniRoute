@@ -6,7 +6,7 @@ import {
   selectProvider,
   type SearchProviderConfig,
 } from "@omniroute/open-sse/config/searchRegistry.ts";
-import { errorResponse } from "@omniroute/open-sse/utils/error.ts";
+import { buildErrorBody, errorResponse } from "@omniroute/open-sse/utils/error.ts";
 import { HTTP_STATUS } from "@omniroute/open-sse/config/constants.ts";
 import * as log from "@/sse/utils/logger";
 import { toJsonErrorPayload } from "@/shared/utils/upstreamError";
@@ -250,10 +250,25 @@ async function postHandler(request: Request) {
       });
     }
 
-    log.error("ALPHA_SEARCH", `Unexpected error: ${err.message}`);
-    const errorPayload = toJsonErrorPayload(err.message, "Internal search error");
+    log.error("ALPHA_SEARCH", `Unexpected error: ${err?.message}`);
+    // Hard Rule #12: an unexpected internal exception (as opposed to the
+    // AlphaSearchError branch above, whose message is our own controlled
+    // provider-failure text) must never reach the client verbatim.
+    // toJsonErrorPayload() is designed for upstream provider bodies and
+    // passes an unparseable plain string straight through with zero
+    // sanitization — buildErrorBody()/sanitizeErrorMessage() is the
+    // sanctioned boundary for this (docs/security/ERROR_SANITIZATION.md).
+    const errorPayload = buildErrorBody(
+      HTTP_STATUS.SERVER_ERROR,
+      String(err?.message ?? err),
+      undefined,
+      {
+        type: "internal_server_error",
+        code: "internal_server_error",
+      }
+    );
     return new Response(JSON.stringify(errorPayload), {
-      status: 500,
+      status: HTTP_STATUS.SERVER_ERROR,
       headers: { "Content-Type": "application/json", ...CORS_HEADERS },
     });
   }
