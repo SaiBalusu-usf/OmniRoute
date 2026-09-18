@@ -11423,6 +11423,7 @@
       "output": "Uitvoer",
       "totalOut": "Totaal Uit: {value}",
       "reasoning": "Redenering: {value}",
+      "reasoningObserved": "{value} · {chars} tekens waargenomen",
       "requestedModel": "Aangevraagd Model",
       "requestProtocol": "Aanvraagprotocol",
       "cacheSource": "Cachebron",

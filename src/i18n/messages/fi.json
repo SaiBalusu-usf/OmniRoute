@@ -11423,6 +11423,7 @@
       "output": "Tulostus",
       "totalOut": "Yhteensä ulos: {value}",
       "reasoning": "Pohdinta: {value}",
+      "reasoningObserved": "{value} · havaittu {chars} merkkiä",
       "requestedModel": "Pyydetty Malli",
       "requestProtocol": "Req-protokolla",
       "cacheSource": "Välimuisti Lähde",

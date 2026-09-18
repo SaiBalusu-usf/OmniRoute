@@ -11423,6 +11423,7 @@
       "output": "Izvade",
       "totalOut": "Kopā izvadē: {value}",
       "reasoning": "Argumentācija: {value}",
+      "reasoningObserved": "{value} · novērotas {chars} rakstzīmes",
       "requestedModel": "Pieprasītais modelis",
       "requestProtocol": "Pieprasījuma protokols",
       "cacheSource": "Kešatmiņas avots",
