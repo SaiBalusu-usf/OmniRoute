@@ -29,11 +29,16 @@
  * Verified: package.json, both bin entries, and dist/ are inside the tarball.
  * Cross-platform: node >= 22, bun >= 1.1; no shell string interpolation
  * (secrets/env travel as spawn options, never in the script body).
+ *
+ * `parseArgs` and `verifyTarball` are pure (no `process.exit`) and exported so
+ * they are unit-testable without a real build — see tests/unit/bun-pack.test.ts.
+ * They signal a bad-input/bad-tarball condition by throwing `UsageError`; only
+ * the direct-run `main()` below translates that into the CLI's `fail()` exit.
  */
 
-import { execFileSync, spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -41,6 +46,8 @@ const ROOT = join(__dirname, "..", "..");
 const isWin = process.platform === "win32";
 const npmBin = isWin ? "npm.cmd" : "npm";
 const bunBin = isWin ? "bun.exe" : "bun";
+
+export class UsageError extends Error {}
 
 function log(line) {
   console.log(`[bun-pack] ${line}`);
@@ -51,22 +58,22 @@ function fail(message, exitCode = 1) {
   process.exit(exitCode);
 }
 
-function parseArgs(argv) {
-  const opts = { pm: "bun", skipBuild: false, destination: join(ROOT, "_artifacts") };
+export function parseArgs(argv, defaultDestination = join(ROOT, "_artifacts")) {
+  const opts = { pm: "bun", skipBuild: false, destination: defaultDestination };
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === "--pm") {
       const pm = (argv[++i] || "").toLowerCase();
-      if (pm !== "bun" && pm !== "npm") fail("--pm must be bun or npm");
+      if (pm !== "bun" && pm !== "npm") throw new UsageError("--pm must be bun or npm");
       opts.pm = pm;
     } else if (argv[i] === "--skip-build") {
       opts.skipBuild = true;
     } else if (argv[i] === "--destination") {
       opts.destination = argv[++i];
     } else {
-      fail(`unknown argument "${argv[i]}"`);
+      throw new UsageError(`unknown argument "${argv[i]}"`);
     }
   }
-  if (!opts.destination) fail("--destination requires a directory path");
+  if (!opts.destination) throw new UsageError("--destination requires a directory path");
   return opts;
 }
 
@@ -82,9 +89,11 @@ function run(bin, args, opts = {}) {
   return spawnSync(bin, args, { cwd: ROOT, encoding: "utf8", ...opts });
 }
 
-function verifyTarball(tarball) {
+export function verifyTarball(tarball) {
   const list = run("tar", ["-tzf", tarball]);
-  if (list.status !== 0) fail(`could not read tarball listing (${list.error?.message || "tar failed"})`);
+  if (list.status !== 0) {
+    throw new UsageError(`could not read tarball listing (${list.error?.message || "tar failed"})`);
+  }
   const entries = new Set((list.stdout || "").split("\n").map((l) => l.replace(/\/$/, "")));
 
   const requiredFiles = [
@@ -93,59 +102,85 @@ function verifyTarball(tarball) {
     "package/bin/reset-password.mjs",
   ];
   const missing = requiredFiles.filter((entry) => !entries.has(entry));
-  if (missing.length > 0) fail(`tarball missing required entries: ${missing.join(", ")}`);
+  if (missing.length > 0)
+    throw new UsageError(`tarball missing required entries: ${missing.join(", ")}`);
 
   const distFiles = [...entries].filter((e) => e.startsWith("package/dist/"));
-  if (distFiles.length === 0) fail("tarball contains an empty dist/ — run the build first");
+  if (distFiles.length === 0)
+    throw new UsageError("tarball contains an empty dist/ — run the build first");
   return distFiles.length;
 }
 
-log("OmniRoute release pack (npm-compatible tarball)");
-if (!existsSync(join(ROOT, "package.json"))) fail(`no package.json at ${ROOT}`);
+function main() {
+  log("OmniRoute release pack (npm-compatible tarball)");
+  if (!existsSync(join(ROOT, "package.json"))) fail(`no package.json at ${ROOT}`);
 
-const opts = parseArgs(process.argv.slice(2));
-const version = readVersion();
-const tarball = join(opts.destination, `omniroute-${version}.tgz`);
-const isBun = opts.pm === "bun";
-
-if (isBun) {
-  const bunCheck = run(bunBin, ["--version"]);
-  if (bunCheck.status !== 0) fail("bun not found — run `npm run bun:release` or install bun (curl -fsSL https://bun.sh/install | bash)");
-  log(`packer: bun ${bunCheck.stdout.trim()}`);
-} else {
-  log("packer: npm (fallback)");
-}
-
-if (opts.skipBuild) {
-  if (!existsSync(join(ROOT, "dist", "server.js"))) {
-    fail("dist/ not staged — run `bun run build:release` first, or drop --skip-build");
+  let opts;
+  try {
+    opts = parseArgs(process.argv.slice(2));
+  } catch (err) {
+    if (err instanceof UsageError) fail(err.message);
+    throw err;
   }
-  log("reusing existing dist/ (--skip-build)");
-} else {
-  const runner = isBun ? bunBin : npmBin;
-  log(`running ${opts.pm} run build:release (Node runs the actual build)`);
-  const b = run(runner, ["run", "build:release"], { stdio: "inherit" });
-  if (b.status !== 0) fail(`build:release failed (exit ${b.status})`);
+
+  const version = readVersion();
+  const tarball = join(opts.destination, `omniroute-${version}.tgz`);
+  const isBun = opts.pm === "bun";
+
+  if (isBun) {
+    const bunCheck = run(bunBin, ["--version"]);
+    if (bunCheck.status !== 0) {
+      fail(
+        "bun not found — run `npm run bun:release` or install bun (curl -fsSL https://bun.sh/install | bash)"
+      );
+    }
+    log(`packer: bun ${bunCheck.stdout.trim()}`);
+  } else {
+    log("packer: npm (fallback)");
+  }
+
+  if (opts.skipBuild) {
+    if (!existsSync(join(ROOT, "dist", "server.js"))) {
+      fail("dist/ not staged — run `bun run build:release` first, or drop --skip-build");
+    }
+    log("reusing existing dist/ (--skip-build)");
+  } else {
+    const runner = isBun ? bunBin : npmBin;
+    log(`running ${opts.pm} run build:release (Node runs the actual build)`);
+    const b = run(runner, ["run", "build:release"], { stdio: "inherit" });
+    if (b.status !== 0) fail(`build:release failed (exit ${b.status})`);
+  }
+
+  if (!existsSync(opts.destination)) mkdirSync(opts.destination, { recursive: true });
+  if (existsSync(tarball)) {
+    log(`removing stale ${tarball}`);
+    rmSync(tarball, { force: true });
+  }
+
+  const packArgs =
+    opts.pm === "npm"
+      ? ["pack", "--ignore-scripts", "--pack-destination", opts.destination, "--json"]
+      : ["pm", "pack", "--destination", opts.destination, "--ignore-scripts", "--quiet"];
+  const p = run(isBun ? bunBin : npmBin, packArgs, { stdio: "inherit" });
+  if (p.status !== 0) fail(`${opts.pm} pack failed (exit ${p.status})`);
+
+  if (!existsSync(tarball)) fail(`${opts.pm} pack completed but ${tarball} was not created`);
+
+  let distFiles;
+  try {
+    distFiles = verifyTarball(tarball);
+  } catch (err) {
+    if (err instanceof UsageError) fail(err.message);
+    throw err;
+  }
+  log(`✅ packed ${tarball} (${distFiles} tracked dist/ entries verified)`);
+  log(`install (bun):   bun add -g ${tarball}`);
+  log(`install (npm):   npm install -g ${tarball}`);
+  log(`uninstall (bun): bun remove -g omniroute`);
+  log(`run:             omniroute serve`);
 }
 
-if (!existsSync(opts.destination)) mkdirSync(opts.destination, { recursive: true });
-if (existsSync(tarball)) {
-  log(`removing stale ${tarball}`);
-  rmSync(tarball, { force: true });
+// direct-run guard (importable for tests)
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main();
 }
-
-const packArgs =
-  opts.pm === "npm"
-    ? ["pack", "--ignore-scripts", "--pack-destination", opts.destination, "--json"]
-    : ["pm", "pack", "--destination", opts.destination, "--ignore-scripts", "--quiet"];
-const p = run(isBun ? bunBin : npmBin, packArgs, { stdio: "inherit" });
-if (p.status !== 0) fail(`${opts.pm} pack failed (exit ${p.status})`);
-
-if (!existsSync(tarball)) fail(`${opts.pm} pack completed but ${tarball} was not created`);
-
-const distFiles = verifyTarball(tarball);
-log(`✅ packed ${tarball} (${distFiles} tracked dist/ entries verified)`);
-log(`install (bun):   bun add -g ${tarball}`);
-log(`install (npm):   npm install -g ${tarball}`);
-log(`uninstall (bun): bun remove -g omniroute`);
-log(`run:             omniroute serve`);
