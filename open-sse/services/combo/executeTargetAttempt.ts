@@ -87,6 +87,8 @@ import { markAccountExhaustedFromCredits } from "../../../src/domain/quotaCache.
 import { classifyComboOutcome, redactConnectionLabel } from "./comboErrorAggregation.ts";
 import { readConnectionForCooldownGate } from "./executeTargetGates.ts";
 import {
+  handlePreContentStreamRetry,
+  qualityValidationFailure,
   remainderIsHomogeneous,
   shouldAbortOnInputBoundFailure,
   shouldSurfaceBodySpecific400,
@@ -97,6 +99,8 @@ import type { ComboDiagnostics } from "../../utils/error.ts";
 import type { ComboErrorBody, ComboRetryAfter, ResolvedComboTarget } from "./types.ts";
 import type { ResponseValidationConfig } from "./responseValidation.ts";
 import { resolveComboDailyReset } from "./comboDailyResetClock.ts";
+import { protectedPriorityStopStatus } from "./protectedPriorityStopStatus.ts";
+import type { ProtectedPriorityStopCause } from "./protectedPriorityStopStatus.ts";
 
 export async function executeTargetAttempt(opts: {
   index: number;
@@ -120,11 +124,11 @@ export async function executeTargetAttempt(opts: {
   const fallbackDelayMs = resolveDelayMs(deps.config.fallbackDelayMs, 0);
   const universalHandoffConfig = deps.universalHandoffConfig ?? DEFAULT_UNIVERSAL_HANDOFF_CONFIG;
 
-  const stopProtectedPriorityTarget = (message: string) => {
+  const stopProtectedPriorityTarget = (message: string, cause?: ProtectedPriorityStopCause) => {
     state.observeFailure(false, target.executionKey);
     deps.clearStaleLKGP(deps.combo.name, target.executionKey, deps.combo.id, deps.log, "COMBO");
     return protectedPriorityTarget
-      ? { ok: false as const, response: errorResponse(503, message) }
+      ? { ok: false as const, response: errorResponse(protectedPriorityStopStatus(cause), message) }
       : null;
   };
 
@@ -200,7 +204,10 @@ export async function executeTargetAttempt(opts: {
             decision: "skipped_before_dispatch",
             reason: "predictive_ttft",
           });
-          return stopProtectedPriorityTarget(`Predictive latency check rejected ${modelStr}`);
+          return stopProtectedPriorityTarget(
+            `Predictive latency check rejected ${modelStr}`,
+            "predictive_ttft"
+          );
         }
       }
     }
@@ -292,14 +299,13 @@ export async function executeTargetAttempt(opts: {
       }
     }
 
-    // Universal handoff: inject existing handoff if model changed. i === 0
-    // only: a fallback target (i > 0) serves the SAME client request the
-    // failed primary target would have served, with the original messages
-    // already intact -- there's nothing to hand off, since the client never
-    // saw the earlier target fail. Injecting a handoff note there replaces
-    // real context with a context-free note, which weaker fallback models
-    // have been observed treating as license to fabricate content instead
-    // of just answering the actual request (#12227 follow-up).
+    // Universal handoff: inject on model change only when i === 0. A fallback
+    // target (i > 0) serves the SAME client request the failed primary target
+    // would have served, with the original messages already intact -- there is
+    // nothing to hand off, since the client never saw the earlier target fail.
+    // Injecting a handoff note there replaces real context with a context-free
+    // note, which weaker fallback models have been observed treating as license
+    // to fabricate content instead of answering the request (#12227 follow-up).
     if (
       i === 0 &&
       universalHandoffConfig.enabled &&
@@ -315,7 +321,8 @@ export async function executeTargetAttempt(opts: {
           modelStr,
           `Model routing: ${lastModel} → ${modelStr}`,
           existingHandoff,
-          universalHandoffConfig.relayMode
+          universalHandoffConfig.relayMode,
+          deps.sourceFormat
         );
       }
     }
@@ -449,12 +456,8 @@ export async function executeTargetAttempt(opts: {
           latencyMs: Date.now() - deps.startTime,
         });
         state.observeFailure(false, target.executionKey);
-        return protectedPriorityTarget
-          ? {
-              ok: false,
-              response: errorResponse(502, "Upstream response failed quality validation"),
-            }
-          : null;
+        if (handlePreContentStreamRetry(quality, retry, deps, modelStr)) continue;
+        return protectedPriorityTarget ? qualityValidationFailure() : null;
       }
 
       if (Boolean(deps.clientManagedResponsesContext) && effectiveConnectionId) {
