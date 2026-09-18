@@ -562,6 +562,9 @@ export function parseDeepSeekToolCalls(
     return { content: text ?? "", toolCalls: null };
   }
 
+  const dsml = parseFullWidthDsmlCalls(text, idSeed, requestedTools);
+  if (dsml.recognized) return dsml;
+
   const native = parseNativeDeepSeekCalls(text, idSeed, requestedTools);
   if (native.recognized) return native;
 
@@ -638,4 +641,73 @@ export function parseDeepSeekToolCalls(
   ];
 
   return { content: stripRanges(text, ranges), toolCalls };
+}
+
+/**
+ * DeepSeek Web sometimes emits its internal full-width DSML envelope instead of the
+ * requested `<tool>{json}</tool>` contract. Convert every invocation in the envelope to
+ * an OpenAI tool call. This is deliberately separate from the generic tag parser because
+ * the DSML delimiters contain full-width Unicode characters and may contain several calls
+ * in one response.
+ */
+function parseFullWidthDsmlCalls(
+  text: string,
+  idSeed: string,
+  requestedTools?: unknown
+): { content: string; toolCalls: OpenAIToolCall[] | null; recognized: boolean } {
+  const marker = /<(?:(?:｜｜DSML｜｜)|(?:\|DSML\|))/;
+  if (!marker.test(text)) return { content: text, toolCalls: null, recognized: false };
+
+  const requested = getRequestedToolNames(requestedTools);
+  const calls: OpenAIToolCall[] = [];
+  const ranges: Array<{ start: number; end: number }> = [];
+  const invokeRe =
+    /<(?<dsml>｜｜DSML｜｜|\|DSML\|)\s*invoke\s+name=["']([^"']+)["']\s*>([\s\S]*?)<\/\k<dsml>\s*invoke\s*>/g;
+  let match: RegExpExecArray | null;
+  while ((match = invokeRe.exec(text)) !== null) {
+    const resolvedName = resolveRequestedToolName(match[2], requested);
+    if (requested.length > 0 && !resolvedName) continue;
+    const name = resolvedName ?? match[2];
+
+    const args: Record<string, unknown> = {};
+    const body = match[3];
+    const paramRe =
+      /<(?:｜｜DSML｜｜|\|DSML\|)\s*parameter\s+name=["']([^"']+)["'][^>]*>([\s\S]*?)(?:<\/?(?:｜｜DSML｜｜|\|DSML\|)\s*parameter\s*>|(?=<(?:｜｜DSML｜｜|\|DSML\|)\s*parameter\s+name=|<\/(?:｜｜DSML｜｜|\|DSML\|)\s*invoke\s*>))/g;
+    let param: RegExpExecArray | null;
+    while ((param = paramRe.exec(body)) !== null) {
+      const raw = param[2].trim();
+      try {
+        args[param[1]] = JSON.parse(raw);
+      } catch {
+        args[param[1]] = raw;
+      }
+    }
+
+    if (Object.keys(args).length === 0) {
+      try {
+        const parsed = JSON.parse(body.trim() || "{}");
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          Object.assign(args, parsed);
+        }
+      } catch {
+        // Invalid DSML argument text remains a normal tool call with empty arguments.
+      }
+    }
+
+    calls.push({
+      id: `${idSeed}_${calls.length}`,
+      type: "function",
+      function: { name, arguments: JSON.stringify(args) },
+    });
+    ranges.push({ start: match.index, end: invokeRe.lastIndex });
+  }
+
+  if (calls.length === 0) return { content: text, toolCalls: null, recognized: true };
+
+  const callsEnvelope = /<\/?(?:｜｜DSML｜｜|\|DSML\|)\s*calls\s*>/g;
+  let envelope: RegExpExecArray | null;
+  while ((envelope = callsEnvelope.exec(text)) !== null) {
+    ranges.push({ start: envelope.index, end: callsEnvelope.lastIndex });
+  }
+  return { content: stripRanges(text, ranges), toolCalls: calls, recognized: true };
 }
