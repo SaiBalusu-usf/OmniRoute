@@ -412,9 +412,27 @@ test("chatCore provider-failure writes use the projected persistent message", ()
     /const persistentMessage = sanitizeErrorMessage\(message\) \|\| "Provider request failed"/
   );
   assert.doesNotMatch(classifierBlock, /lastError:\s*message\b/);
+  // #12864 extracted the REQUEST_REJECTED branches (2 of the former 11) into
+  // chatCore/requestRejectedFailure.ts. Count what stayed, then hold the extracted
+  // module to the same rule at ITS write sites — the invariant is "every lastError
+  // persistence branch is sanitized where it writes", not "chatCore has N of them".
   assert.ok(
-    (classifierBlock.match(/lastError:\s*persistentMessage\b/g) || []).length >= 11,
+    (classifierBlock.match(/lastError:\s*persistentMessage\b/g) || []).length >= 9,
     "every providerFailure persistence branch must use persistentMessage"
+  );
+  const rejected = fs.readFileSync(
+    path.join(REPO_ROOT, "open-sse/handlers/chatCore/requestRejectedFailure.ts"),
+    "utf8"
+  );
+  assert.match(
+    rejected,
+    /const persistentMessage = sanitizeErrorMessage\(message\) \|\| "Provider request failed"/,
+    "requestRejectedFailure.ts must sanitize at the write, not trust its caller"
+  );
+  assert.doesNotMatch(rejected, /lastError:\s*(`\$\{)?message\b/);
+  assert.ok(
+    (rejected.match(/lastError:\s*(`\$\{)?persistentMessage\b/g) || []).length >= 3,
+    "every lastError write in requestRejectedFailure.ts must use persistentMessage"
   );
 });
 
