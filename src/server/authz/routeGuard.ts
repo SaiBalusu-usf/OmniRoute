@@ -79,6 +79,7 @@ export const LOCAL_ONLY_API_PREFIXES: ReadonlyArray<string> = [
   "/api/middleware/", // SECURITY_AUDIT M8: middleware hooks compile+run arbitrary JS via new vm.Script (src/lib/middleware/registry.ts) on the request hot path — same code-exec class as /api/plugins/, so loopback-gate it for parity (Hard Rules #15 + #17)
   "/api/system/version", // auto-update: spawns git checkout + npm install — RCE-via-tunnel surface (Hard Rules #15 + #17, found by 6A.8 route-guard gate)
   "/api/db-backups/exportAll", // spawns tar for export archive (Hard Rules #15 + #17, found by 6A.8 route-guard gate)
+  "/api/db/health", // runManagedDbHealthCheck() forks native diagnostics into a child process via healthCheckRunner.ts (Hard Rules #15 + #17, #13717)
   "/api/local/", // T-12: 1-click local service launchers (Redis today; spawns podman/docker) — loopback-enforced by isLocalRequestAllowed() in src/lib/security/localEndpoints.ts (Hard Rules #15 + #17)
   "/api/headroom/start", // Headroom token-saver proxy lifecycle: spawns headroom-ai python CLI (Hard Rules #15 + #17)
   "/api/headroom/stop", // Headroom token-saver proxy lifecycle: sends SIGTERM/SIGKILL to managed PID (Hard Rules #15 + #17)
@@ -177,6 +178,17 @@ export const ALWAYS_PROTECTED_API_PATHS: ReadonlyArray<string> = [
   // as the {claude,codex}-auth/apply-local pattern below; a plain path because
   // it carries no dynamic segment.
   "/api/providers/agy-auth/apply-local",
+  // Obsidian integration. POST /webdav points the WebDAV file service — served by
+  // the custom Node layer BEFORE Next.js, outside this pipeline — at a
+  // caller-chosen root and echoes freshly minted, reusable Basic credentials;
+  // DELETE /webdav rotates/clears them; the parent POST stores the Obsidian REST
+  // API token. GHSA-62vw only masked the GET password reveal, leaving credential
+  // *issuance* on the fail-open tier: with requireLogin flipped off during the
+  // bootstrap window, an anonymous caller stood up a file server over DATA_DIR
+  // and read JWT_SECRET out of server.env (GHSA-7pq4-8pvv-rx7r). Prefix covers
+  // the /webdav child. ALWAYS_PROTECTED rather than LOCAL_ONLY so an operator
+  // driving the dashboard through a tunnel keeps the feature.
+  "/api/settings/obsidian",
 ];
 
 /**
