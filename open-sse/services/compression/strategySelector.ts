@@ -555,6 +555,10 @@ async function runCompressionAsync(
       notifyCompressionFailOpen(
         sanitizeErrorMessage(error instanceof Error ? error.message : error)
       );
+      // Worker failed (timeout, postMessage rejection, etc.) — a timeout means the
+      // compression was too heavy for the worker's budget, so falling through to run
+      // the SAME heavy compression synchronously on the main event loop would defeat
+      // the point of offloading it. Ship the body uncompressed instead.
       return { body, compressed: false, stats: null };
     }
   }
