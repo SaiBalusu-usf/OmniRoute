@@ -4,16 +4,14 @@
  * models/; this file re-exports their public APIs for backward compatibility.
  */
 
-import { isRetiredGitHubCopilotModelId } from "@omniroute/open-sse/config/providers/registry/github/retiredModels.ts";
-
 import { getDbInstance } from "./core";
 import { getProviderConnectionsCount, touchConnectionSyncedModelsAt } from "./providers";
-import { type JsonRecord, getKeyValue } from "./models/shared";
+import { type JsonRecord, asRecord, toNonEmptyString, getKeyValue } from "./models/shared";
 import {
-  normalizeSyncedAvailableModels,
-  type SyncedAvailableModel,
-  type SyncedAvailableModelInput,
-} from "./models/synced";
+  finishSyncedAvailableModelsWrite,
+  persistCanonicalSyncedAvailableModels,
+} from "./models/syncedAvailableModelPersistence";
+import { finishModelCatalogWriteWithBackup } from "./models/modelCatalogWriteSignals";
 import {
   deleteSyncedAvailableModelsForProvider,
   finishSyncedAvailableModelsWrite,
@@ -365,6 +363,104 @@ export async function removeCustomModel(providerId: string, modelId: string) {
 // Each connection stores its own model list. Reads union across all connections
 // for a provider. Deleting a connection removes only its models.
 
+export interface SyncedAvailableModel {
+  id: string;
+  name: string;
+  source: "imported";
+  apiFormat?: string;
+  targetFormat?: string;
+  upstreamProtocol?: string;
+  supportedEndpoints?: string[];
+  supportedThinkingEfforts?: string[];
+  defaultThinkingEffort?: string;
+  inputTokenLimit?: number;
+  outputTokenLimit?: number;
+  description?: string;
+  supportsThinking?: boolean;
+  alwaysThinking?: boolean;
+  supportsTools?: boolean;
+  supportsVideo?: boolean;
+  // #4264: image-input capability captured at sync time (e.g. OpenRouter
+  // `architecture.input_modalities`/`modality`) so the catalog can surface vision.
+  supportsVision?: boolean;
+}
+
+type SyncedAvailableModelInput = Omit<SyncedAvailableModel, "source"> & {
+  source?: string;
+};
+
+function normalizeSyncedAvailableModel(model: unknown): SyncedAvailableModel | null {
+  const record = asRecord(model);
+  const id =
+    toNonEmptyString(record.id) || toNonEmptyString(record.name) || toNonEmptyString(record.model);
+  if (!id) return null;
+
+  const name =
+    toNonEmptyString(record.name) ||
+    toNonEmptyString(record.displayName) ||
+    toNonEmptyString(record.model) ||
+    id;
+  const supportedEndpoints = Array.isArray(record.supportedEndpoints)
+    ? Array.from(
+        new Set(
+          record.supportedEndpoints
+            .map((endpoint) => toNonEmptyString(endpoint))
+            .filter((endpoint): endpoint is string => Boolean(endpoint))
+        )
+      ).sort()
+    : undefined;
+
+  return {
+    id,
+    name,
+    source: "imported",
+    ...(toNonEmptyString(record.apiFormat)
+      ? { apiFormat: toNonEmptyString(record.apiFormat)! }
+      : {}),
+    ...(toNonEmptyString(record.targetFormat)
+      ? { targetFormat: toNonEmptyString(record.targetFormat)! }
+      : {}),
+    ...(toNonEmptyString(record.upstreamProtocol)
+      ? { upstreamProtocol: toNonEmptyString(record.upstreamProtocol)! }
+      : {}),
+    ...(supportedEndpoints && supportedEndpoints.length > 0 ? { supportedEndpoints } : {}),
+    ...(Array.isArray(record.supportedThinkingEfforts)
+      ? {
+          supportedThinkingEfforts: record.supportedThinkingEfforts.filter(
+            (effort): effort is string => typeof effort === "string" && effort.length > 0
+          ),
+        }
+      : {}),
+    ...(toNonEmptyString(record.defaultThinkingEffort)
+      ? { defaultThinkingEffort: toNonEmptyString(record.defaultThinkingEffort)! }
+      : {}),
+    ...(typeof record.inputTokenLimit === "number"
+      ? { inputTokenLimit: record.inputTokenLimit }
+      : {}),
+    ...(typeof record.outputTokenLimit === "number"
+      ? { outputTokenLimit: record.outputTokenLimit }
+      : {}),
+    ...(typeof record.description === "string" ? { description: record.description } : {}),
+    ...(typeof record.supportsThinking === "boolean"
+      ? { supportsThinking: record.supportsThinking }
+      : {}),
+    ...(record.alwaysThinking === true ? { alwaysThinking: true } : {}),
+    ...(typeof record.supportsTools === "boolean" ? { supportsTools: record.supportsTools } : {}),
+    ...(typeof record.supportsVideo === "boolean" ? { supportsVideo: record.supportsVideo } : {}),
+    ...(record.supportsVision === true ? { supportsVision: true } : {}),
+  };
+}
+
+function normalizeSyncedAvailableModels(models: unknown): SyncedAvailableModel[] {
+  if (!Array.isArray(models)) return [];
+  const deduped = new Map<string, SyncedAvailableModel>();
+  for (const model of models) {
+    const normalized = normalizeSyncedAvailableModel(model);
+    if (normalized) deduped.set(normalized.id, normalized);
+  }
+  return Array.from(deduped.values());
+}
+
 /**
  * Get synced available models for a specific provider connection.
  */
@@ -381,7 +477,7 @@ export async function getSyncedAvailableModelsForConnection(
   if (!value) return [];
   try {
     const models = JSON.parse(value);
-    return normalizeSyncedAvailableModels(models, providerId);
+    return normalizeSyncedAvailableModels(models);
   } catch {
     return [];
   }
@@ -403,7 +499,7 @@ export async function getSyncedAvailableModels(
   for (const row of rows) {
     const { key, value } = getKeyValue(row);
     if (!key || value === null) continue;
-    const models = normalizeSyncedAvailableModels(JSON.parse(value), providerId);
+    const models = normalizeSyncedAvailableModels(JSON.parse(value));
     for (const m of models) {
       if (m.id) map.set(m.id, m);
     }
@@ -437,7 +533,7 @@ export async function getSyncedAvailableModelsByConnection(
     if (!key || value === null || !key.startsWith(prefix)) continue;
     try {
       const connectionId = key.slice(prefix.length);
-      result[connectionId] = normalizeSyncedAvailableModels(JSON.parse(value), providerId);
+      result[connectionId] = normalizeSyncedAvailableModels(JSON.parse(value));
     } catch {
       Object.defineProperty(result, SYNCED_AVAILABLE_MODELS_MALFORMED, {
         value: true,
@@ -465,7 +561,7 @@ export async function getAllSyncedAvailableModels(): Promise<
     if (!key || value === null) continue;
     const providerId = key.split(":")[0];
     if (!byProvider.has(providerId)) byProvider.set(providerId, new Map());
-    const models = normalizeSyncedAvailableModels(JSON.parse(value), providerId);
+    const models = normalizeSyncedAvailableModels(JSON.parse(value));
     const map = byProvider.get(providerId)!;
     for (const m of models) {
       if (m.id) map.set(m.id, m);
@@ -521,8 +617,7 @@ export async function getActiveProvidersWithSyncedModel(modelId: string): Promis
 
   return rows
     .map((row) => row.provider)
-    .filter((provider): provider is string => typeof provider === "string" && provider.length > 0)
-    .filter((provider) => !isRetiredGitHubCopilotModelId(provider, modelId));
+    .filter((provider): provider is string => typeof provider === "string" && provider.length > 0);
 }
 
 /**
@@ -535,7 +630,16 @@ export async function replaceSyncedAvailableModelsForConnection(
   models: SyncedAvailableModelInput[]
 ): Promise<SyncedAvailableModel[]> {
   const key = `${providerId}:${connectionId}`;
-  const normalizedModels = normalizeSyncedAvailableModels(models, providerId);
+  // #3199: drop ids the operator DELETED (trash) so a re-fetch does not re-import
+  // a model that was explicitly removed.
+  // #3782: key ONLY on the distinct `isDeleted` marker — NOT on `isHidden`.
+  // Eye/visibility-hidden models (`isHidden:true`, no `isDeleted`) must stay in
+  // the synced store so they remain listed-but-hidden across re-syncs instead of
+  // churning back on through the managed-alias path ("Auto Sync Enabling all
+  // Models"). See getModelIsDeleted for the legacy-row caveat.
+  const normalizedModels = normalizeSyncedAvailableModels(models, providerId).filter(
+    (m) => !getModelIsDeleted(providerId, m.id)
+  );
   persistCanonicalSyncedAvailableModels(key, normalizedModels, normalizeSyncedAvailableModels);
   // #12849: stamp the sync time on every successful sync — even a re-sync that
   // returns an unchanged list proves the catalog is still current, so staleness
@@ -575,7 +679,7 @@ export async function removeSyncedAvailableModel(
         continue;
       }
 
-      const models = normalizeSyncedAvailableModels(parsedModels, providerId);
+      const models = normalizeSyncedAvailableModels(parsedModels);
       const filtered = models.filter((m) => m.id !== modelId);
       if (filtered.length !== models.length) {
         removedAny = true;
@@ -930,12 +1034,14 @@ export function getModelIsHidden(
  */
 export function getHiddenModelsByProvider(modality: string = "chat"): Map<string, Set<string>> {
   const db = getDbInstance();
-  const visibilityByProvider = new Map<string, Map<string, boolean>>();
+  const result = new Map<string, Set<string>>();
+
+  // Query all rows from key_value for both namespaces
   const rows = db
     .prepare(
-      "SELECT namespace, key, value FROM key_value WHERE namespace IN ('modelCompatOverrides', 'customModels')"
+      "SELECT key, value FROM key_value WHERE namespace IN ('modelCompatOverrides', 'customModels')"
     )
-    .all() as Array<{ namespace: string; key: string; value: string | null }>;
+    .all() as Array<{ key: string; value: string | null }>;
 
   for (const namespace of ["modelCompatOverrides", "customModels"]) {
     for (const row of rows) {
@@ -967,10 +1073,10 @@ export function getHiddenModelsByProvider(modality: string = "chat"): Map<string
                   modality
                 )
               : Boolean(record.isHidden);
-          let visibility = visibilityByProvider.get(row.key);
+          let visibility = result.get(row.key);
           if (!visibility) {
             visibility = new Map<string, boolean>();
-            visibilityByProvider.set(row.key, visibility);
+            result.set(row.key, visibility);
           }
           visibility.set(modelId, isHidden);
         }
@@ -980,14 +1086,7 @@ export function getHiddenModelsByProvider(modality: string = "chat"): Map<string
     }
   }
 
-  return new Map(
-    [...visibilityByProvider].flatMap(([providerId, visibility]) => {
-      const hiddenModels = [...visibility].flatMap(([modelId, isHidden]) =>
-        isHidden ? [modelId] : []
-      );
-      return hiddenModels.length > 0 ? [[providerId, new Set(hiddenModels)] as const] : [];
-    })
-  );
+  return result;
 }
 
 /**
