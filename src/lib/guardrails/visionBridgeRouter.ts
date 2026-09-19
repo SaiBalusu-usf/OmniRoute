@@ -43,7 +43,7 @@ export interface VisionBridgeRouterConfig {
   selectionCacheTtlMs: number;
   /**
    * Cache TTL for a "no usable candidate" outcome (ms). `0` disables the
-   * negative cache and restores the pre-#14152 behaviour of rescanning the
+   * negative cache and restores the pre-#14161 behaviour of rescanning the
    * whole catalog on every call.
    */
   noCandidateCacheTtlMs: number;
