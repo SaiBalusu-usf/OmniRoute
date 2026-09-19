@@ -680,7 +680,7 @@ function computeAllowedRestrictionSync(
       .map((m) => {
         if (m.providerId) return m.providerId;
         if (typeof m.model !== "string" || !m.model.includes("/")) return "";
-        const [aliasOrProvider, ...rest] = m.model.split("/");
+        const [aliasOrProvider] = m.model.split("/");
         return resolveProviderAlias(aliasOrProvider) || "";
       })
       .filter((p): p is string => Boolean(p));
