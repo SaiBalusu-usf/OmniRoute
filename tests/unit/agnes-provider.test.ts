@@ -407,7 +407,7 @@ test("agnes Video 2.5-flash submits Bearer auth and polls /v1/videos/{id}", asyn
       JSON.stringify({
         id: "task_nEV6cJjyzWnix1g1O9QHjnHzTstegDGM",
         status: "completed",
-        url: "https://platform-outputs.agnes-ai.space/video-25.mp4",
+        metadata: { url: "https://platform-outputs.agnes-ai.space/video-25.mp4" },
       }),
       { status: 200, headers: { "content-type": "application/json" } }
     );
