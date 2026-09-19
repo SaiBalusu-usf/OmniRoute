@@ -844,14 +844,20 @@ export async function parseUpstreamError(response: Response, provider: string | 
       const { error: clinepassEnvError } = unwrapClinepassEnvelope(json, provider);
       const extractedMessage = clinepassEnvError
         ? clinepassEnvError.message
-        : json.error?.message ||
-          json.message ||
+        : (typeof json.error?.message === "string" ? json.error.message : null) ||
+          (typeof json.error?.data?.msg === "string" ? json.error.data.msg : null) ||
+          (typeof json.error?.data?.message === "string" ? json.error.data.message : null) ||
+          (typeof json.error?.msg === "string" ? json.error.msg : null) ||
+          (typeof json.message === "string" ? json.message : null) ||
+          (typeof json.msg === "string" ? json.msg : null) ||
+          (typeof json.data?.msg === "string" ? json.data.msg : null) ||
+          (typeof json.data?.message === "string" ? json.data.message : null) ||
           (typeof json.error === "string" ? json.error : null);
       message =
         typeof extractedMessage === "string"
           ? extractedMessage
           : `Upstream error: ${response.status}`;
-      errorCode = json.error?.code || json.code;
+      errorCode = json.error?.data?.code || json.error?.code || json.code;
       errorType = json.error?.type || json.type;
     } catch {
       message = text;

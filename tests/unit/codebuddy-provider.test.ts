@@ -236,3 +236,31 @@ test("codebuddy is in USAGE_FETCHER_PROVIDERS and OAUTH_TEST_CONFIG", async () =
   assert.equal(OAUTH_TEST_CONFIG["codebuddy"].checkExpiry, true);
   assert.equal(OAUTH_TEST_CONFIG["codebuddy"].refreshable, true);
 });
+
+test("parseUpstreamError unwraps nested Tencent CodeBuddy credits exhausted error", async () => {
+  const { parseUpstreamError } = await import("../../open-sse/utils/error.ts");
+  const { isCreditsExhausted } = await import("../../open-sse/services/accountFallback.ts");
+
+  const tencentErrorBody = {
+    error: {
+      data: {
+        code: 14018,
+        msg: "Credits exhausted. Please visit the link below to purchase add-on packs and get more credits: https://www.codebuddy.ai/profile/usage ",
+        requestId: "71980743-db09-4de9-a798-fe731c204d6d",
+      },
+    },
+  };
+
+  const resp = new Response(JSON.stringify(tencentErrorBody), {
+    status: 429,
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const parsed = await parseUpstreamError(resp, "codebuddy");
+  assert.equal(
+    parsed.message,
+    "Credits exhausted. Please visit the link below to purchase add-on packs and get more credits: https://www.codebuddy.ai/profile/usage "
+  );
+  assert.equal(parsed.errorCode, 14018);
+  assert.equal(isCreditsExhausted(parsed.message), true);
+});

@@ -829,8 +829,17 @@ export async function testOAuthConnection(
     if (bodyText) {
       try {
         const parsed = JSON.parse(bodyText);
-        if (typeof parsed?.error?.message === "string" && parsed.error.message.trim()) {
-          upstreamDetail = `: ${sanitizeUpstreamBodyText(parsed.error.message)}`;
+        const candidateMsg =
+          (typeof parsed?.error?.message === "string" ? parsed.error.message : null) ||
+          (typeof parsed?.error?.data?.msg === "string" ? parsed.error.data.msg : null) ||
+          (typeof parsed?.error?.data?.message === "string" ? parsed.error.data.message : null) ||
+          (typeof parsed?.error?.msg === "string" ? parsed.error.msg : null) ||
+          (typeof parsed?.message === "string" ? parsed.message : null) ||
+          (typeof parsed?.msg === "string" ? parsed.msg : null) ||
+          (typeof parsed?.data?.msg === "string" ? parsed.data.msg : null) ||
+          (typeof parsed?.data?.message === "string" ? parsed.data.message : null);
+        if (typeof candidateMsg === "string" && candidateMsg.trim()) {
+          upstreamDetail = `: ${sanitizeUpstreamBodyText(candidateMsg)}`;
         }
       } catch {}
     }
