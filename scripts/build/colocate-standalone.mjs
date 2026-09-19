@@ -198,8 +198,19 @@ export function colocateWorkerDeps({ workerBundles, srcNodeModules, dstNodeModul
   let copied = 0;
   for (const pkg of closure) {
     const src = join(srcNodeModules, pkg);
+    if (!existsSync(src)) continue;
+    // Skip only a package that actually RESOLVES from the target tree — the same
+    // predicate the detection pass used. A plain `existsSync(dst)` is NOT enough:
+    // the trace can materialize a package PARTIALLY (the directory lands, the file
+    // its `main` points at does not), and skipping that leaves the worker dying
+    // with "Cannot find package <pkg>/index.js" — precisely the failure this
+    // function exists to prevent. Measured in the 2026-09-19 build: `undici`'s
+    // directory existed but `index.js` did not, so it was detected as missing and
+    // then skipped at copy time, and the worker still failed to load.
+    // NO-CLOBBER is preserved for a package that genuinely resolves: cpSync merges
+    // into the existing tree rather than replacing it.
+    if (isPackageUsable(dstNodeModules, pkg)) continue;
     const dst = join(dstNodeModules, pkg);
-    if (!existsSync(src) || existsSync(dst)) continue;
     mkdirSync(dirname(dst), { recursive: true });
     cpSync(src, dst, { recursive: true });
     copied++;

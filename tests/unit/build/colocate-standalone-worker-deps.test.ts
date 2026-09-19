@@ -133,6 +133,57 @@ test("colocateWorkerDeps copies missing packages AND their dependency closure", 
   }
 });
 
+// Regression: a PARTIALLY materialized package. Next's tracer can leave the directory
+// in place while the file its `main` points at is absent — measured in the 2026-09-19
+// build, where `undici/index.js` was missing from the standalone. A plain `existsSync`
+// check detects it as missing and then skips it at copy time, so the worker still dies.
+test("colocateWorkerDeps repairs a partially materialized package instead of skipping it", () => {
+  const root = mkdtempSync(join(tmpdir(), "worker-deps-partial-"));
+  try {
+    const srcNm = join(root, "src-node_modules");
+    const dstNm = join(root, "standalone", "node_modules");
+    mkdirSync(srcNm, { recursive: true });
+    mkdirSync(dstNm, { recursive: true });
+
+    makePackage(srcNm, "half-baked", 'module.exports = "REPAIRED";\n');
+
+    // The target has the directory and a manifest, but not the entry file the manifest
+    // names — the tracer's partial-materialization shape.
+    const partial = join(dstNm, "half-baked");
+    mkdirSync(partial, { recursive: true });
+    writeFileSync(
+      join(partial, "package.json"),
+      JSON.stringify({ name: "half-baked", version: "1.0.0", main: "index.js" })
+    );
+
+    const bundle = join(root, "worker.js");
+    writeFileSync(bundle, 'import v from "half-baked";\nprocess.stdout.write(String(v));\n');
+
+    const missing = colocateWorkerDeps({
+      workerBundles: [bundle],
+      srcNodeModules: srcNm,
+      dstNodeModules: dstNm,
+    });
+
+    assert.deepEqual(
+      missing,
+      ["half-baked"],
+      "a package whose entry file cannot be resolved counts as missing"
+    );
+    assert.ok(existsSync(join(dstNm, "half-baked", "index.js")), "the entry file is restored");
+    assert.equal(
+      execFileSync(process.execPath, ["-e", 'process.stdout.write(require("half-baked"))'], {
+        cwd: join(root, "standalone"),
+        encoding: "utf8",
+      }),
+      "REPAIRED",
+      "the repaired package resolves at runtime"
+    );
+  } finally {
+    rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  }
+});
+
 // End-to-end: the point of the fix is that the worker can actually LOAD. Before it,
 // `node compressionWorker.js` died with ERR_MODULE_NOT_FOUND on its first bare import.
 test("a co-located worker bundle loads its external dependency at runtime", () => {
