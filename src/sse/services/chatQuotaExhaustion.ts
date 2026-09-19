@@ -24,7 +24,8 @@ export async function maybeMarkChatAccountExhaustedFrom429(input: {
       input.provider,
       input.model,
       input.passthroughModels,
-      input.failureKind
+      input.failureKind,
+      input.errorText
     ) ||
     getCachedClaudeQuotaScopeDecision({
       connectionId: input.connectionId,

@@ -503,7 +503,15 @@ export async function handleRoundRobinCombo({
             "COMBO-RR",
             `Skipping ${modelStr} — no credentials available or model excluded`
           );
-          clearStaleLKGP(combo.name, target.executionKey, combo.id, log, "COMBO-RR");
+          clearStaleLKGP(
+            combo.name,
+            target.executionKey,
+            combo.id,
+            log,
+            "COMBO-RR",
+            undefined,
+            target
+          );
           if (offset > 0) fallbackCount++;
           continue;
         }
@@ -519,7 +527,15 @@ export async function handleRoundRobinCombo({
         )
       ) {
         log.info("COMBO-RR", `Skipping ${modelStr} — provider ${provider} in global cooldown`);
-        clearStaleLKGP(combo.name, target.executionKey, combo.id, log, "COMBO-RR");
+        clearStaleLKGP(
+          combo.name,
+          target.executionKey,
+          combo.id,
+          log,
+          "COMBO-RR",
+          undefined,
+          target
+        );
         if (offset > 0) fallbackCount++;
         continue;
       }
@@ -532,7 +548,15 @@ export async function handleRoundRobinCombo({
       );
       if (exhaustedSkip) {
         log.info("COMBO-RR", exhaustedSkip);
-        clearStaleLKGP(combo.name, target.executionKey, combo.id, log, "COMBO-RR");
+        clearStaleLKGP(
+          combo.name,
+          target.executionKey,
+          combo.id,
+          log,
+          "COMBO-RR",
+          undefined,
+          target
+        );
         if (offset > 0) fallbackCount++;
         continue;
       }
@@ -976,7 +1000,15 @@ export async function handleRoundRobinCombo({
             exhaustedConnections.has(`${provider}:${targetWithConnection.connectionId}`) ||
             (provider && exhaustedProviders.has(provider))
           ) {
-            clearStaleLKGP(combo.name, target.executionKey, combo.id, log, "COMBO-RR");
+            clearStaleLKGP(
+              combo.name,
+              target.executionKey,
+              combo.id,
+              log,
+              "COMBO-RR",
+              undefined,
+              target
+            );
           }
 
           // Transient errors → mark in semaphore so round-robin stops stampeding this target.
@@ -1038,7 +1070,15 @@ export async function handleRoundRobinCombo({
           // LKGP (#919) mirror of handleComboChat's failure-path clear above — see
           // that comment for why this must happen (nothing else clears a pin left
           // by a request-scoped failure class like a stream-readiness timeout).
-          clearStaleLKGP(combo.name, target.executionKey, combo.id, log, "COMBO-RR");
+          clearStaleLKGP(
+            combo.name,
+            target.executionKey,
+            combo.id,
+            log,
+            "COMBO-RR",
+            undefined,
+            target
+          );
           recordedAttempts++;
           lastError = errorText || String(result.status);
           lastStatus = result.status;
