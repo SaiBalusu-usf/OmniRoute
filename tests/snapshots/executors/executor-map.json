@@ -105,11 +105,6 @@
       "configSource": "cheaperinference",
       "provider": "cheaperinference"
     },
-    "chipotle": {
-      "className": "ChipotleExecutor",
-      "configSource": "<custom-config>",
-      "provider": "chipotle"
-    },
     "cinf": {
       "className": "CheaperInferenceExecutor",
       "configSource": "cheaperinference",
@@ -500,11 +495,6 @@
       "configSource": "opencode-zen",
       "provider": "opencode-zen"
     },
-    "pepper": {
-      "className": "ChipotleExecutor",
-      "configSource": "<custom-config>",
-      "provider": "chipotle"
-    },
     "perplexity-web": {
       "className": "PerplexityWebExecutor",
       "configSource": "<custom-config>",
@@ -686,6 +676,6 @@
       "provider": "zai-web"
     }
   },
-  "keyCount": 137,
+  "keyCount": 133,
   "sharedInstances": []
 }
