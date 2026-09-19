@@ -22,7 +22,7 @@ import type { FreeModelBudget } from "./freeModelCatalog.ts";
  * rewrites file timestamps on every deploy, which would report a months-old
  * catalog as "updated today". Bump this whenever the entries below change.
  */
-export const FREE_CATALOG_CURATED_AT = "2026-09-12";
+export const FREE_CATALOG_CURATED_AT = "2026-09-19";
 
 export const FREE_MODEL_BUDGETS: FreeModelBudget[] = [
   { provider: "agentrouter", modelId: "claude-opus-4-8", displayName: "Claude Opus 4.8", monthlyTokens: 0, creditTokens: 200000000, freeType: "one-time-initial", poolKey: "agentrouter", tos: "caution" },
@@ -128,6 +128,14 @@ export const FREE_MODEL_BUDGETS: FreeModelBudget[] = [
   { provider: "cloudflare-ai", modelId: "@cf/zai-org/glm-4.7-flash", displayName: "GLM 4.7 Flash (🆓)", monthlyTokens: 0, creditTokens: 0, freeType: "recurring-daily", poolKey: "cloudflare-ai", tos: "caution" },
   { provider: "cloudflare-ai", modelId: "@cf/moonshotai/kimi-k2.6", displayName: "Kimi K2.6 (🆓)", monthlyTokens: 0, creditTokens: 0, freeType: "recurring-daily", poolKey: "cloudflare-ai", tos: "caution" },
   { provider: "cloudflare-ai", modelId: "@cf/google/gemma-4-26b-a4b-it", displayName: "Gemma 4 26B (🆓)", monthlyTokens: 0, creditTokens: 0, freeType: "recurring-daily", poolKey: "cloudflare-ai", tos: "caution" },
+  // WorkBuddy AI / CodeBuddy promo free tier (Tencent modelPromotions free daily trial):
+  // evidence: console-verified 2026-09-19 por safeer (factor 0 / 0x unlimited daily trial)
+  { provider: "cbai", modelId: "deepseek-v4.1-flash", displayName: "DeepSeek V4.1 Flash", monthlyTokens: 0, creditTokens: 0, freeType: "recurring-uncapped", poolKey: "codebuddy-promo", tos: "ok" },
+  { provider: "cbai", modelId: "deepseek-v4.1-flash-sg", displayName: "DeepSeek V4.1 Flash (SG)", monthlyTokens: 0, creditTokens: 0, freeType: "recurring-uncapped", poolKey: "codebuddy-promo", tos: "ok" },
+  { provider: "cbai", modelId: "hy3", displayName: "Hy3", monthlyTokens: 0, creditTokens: 0, freeType: "recurring-uncapped", poolKey: "codebuddy-promo", tos: "ok" },
+  { provider: "codebuddy", modelId: "deepseek-v4.1-flash", displayName: "DeepSeek V4.1 Flash", monthlyTokens: 0, creditTokens: 0, freeType: "recurring-uncapped", poolKey: "codebuddy-promo", tos: "ok" },
+  { provider: "codebuddy", modelId: "deepseek-v4.1-flash-sg", displayName: "DeepSeek V4.1 Flash (SG)", monthlyTokens: 0, creditTokens: 0, freeType: "recurring-uncapped", poolKey: "codebuddy-promo", tos: "ok" },
+  { provider: "codebuddy", modelId: "hy3", displayName: "Hy3", monthlyTokens: 0, creditTokens: 0, freeType: "recurring-uncapped", poolKey: "codebuddy-promo", tos: "ok" },
   { provider: "cohere", modelId: "command-a-reasoning-08-2025", displayName: "Command A Reasoning (Aug 2025)", monthlyTokens: 800000, creditTokens: 0, freeType: "recurring-monthly", poolKey: "cohere", tos: "caution" },
   { provider: "cohere", modelId: "command-a-vision-07-2025", displayName: "Command A Vision (Jul 2025)", monthlyTokens: 800000, creditTokens: 0, freeType: "recurring-monthly", poolKey: "cohere", tos: "caution" },
   { provider: "cohere", modelId: "command-a-03-2025", displayName: "Command A (Mar 2025)", monthlyTokens: 800000, creditTokens: 0, freeType: "recurring-monthly", poolKey: "cohere", tos: "caution" },

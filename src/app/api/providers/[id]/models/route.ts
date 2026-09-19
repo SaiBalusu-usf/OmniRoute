@@ -39,6 +39,7 @@ import {
   fetchGheCopilotModels,
 } from "@omniroute/open-sse/services/githubCopilotModels.ts";
 import { fetchKiroAvailableModels } from "@omniroute/open-sse/services/kiroModels.ts";
+import { fetchCodeBuddyAvailableModels } from "@omniroute/open-sse/services/codebuddyModels.ts";
 import {
   buildGlmCodingHeaders,
   buildGlmModelsUrl,
@@ -1797,6 +1798,49 @@ export async function GET(
         models: discovery.models,
         source: "local_catalog",
         warning: "Kiro models API unavailable — using local catalog",
+      });
+    }
+
+    if (
+      provider === "codebuddy" ||
+      provider === "cbai" ||
+      provider === "codebuddy-cn" ||
+      provider === "cbcn"
+    ) {
+      const isCn = provider === "codebuddy-cn" || provider === "cbcn";
+      const cachedResponse = maybeReturnCachedDiscovery();
+      if (cachedResponse) return cachedResponse;
+
+      const autoFetchDisabledResponse = maybeReturnAutoFetchDisabled();
+      if (autoFetchDisabledResponse) return autoFetchDisabledResponse;
+
+      const endpointUrl = (connection.providerSpecificData as Record<string, unknown> | null)
+        ?.endpointUrl as string | undefined;
+
+      const discovery = await fetchCodeBuddyAvailableModels({
+        accessToken,
+        endpointUrl,
+        fallbackModels: toLocalCatalogModels(),
+        isCn,
+      });
+
+      if (discovery.models.length > 0) {
+        return buildApiDiscoveryResponse(discovery.models, undefined, {
+          discoverySource: discovery.source,
+        });
+      }
+
+      const fallback = buildDiscoveryFallbackResponse({
+        cacheWarning: "CodeBuddy models unavailable — using cached catalog",
+        localWarning: "CodeBuddy models unavailable — using local catalog",
+      });
+      if (fallback) return fallback;
+      return buildResponse({
+        provider,
+        connectionId,
+        models: toLocalCatalogModels(),
+        source: "local_catalog",
+        warning: "CodeBuddy models unavailable — using local catalog",
       });
     }
 

@@ -172,7 +172,7 @@ export class CodeBuddyCnExecutor extends DefaultExecutor {
 
     // Handle messages array with role: "system"
     if (Array.isArray(out.messages)) {
-      out.messages = (out.messages as Array<Record<string, unknown>>).map((message) => {
+      const msgs = (out.messages as Array<Record<string, unknown>>).map((message) => {
         if (!message || message.role !== "system") return message;
         const text = flatten(message.content);
         if (!text) return message;
@@ -186,14 +186,12 @@ export class CodeBuddyCnExecutor extends DefaultExecutor {
 
       // CodeBuddy strictly requires the first message in messages to be a system prompt
       // (HTTP 400, code 11128: "first message is not system prompt").
-      if (
-        out.messages.length === 0 ||
-        (out.messages[0] as Record<string, unknown>)?.role !== "system"
-      ) {
+      if (msgs.length === 0 || (msgs[0] as Record<string, unknown>)?.role !== "system") {
         const sysContent =
           typeof out.system === "string" && out.system.trim() ? out.system : NEUTRAL_PROMPT;
-        out.messages.unshift({ role: "system", content: sysContent });
+        msgs.unshift({ role: "system", content: sysContent });
       }
+      out.messages = msgs;
     }
 
     // --- Strip oversized tool descriptions (>64KB) ---

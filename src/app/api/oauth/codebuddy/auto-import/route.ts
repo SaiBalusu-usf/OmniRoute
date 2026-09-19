@@ -32,7 +32,7 @@ export async function GET(request: Request) {
       connection = await createProviderConnection({
         provider: "codebuddy",
         authType: "oauth",
-        name: result.nickname ? `WorkBuddy (${result.nickname})` : "WorkBuddy AI",
+        name: result.nickname || "WorkBuddy AI",
         email: result.nickname || null,
         accessToken: result.accessToken,
         refreshToken: result.refreshToken,
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     const connection = await createProviderConnection({
       provider: "codebuddy",
       authType: "oauth",
-      name: result.nickname ? `WorkBuddy (${result.nickname})` : "WorkBuddy AI",
+      name: result.nickname || "WorkBuddy AI",
       email: result.nickname || null,
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,

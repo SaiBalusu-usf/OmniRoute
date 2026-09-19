@@ -29,6 +29,9 @@ export const KNOWN_MODEL_PRICING: Record<string, ModelPricing> = {
   "minimax-m2.1": { inputCostPer1M: 0.2, outputCostPer1M: 0.2, isFree: false },
   "grok-4-fast": { inputCostPer1M: 0.2, outputCostPer1M: 0.5, isFree: false },
   "kimi-k2-thinking": { inputCostPer1M: 0, outputCostPer1M: 0, isFree: true },
+  "deepseek-v4.1-flash": { inputCostPer1M: 0, outputCostPer1M: 0, isFree: true },
+  "deepseek-v4.1-flash-sg": { inputCostPer1M: 0, outputCostPer1M: 0, isFree: true },
+  hy3: { inputCostPer1M: 0, outputCostPer1M: 0, isFree: true },
   "qwen3-coder-plus": { inputCostPer1M: 0, outputCostPer1M: 0, isFree: true },
   "longcat-2.0": {
     inputCostPer1M: 0.75,
