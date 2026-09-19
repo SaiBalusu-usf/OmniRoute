@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { Worker } from "node:worker_threads";
 import type { CompressionResult } from "./types.ts";
 import type { StackedCompressionStep } from "./strategySelector.ts";
@@ -8,6 +9,8 @@ import type {
   CompressionWorkerMessage,
   CompressionWorkerOptions,
 } from "./compressionWorkerProtocol.ts";
+
+const MAX_QUEUE_DEPTH = 32;
 
 function positiveInteger(value: string | undefined, fallback: number): number {
   const parsed = Number(value);
@@ -138,6 +141,9 @@ export class CompressionWorkerPool {
     options?: CompressionWorkerOptions,
     onEngineStep?: (step: StackedCompressionStep) => void
   ): Promise<CompressionResult> {
+    if (this.queue.length >= MAX_QUEUE_DEPTH) {
+      return Promise.resolve(unchanged(body));
+    }
     return new Promise((resolve, reject) => {
       this.queue.push({
         id: this.nextId++,
@@ -157,8 +163,10 @@ export class CompressionWorkerPool {
     await Promise.all([...this.workers].map((slot) => this.remove(slot)));
   }
   private spawn(): PoolWorker {
+    const workerFile = resolve(resolveWorkerFile());
+    const workerUrl = pathToFileURL(workerFile);
     const slot: PoolWorker = {
-      worker: new Worker(resolveWorkerFile()),
+      worker: new Worker(workerUrl),
       job: null,
       timeout: null,
       idle: null,
@@ -202,7 +210,14 @@ export class CompressionWorkerPool {
         onEngineStep: _step,
         ...wireJob
       } = job;
-      slot.worker.postMessage(wireJob);
+      try {
+        slot.worker.postMessage(wireJob);
+      } catch (err) {
+        this.fail(
+          slot,
+          `compression worker postMessage failed: ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
     }
   }
   private handleMessage(slot: PoolWorker, message: CompressionWorkerMessage): void {
@@ -233,7 +248,12 @@ export class CompressionWorkerPool {
     if (slot.timeout) clearTimeout(slot.timeout);
     slot.timeout = null;
     slot.job = null;
-    job.resolve(result);
+    const res = job.resolve;
+    job.body = undefined as unknown as Record<string, unknown>;
+    job.originalBody = undefined as unknown as Record<string, unknown>;
+    job.options = undefined;
+    job.onEngineStep = undefined;
+    res(result);
     // Idle eviction MUST terminate. Dropping the slot from the set only releases our
     // reference - the thread, its MessagePort and its private heap outlive the pool
     // for the whole process lifetime, invisible to process.memoryUsage(). (#12812)
@@ -256,7 +276,14 @@ export class CompressionWorkerPool {
     if (slot.timeout) clearTimeout(slot.timeout);
     slot.timeout = null;
     slot.job = null;
-    if (job) job.reject(error);
+    if (job) {
+      const rej = job.reject;
+      job.body = undefined as unknown as Record<string, unknown>;
+      job.originalBody = undefined as unknown as Record<string, unknown>;
+      job.options = undefined;
+      job.onEngineStep = undefined;
+      rej(error);
+    }
     void this.remove(slot).finally(() => this.dispatch());
   }
   /** Drop a slot and release its OS thread. Removal always terminates: a pooled worker
