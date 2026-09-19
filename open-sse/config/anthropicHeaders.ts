@@ -69,6 +69,12 @@ export const FORWARDABLE_CLIENT_BETAS = Object.freeze([
   // upstream rejects `thinking.block_binding` / `thinking.display` with 400.
   "thinking-binding-controls-2026-08-01",
   "thinking-display-updates-2026-08-18",
+  // Claude Code auto mode pairs these with the `safeguards` body field so the
+  // server runs permission checks in the same request. Dropping them makes
+  // Claude Code fall back to its own billed classifier requests.
+  // https://code.claude.com/docs/en/auto-mode-classifier-billing
+  "afk-mode-2026-01-31",
+  "dangerous-tool-use-2026-09-03",
 ]);
 
 /**
