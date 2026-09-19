@@ -145,7 +145,7 @@ test("responses: the placeholder tool is flat and tool_choice stays absent", () 
   assert.equal("tool_choice" in body, false);
 });
 
-test("client-supplied tools are never replaced, and no tool_choice is imposed", () => {
+test("client-supplied tools are never replaced, required placeholders are appended, and no tool_choice is imposed", () => {
   const clientTools = [
     { type: "function", function: { name: "search", parameters: { type: "object" } } },
   ];
@@ -153,9 +153,24 @@ test("client-supplied tools are never replaced, and no tool_choice is imposed", 
     { ...CHAT_BODY(), tools: clientTools },
     "openai"
   ) as Record<string, unknown>;
-  assert.deepEqual(body.tools, clientTools);
+  const tools = body.tools as Array<{ type: string; function?: { name: string } }>;
+  assert.equal(tools.length, 2);
+  assert.equal(tools[0].function?.name, "search");
+  assert.equal(tools[1].function?.name, "_noop");
   assert.equal("tool_choice" in body, false);
   assert.equal(body.stream, true);
+});
+
+test("when client-supplied tools already include placeholder tools, nothing extra is added", () => {
+  const clientTools = [
+    { type: "function", function: { name: "search", parameters: { type: "object" } } },
+    { type: "function", function: { name: "_noop", parameters: { type: "object" } } },
+  ];
+  const body = applyFreeTierRequestContract(
+    { ...CHAT_BODY(), tools: clientTools },
+    "openai"
+  ) as Record<string, unknown>;
+  assert.deepEqual(body.tools, clientTools);
 });
 
 test("a client tool_choice is preserved", () => {
