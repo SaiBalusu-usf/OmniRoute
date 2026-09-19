@@ -12,6 +12,7 @@ const { getModelSpec } = await import("../../src/shared/constants/modelSpecs.ts"
 
 const K27 = "kimi-k2.7-code";
 const K28 = "kimi-for-coding";
+const K28_HS = "kimi-for-coding-highspeed";
 const K27_HS = "kimi-k2.7-code-highspeed";
 
 function modelIds(provider: string): string[] {
@@ -49,6 +50,18 @@ test("Kimi Code k3 fallback leaves discovered capabilities unset", () => {
 test("Kimi Coding K2.8 Preview resolves vision, tools, thinking, and 1M context", () => {
   const spec = getModelSpec(K28);
   assert.ok(spec);
+  assert.equal(spec.contextWindow, 1048576);
+  assert.equal(spec.supportsVision, true);
+  assert.equal(spec.supportsTools, true);
+  assert.equal(spec.supportsThinking, true);
+});
+
+test("Kimi Coding K2.8 Preview (highspeed variant) resolves vision, tools, thinking, and 1M context", () => {
+  // #14003: the highspeed sibling id must share the same spec as the base
+  // `kimi-for-coding` id, otherwise it silently falls back to the default
+  // caps (no vision) and the Vision-Bridge reroute bug reappears for it.
+  const spec = getModelSpec(K28_HS);
+  assert.ok(spec, `${K28_HS} must resolve to a model spec`);
   assert.equal(spec.contextWindow, 1048576);
   assert.equal(spec.supportsVision, true);
   assert.equal(spec.supportsTools, true);
