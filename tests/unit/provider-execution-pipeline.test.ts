@@ -203,6 +203,57 @@ test("initial Antigravity 422 gcp_project_required: rotation resolver>=1 and suc
   }
 });
 
+test("initial CodeBuddy 400 request illegal: rotation resolver>=1 and successful retry", async () => {
+  const { runProviderExecutionPipeline } =
+    await import("../../open-sse/handlers/chatCore/providerExecutionPipeline.ts");
+  let sendCount = 0;
+  let resolverCallCount = 0;
+  const input = makeInput({
+    policy: { allowAccountRotation: true, allowModelFallback: true },
+    provider: "codebuddy",
+    connectionId: "cb-a",
+    send: async () => {
+      sendCount += 1;
+      if (sendCount === 1) {
+        return makeAttempt(
+          {
+            code: 11128,
+            msg: "request illegal",
+            displayMsg: "The request was blocked by security policy. Please retry later.",
+          },
+          400
+        );
+      }
+      return makeAttempt(
+        {
+          id: "chatcmpl-ok",
+          choices: [
+            { message: { role: "assistant", content: "rotated-ok" }, finish_reason: "stop" },
+          ],
+        },
+        200
+      );
+    },
+    getProviderCredentials: (async () => {
+      resolverCallCount += 1;
+      return { connectionId: "cb-b", allRateLimited: false };
+    }) as PipelineConnectionContext["getProviderCredentials"],
+  });
+
+  const outcome = await runProviderExecutionPipeline(input);
+  assert.equal(
+    resolverCallCount >= 1,
+    true,
+    "resolver must run on initial CodeBuddy 400 request illegal"
+  );
+  assert.equal(sendCount, 2, "second send after CodeBuddy rotation");
+  assert.equal(outcome.kind, "response");
+  if (outcome.kind === "response") {
+    assert.equal(outcome.connectionId, "cb-b");
+    assert.equal(outcome.response.status, 200);
+  }
+});
+
 test("follow-up rotation blocks resolver on Antigravity 422", async () => {
   const { runProviderExecutionPipeline } =
     await import("../../open-sse/handlers/chatCore/providerExecutionPipeline.ts");

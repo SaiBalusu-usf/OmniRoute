@@ -165,3 +165,43 @@ test("R11: the shared provider execution pipeline restates before building the e
     /createErrorResult\(\s*restatement\.status,\s*message,\s*restatement\.retryAfterMs/
   );
 });
+
+test("R12: codebuddy 400 + request illegal → 429 with synthetic Retry-After", () => {
+  const res = applyStatusRestatement({
+    provider: "codebuddy",
+    status: 400,
+    message: "request illegal",
+    body: { code: 11128, msg: "request illegal" },
+  });
+  assert.equal(res.status, 429);
+  assert.equal(res.retryAfterMs, 60_000);
+  assert.equal(res.ruleId, "codebuddy-waf-rate-limit-misstatus");
+  assert.equal(res.fromStatus, 400);
+});
+
+test("R13: codebuddy 400 + first message is not system prompt is NOT restated", () => {
+  const res = applyStatusRestatement({
+    provider: "codebuddy",
+    status: 400,
+    message: "first message is not system prompt",
+    body: { code: 11128, msg: "first message is not system prompt" },
+  });
+  assert.equal(res.status, 400);
+  assert.equal(res.ruleId, null);
+});
+
+test("R14: codebuddy alias cbai and codebuddy-cn share the restatement rule", () => {
+  const resCbcn = applyStatusRestatement({
+    provider: "codebuddy-cn",
+    status: 400,
+    message: "request illegal",
+  });
+  assert.equal(resCbcn.status, 429);
+
+  const resCbai = applyStatusRestatement({
+    provider: "cbai",
+    status: 400,
+    message: "request illegal",
+  });
+  assert.equal(resCbai.status, 429);
+});

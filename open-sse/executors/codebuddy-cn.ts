@@ -170,16 +170,49 @@ export class CodeBuddyCnExecutor extends DefaultExecutor {
       }
     }
 
-    // Handle messages array with role: "system"
+    // Handle messages array with role: "system" and role: "user"
     if (Array.isArray(out.messages)) {
+      const sanitizeUserMessage = (msg: Record<string, unknown>): Record<string, unknown> => {
+        if (typeof msg.content === "string") {
+          if (msg.content.includes("<system-reminder>")) {
+            return {
+              ...msg,
+              content: msg.content
+                .replace(/<system-reminder>/gi, "[System Reminder:\n")
+                .replace(/<\/system-reminder>/gi, "\n]"),
+            };
+          }
+        } else if (Array.isArray(msg.content)) {
+          const parts = (msg.content as Array<Record<string, unknown>>).map((part) => {
+            if (part && typeof part.text === "string" && part.text.includes("<system-reminder>")) {
+              return {
+                ...part,
+                text: part.text
+                  .replace(/<system-reminder>/gi, "[System Reminder:\n")
+                  .replace(/<\/system-reminder>/gi, "\n]"),
+              };
+            }
+            return part;
+          });
+          return { ...msg, content: parts };
+        }
+        return msg;
+      };
+
       const msgs = (out.messages as Array<Record<string, unknown>>).map((message) => {
-        if (!message || message.role !== "system") return message;
-        const text = flatten(message.content);
-        if (!text) return message;
-        if (text.length > 2000 || AGENT_PATTERN.test(text)) {
-          return typeof message.content === "string"
-            ? { ...message, content: NEUTRAL_PROMPT }
-            : { ...message, content: [{ type: "text", text: NEUTRAL_PROMPT }] };
+        if (!message) return message;
+        if (message.role === "system") {
+          const text = flatten(message.content);
+          if (!text) return message;
+          if (text.length > 2000 || AGENT_PATTERN.test(text)) {
+            return typeof message.content === "string"
+              ? { ...message, content: NEUTRAL_PROMPT }
+              : { ...message, content: [{ type: "text", text: NEUTRAL_PROMPT }] };
+          }
+          return message;
+        }
+        if (message.role === "user") {
+          return sanitizeUserMessage(message);
         }
         return message;
       });

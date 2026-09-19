@@ -88,7 +88,10 @@ function successResponse(): Response {
 function toolRequestBody(reasoningEffort?: string): Record<string, unknown> {
   return {
     model: "glm-5.2",
-    messages: [{ role: "user", content: "Use one of the tools" }],
+    messages: [
+      { role: "system", content: "You are a helpful assistant" },
+      { role: "user", content: "Use one of the tools" },
+    ],
     stream: false,
     tools: [
       {

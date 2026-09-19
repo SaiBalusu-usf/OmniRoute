@@ -83,9 +83,29 @@ const AGENTROUTER_RULES: UpstreamStatusRestatementRule[] = [
   },
 ];
 
+// ─── codebuddy ──────────────────────────────────────────────────────────────
+// Observed misstatus (Tencent CodeBuddy WAF / burst rate limiting):
+//   400 "request illegal" (code 11128) → temporary security-policy throttling → 429
+//   400 "first message is not system prompt" (code 11128) → structural schema error, NEVER
+//   restated — it must keep flowing as 400 so callers fix their request format.
+const CODEBUDDY_RULES: UpstreamStatusRestatementRule[] = [
+  {
+    id: "codebuddy-waf-rate-limit-misstatus",
+    fromStatuses: new Set([400]),
+    toStatus: 429,
+    textMarkers: ["request illegal"],
+    excludeMarkers: ["first message is not system prompt"],
+    defaultRetryAfterMs: 60_000,
+  },
+];
+
 /** Provider id (lowercase) → ordered rules; first match wins. */
 export const statusRestatementRegistry = new Map<string, UpstreamStatusRestatementRule[]>([
   ["agentrouter", AGENTROUTER_RULES],
+  ["codebuddy", CODEBUDDY_RULES],
+  ["codebuddy-cn", CODEBUDDY_RULES],
+  ["cbai", CODEBUDDY_RULES],
+  ["cbcn", CODEBUDDY_RULES],
 ]);
 
 function stringifyBody(body: unknown): string {

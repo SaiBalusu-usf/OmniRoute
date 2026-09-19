@@ -304,7 +304,16 @@ function assertLease(
 }
 
 function maxAttemptsFor(provider: string): number {
-  return provider === "codex" ? 3 : 1;
+  if (
+    provider === "codex" ||
+    provider === "codebuddy" ||
+    provider === "codebuddy-cn" ||
+    provider === "cbai" ||
+    provider === "cbcn"
+  ) {
+    return 3;
+  }
+  return 1;
 }
 
 /**
@@ -320,6 +329,7 @@ export async function runProviderExecutionPipeline(
   let attempts = 0;
   let lastAttempt: ChatCoreExecutorResult | null = null;
   let antigravityByopRotationPending = false;
+  let codebuddyRotationPending = false;
   let authRefreshPending = false;
   let authRefreshed = false;
   let modelFallbackPending = false;
@@ -328,10 +338,12 @@ export async function runProviderExecutionPipeline(
   while (
     attempts < maxAttempts ||
     antigravityByopRotationPending ||
+    codebuddyRotationPending ||
     authRefreshPending ||
     modelFallbackPending
   ) {
     antigravityByopRotationPending = false;
+    codebuddyRotationPending = false;
     authRefreshPending = false;
     modelFallbackPending = false;
     const before = assertLease(policy, connection, wire.currentModel);
@@ -430,6 +442,55 @@ export async function runProviderExecutionPipeline(
         if (nextCreds && !nextCreds.allRateLimited && nextCreds.connectionId) {
           connection.replaceCredentials(nextCreds as Record<string, unknown>);
           antigravityByopRotationPending = true;
+          continue;
+        }
+      }
+    }
+
+    const isCodeBuddyProvider =
+      target.provider === "codebuddy" ||
+      target.provider === "codebuddy-cn" ||
+      target.provider === "cbai" ||
+      target.provider === "cbcn";
+
+    if (canRotateAccount && isCodeBuddyProvider && attempts < maxAttempts - 1) {
+      let isCodeBuddyThrottled = status === 429;
+      if (!isCodeBuddyThrottled && status === 400) {
+        const errorBody = await attempt.response
+          .clone()
+          .text()
+          .catch(() => "");
+        if (
+          errorBody.includes("request illegal") &&
+          !errorBody.includes("first message is not system prompt")
+        ) {
+          isCodeBuddyThrottled = true;
+        }
+      }
+      if (isCodeBuddyThrottled) {
+        const failedId = currentConnectionId(connection);
+        const retryAfterMs = retryAfterMsFrom(attempt) || 60_000;
+        if (failedId && !excludedIds.includes(failedId)) excludedIds.push(failedId);
+        if (failedId) {
+          await state.setConnectionRateLimitedUntil(failedId, Date.now() + retryAfterMs);
+          await state.onClearSessionAffinity?.({ failedConnectionId: failedId });
+        }
+        const nextCreds = await connection
+          .getProviderCredentials(target.provider, null, null, wire.currentModel, {
+            excludeConnectionIds: [...excludedIds],
+          })
+          .catch(() => null);
+        if (nextCreds && !nextCreds.allRateLimited && nextCreds.connectionId) {
+          await state.onAuditAccountRotation?.({
+            action: "codebuddy.account_rotation",
+            failedConnectionId: failedId,
+            newConnectionId: String(nextCreds.connectionId),
+            attempt: attempts + 1,
+            retryAfterMs,
+          });
+          connection.replaceCredentials(nextCreds as Record<string, unknown>);
+          codebuddyRotationPending = true;
+          attempts += 1;
           continue;
         }
       }
