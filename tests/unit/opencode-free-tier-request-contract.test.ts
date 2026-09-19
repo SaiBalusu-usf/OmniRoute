@@ -34,6 +34,8 @@ import {
 import {
   _resetToolObservationForTests,
   getObservedToolNames,
+  recordAcceptedToolNames,
+  resolvePlaceholderNames,
 } from "../../open-sse/executors/opencodeToolObservation.ts";
 import {
   DEFAULT_OPENCODE_USER_AGENT,
@@ -171,6 +173,27 @@ test("when client-supplied tools already include placeholder tools, nothing extr
     "openai"
   ) as Record<string, unknown>;
   assert.deepEqual(body.tools, clientTools);
+});
+
+test("when client-supplied tools are present, multiple configured placeholders are appended", () => {
+  const clientTools = [
+    { type: "function", function: { name: "run_code", parameters: { type: "object" } } },
+  ];
+  const body = applyFreeTierRequestContract({ ...CHAT_BODY(), tools: clientTools }, "openai", [
+    "glob",
+    "grep",
+    "read",
+    "edit",
+    "write",
+    "bash",
+  ]) as Record<string, unknown>;
+  const tools = body.tools as Array<{ type: string; function?: { name: string } }>;
+  assert.equal(tools.length, 7);
+  assert.equal(tools[0].function?.name, "run_code");
+  assert.deepEqual(
+    tools.slice(1).map((t) => t.function?.name),
+    ["glob", "grep", "read", "edit", "write", "bash"]
+  );
 });
 
 test("a client tool_choice is preserved", () => {
@@ -531,6 +554,13 @@ test("an accepted request teaches the names it carried, and a later bare request
     ["glob", "grep"]
   );
   assert.equal(second.attempt?.borrowed, true);
+});
+
+test("configured placeholder names take precedence over un-scoped observed tools for generic clients", () => {
+  _resetToolObservationForTests();
+  recordAcceptedToolNames("opencode", "big-pickle", undefined, ["run_code"]);
+  const resolved = resolvePlaceholderNames("opencode", "big-pickle", undefined, ["glob", "grep"]);
+  assert.deepEqual(resolved, ["glob", "grep"]);
 });
 
 test("what one model learns stays with that model", () => {

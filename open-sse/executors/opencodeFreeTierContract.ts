@@ -41,6 +41,7 @@ export interface FreeTierContractAttempt {
   readonly session: string | undefined;
   readonly borrowed: boolean;
   readonly clientToolNames: readonly string[];
+  readonly injectedPlaceholders?: boolean;
 }
 
 /**
@@ -180,7 +181,8 @@ const PLACEHOLDER_TOOL_PARAMETERS = { type: "object", properties: {} } as const;
 /**
  * Bring a free-tier request up to the upstream contract, without overriding anything the
  * caller already decided: client tools are kept as they are, and the placeholder tool is
- * only added when the caller sent none. Idempotent.
+ * only added when the caller sent none or when client-supplied tools do not yet carry the
+ * required placeholder tool. Idempotent.
  *
  * The placeholder differs per surface: Chat Completions takes the nested function shape,
  * the Responses surface takes the flat one. Neither carries a `tool_choice` — the upstream
