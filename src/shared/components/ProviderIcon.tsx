@@ -223,7 +223,6 @@ const GENERIC_PROVIDER_IDS = new Set([
   "byteplus",
   "cartesia",
   "cheaperinference",
-  "chipotle",
   "clarifai",
   "command-code",
   "digitalocean",
