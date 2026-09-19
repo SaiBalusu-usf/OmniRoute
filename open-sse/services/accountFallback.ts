@@ -2284,6 +2284,18 @@ export function checkFallbackError(
       return buildRetryableFallback(RateLimitReason.RATE_LIMIT_EXCEEDED);
     }
 
+    // Transient WAF / security-policy throttling (Tencent CodeBuddy 11128 with msg "request illegal").
+    // When Tencent temporarily blocks a session ("The request was blocked by security policy. Please retry later"),
+    // it returns msg: "request illegal". This is distinct from the deterministic structural rejection
+    // ("first message is not system prompt"), which remains terminal.
+    // Marking "request illegal" fallback-worthy enables rotating to a sibling account or backing off.
+    if (
+      /\brequest illegal\b/i.test(errorStr) &&
+      !/first message is not system prompt/i.test(errorStr)
+    ) {
+      return buildRetryableFallback(RateLimitReason.RATE_LIMIT_EXCEEDED);
+    }
+
     // Generic 400 is not account-fallback-worthy. Combo routing may still try a
     // different provider/model because combo fallback is target-level orchestration.
     return { shouldFallback: false, cooldownMs: 0, reason: RateLimitReason.UNKNOWN };
