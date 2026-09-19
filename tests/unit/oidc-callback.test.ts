@@ -20,8 +20,6 @@ const localDb = { updateSettings };
 // @ts-ignore - intentional for test harness timing
 const callbackRoute = await import("../../src/app/api/auth/oidc/callback/route.ts");
 
-import type { default as CookieStore } from "next/headers"; // not really, just for shape
-
 interface CapturedCookie {
   value: string;
   options?: Record<string, unknown>;
@@ -53,7 +51,8 @@ function makeTestCookieStore() {
 test.beforeEach(async () => {
   await resetStorage();
   callbackRoute.oidcCallbackInternals.clearJwksCache?.();
-  callbackRoute.oidcCallbackInternals.getCookieStore = async () => makeTestCookieStore();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  callbackRoute.oidcCallbackInternals.getCookieStore = async () => makeTestCookieStore() as any;
 });
 
 test.afterEach(() => {
@@ -110,7 +109,7 @@ test("OIDC callback happy path: exchanges code, validates ID token, mints identi
 
   const originalFetch = globalThis.fetch;
 
-  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = typeof input === "string" ? input : (input as URL).toString();
 
     if (url.includes("/.well-known/openid-configuration")) {
@@ -176,6 +175,77 @@ test("OIDC callback happy path: exchanges code, validates ID token, mints identi
   }
 });
 
+test("OIDC callback validates ID token when the IdP issuer includes a trailing slash", async () => {
+  const mockIssuer = "https://authentik.test/application/o/slug/"; // Has trailing slash
+  const mockClientId = "client-oidc-test";
+
+  await localDb.updateSettings({
+    requireLogin: true,
+    password: "",
+    oidcEnabled: true,
+    oidcIssuer: mockIssuer, // Stored exactly as configured
+    oidcClientId: mockClientId,
+    oidcClientSecret: "secret-oidc-test",
+    oidcRedirectPath: "/api/auth/oidc/callback",
+    oidcAllowedSubjects: [],
+  });
+
+  const { idToken, jwks } = await createSignedIdToken({
+    iss: mockIssuer, // Exact match to the issuer with a trailing slash
+    aud: mockClientId,
+    sub: "user-123",
+  });
+
+  const testState = "test-oidc-state-slash";
+  capturedCookies["oidc_state"] = { value: testState };
+
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = (async (input: RequestInfo | URL) => {
+    const url = typeof input === "string" ? input : (input as URL).toString();
+
+    if (url.includes("/.well-known/openid-configuration")) {
+      return new Response(
+        JSON.stringify({
+          issuer: mockIssuer, // The exact issuer expected by this IdP
+          token_endpoint: "https://authentik.test/token",
+          jwks_uri: "https://authentik.test/jwks",
+        }),
+        { status: 200 }
+      );
+    }
+
+    if (url.includes("/token")) {
+      return new Response(JSON.stringify({ id_token: idToken }), { status: 200 });
+    }
+
+    if (url.includes("/jwks")) {
+      return new Response(JSON.stringify(jwks), { status: 200 });
+    }
+
+    return new Response("not mocked", { status: 404 });
+  }) as unknown as typeof fetch;
+
+  try {
+    const reqUrl = `http://localhost/api/auth/oidc/callback?code=auth-code-123&state=${testState}`;
+    const response = await callbackRoute.GET(
+      new Request(reqUrl, {
+        headers: { "x-forwarded-proto": "http" },
+      })
+    );
+
+    assert.equal(response.status, 307);
+    const location = response.headers.get("location");
+    // Should successfully log in and redirect to dashboard, rather than id_token_invalid error
+    assert.ok(
+      location && location.endsWith("/dashboard"),
+      "OIDC should succeed with trailing slash issuer"
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("OIDC callback rejects invalid state", async () => {
   await setupFullOidcSettings();
 
@@ -188,6 +258,7 @@ test("OIDC callback rejects invalid state", async () => {
   assert.ok(loc.includes("login"));
   assert.ok(loc.includes("invalid_state"));
 });
+
 test("OIDC callback rejects subject not in allowed list (subject_not_allowed)", async () => {
   await localDb.updateSettings({
     requireLogin: true,
@@ -330,6 +401,7 @@ test("OIDC callback rejects partial/misconfigured OIDC settings (not_configured)
   assert.ok(loc.includes("login"));
   assert.ok(loc.includes("not_configured"));
 });
+
 test("OIDC callback rejects token exchange failure (token_exchange)", async () => {
   await setupFullOidcSettings();
 

@@ -3467,18 +3467,36 @@ export async function handleChatCore({
         const statusText = rawResult.response.statusText;
         const headersObj = normalizeHeaders(rawResult.response.headers);
         const responseHeaders = new Headers(headersObj);
+
+        // #13638: Conditionally drop Codex quota headers if pooling selected a different account
+        const isForeignAccount = 
+          rawResult._executionCredentials?.connectionId !== credentials?.connectionId;
+
         stripStaleForwardingHeaders(responseHeaders);
         stripNextMiddlewareControlHeaders(responseHeaders);
+
+        const strippedHeadersObj = buildStreamingResponseHeaders(
+          responseHeaders, 
+          {}, 
+          log,
+          { isForeignAccount }
+        );
+
+        const finalResponseHeaders = new Headers();
+        for (const [key, value] of Object.entries(strippedHeadersObj)) {
+          finalResponseHeaders.set(key, value);
+        }
+
         // The upstream headers (turn-state included) are about to be committed
         // to the client — record which connection minted the blob so a later
         // cross-account echo can be stripped (Codex failover guard).
-        if (provider === "codex" && readCodexTurnStateHeader(responseHeaders)) {
+        if (provider === "codex" && readCodexTurnStateHeader(finalResponseHeaders)) {
           noteCodexTurnStateProvenance(
             getCodexClientSessionId(clientRawRequest?.headers),
             rawResult._executionCredentials?.connectionId ?? credentials?.connectionId
           );
         }
-        const contentType = (responseHeaders.get("content-type") || "").toLowerCase();
+        const contentType = (finalResponseHeaders.get("content-type") || "").toLowerCase();
         const payload = await readNonStreamingResponseBody(
           rawResult.response,
           contentType,
@@ -3502,13 +3520,13 @@ export async function handleChatCore({
 
         return {
           ...rawResult,
-          response: new Response(payload, { status, statusText, headers: responseHeaders }),
+          response: new Response(payload, { status, statusText, headers: finalResponseHeaders }),
           _dedupSnapshot: {
             status,
             statusText,
             headers: (() => {
               const arr: [string, string][] = [];
-              responseHeaders.forEach((v, k) => arr.push([k, v]));
+              finalResponseHeaders.forEach((v, k) => arr.push([k, v]));
               return arr;
             })(),
             payload,
