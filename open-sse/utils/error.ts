@@ -859,25 +859,6 @@ export async function parseUpstreamError(response: Response, provider: string | 
           : `Upstream error: ${response.status}`;
       errorCode = json.error?.data?.code || json.error?.code || json.code;
       errorType = json.error?.type || json.type;
-
-      // Tencent CodeBuddy (`codebuddy` / `codebuddy-cn`) answers with a flat envelope:
-      //   { code, msg, extError: { code, type }, displayMsg: { en, zh, zh-hant } }
-      // `msg` is the terse internal string — 11128 is literally "request illegal" —
-      // while `displayMsg.en` is the sentence written for a human ("The request was
-      // blocked by security policy. Please retry later or contact support."). Surfacing
-      // only `msg` produced a support ticket whose text named no cause and no remedy.
-      //
-      // APPEND rather than replace: every downstream consumer (status restatement,
-      // overflow/rate-limit/malformed classification) regex-matches the primary text and
-      // must keep seeing exactly what it saw before. Skipped when the primary text
-      // already contains the display sentence, so no message is ever duplicated.
-      const displayMessage =
-        typeof json.displayMsg?.en === "string" && json.displayMsg.en.trim()
-          ? json.displayMsg.en.trim()
-          : null;
-      if (displayMessage && !message.toLowerCase().includes(displayMessage.toLowerCase())) {
-        message = `${message} — ${displayMessage}`;
-      }
     } catch {
       message = text;
     }
