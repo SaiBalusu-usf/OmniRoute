@@ -22,12 +22,44 @@ export const TWINMIND_FALLBACK_MODELS = [
 
 export type TwinmindCatalogModel = { id: string; name: string };
 
+type ModelAdder = (id: string, name?: string) => void;
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+/** Twinmind's "model" and "default_model" shapes both key the id off `name` (falling back to `id`) plus an optional `display_name`. */
+function extractModelIdentity(rec: Record<string, unknown>): { id: string; display?: string } {
+  const id = typeof rec.name === "string" ? rec.name : typeof rec.id === "string" ? rec.id : "";
+  const display = typeof rec.display_name === "string" ? rec.display_name : undefined;
+  return { id, display };
+}
+
+function addModelsFromProviderGroups(root: Record<string, unknown>, add: ModelAdder): void {
+  const providers = Array.isArray(root.providers) ? root.providers : [];
+  for (const provider of providers) {
+    if (!isPlainRecord(provider)) continue;
+    const nested = Array.isArray(provider.models) ? provider.models : [];
+    for (const model of nested) {
+      if (!isPlainRecord(model)) continue;
+      const { id, display } = extractModelIdentity(model);
+      if (id) add(id, display);
+    }
+  }
+}
+
+function addDefaultModel(root: Record<string, unknown>, add: ModelAdder): void {
+  if (!isPlainRecord(root.default_model)) return;
+  const { id, display } = extractModelIdentity(root.default_model);
+  if (id) add(id, display);
+}
+
 export function flattenTwinmindModelsCatalog(json: unknown): TwinmindCatalogModel[] {
-  const root = json && typeof json === "object" && !Array.isArray(json) ? (json as Record<string, unknown>) : {};
+  const root = isPlainRecord(json) ? json : {};
   const seen = new Set<string>();
   const models: TwinmindCatalogModel[] = [];
 
-  const add = (id: string, name?: string) => {
+  const add: ModelAdder = (id, name) => {
     const trimmed = id.trim();
     if (!trimmed || seen.has(trimmed)) return;
     seen.add(trimmed);
@@ -35,28 +67,8 @@ export function flattenTwinmindModelsCatalog(json: unknown): TwinmindCatalogMode
   };
 
   add("auto", "Auto");
-
-  const providers = Array.isArray(root.providers) ? root.providers : [];
-  for (const provider of providers) {
-    if (!provider || typeof provider !== "object" || Array.isArray(provider)) continue;
-    const group = provider as Record<string, unknown>;
-    const nested = Array.isArray(group.models) ? group.models : [];
-    for (const model of nested) {
-      if (!model || typeof model !== "object" || Array.isArray(model)) continue;
-      const rec = model as Record<string, unknown>;
-      const id = typeof rec.name === "string" ? rec.name : typeof rec.id === "string" ? rec.id : "";
-      const display = typeof rec.display_name === "string" ? rec.display_name : undefined;
-      if (id) add(id, display);
-    }
-  }
-
-  const defaultModel = root.default_model;
-  if (defaultModel && typeof defaultModel === "object" && !Array.isArray(defaultModel)) {
-    const rec = defaultModel as Record<string, unknown>;
-    const id = typeof rec.name === "string" ? rec.name : "";
-    const display = typeof rec.display_name === "string" ? rec.display_name : undefined;
-    if (id) add(id, display);
-  }
+  addModelsFromProviderGroups(root, add);
+  addDefaultModel(root, add);
 
   return models;
 }

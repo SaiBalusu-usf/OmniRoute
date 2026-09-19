@@ -29,6 +29,40 @@ interface TwinmindDiscoveryRouteOptions {
   onCredentialsRefreshed?: (patch: Record<string, unknown>) => Promise<void> | void;
 }
 
+function buildEnsureTokenOptions(
+  options: TwinmindDiscoveryRouteOptions
+): Parameters<typeof ensureTwinmindAccessToken>[0] {
+  return {
+    apiKey: typeof options.apiKey === "string" ? options.apiKey : "",
+    accessToken: typeof options.accessToken === "string" ? options.accessToken : "",
+    refreshToken: typeof options.refreshToken === "string" ? options.refreshToken : "",
+    providerSpecificData:
+      options.providerSpecificData && typeof options.providerSpecificData === "object"
+        ? (options.providerSpecificData as Record<string, unknown>)
+        : {},
+    onCredentialsRefreshed: options.onCredentialsRefreshed,
+  };
+}
+
+/** Shared "give up and serve the seed catalog" path for both the no-token and discovery-failure cases. */
+function buildFallbackOrSeedResponse(
+  options: TwinmindDiscoveryRouteOptions,
+  seedModels: TwinmindCatalogModel[],
+  warnings: DiscoveryWarnings,
+  seedWarning: string
+): Response {
+  const fallback = options.buildDiscoveryFallbackResponse(warnings);
+  if (fallback) return fallback;
+  return options.buildResponse({
+    provider: options.provider,
+    connectionId: options.connectionId,
+    models: seedModels,
+    source: "local_catalog",
+    intentional: true,
+    warning: seedWarning,
+  });
+}
+
 export async function maybeHandleTwinmindModelDiscovery(
   options: TwinmindDiscoveryRouteOptions
 ): Promise<Response | null> {
@@ -45,31 +79,18 @@ export async function maybeHandleTwinmindModelDiscovery(
     name: model.name,
   }));
 
-  const ensured = await ensureTwinmindAccessToken({
-    apiKey: typeof options.apiKey === "string" ? options.apiKey : "",
-    accessToken: typeof options.accessToken === "string" ? options.accessToken : "",
-    refreshToken: typeof options.refreshToken === "string" ? options.refreshToken : "",
-    providerSpecificData:
-      options.providerSpecificData && typeof options.providerSpecificData === "object"
-        ? (options.providerSpecificData as Record<string, unknown>)
-        : {},
-    onCredentialsRefreshed: options.onCredentialsRefreshed,
-  });
+  const ensured = await ensureTwinmindAccessToken(buildEnsureTokenOptions(options));
 
   if (!ensured.token) {
-    const fallback = options.buildDiscoveryFallbackResponse({
-      cacheWarning: "No Twinmind token configured — using cached catalog",
-      localWarning: "No Twinmind token configured — using local catalog",
-    });
-    if (fallback) return fallback;
-    return options.buildResponse({
-      provider: options.provider,
-      connectionId: options.connectionId,
-      models: seedModels,
-      source: "local_catalog",
-      intentional: true,
-      warning: "No Twinmind Bearer or refresh token — using seed model list",
-    });
+    return buildFallbackOrSeedResponse(
+      options,
+      seedModels,
+      {
+        cacheWarning: "No Twinmind token configured — using cached catalog",
+        localWarning: "No Twinmind token configured — using local catalog",
+      },
+      "No Twinmind Bearer or refresh token — using seed model list"
+    );
   }
 
   try {
@@ -88,18 +109,14 @@ export async function maybeHandleTwinmindModelDiscovery(
     console.log("Error fetching models from twinmind", {
       error: sanitizeErrorMessage(error instanceof Error ? error.message : error),
     });
-    const fallback = options.buildDiscoveryFallbackResponse({
-      cacheWarning: "Twinmind model discovery failed — using cached catalog",
-      localWarning: "Twinmind model discovery failed — using seed catalog",
-    });
-    if (fallback) return fallback;
-    return options.buildResponse({
-      provider: options.provider,
-      connectionId: options.connectionId,
-      models: seedModels,
-      source: "local_catalog",
-      intentional: true,
-      warning: "API unavailable — using seed Twinmind model list",
-    });
+    return buildFallbackOrSeedResponse(
+      options,
+      seedModels,
+      {
+        cacheWarning: "Twinmind model discovery failed — using cached catalog",
+        localWarning: "Twinmind model discovery failed — using seed catalog",
+      },
+      "API unavailable — using seed Twinmind model list"
+    );
   }
 }

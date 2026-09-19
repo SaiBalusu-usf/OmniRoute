@@ -10,8 +10,11 @@
  * (no session_id, no Twinmind server-side history). Tools are prompt-emulated.
  */
 import { randomBytes } from "node:crypto";
-import { BaseExecutor, type ExecuteInput } from "./base.ts";
-import { makeExecutorErrorResult as makeErrorResult, sanitizeErrorMessage } from "../utils/error.ts";
+import { BaseExecutor, type ExecuteInput, type ExecutorExecuteResult } from "./base.ts";
+import {
+  makeExecutorErrorResult as makeErrorResult,
+  sanitizeErrorMessage,
+} from "../utils/error.ts";
 import { TWINMIND_CHAT_URL } from "../services/twinmindModels.ts";
 import {
   asRecord,
@@ -148,7 +151,10 @@ export function looksLikeTwinmindRefusal(text: string): boolean {
   return phrase.test(sample) && subject.test(sample);
 }
 
-export function makeTwinmindToolAwareStreamer(emitContent: (text: string) => void, sniffChars = 260) {
+export function makeTwinmindToolAwareStreamer(
+  emitContent: (text: string) => void,
+  sniffChars = 260
+) {
   let full = "";
   let emitted = 0;
   let toolMode = false;
@@ -224,11 +230,71 @@ export function extractMessageText(content: unknown): string {
 export function neutralizeTwinmindWorkspaceIdentity(text: string): string {
   if (!text) return text;
   return text
-    .replace(/You are (?:Cursor|Claude Code|OpenCode)[^\n.]*/gi, "You are a coding assistant with live local tools")
+    .replace(
+      /You are (?:Cursor|Claude Code|OpenCode)[^\n.]*/gi,
+      "You are a coding assistant with live local tools"
+    )
     .replace(/coding[- ]enabled workspace[^\n.]*/gi, "local tools via <tool_call>")
-    .replace(/tools(?: needed)? are not available in this session[^\n.]*/gi, "tools are available via <tool_call>")
+    .replace(
+      /tools(?: needed)? are not available in this session[^\n.]*/gi,
+      "tools are available via <tool_call>"
+    )
     .replace(/reopen this request in a coding-enabled workspace[^\n.]*/gi, "use a <tool_call>")
     .replace(/without (?:a )?(?:coding )?workspace[^\n.]*/gi, "with local tools");
+}
+
+function formatTwinmindAssistantToolCallSuffix(toolCalls: unknown): string {
+  if (!Array.isArray(toolCalls)) return "";
+  let suffix = "";
+  for (const toolCall of toolCalls) {
+    if (!toolCall || typeof toolCall !== "object" || Array.isArray(toolCall)) continue;
+    const fn = asRecord((toolCall as Record<string, unknown>).function);
+    const name = toStringOrEmpty(fn.name);
+    let args: unknown = fn.arguments ?? {};
+    if (typeof args === "string") {
+      try {
+        args = JSON.parse(args);
+      } catch {
+        args = {};
+      }
+    }
+    suffix += `\n${TOOL_MARK}\n${JSON.stringify({ name, arguments: args })}\n</tool_call>`;
+  }
+  return suffix;
+}
+
+function formatTwinmindAssistantMessage(rec: Record<string, unknown>): string {
+  const text =
+    extractMessageText(rec.content) + formatTwinmindAssistantToolCallSuffix(rec.tool_calls);
+  return `<assistant>\n${text}\n</assistant>`;
+}
+
+function formatTwinmindToolResultMessage(rec: Record<string, unknown>): string {
+  const name = toStringOrEmpty(rec.name) || toStringOrEmpty(rec.tool_call_id) || "tool";
+  return `<tool_result name="${name}">\n${extractMessageText(rec.content)}\n</tool_result>`;
+}
+
+/** Renders one chat message into Twinmind's flattened prompt markup, or null to drop it. */
+function formatTwinmindMessage(
+  rec: Record<string, unknown>,
+  dropClientSystem: boolean
+): string | null {
+  const role = typeof rec.role === "string" ? rec.role : "";
+  switch (role) {
+    case "system":
+    case "developer":
+      if (dropClientSystem) return null;
+      return `<system>\n${neutralizeTwinmindWorkspaceIdentity(extractMessageText(rec.content))}\n</system>`;
+    case "user":
+      return `<user>\n${extractMessageText(rec.content)}\n</user>`;
+    case "assistant":
+      return formatTwinmindAssistantMessage(rec);
+    case "tool":
+    case "function":
+      return formatTwinmindToolResultMessage(rec);
+    default:
+      return null;
+  }
 }
 
 export function flattenTwinmindMessages(messages: unknown, dropClientSystem = false): string {
@@ -236,36 +302,8 @@ export function flattenTwinmindMessages(messages: unknown, dropClientSystem = fa
   const parts: string[] = [];
   for (const message of messages) {
     if (!message || typeof message !== "object" || Array.isArray(message)) continue;
-    const rec = message as Record<string, unknown>;
-    const role = typeof rec.role === "string" ? rec.role : "";
-    if (role === "system" || role === "developer") {
-      if (dropClientSystem) continue;
-      parts.push(`<system>\n${neutralizeTwinmindWorkspaceIdentity(extractMessageText(rec.content))}\n</system>`);
-    } else if (role === "user") {
-      parts.push(`<user>\n${extractMessageText(rec.content)}\n</user>`);
-    } else if (role === "assistant") {
-      let text = extractMessageText(rec.content);
-      if (Array.isArray(rec.tool_calls)) {
-        for (const toolCall of rec.tool_calls) {
-          if (!toolCall || typeof toolCall !== "object" || Array.isArray(toolCall)) continue;
-          const fn = asRecord((toolCall as Record<string, unknown>).function);
-          const name = toStringOrEmpty(fn.name);
-          let args: unknown = fn.arguments ?? {};
-          if (typeof args === "string") {
-            try {
-              args = JSON.parse(args);
-            } catch {
-              args = {};
-            }
-          }
-          text += `\n${TOOL_MARK}\n${JSON.stringify({ name, arguments: args })}\n</tool_call>`;
-        }
-      }
-      parts.push(`<assistant>\n${text}\n</assistant>`);
-    } else if (role === "tool" || role === "function") {
-      const name = toStringOrEmpty(rec.name) || toStringOrEmpty(rec.tool_call_id) || "tool";
-      parts.push(`<tool_result name="${name}">\n${extractMessageText(rec.content)}\n</tool_result>`);
-    }
+    const formatted = formatTwinmindMessage(message as Record<string, unknown>, dropClientSystem);
+    if (formatted !== null) parts.push(formatted);
   }
   return parts.join("\n\n").trim();
 }
@@ -299,35 +337,51 @@ export function systemPrefix(messages: unknown): string {
     .join("\n\n");
 }
 
+function formatTwinmindToolParameterLine(
+  key: string,
+  spec: unknown,
+  required: Set<string>
+): string {
+  const info = asRecord(spec);
+  const req = required.has(key) ? ", required" : "";
+  const desc = typeof info.description === "string" ? ` — ${info.description}` : "";
+  return `  - ${key} (${toStringOrEmpty(info.type) || "any"}${req})${desc}\n`;
+}
+
+function formatTwinmindToolParametersBlock(parameters: Record<string, unknown>): string {
+  const properties = asRecord(parameters.properties);
+  const required = new Set(
+    Array.isArray(parameters.required)
+      ? parameters.required.filter((item): item is string => typeof item === "string")
+      : []
+  );
+  const entries = Object.entries(properties);
+  if (entries.length === 0) return "";
+  let out = "Parameters:\n";
+  for (const [key, spec] of entries) {
+    out += formatTwinmindToolParameterLine(key, spec, required);
+  }
+  return out;
+}
+
+function formatSingleTwinmindToolDef(tool: unknown): string {
+  if (!tool || typeof tool !== "object" || Array.isArray(tool)) return "";
+  const rec = tool as Record<string, unknown>;
+  const fn = asRecord(rec.function).name ? asRecord(rec.function) : rec;
+  const name = toStringOrEmpty(fn.name);
+  if (!name) return "";
+  let out = `### ${name}\n`;
+  if (typeof fn.description === "string" && fn.description) out += `${fn.description}\n`;
+  out += formatTwinmindToolParametersBlock(asRecord(fn.parameters));
+  out += "\n";
+  return out;
+}
+
 export function formatTwinmindToolDefs(tools: unknown): string {
   if (!Array.isArray(tools) || tools.length === 0) return "";
   let out = `${TOOL_INSTRUCTIONS}## Available tools:\n\n`;
   for (const tool of tools) {
-    if (!tool || typeof tool !== "object" || Array.isArray(tool)) continue;
-    const rec = tool as Record<string, unknown>;
-    const fn = asRecord(rec.function).name ? asRecord(rec.function) : rec;
-    const name = toStringOrEmpty(fn.name);
-    if (!name) continue;
-    out += `### ${name}\n`;
-    if (typeof fn.description === "string" && fn.description) out += `${fn.description}\n`;
-    const parameters = asRecord(fn.parameters);
-    const properties = asRecord(parameters.properties);
-    const required = new Set(
-      Array.isArray(parameters.required)
-        ? parameters.required.filter((item): item is string => typeof item === "string")
-        : []
-    );
-    const entries = Object.entries(properties);
-    if (entries.length > 0) {
-      out += "Parameters:\n";
-      for (const [key, spec] of entries) {
-        const info = asRecord(spec);
-        const req = required.has(key) ? ", required" : "";
-        const desc = typeof info.description === "string" ? ` — ${info.description}` : "";
-        out += `  - ${key} (${toStringOrEmpty(info.type) || "any"}${req})${desc}\n`;
-      }
-    }
-    out += "\n";
+    out += formatSingleTwinmindToolDef(tool);
   }
   return out;
 }
@@ -339,7 +393,8 @@ export function messagesHaveTwinmindToolTraffic(messages: unknown): boolean {
     const rec = message as Record<string, unknown>;
     const role = typeof rec.role === "string" ? rec.role : "";
     if (role === "tool" || role === "function") return true;
-    if (role === "assistant" && Array.isArray(rec.tool_calls) && rec.tool_calls.length > 0) return true;
+    if (role === "assistant" && Array.isArray(rec.tool_calls) && rec.tool_calls.length > 0)
+      return true;
     if (extractMessageText(rec.content).includes(TOOL_MARK)) return true;
   }
   return false;
@@ -429,14 +484,21 @@ function parseFencedJsonToolCalls(text: string): TwinmindToolCall[] {
   return calls;
 }
 
-export function parseTwinmindToolCalls(text: string): { calls: TwinmindToolCall[]; content: string } {
+export function parseTwinmindToolCalls(text: string): {
+  calls: TwinmindToolCall[];
+  content: string;
+} {
   const regex = /<tool_call>\s*([\s\S]*?)\s*<\/tool_call>/g;
   const calls: TwinmindToolCall[] = [];
   let match: RegExpExecArray | null;
   while ((match = regex.exec(text)) !== null) {
     try {
       let raw = match[1].trim();
-      if (raw.startsWith("```")) raw = raw.replace(/^```\w*\n?/, "").replace(/\n?```$/, "").trim();
+      if (raw.startsWith("```"))
+        raw = raw
+          .replace(/^```\w*\n?/, "")
+          .replace(/\n?```$/, "")
+          .trim();
       const obj = JSON.parse(raw) as unknown;
       const call = toolCallFromUnknown(obj);
       if (call) calls.push(call);
@@ -462,7 +524,11 @@ export function clientTimezone(): string {
   }
 }
 
-export function buildTwinmindChatBody(query: string, modelName: string, now = new Date()): JsonRecord {
+export function buildTwinmindChatBody(
+  query: string,
+  modelName: string,
+  now = new Date()
+): JsonRecord {
   return {
     type: "app",
     version: 1,
@@ -502,7 +568,13 @@ export function extractTwinmindSseDeltas(event: string): string[] {
   return deltas;
 }
 
-function openAiChunk(id: string, created: number, modelId: string, delta: JsonRecord, finish: string | null = null) {
+function openAiChunk(
+  id: string,
+  created: number,
+  modelId: string,
+  delta: JsonRecord,
+  finish: string | null = null
+) {
   return {
     id,
     object: "chat.completion.chunk",
@@ -542,6 +614,67 @@ class TwinmindUnauthorizedError extends Error {
   constructor() {
     super("unauthorized");
   }
+}
+
+type TwinmindAuthState = { token: string; refreshToken: string };
+
+/** Everything a single chat attempt needs that stays constant across tool-retry attempts. */
+type TwinmindRunContext = {
+  body: JsonRecord;
+  modelId: string;
+  signal: AbortSignal | null | undefined;
+  fetchImpl: typeof fetch;
+  providerSpecificData: unknown;
+  persist: ((patch: TwinmindCredentialPatch) => Promise<void> | void) | undefined;
+};
+
+type TwinmindRunOnceResult =
+  | { text: string; chatBody: JsonRecord }
+  | { errorResult: ExecutorExecuteResult; chatBody: JsonRecord };
+
+/** Resets the live SSE chunk buffer for a new tool-loop attempt and wires up its content streamer. */
+function beginTwinmindToolAttemptStream(
+  liveChunks: string[],
+  id: string,
+  created: number,
+  clientModel: string
+): ReturnType<typeof makeTwinmindToolAwareStreamer> {
+  liveChunks.length = 0;
+  liveChunks.push(
+    `data: ${JSON.stringify(openAiChunk(id, created, clientModel, { role: "assistant" }))}\n\n`
+  );
+  return makeTwinmindToolAwareStreamer((text) => {
+    liveChunks.push(
+      `data: ${JSON.stringify(openAiChunk(id, created, clientModel, { content: text }))}\n\n`
+    );
+  });
+}
+
+/** True while the tool-retry loop should nudge the model again instead of accepting its answer. */
+function shouldContinueTwinmindToolLoop(
+  hasTools: boolean,
+  parsed: { calls: TwinmindToolCall[] },
+  lastText: string,
+  bodyObj: JsonRecord
+): boolean {
+  if (!hasTools || parsed.calls.length > 0) return false;
+  return looksLikeTwinmindRefusal(lastText) || twinmindUserWantsLocalTools(bodyObj.messages);
+}
+
+function twinmindChatErrorResult(
+  status: number,
+  message: string,
+  body: JsonRecord,
+  chatBody: JsonRecord
+): { errorResult: ExecutorExecuteResult; chatBody: JsonRecord } {
+  return {
+    errorResult: {
+      ...makeErrorResult(status, message, body, TWINMIND_CHAT_URL),
+      headers: { authorization: "Bearer <redacted>" },
+      transformedBody: chatBody,
+    },
+    chatBody,
+  };
 }
 
 export class TwinmindExecutor extends BaseExecutor {
@@ -616,242 +749,266 @@ export class TwinmindExecutor extends BaseExecutor {
     return upstream;
   }
 
-  async execute(input: ExecuteInput) {
-    const { body, credentials, signal, stream: wantStream } = input;
-    const bodyObj = asRecord(body);
-    const fetchImpl = globalThis.fetch.bind(globalThis);
-    const requestedModel = input.model || toStringOrEmpty(bodyObj.model) || "auto";
-    const modelId = mapTwinmindModel(requestedModel);
-    const baseQuery = buildTwinmindQuery(bodyObj);
-    const hasTools =
-      (Array.isArray(bodyObj.tools) && bodyObj.tools.length > 0) ||
-      messagesHaveTwinmindToolTraffic(bodyObj.messages);
-    const maxToolTries = hasTools ? 4 : 1;
-
-    if (!baseQuery) {
-      return makeErrorResult(400, "Twinmind requires a non-empty user message", body, TWINMIND_CHAT_URL);
+  /** Posts once; on a 401 with a refresh token available, re-authenticates and retries exactly once. */
+  private async reauthAndPostChat(
+    auth: TwinmindAuthState,
+    chatBody: JsonRecord,
+    ctx: TwinmindRunContext
+  ): Promise<{ upstream: Response; auth: TwinmindAuthState }> {
+    try {
+      const upstream = await this.postChat(auth.token, chatBody, ctx.signal, ctx.fetchImpl);
+      return { upstream, auth };
+    } catch (error) {
+      if (!(error instanceof TwinmindUnauthorizedError) || !auth.refreshToken) throw error;
+      const refreshed = await ensureTwinmindAccessToken({
+        apiKey: "",
+        accessToken: "",
+        refreshToken: auth.refreshToken,
+        providerSpecificData: ctx.providerSpecificData,
+        fetchImpl: ctx.fetchImpl,
+        onCredentialsRefreshed: ctx.persist,
+      });
+      if (!refreshed.token) throw error;
+      const upstream = await this.postChat(refreshed.token, chatBody, ctx.signal, ctx.fetchImpl);
+      return { upstream, auth: refreshed };
     }
+  }
 
-    let ensured = await ensureTwinmindAccessToken({
-      apiKey: credentials?.apiKey,
-      accessToken: credentials?.accessToken,
-      refreshToken: credentials?.refreshToken,
-      providerSpecificData: credentials?.providerSpecificData,
-      fetchImpl,
-      onCredentialsRefreshed: input.onCredentialsRefreshed as
-        | ((patch: TwinmindCredentialPatch) => Promise<void> | void)
-        | undefined,
-    });
-
-    if (!ensured.token) {
-      return makeErrorResult(
-        401,
-        ensured.refreshToken
-          ? "Twinmind Firebase refresh failed. Paste stsTokenManager JSON (accessToken + refreshToken) or a current Bearer JWT."
-          : "Missing Twinmind token — paste stsTokenManager JSON (accessToken + refreshToken) or a current Bearer JWT.",
-        body,
-        TWINMIND_CHAT_URL
+  /** Runs one Twinmind chat turn: post (with reauth-on-401), surface upstream/protocol errors, read the SSE stream. */
+  private async runTwinmindOnce(
+    ctx: TwinmindRunContext,
+    authRef: { current: TwinmindAuthState },
+    query: string,
+    onDelta?: (delta: string) => void
+  ): Promise<TwinmindRunOnceResult> {
+    const chatBody = buildTwinmindChatBody(query, ctx.modelId);
+    let upstream: Response;
+    try {
+      const result = await this.reauthAndPostChat(authRef.current, chatBody, ctx);
+      upstream = result.upstream;
+      authRef.current = result.auth;
+    } catch (error) {
+      if (error instanceof TwinmindUnauthorizedError) {
+        return {
+          errorResult: makeErrorResult(
+            401,
+            "Twinmind token expired. Paste a fresh Firebase refresh token or Bearer JWT.",
+            ctx.body,
+            TWINMIND_CHAT_URL
+          ),
+          chatBody,
+        };
+      }
+      return twinmindChatErrorResult(
+        502,
+        `Twinmind fetch failed: ${error instanceof Error ? error.message : "unknown"}`,
+        ctx.body,
+        chatBody
       );
     }
 
-    const persist = input.onCredentialsRefreshed as
-      | ((patch: TwinmindCredentialPatch) => Promise<void> | void)
-      | undefined;
-
-    const runOnce = async (query: string, onDelta?: (delta: string) => void) => {
-      const chatBody = buildTwinmindChatBody(query, modelId);
-      let upstream: Response;
-      try {
-        try {
-          upstream = await this.postChat(ensured.token, chatBody, signal, fetchImpl);
-        } catch (error) {
-          if (error instanceof TwinmindUnauthorizedError && ensured.refreshToken) {
-            ensured = await ensureTwinmindAccessToken({
-              apiKey: "",
-              accessToken: "",
-              refreshToken: ensured.refreshToken,
-              providerSpecificData: credentials?.providerSpecificData,
-              fetchImpl,
-              onCredentialsRefreshed: persist,
-            });
-            if (!ensured.token) throw error;
-            upstream = await this.postChat(ensured.token, chatBody, signal, fetchImpl);
-          } else {
-            throw error;
-          }
-        }
-      } catch (error) {
-        if (error instanceof TwinmindUnauthorizedError) {
-          return {
-            errorResult: makeErrorResult(
-              401,
-              "Twinmind token expired. Paste a fresh Firebase refresh token or Bearer JWT.",
-              body,
-              TWINMIND_CHAT_URL
-            ),
-            chatBody,
-          };
-        }
-        return {
-          errorResult: {
-            ...makeErrorResult(
-              502,
-              `Twinmind fetch failed: ${error instanceof Error ? error.message : "unknown"}`,
-              body,
-              TWINMIND_CHAT_URL
-            ),
-            headers: { authorization: "Bearer <redacted>" },
-            transformedBody: chatBody,
-          },
-          chatBody,
-        };
-      }
-
-      if (!upstream.ok) {
-        const errText = await upstream.text().catch(() => "");
-        return {
-          errorResult: {
-            ...makeErrorResult(
-              upstream.status,
-              `Twinmind error: ${sanitizeErrorMessage(errText)}`,
-              body,
-              TWINMIND_CHAT_URL
-            ),
-            headers: { authorization: "Bearer <redacted>" },
-            transformedBody: chatBody,
-          },
-          chatBody,
-        };
-      }
-
-      const read = await this.readSse(upstream, onDelta ?? (() => undefined));
-      if (!read.ok) {
-        return {
-          errorResult: {
-            ...makeErrorResult(
-              502,
-              `Twinmind protocol error: ${sanitizeErrorMessage(read.errorMessage || "unknown")}`,
-              body,
-              TWINMIND_CHAT_URL
-            ),
-            headers: { authorization: "Bearer <redacted>" },
-            transformedBody: chatBody,
-          },
-          chatBody,
-        };
-      }
-      return { text: read.text, chatBody };
-    };
-
-    const id = `chatcmpl-twinmind-${Date.now()}`;
-    const created = Math.floor(Date.now() / 1000);
-    const clientModel = toStringOrEmpty(bodyObj.model) || requestedModel;
-    const sseHeaders = {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    };
-
-    if (wantStream && !hasTools) {
-      const encoder = new TextEncoder();
-      const stream = new ReadableStream({
-        start: async (controller) => {
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(openAiChunk(id, created, clientModel, { role: "assistant" }))}\n\n`)
-          );
-          const result = await runOnce(baseQuery, (delta) => {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify(openAiChunk(id, created, clientModel, { content: delta }))}\n\n`)
-            );
-          });
-          if ("errorResult" in result && result.errorResult) {
-            if (!signal?.aborted) controller.error(new Error("Twinmind stream error"));
-            else {
-              try {
-                controller.close();
-              } catch {
-                /* already closed */
-              }
-            }
-            return;
-          }
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(openAiChunk(id, created, clientModel, {}, "stop"))}\n\n`)
-          );
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-          controller.close();
-        },
-      });
-      return {
-        response: new Response(stream, { headers: sseHeaders }),
-        url: TWINMIND_CHAT_URL,
-        headers: { authorization: "Bearer <redacted>" },
-        transformedBody: buildTwinmindChatBody(baseQuery, modelId),
-      };
+    if (!upstream.ok) {
+      const errText = await upstream.text().catch(() => "");
+      return twinmindChatErrorResult(
+        upstream.status,
+        `Twinmind error: ${sanitizeErrorMessage(errText)}`,
+        ctx.body,
+        chatBody
+      );
     }
 
+    const read = await this.readSse(upstream, onDelta ?? (() => undefined));
+    if (!read.ok) {
+      return twinmindChatErrorResult(
+        502,
+        `Twinmind protocol error: ${sanitizeErrorMessage(read.errorMessage || "unknown")}`,
+        ctx.body,
+        chatBody
+      );
+    }
+    return { text: read.text, chatBody };
+  }
+
+  /** Non-tool streaming path: single upstream call, delta-forwarded straight through as SSE. */
+  private buildTwinmindPlainStreamResponse(
+    ctx: TwinmindRunContext,
+    authRef: { current: TwinmindAuthState },
+    baseQuery: string,
+    id: string,
+    created: number,
+    clientModel: string,
+    sseHeaders: Record<string, string>
+  ): ExecutorExecuteResult {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start: async (controller) => {
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify(openAiChunk(id, created, clientModel, { role: "assistant" }))}\n\n`
+          )
+        );
+        const result = await this.runTwinmindOnce(ctx, authRef, baseQuery, (delta) => {
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify(openAiChunk(id, created, clientModel, { content: delta }))}\n\n`
+            )
+          );
+        });
+        if ("errorResult" in result && result.errorResult) {
+          if (!ctx.signal?.aborted) controller.error(new Error("Twinmind stream error"));
+          else {
+            try {
+              controller.close();
+            } catch {
+              /* already closed */
+            }
+          }
+          return;
+        }
+        controller.enqueue(
+          encoder.encode(
+            `data: ${JSON.stringify(openAiChunk(id, created, clientModel, {}, "stop"))}\n\n`
+          )
+        );
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+      },
+    });
+    return {
+      response: new Response(stream, { headers: sseHeaders }),
+      url: TWINMIND_CHAT_URL,
+      headers: { authorization: "Bearer <redacted>" },
+      transformedBody: buildTwinmindChatBody(baseQuery, ctx.modelId),
+    };
+  }
+
+  /** Runs one tool-loop attempt: post + read, then parse tool calls when this provider request has tools. */
+  private async runTwinmindToolAttempt(
+    ctx: TwinmindRunContext,
+    authRef: { current: TwinmindAuthState },
+    query: string,
+    hasTools: boolean,
+    streamer: ReturnType<typeof makeTwinmindToolAwareStreamer> | undefined
+  ): Promise<
+    | { errorResult: ExecutorExecuteResult }
+    | {
+        lastText: string;
+        lastBody: JsonRecord;
+        parsed: { calls: TwinmindToolCall[]; content: string };
+      }
+  > {
+    const result = await this.runTwinmindOnce(
+      ctx,
+      authRef,
+      query,
+      streamer ? (delta) => streamer.onDelta(delta) : undefined
+    );
+    if ("errorResult" in result && result.errorResult) return { errorResult: result.errorResult };
+    const lastText = result.text || "";
+    streamer?.finish();
+    const parsed = hasTools
+      ? parseTwinmindToolCalls(lastText)
+      : { calls: [] as TwinmindToolCall[], content: lastText };
+    return { lastText, lastBody: result.chatBody, parsed };
+  }
+
+  /** Runs the (possibly single) tool-aware attempt loop; returns the terminal state or an early error. */
+  private async runTwinmindToolLoop(
+    ctx: TwinmindRunContext,
+    authRef: { current: TwinmindAuthState },
+    baseQuery: string,
+    bodyObj: JsonRecord,
+    hasTools: boolean,
+    maxToolTries: number,
+    wantStream: boolean,
+    id: string,
+    created: number,
+    clientModel: string
+  ): Promise<
+    | { errorResult: ExecutorExecuteResult }
+    | {
+        lastText: string;
+        lastBody: JsonRecord;
+        parsed: { calls: TwinmindToolCall[]; content: string };
+        streamer: ReturnType<typeof makeTwinmindToolAwareStreamer> | undefined;
+        liveChunks: string[];
+      }
+  > {
     let lastText = "";
-    let lastBody = buildTwinmindChatBody(baseQuery, modelId);
+    let lastBody = buildTwinmindChatBody(baseQuery, ctx.modelId);
     let parsed = { calls: [] as TwinmindToolCall[], content: "" };
     let streamer: ReturnType<typeof makeTwinmindToolAwareStreamer> | undefined;
     const liveChunks: string[] = [];
 
     for (let attempt = 1; attempt <= maxToolTries; attempt++) {
-      const query = attempt === 1 ? baseQuery : `${baseQuery}${buildTwinmindToolRetryNudge(bodyObj.tools)}`;
-      if (wantStream && hasTools) {
-        liveChunks.length = 0;
+      const query =
+        attempt === 1 ? baseQuery : `${baseQuery}${buildTwinmindToolRetryNudge(bodyObj.tools)}`;
+      streamer =
+        wantStream && hasTools
+          ? beginTwinmindToolAttemptStream(liveChunks, id, created, clientModel)
+          : streamer;
+      const attempted = await this.runTwinmindToolAttempt(ctx, authRef, query, hasTools, streamer);
+      if ("errorResult" in attempted) return { errorResult: attempted.errorResult };
+      ({ lastText, lastBody, parsed } = attempted);
+      if (!shouldContinueTwinmindToolLoop(hasTools, parsed, lastText, bodyObj)) break;
+    }
+
+    return { lastText, lastBody, parsed, streamer, liveChunks };
+  }
+
+  /** Assembles the tool-aware streaming SSE response from the loop's terminal state. */
+  private buildTwinmindToolStreamResponse(
+    lastText: string,
+    lastBody: JsonRecord,
+    parsed: { calls: TwinmindToolCall[]; content: string },
+    streamer: ReturnType<typeof makeTwinmindToolAwareStreamer> | undefined,
+    liveChunks: string[],
+    id: string,
+    created: number,
+    clientModel: string,
+    sseHeaders: Record<string, string>
+  ): ExecutorExecuteResult {
+    if (parsed.calls.length > 0) {
+      liveChunks.length = 1;
+      liveChunks.push(
+        `data: ${JSON.stringify(
+          openAiChunk(id, created, clientModel, {
+            tool_calls: parsed.calls.map((call, index) => ({ ...call, index })),
+          })
+        )}\n\n`
+      );
+      liveChunks.push(
+        `data: ${JSON.stringify(openAiChunk(id, created, clientModel, {}, "tool_calls"))}\n\n`
+      );
+    } else {
+      const rest = lastText.slice(streamer?.blocked ? 0 : (streamer?.emitted ?? 0));
+      if (rest && (!streamer || streamer.blocked || streamer.emitted < lastText.length)) {
         liveChunks.push(
-          `data: ${JSON.stringify(openAiChunk(id, created, clientModel, { role: "assistant" }))}\n\n`
+          `data: ${JSON.stringify(openAiChunk(id, created, clientModel, { content: rest }))}\n\n`
         );
-        streamer = makeTwinmindToolAwareStreamer((text) => {
-          liveChunks.push(
-            `data: ${JSON.stringify(openAiChunk(id, created, clientModel, { content: text }))}\n\n`
-          );
-        });
       }
-      const result = await runOnce(query, streamer ? (delta) => streamer!.onDelta(delta) : undefined);
-      if ("errorResult" in result && result.errorResult) return result.errorResult;
-      lastText = result.text || "";
-      lastBody = result.chatBody;
-      streamer?.finish();
-      parsed = hasTools ? parseTwinmindToolCalls(lastText) : { calls: [] as TwinmindToolCall[], content: lastText };
-      if (!hasTools) break;
-      if (parsed.calls.length > 0) break;
-      if (looksLikeTwinmindRefusal(lastText) || twinmindUserWantsLocalTools(bodyObj.messages)) continue;
-      break;
+      liveChunks.push(
+        `data: ${JSON.stringify(openAiChunk(id, created, clientModel, {}, "stop"))}\n\n`
+      );
     }
+    liveChunks.push("data: [DONE]\n\n");
+    return {
+      response: new Response(liveChunks.join(""), { headers: sseHeaders }),
+      url: TWINMIND_CHAT_URL,
+      headers: { authorization: "Bearer <redacted>" },
+      transformedBody: lastBody,
+    };
+  }
 
-    if (wantStream) {
-      if (hasTools) {
-        if (parsed.calls.length > 0) {
-          liveChunks.length = 1;
-          liveChunks.push(
-            `data: ${JSON.stringify(
-              openAiChunk(id, created, clientModel, {
-                tool_calls: parsed.calls.map((call, index) => ({ ...call, index })),
-              })
-            )}\n\n`
-          );
-          liveChunks.push(`data: ${JSON.stringify(openAiChunk(id, created, clientModel, {}, "tool_calls"))}\n\n`);
-        } else {
-          const rest = lastText.slice(streamer?.blocked ? 0 : streamer?.emitted ?? 0);
-          if (rest && (!streamer || streamer.blocked || streamer.emitted < lastText.length)) {
-            liveChunks.push(
-              `data: ${JSON.stringify(openAiChunk(id, created, clientModel, { content: rest }))}\n\n`
-            );
-          }
-          liveChunks.push(`data: ${JSON.stringify(openAiChunk(id, created, clientModel, {}, "stop"))}\n\n`);
-        }
-        liveChunks.push("data: [DONE]\n\n");
-        return {
-          response: new Response(liveChunks.join(""), { headers: sseHeaders }),
-          url: TWINMIND_CHAT_URL,
-          headers: { authorization: "Bearer <redacted>" },
-          transformedBody: lastBody,
-        };
-      }
-    }
-
+  /** Assembles the non-streaming JSON chat-completion response. */
+  private buildTwinmindJsonResponse(
+    lastText: string,
+    lastBody: JsonRecord,
+    parsed: { calls: TwinmindToolCall[]; content: string },
+    id: string,
+    created: number,
+    clientModel: string
+  ): ExecutorExecuteResult {
     return {
       response: new Response(
         JSON.stringify(
@@ -869,5 +1026,156 @@ export class TwinmindExecutor extends BaseExecutor {
       headers: { authorization: "Bearer <redacted>" },
       transformedBody: lastBody,
     };
+  }
+
+  /** Validates the request, ensures a usable token, and assembles everything the run phases need. */
+  private async setupTwinmindExecution(input: ExecuteInput): Promise<
+    | { error: ExecutorExecuteResult }
+    | {
+        ctx: TwinmindRunContext;
+        authRef: { current: TwinmindAuthState };
+        bodyObj: JsonRecord;
+        baseQuery: string;
+        hasTools: boolean;
+        maxToolTries: number;
+        wantStream: boolean;
+        id: string;
+        created: number;
+        clientModel: string;
+        sseHeaders: Record<string, string>;
+      }
+  > {
+    const { body, credentials, signal, stream: wantStream } = input;
+    const bodyObj = asRecord(body);
+    const fetchImpl = globalThis.fetch.bind(globalThis);
+    const requestedModel = input.model || toStringOrEmpty(bodyObj.model) || "auto";
+    const modelId = mapTwinmindModel(requestedModel);
+    const baseQuery = buildTwinmindQuery(bodyObj);
+    const hasTools =
+      (Array.isArray(bodyObj.tools) && bodyObj.tools.length > 0) ||
+      messagesHaveTwinmindToolTraffic(bodyObj.messages);
+    const maxToolTries = hasTools ? 4 : 1;
+
+    if (!baseQuery) {
+      return {
+        error: makeErrorResult(
+          400,
+          "Twinmind requires a non-empty user message",
+          body,
+          TWINMIND_CHAT_URL
+        ),
+      };
+    }
+
+    const persist = input.onCredentialsRefreshed as
+      ((patch: TwinmindCredentialPatch) => Promise<void> | void) | undefined;
+
+    const ensured = await ensureTwinmindAccessToken({
+      apiKey: credentials?.apiKey,
+      accessToken: credentials?.accessToken,
+      refreshToken: credentials?.refreshToken,
+      providerSpecificData: credentials?.providerSpecificData,
+      fetchImpl,
+      onCredentialsRefreshed: persist,
+    });
+
+    if (!ensured.token) {
+      return {
+        error: makeErrorResult(
+          401,
+          ensured.refreshToken
+            ? "Twinmind Firebase refresh failed. Paste stsTokenManager JSON (accessToken + refreshToken) or a current Bearer JWT."
+            : "Missing Twinmind token — paste stsTokenManager JSON (accessToken + refreshToken) or a current Bearer JWT.",
+          body,
+          TWINMIND_CHAT_URL
+        ),
+      };
+    }
+
+    return {
+      ctx: {
+        body,
+        modelId,
+        signal,
+        fetchImpl,
+        providerSpecificData: credentials?.providerSpecificData,
+        persist,
+      },
+      authRef: { current: ensured },
+      bodyObj,
+      baseQuery,
+      hasTools,
+      maxToolTries,
+      wantStream,
+      id: `chatcmpl-twinmind-${Date.now()}`,
+      created: Math.floor(Date.now() / 1000),
+      clientModel: toStringOrEmpty(bodyObj.model) || requestedModel,
+      sseHeaders: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    };
+  }
+
+  async execute(input: ExecuteInput): Promise<ExecutorExecuteResult> {
+    const setup = await this.setupTwinmindExecution(input);
+    if ("error" in setup) return setup.error;
+    const {
+      ctx,
+      authRef,
+      bodyObj,
+      baseQuery,
+      hasTools,
+      maxToolTries,
+      wantStream,
+      id,
+      created,
+      clientModel,
+      sseHeaders,
+    } = setup;
+
+    if (wantStream && !hasTools) {
+      return this.buildTwinmindPlainStreamResponse(
+        ctx,
+        authRef,
+        baseQuery,
+        id,
+        created,
+        clientModel,
+        sseHeaders
+      );
+    }
+
+    const loopResult = await this.runTwinmindToolLoop(
+      ctx,
+      authRef,
+      baseQuery,
+      bodyObj,
+      hasTools,
+      maxToolTries,
+      wantStream,
+      id,
+      created,
+      clientModel
+    );
+    if ("errorResult" in loopResult) return loopResult.errorResult;
+    const { lastText, lastBody, parsed, streamer, liveChunks } = loopResult;
+
+    if (wantStream && hasTools) {
+      return this.buildTwinmindToolStreamResponse(
+        lastText,
+        lastBody,
+        parsed,
+        streamer,
+        liveChunks,
+        id,
+        created,
+        clientModel,
+        sseHeaders
+      );
+    }
+
+    return this.buildTwinmindJsonResponse(lastText, lastBody, parsed, id, created, clientModel);
   }
 }
