@@ -5,11 +5,10 @@
 //     bulkCreateProviderSchema        (bulk import)
 //     updateProviderConnectionSchema  (edit connection)
 //
-// That `apiKey` field is reused as the raw `Cookie:` header value for cookie-
-// based web providers (Gemini Business, Copilot M365, ChatGPT Web (Codex), Claude Web,
-// …). Real multi-cookie session headers (many `__Secure-*` entries, large
-// session tokens) legitimately exceed 10,000 chars. The provider's own
-// `validate` schema (validateProviderApiKeySchema) has NO cap, so the cookie
+// Cookie-header-based web providers (Gemini Business, Copilot M365, ChatGPT Web
+// (Codex), Claude Web, …). Real multi-cookie session headers (many `__Secure-*`
+// entries, large session tokens) legitimately exceed 10,000 chars. The provider's
+// own `validate` schema (validateProviderApiKeySchema) has NO cap, so the cookie
 // validated as OK — then `save` rejected it with HTTP 400
 // "Too big: expected string to have <=10000 characters".
 //
@@ -24,7 +23,7 @@ const { createProviderSchema, bulkCreateProviderSchema, updateProviderConnection
   await import("../../src/shared/validation/schemas.ts");
 
 // A realistic large cookie-header value: > 10_000 chars, < the new 100_000 cap.
-const LARGE_COOKIE = "__Secure-session=" + "a".repeat(20_000);
+const LARGE_COOKIE = "cf_clearance=" + "a".repeat(20_000);
 // Beyond the new ceiling — must still be rejected (anti-abuse bound preserved).
 const OVERSIZE_COOKIE = "x".repeat(100_001);
 

@@ -259,7 +259,7 @@ test("provider schemas accept quota scraping provider-specific strings", () => {
   });
   const updated = updateProviderConnectionSchema.safeParse({
     providerSpecificData: {
-      ollamaCloudUsageCookie: "__Secure-session=cookie-value",
+      opencodeGoAuthCookie: "auth=cookie-value",
     },
   });
 
@@ -279,7 +279,7 @@ test("provider schemas reject malformed quota scraping provider-specific values"
   });
   const updated = updateProviderConnectionSchema.safeParse({
     providerSpecificData: {
-      ollamaCloudUsageCookie: 123,
+      usageCookie: 123,
     },
   });
 

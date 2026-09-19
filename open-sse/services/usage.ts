@@ -171,7 +171,7 @@ export async function getUsageForProvider(
     case "opencode-go":
       return await getOpencodeUsage(id || "", apiKey || "");
     case "ollama-cloud":
-      return await getOllamaCloudUsage(providerSpecificData);
+      return await getOllamaCloudUsage(apiKey || accessToken);
     case "minimax":
     case "minimax-cn":
       return await getMiniMaxUsage(apiKey || "", provider);

@@ -342,7 +342,6 @@ export function sanitizeProviderSpecificDataForResponse(value: unknown): JsonRec
   delete sanitized.opencodeGoAuthCookie;
   delete sanitized.authCookie;
   delete sanitized.ollamaUsageCookie;
-  delete sanitized.ollamaCloudUsageCookie;
   delete sanitized.ollamaCloudCookie;
   delete sanitized.usageCookie;
   // Qwen/Alibaba Token Plan console session — a browser credential for the operator's

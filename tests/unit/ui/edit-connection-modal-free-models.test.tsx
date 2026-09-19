@@ -295,32 +295,4 @@ describe("EditConnectionModal — quota scraping fields", () => {
     expect(payload.providerSpecificData).not.toHaveProperty("opencodeGoWorkspaceId");
     expect(payload.providerSpecificData).not.toHaveProperty("opencodeGoAuthCookie");
   });
-
-  it("omits Ollama Cloud usage cookie when the edit field is left blank", async () => {
-    const onSave = vi.fn().mockResolvedValue(undefined);
-    const el = render({
-      providerId: "ollama-cloud",
-      connection: {
-        id: "conn-ollama-cloud",
-        provider: "ollama-cloud",
-        name: "Ollama Cloud",
-        authType: "apikey",
-        providerSpecificData: {},
-      },
-      onSave,
-    });
-
-    expect(el.querySelector<HTMLInputElement>('input[name="ollamaCloudUsageCookie"]')).toBeTruthy();
-
-    const saveBtn = Array.from(el.querySelectorAll("button")).find(
-      (b) => b.textContent?.trim() === "save"
-    )!;
-    act(() => {
-      saveBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-
-    await waitFor(() => onSave.mock.calls.length > 0);
-    const payload = onSave.mock.calls[0][0];
-    expect("ollamaCloudUsageCookie" in payload.providerSpecificData).toBe(false);
-  });
 });

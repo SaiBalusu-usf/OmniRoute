@@ -132,29 +132,4 @@ describe("AddApiKeyModal — quota scraping fields", () => {
     expect(payload.providerSpecificData ?? {}).not.toHaveProperty("opencodeGoWorkspaceId");
     expect(payload.providerSpecificData ?? {}).not.toHaveProperty("opencodeGoAuthCookie");
   });
-
-  it("saves Ollama Cloud usage cookie in providerSpecificData", async () => {
-    const onSave = vi.fn().mockResolvedValue(undefined);
-    const el = render({ provider: "ollama-cloud", providerName: "Ollama Cloud", onSave });
-
-    const nameInput = el.querySelector<HTMLInputElement>('input[placeholder="productionKey"]')!;
-    const apiKeyInput = el.querySelector<HTMLInputElement>('input[type="password"]')!;
-    const cookieInput = el.querySelector<HTMLInputElement>('input[name="ollamaCloudUsageCookie"]')!;
-    setInputValue(nameInput, "Ollama Cloud");
-    setInputValue(apiKeyInput, "ollama-key");
-    setInputValue(cookieInput, "__Secure-session=ollama-cookie");
-
-    const saveBtn = Array.from(el.querySelectorAll("button")).find(
-      (b) => b.textContent?.trim() === "save"
-    )!;
-    act(() => {
-      saveBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-
-    await waitFor(() => onSave.mock.calls.length > 0);
-    const payload = onSave.mock.calls[0][0];
-    expect(payload.providerSpecificData?.ollamaCloudUsageCookie).toBe(
-      "__Secure-session=ollama-cookie"
-    );
-  });
 });

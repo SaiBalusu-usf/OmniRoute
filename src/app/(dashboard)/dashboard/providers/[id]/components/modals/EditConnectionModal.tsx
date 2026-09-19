@@ -377,7 +377,6 @@ export default function EditConnectionModal({
         glmOrganizationId: existingGlmOrganizationId,
         glmProjectId: existingGlmProjectId,
         // Console-session credentials stripped in responses; blank preserves stored values.
-        ollamaCloudUsageCookie: "",
         alibabaConsoleCookie: "",
         qwenCloudCookie: "",
         qwenCloudSecToken: "",

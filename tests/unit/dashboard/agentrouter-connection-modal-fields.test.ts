@@ -28,7 +28,6 @@ const BASE_FORM_DATA = {
   importFreeModelsOnly: false,
   m365Tier: undefined,
   newApiUserId: "",
-  ollamaCloudUsageCookie: "",
   opencodeGoAuthCookie: "",
   opencodeGoWorkspaceId: "",
   passthroughModels: false,

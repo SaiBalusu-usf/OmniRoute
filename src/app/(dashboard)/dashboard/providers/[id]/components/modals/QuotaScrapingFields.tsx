@@ -31,31 +31,6 @@ export default function QuotaScrapingFields({
   t,
   editMode = false,
 }: QuotaScrapingFieldsProps) {
-  if (provider === "ollama-cloud") {
-    return (
-      <div className="flex flex-col gap-3 rounded-lg border border-border/50 bg-surface/20 p-4">
-        <Input
-          label={providerText(t, "ollamaCloudUsageCookieLabel", "Ollama Cloud usage cookie")}
-          name="ollamaCloudUsageCookie"
-          type="password"
-          value={values.ollamaCloudUsageCookie}
-          onChange={(e) => onChange({ ollamaCloudUsageCookie: e.target.value })}
-          placeholder="__Secure-session=..."
-          hint={providerText(
-            t,
-            "ollamaCloudUsageCookieHint",
-            editMode
-              ? "Leave blank to keep the stored cookie. Paste the __Secure-session cookie value from ollama.com/settings to replace it."
-              : "Required for quota scraping. Paste the __Secure-session cookie value from ollama.com/settings."
-          )}
-          autoComplete="off"
-          spellCheck={false}
-          autoCapitalize="off"
-        />
-      </div>
-    );
-  }
-
   if (getProviderConnectionFamilyIds("alibaba").includes(provider)) {
     return (
       <div className="flex flex-col gap-3 rounded-lg border border-border/50 bg-surface/20 p-4">

@@ -1,8 +1,16 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+// The service reads OMNIROUTE_OLLAMA_API_USAGE_URL at module import time, so the
+// stub URL must be set before ANY module that (transitively) loads
+// opencodeOllamaUsage.ts — including usage.ts below, which statically imports it.
+// Dynamic imports are required because static imports would hoist above this stub.
+const STUB_USAGE_URL = "https://stub.invalid/api/usage";
+const originalUsageUrl = process.env.OMNIROUTE_OLLAMA_API_USAGE_URL;
+process.env.OMNIROUTE_OLLAMA_API_USAGE_URL = STUB_USAGE_URL;
 
 const usage = await import("../../open-sse/services/usage.ts");
 const { USAGE_SUPPORTED_PROVIDERS } = await import("../../src/shared/constants/providers.ts");
+if (originalUsageUrl === undefined) delete process.env.OMNIROUTE_OLLAMA_API_USAGE_URL;
 
 test("USAGE_SUPPORTED_PROVIDERS includes ollama-cloud", () => {
   assert.ok(
@@ -20,248 +28,183 @@ test("USAGE_FETCHER_PROVIDERS includes ollama-cloud (#7026)", () => {
     "ollama-cloud is handled by getUsageForProvider's switch and must be listed in USAGE_FETCHER_PROVIDERS"
   );
 });
+const { getOllamaCloudUsage } = await import("../../open-sse/services/opencodeOllamaUsage.ts");
+type UsageResult = {
+  message?: string;
+  plan?: string;
+  quotas?: Record<string, {
+    used: number;
+    total: number;
+    remaining: number;
+    remainingPercentage: number;
+    details?: Array<{ name: string; used: number }>;
+  }>;
+};
 
-test("registerGenericQuotaFetchers wires a preflight quota fetcher for ollama-cloud (#7026)", async () => {
-  const { registerGenericQuotaFetchers } = await import(
-    "../../open-sse/services/genericQuotaFetcher.ts"
-  );
-  const { getQuotaFetcher } = await import("../../open-sse/services/quotaPreflight.ts");
-  registerGenericQuotaFetchers();
-  assert.ok(
-    getQuotaFetcher("ollama-cloud"),
-    "a generic quota fetcher must be registered for ollama-cloud after registerGenericQuotaFetchers()"
-  );
-});
+type CapturedRequest = {
+  url: string;
+  headers: Headers;
+  redirect: RequestRedirect | undefined;
+};
 
-test("getUsageForProvider returns helpful message when Ollama Cloud has no usage cookie", async () => {
-  const originalCookie = process.env.OLLAMA_USAGE_COOKIE;
-  const originalOmniCookie = process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE;
-  delete process.env.OLLAMA_USAGE_COOKIE;
-  delete process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE;
-
-  let called = false;
+function stubFetch(response: Response): {
+  restore: () => void;
+  requests: CapturedRequest[];
+} {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => {
-    called = true;
-    return new Response("unexpected", { status: 500 });
-  };
-
-  try {
-    const result = (await usage.getUsageForProvider({
-      id: "ollama-cloud-no-cookie",
-      provider: "ollama-cloud",
-      apiKey: "ollama-chat-key",
-    })) as { message?: string };
-
-    assert.equal(called, false, "settings scrape must not run without a cookie");
-    assert.match(result.message ?? "", /Ollama Cloud/);
-    assert.match(result.message ?? "", /OLLAMA_USAGE_COOKIE/);
-  } finally {
-    globalThis.fetch = originalFetch;
-    if (originalCookie === undefined) delete process.env.OLLAMA_USAGE_COOKIE;
-    else process.env.OLLAMA_USAGE_COOKIE = originalCookie;
-    if (originalOmniCookie === undefined) delete process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE;
-    else process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE = originalOmniCookie;
-  }
-});
-
-test("getUsageForProvider scrapes Ollama Cloud settings quota", async () => {
-  const originalFetch = globalThis.fetch;
-  const originalCookie = process.env.OLLAMA_USAGE_COOKIE;
-  const originalOmniCookie = process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE;
-  delete process.env.OLLAMA_USAGE_COOKIE;
-  process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE = "__Secure-session=test-cookie";
-
-  let requestUrl = "";
-  let requestHeaders: Headers | null = null;
-  let redirectMode: RequestRedirect | undefined;
-
+  const requests: CapturedRequest[] = [];
   globalThis.fetch = async (input, init) => {
-    requestUrl = String(input);
-    requestHeaders = new Headers(init?.headers as HeadersInit | undefined);
-    redirectMode = init?.redirect;
-    return new Response(
-      [
-        '<span class="capitalize">pro</span>',
-        '<div data-usage-track aria-label="34% used" style="width: 34%"></div>',
-        '<span class="local-time" data-time="2026-06-22T15:00:00.000Z"></span>',
-        '<div data-usage-track style="width: 67%"></div>',
-        '<span class="local-time" data-time="2026-06-29T15:00:00.000Z"></span>',
-      ].join(""),
-      { status: 200, headers: { "content-type": "text/html" } }
-    );
-  };
-
-  try {
-    const result = (await usage.getUsageForProvider({
-      id: "ollama-cloud-settings",
-      provider: "ollama-cloud",
-      apiKey: "ollama-chat-key",
-    })) as {
-      plan?: string | null;
-      quotas?: Record<string, { used: number; total: number; remainingPercentage: number }>;
-    };
-
-    assert.equal(requestUrl, "https://ollama.com/settings");
-    assert.equal(requestHeaders?.get("Cookie"), "__Secure-session=test-cookie");
-    assert.equal(redirectMode, "manual");
-    assert.equal(result.plan, "Ollama Cloud pro");
-    assert.deepEqual(Object.keys(result.quotas ?? {}), ["session", "weekly"]);
-    assert.equal(result.quotas!.session.used, 34);
-    assert.equal(result.quotas!.session.remainingPercentage, 66);
-    assert.equal(result.quotas!.weekly.used, 67);
-    assert.equal(result.quotas!.weekly.remainingPercentage, 33);
-  } finally {
-    globalThis.fetch = originalFetch;
-    if (originalCookie === undefined) delete process.env.OLLAMA_USAGE_COOKIE;
-    else process.env.OLLAMA_USAGE_COOKIE = originalCookie;
-    if (originalOmniCookie === undefined) delete process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE;
-    else process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE = originalOmniCookie;
-  }
-});
-
-test("getUsageForProvider keeps Ollama Cloud reset times aligned to usage tracks", async () => {
-  const originalFetch = globalThis.fetch;
-  const originalCookie = process.env.OLLAMA_USAGE_COOKIE;
-  const originalOmniCookie = process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE;
-  delete process.env.OLLAMA_USAGE_COOKIE;
-  process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE = "test-cookie";
-
-  globalThis.fetch = async () =>
-    new Response(
-      [
-        '<span class="local-time" data-time="2026-01-01T00:00:00.000Z"></span>',
-        '<div data-usage-track aria-label="34% used" style="width: 1%">',
-        '<span class="local-time" data-time="2026-06-22T15:00:00.000Z"></span>',
-        "</div>",
-        '<div data-usage-track style="width: 67%">',
-        '<span style="width: 1%"></span>',
-        '<span class="local-time" data-time="2026-06-29T15:00:00.000Z"></span>',
-        "</div>",
-      ].join(""),
-      { status: 200, headers: { "content-type": "text/html" } }
-    );
-
-  try {
-    const result = (await usage.getUsageForProvider({
-      id: "ollama-cloud-aligned-times",
-      provider: "ollama-cloud",
-      apiKey: "ollama-chat-key",
-    })) as {
-      quotas?: Record<string, { used: number; resetAt: string | null }>;
-    };
-
-    assert.equal(result.quotas!.session.used, 34);
-    assert.equal(result.quotas!.session.resetAt, "2026-06-22T15:00:00.000Z");
-    assert.equal(result.quotas!.weekly.used, 67);
-    assert.equal(result.quotas!.weekly.resetAt, "2026-06-29T15:00:00.000Z");
-  } finally {
-    globalThis.fetch = originalFetch;
-    if (originalCookie === undefined) delete process.env.OLLAMA_USAGE_COOKIE;
-    else process.env.OLLAMA_USAGE_COOKIE = originalCookie;
-    if (originalOmniCookie === undefined) delete process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE;
-    else process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE = originalOmniCookie;
-  }
-});
-
-test("getUsageForProvider reports expired Ollama Cloud cookies on redirect", async () => {
-  const originalFetch = globalThis.fetch;
-  const originalCookie = process.env.OLLAMA_USAGE_COOKIE;
-  process.env.OLLAMA_USAGE_COOKIE = "expired-cookie";
-
-  globalThis.fetch = async () =>
-    new Response("", {
-      status: 302,
-      headers: { location: "/signin" },
+    requests.push({
+      url: String(input),
+      headers: new Headers(init?.headers as HeadersInit | undefined),
+      redirect: init?.redirect,
     });
+    return response;
+  };
+  return { restore: () => (globalThis.fetch = originalFetch), requests };
+}
 
+test("getOllamaCloudUsage returns a helpful message when no API key is set", async () => {
+  const { restore, requests } = stubFetch(new Response("unexpected", { status: 500 }));
   try {
-    const result = (await usage.getUsageForProvider({
-      id: "ollama-cloud-redirect",
-      provider: "ollama-cloud",
-      apiKey: "ollama-chat-key",
-    })) as { message?: string };
-
-    assert.match(result.message ?? "", /authentication expired/i);
+    for (const apiKey of [undefined, "", "   "]) {
+      const result = (await getOllamaCloudUsage(apiKey)) as UsageResult;
+      assert.match(result.message ?? "", /API key/);
+      assert.match(result.message ?? "", /Ollama Cloud/);
+    }
+    assert.equal(requests.length, 0, "no fetch must run without an API key");
   } finally {
-    globalThis.fetch = originalFetch;
-    if (originalCookie === undefined) delete process.env.OLLAMA_USAGE_COOKIE;
-    else process.env.OLLAMA_USAGE_COOKIE = originalCookie;
+    restore();
   }
 });
 
-test("getUsageForProvider parses the current $X-of-$Y aria-label with nested width style (#12749)", async () => {
-  const originalFetch = globalThis.fetch;
-  const originalCookie = process.env.OLLAMA_USAGE_COOKIE;
-  const originalOmniCookie = process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE;
-  delete process.env.OLLAMA_USAGE_COOKIE;
-  process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE = "__Secure-session=test-cookie";
-
-  globalThis.fetch = async () =>
-    new Response(
-      [
-        '<span class="capitalize">pro</span>',
-        '<div class="relative h-3 overflow-hidden rounded-full bg-neutral-200" data-usage-track aria-label="Monthly usage $60.01 of $60 used">',
-        '<div class="flex h-full overflow-hidden bg-neutral-950" style="width: 100%; background: #ef4444;"></div>',
-        '<span class="local-time" data-time="2026-06-22T15:00:00.000Z"></span>',
-        "</div>",
-      ].join(""),
-      { status: 200, headers: { "content-type": "text/html" } }
-    );
-
+test("getOllamaCloudUsage sends a Bearer request to the /api/usage endpoint", async () => {
+  const { restore, requests } = stubFetch(
+    new Response(JSON.stringify({ limits: { monthly: { usage: 0.5, models: [] } } }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    })
+  );
   try {
-    const result = (await usage.getUsageForProvider({
-      id: "ollama-cloud-new-markup",
-      provider: "ollama-cloud",
-      apiKey: "ollama-chat-key",
-    })) as { message?: string; quotas?: Record<string, { used: number }> };
-
-    assert.ok(
-      result.quotas && Object.keys(result.quotas).length > 0,
-      `expected quotas, got message: ${result.message}`
-    );
-    assert.equal(result.quotas!.session.used, 100);
+    const result = (await getOllamaCloudUsage("test-key")) as UsageResult;
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].url, STUB_USAGE_URL, "must call the retained usage URL env target");
+    assert.equal(requests[0].headers.get("Authorization"), "Bearer test-key");
+    assert.equal(requests[0].headers.get("Accept"), "application/json");
+    assert.equal(requests[0].redirect, "manual");
+    assert.equal(result.plan, "Ollama Cloud");
+    assert.equal(result.quotas!.monthly.used, 50);
+    assert.equal(result.quotas!.monthly.total, 100);
+    assert.equal(result.quotas!.monthly.remaining, 50);
+    assert.equal(result.quotas!.monthly.remainingPercentage, 50);
   } finally {
-    globalThis.fetch = originalFetch;
-    if (originalCookie === undefined) delete process.env.OLLAMA_USAGE_COOKIE;
-    else process.env.OLLAMA_USAGE_COOKIE = originalCookie;
-    if (originalOmniCookie === undefined) delete process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE;
-    else process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE = originalOmniCookie;
+    restore();
   }
 });
 
-test("getUsageForProvider still finds width style on a nested child when no aria-label percent exists (#12749)", async () => {
-  const originalFetch = globalThis.fetch;
-  const originalCookie = process.env.OLLAMA_USAGE_COOKIE;
-  const originalOmniCookie = process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE;
-  delete process.env.OLLAMA_USAGE_COOKIE;
-  process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE = "__Secure-session=test-cookie";
-
-  globalThis.fetch = async () =>
-    new Response(
-      [
-        '<div class="relative h-3" data-usage-track aria-label="Weekly usage $12 of $60 used">',
-        '<div class="flex h-full" style="width: 20%;"></div>',
-        '<span class="local-time" data-time="2026-06-29T15:00:00.000Z"></span>',
-        "</div>",
-      ].join(""),
-      { status: 200, headers: { "content-type": "text/html" } }
+test("getOllamaCloudUsage parses fractions as percents and clamps at 100", async () => {
+  const cases: Array<{ usage: number; expected: number | null }> = [
+    { usage: 0, expected: 0 },
+    { usage: 0.37, expected: 37 },
+    { usage: 37, expected: 37 }, // percent values pass through
+    { usage: 150, expected: 100 }, // clamped at 100
+    { usage: -1, expected: null }, // negative is invalid -> unavailable
+  ];
+  for (const { usage, expected } of cases) {
+    const { restore } = stubFetch(
+      new Response(JSON.stringify({ limits: { monthly: { usage, models: [] } } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      })
     );
+    try {
+      const result = (await getOllamaCloudUsage("test-key")) as UsageResult;
+      if (expected === null) {
+        assert.match(result.message ?? "", /unavailable/);
+      } else {
+        assert.equal(result.quotas!.monthly.used, expected, `usage=${usage}`);
+        assert.equal(result.quotas!.monthly.remaining, 100 - expected);
+      }
+    } finally {
+      restore();
+    }
+  }
+});
 
+test("getOllamaCloudUsage maps limits.monthly.models into quota details", async () => {
+  const { restore } = stubFetch(
+    new Response(
+      JSON.stringify({
+        limits: {
+          monthly: {
+            usage: 0.25,
+            models: [
+              { name: "gpt-oss:20b", request_count: 12 },
+              { name: "", request_count: 99 }, // unnamed rows are dropped
+            ],
+          },
+        },
+      }),
+      { status: 200, headers: { "content-type": "application/json" } }
+    )
+  );
   try {
-    const result = (await usage.getUsageForProvider({
-      id: "ollama-cloud-nested-width",
-      provider: "ollama-cloud",
-      apiKey: "ollama-chat-key",
-    })) as { quotas?: Record<string, { used: number }> };
-
-    // The aria-label ratio ($12 of $60 = 20%) is used, matching the nested style width fallback.
-    assert.equal(result.quotas!.session.used, 20);
+    const result = (await getOllamaCloudUsage("test-key")) as UsageResult;
+    assert.deepEqual(result.quotas!.monthly.details, [{ name: "gpt-oss:20b", used: 12 }]);
   } finally {
-    globalThis.fetch = originalFetch;
-    if (originalCookie === undefined) delete process.env.OLLAMA_USAGE_COOKIE;
-    else process.env.OLLAMA_USAGE_COOKIE = originalCookie;
-    if (originalOmniCookie === undefined) delete process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE;
-    else process.env.OMNIROUTE_OLLAMA_USAGE_COOKIE = originalOmniCookie;
+    restore();
+  }
+});
+
+test("getOllamaCloudUsage reports rejected API keys on 401/403", async () => {
+  for (const status of [401, 403]) {
+    const { restore } = stubFetch(new Response("denied", { status }));
+    try {
+      const result = (await getOllamaCloudUsage("test-key")) as UsageResult;
+      assert.match(result.message ?? "", new RegExp(`API key rejected \\(${status}\\)`));
+      assert.equal(result.quotas, undefined);
+    } finally {
+      restore();
+    }
+  }
+});
+
+test("getOllamaCloudUsage reports a redirect to sign-in", async () => {
+  const { restore } = stubFetch(
+    new Response(null, { status: 302, headers: { location: "https://ollama.com/signin" } })
+  );
+  try {
+    const result = (await getOllamaCloudUsage("expired-key")) as UsageResult;
+    assert.match(result.message ?? "", /redirect to sign-in/);
+    assert.equal(result.quotas, undefined);
+  } finally {
+    restore();
+  }
+});
+
+test("getOllamaCloudUsage errors on non-JSON and HTTP failures", async () => {
+  {
+    const { restore } = stubFetch(
+      new Response("<html>not json</html>", {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      })
+    );
+    try {
+      const result = (await getOllamaCloudUsage("test-key")) as UsageResult;
+      assert.match(result.message ?? "", /non-JSON/);
+      assert.equal(result.quotas, undefined);
+    } finally {
+      restore();
+    }
+  }
+  {
+    const { restore } = stubFetch(new Response("boom", { status: 500 }));
+    try {
+      const result = (await getOllamaCloudUsage("test-key")) as UsageResult;
+      assert.match(result.message ?? "", /usage API error \(500\)/);
+    } finally {
+      restore();
+    }
   }
 });

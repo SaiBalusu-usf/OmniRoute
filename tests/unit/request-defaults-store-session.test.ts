@@ -143,8 +143,6 @@ test("sanitizeProviderSpecificDataForResponse removes credentials and quota scra
     idToken: "id-token",
     apiKey: "api-key",
     opencodeGoAuthCookie: "auth-cookie",
-    ollamaCloudUsageCookie: "ollama-cookie",
-    usageCookie: "fallback-cookie",
     consoleApiKey: "console-key",
     tag: "primary",
   });

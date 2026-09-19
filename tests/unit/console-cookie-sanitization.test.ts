@@ -1,7 +1,7 @@
 /**
  * Console-session cookies are credentials: the Qwen/Alibaba Token Plan cookie grants
  * access to the operator's cloud-console account. Every sibling secret in
- * providerSpecificData (apiKey, ollamaCloudUsageCookie, opencodeGoAuthCookie, …) is
+ * providerSpecificData (apiKey, opencodeGoAuthCookie, …) is
  * stripped from API responses by sanitizeProviderSpecificDataForResponse — but the
  * qwen/alibaba console fields were forgotten, so GET /api/providers returned the
  * operator's console session in the clear to any dashboard session (found in the
@@ -34,7 +34,6 @@ test("every quota-scraping credential field is stripped from API responses", () 
     "qwenCloudSecToken",
     "alibabaConsoleCookie",
     "alibabaConsoleSecToken",
-    "ollamaCloudUsageCookie",
   ]) {
     assert.ok(secretFields.includes(expected), `${expected} missing from the field inventory`);
   }

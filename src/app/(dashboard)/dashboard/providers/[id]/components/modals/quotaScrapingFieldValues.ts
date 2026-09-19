@@ -19,7 +19,6 @@ export const VOLCENGINE_PLAN_PROVIDERS = new Set([
 ]);
 
 export type QuotaScrapingFieldValues = {
-  ollamaCloudUsageCookie: string;
   alibabaConsoleCookie: string;
   alibabaConsoleSecToken: string;
   qwenCloudCookie: string;
@@ -28,7 +27,6 @@ export type QuotaScrapingFieldValues = {
 };
 
 export const EMPTY_QUOTA_SCRAPING_FIELDS: QuotaScrapingFieldValues = {
-  ollamaCloudUsageCookie: "",
   alibabaConsoleCookie: "",
   alibabaConsoleSecToken: "",
   qwenCloudCookie: "",
@@ -41,9 +39,7 @@ export function assignQuotaScrapingProviderData(
   values: QuotaScrapingFieldValues,
   target: Record<string, unknown>
 ) {
-  if (provider === "ollama-cloud" && values.ollamaCloudUsageCookie.trim()) {
-    target.ollamaCloudUsageCookie = values.ollamaCloudUsageCookie.trim();
-  } else if (
+  if (
     getProviderConnectionFamilyIds("alibaba").includes(provider) &&
     values.alibabaConsoleCookie.trim()
   ) {

@@ -400,7 +400,6 @@ export function validateProviderSpecificData(
     "opencodeGoAuthCookie",
     "authCookie",
     "ollamaUsageCookie",
-    "ollamaCloudUsageCookie",
     "ollamaCloudCookie",
     "usageCookie",
     "alibabaConsoleCookie",
