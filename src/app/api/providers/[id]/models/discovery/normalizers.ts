@@ -268,6 +268,46 @@ export function normalizeOpenAiLikeModelsResponse(
     .filter((value): value is { id: string; name: string; owned_by: string } => Boolean(value));
 }
 
+/**
+ * WorkBuddy (www.workbuddy.ai) catalogue.
+ *
+ * The gateway answers `GET /v3/config` with `{ code, msg, requestId, data }` and
+ * the roster under `data.models`. Verified live (2026-09-19): the wrapper shape
+ * is as above and `data.models` is `null` on an unauthenticated request, so a
+ * token is required to see the roster. The item schema below (id / name /
+ * maxInputTokens / maxOutputTokens / supportsToolCall / supportsImages /
+ * supportsReasoning) is taken from the catalogue WorkBuddy's own CLI ships in
+ * `cli/product.json`, which is the same product's config family; the *populated*
+ * authenticated array was not directly observed, so the field probes stay
+ * defensive and an item without an id is dropped rather than guessed at.
+ *
+ * An object map is accepted alongside an array because the same config family
+ * ships `relatedModels` keyed by name.
+ */
+export function normalizeWorkbuddyModelsResponse(
+  data: unknown
+): Array<{ id: string; name: string; owned_by: string }> {
+  const root = asRecord(data);
+  const inner = asRecord(root.data);
+  const payload = inner.models ?? root.models;
+
+  const items: unknown[] = Array.isArray(payload)
+    ? payload
+    : payload && typeof payload === "object"
+      ? Object.entries(asRecord(payload)).map(([id, value]) => ({ id, ...asRecord(value) }))
+      : [];
+
+  return items
+    .map((value) => {
+      const item = asRecord(value);
+      const id = toNonEmptyString(item.id) || toNonEmptyString(item.model);
+      if (!id) return null;
+      const name = toNonEmptyString(item.name) || toNonEmptyString(item.displayName) || id;
+      return { id, name, owned_by: "workbuddy" };
+    })
+    .filter((value): value is { id: string; name: string; owned_by: string } => Boolean(value));
+}
+
 export function normalizeSapModelsResponse(
   data: unknown
 ): Array<{ id: string; name: string; owned_by: string }> {
