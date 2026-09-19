@@ -31,7 +31,7 @@ import {
   repairRelayResponseSchema,
 } from "./proxyRegistryData";
 
- export default function ProxyRegistryManager({
+export default function ProxyRegistryManager({
   onRedeployRelay,
   showVercelRelay = false,
   showDenoRelay = false,
