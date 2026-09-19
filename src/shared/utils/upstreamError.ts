@@ -87,6 +87,15 @@ export function extractErrorMessage(value: unknown): string | null {
     return record.message.trim();
   }
 
+  if (typeof record.msg === "string" && record.msg.trim()) {
+    return record.msg.trim();
+  }
+
+  if (record.data && typeof record.data === "object") {
+    const dataMessage = extractErrorMessage(record.data);
+    if (dataMessage) return dataMessage;
+  }
+
   if (typeof record.detail === "string" && record.detail.trim()) {
     return record.detail.trim();
   }

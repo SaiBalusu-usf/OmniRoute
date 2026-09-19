@@ -183,6 +183,17 @@ export class CodeBuddyCnExecutor extends DefaultExecutor {
         }
         return message;
       });
+
+      // CodeBuddy strictly requires the first message in messages to be a system prompt
+      // (HTTP 400, code 11128: "first message is not system prompt").
+      if (
+        out.messages.length === 0 ||
+        (out.messages[0] as Record<string, unknown>)?.role !== "system"
+      ) {
+        const sysContent =
+          typeof out.system === "string" && out.system.trim() ? out.system : NEUTRAL_PROMPT;
+        out.messages.unshift({ role: "system", content: sysContent });
+      }
     }
 
     // --- Strip oversized tool descriptions (>64KB) ---

@@ -1,4 +1,4 @@
-import { readFile } from "fs/promises";
+import { readFile, stat } from "fs/promises";
 import { homedir, platform } from "os";
 import { join } from "path";
 
@@ -84,7 +84,19 @@ function getWorkBuddyAuthPaths(): string[] {
 export async function tryWorkBuddyDesktopAuth(): Promise<CodeBuddyAutoImportResult> {
   const candidatePaths = getWorkBuddyAuthPaths();
 
+  // Prioritize the most recently modified auth file so the active account is selected
+  const candidatesWithMtime: { path: string; mtimeMs: number }[] = [];
   for (const filePath of candidatePaths) {
+    try {
+      const s = await stat(filePath);
+      candidatesWithMtime.push({ path: filePath, mtimeMs: s.mtimeMs });
+    } catch {
+      // Path does not exist or unreadable
+    }
+  }
+  candidatesWithMtime.sort((a, b) => b.mtimeMs - a.mtimeMs);
+
+  for (const { path: filePath } of candidatesWithMtime) {
     try {
       const content = await readFile(filePath, "utf-8");
       const data = JSON.parse(content);
