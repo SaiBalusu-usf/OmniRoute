@@ -4,14 +4,11 @@
  * models/; this file re-exports their public APIs for backward compatibility.
  */
 
+import { isRetiredGitHubCopilotModelId } from "@omniroute/open-sse/config/providers/registry/github/retiredModels.ts";
+
 import { getDbInstance } from "./core";
 import { getProviderConnectionsCount, touchConnectionSyncedModelsAt } from "./providers";
 import { type JsonRecord, asRecord, toNonEmptyString, getKeyValue } from "./models/shared";
-import {
-  finishSyncedAvailableModelsWrite,
-  persistCanonicalSyncedAvailableModels,
-} from "./models/syncedAvailableModelPersistence";
-import { finishModelCatalogWriteWithBackup } from "./models/modelCatalogWriteSignals";
 import {
   deleteSyncedAvailableModelsForProvider,
   finishSyncedAvailableModelsWrite,
@@ -52,7 +49,6 @@ export {
   deleteModelAliasesForProvider,
 } from "./models/aliases";
 export { getMitmAlias, setMitmAliasAll } from "./models/mitmAlias";
-export type { SyncedAvailableModel } from "./models/synced";
 export {
   getCustomModelVisionOverride,
   listCustomModelVisionOverrides,
@@ -617,7 +613,14 @@ export async function getActiveProvidersWithSyncedModel(modelId: string): Promis
 
   return rows
     .map((row) => row.provider)
-    .filter((provider): provider is string => typeof provider === "string" && provider.length > 0);
+    .filter((provider): provider is string => typeof provider === "string" && provider.length > 0)
+    .filter((provider) => !isRetiredGitHubCopilotModelId(provider, modelId));
+}
+
+function getModelIsDeleted(providerId: string, modelId: string): boolean {
+  const override = readCompatList(providerId).find((entry) => entry.id === modelId) as
+    (ModelCompatOverride & { isDeleted?: unknown }) | undefined;
+  return override?.isDeleted === true;
 }
 
 /**
@@ -637,7 +640,7 @@ export async function replaceSyncedAvailableModelsForConnection(
   // the synced store so they remain listed-but-hidden across re-syncs instead of
   // churning back on through the managed-alias path ("Auto Sync Enabling all
   // Models"). See getModelIsDeleted for the legacy-row caveat.
-  const normalizedModels = normalizeSyncedAvailableModels(models, providerId).filter(
+  const normalizedModels = normalizeSyncedAvailableModels(models).filter(
     (m) => !getModelIsDeleted(providerId, m.id)
   );
   persistCanonicalSyncedAvailableModels(key, normalizedModels, normalizeSyncedAvailableModels);
@@ -1034,14 +1037,14 @@ export function getModelIsHidden(
  */
 export function getHiddenModelsByProvider(modality: string = "chat"): Map<string, Set<string>> {
   const db = getDbInstance();
-  const result = new Map<string, Set<string>>();
+  const visibilityByProvider = new Map<string, Map<string, boolean>>();
 
   // Query all rows from key_value for both namespaces
   const rows = db
     .prepare(
-      "SELECT key, value FROM key_value WHERE namespace IN ('modelCompatOverrides', 'customModels')"
+      "SELECT namespace, key, value FROM key_value WHERE namespace IN ('modelCompatOverrides', 'customModels')"
     )
-    .all() as Array<{ key: string; value: string | null }>;
+    .all() as Array<{ namespace: string; key: string; value: string | null }>;
 
   for (const namespace of ["modelCompatOverrides", "customModels"]) {
     for (const row of rows) {
@@ -1073,10 +1076,10 @@ export function getHiddenModelsByProvider(modality: string = "chat"): Map<string
                   modality
                 )
               : Boolean(record.isHidden);
-          let visibility = result.get(row.key);
+          let visibility = visibilityByProvider.get(row.key);
           if (!visibility) {
             visibility = new Map<string, boolean>();
-            result.set(row.key, visibility);
+            visibilityByProvider.set(row.key, visibility);
           }
           visibility.set(modelId, isHidden);
         }
@@ -1086,7 +1089,14 @@ export function getHiddenModelsByProvider(modality: string = "chat"): Map<string
     }
   }
 
-  return result;
+  return new Map(
+    [...visibilityByProvider].flatMap(([providerId, visibility]) => {
+      const hiddenModels = [...visibility].flatMap(([modelId, isHidden]) =>
+        isHidden ? [modelId] : []
+      );
+      return hiddenModels.length > 0 ? [[providerId, new Set(hiddenModels)] as const] : [];
+    })
+  );
 }
 
 /**
