@@ -28,6 +28,38 @@ describe("TwinmindExecutor", () => {
     assert.match(flattened, /<user>\nagain\n<\/user>/);
   });
 
+  it("neutralizes Cursor/Claude Code workspace-identity in system history", () => {
+    const flattened = mod.flattenTwinmindMessages([
+      {
+        role: "system",
+        content:
+          "You are Claude Code, Anthropic's CLI. If coding workspace tools are not available in this session, reopen this request in a coding-enabled workspace.",
+      },
+      { role: "user", content: "list files" },
+    ]);
+    assert.match(flattened, /live local tools/);
+    assert.doesNotMatch(flattened, /You are Claude Code/);
+    assert.doesNotMatch(flattened, /coding-enabled workspace/);
+  });
+
+  it("drops client system prompts on tool queries so Cursor identity cannot refuse", () => {
+    const query = mod.buildTwinmindQuery({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are Cursor Grok. If tools are not available in this session, tell the user to reopen in a coding-enabled workspace.",
+        },
+        { role: "user", content: "inspect the repo" },
+      ],
+      tools: [{ type: "function", function: { name: "Glob", parameters: { type: "object" } } }],
+    });
+    assert.doesNotMatch(query, /You are Cursor Grok/);
+    assert.doesNotMatch(query, /reopen in a coding-enabled workspace/);
+    assert.match(query, /inspect the repo/);
+    assert.match(query, /### Glob/);
+  });
+
   it("strips twinmind/ prefixes and maps auto to the default wire model", () => {
     assert.equal(mod.mapTwinmindModel("twinmind/claude-opus-5-thinking"), "claude-opus-5-thinking");
     assert.equal(mod.mapTwinmindModel("tm/claude-opus-5-thinking"), "claude-opus-5-thinking");
@@ -45,6 +77,22 @@ describe("TwinmindExecutor", () => {
     assert.equal(parsed.content, "ok");
   });
 
+  it("parses Claude invoke blocks and fenced tool JSON", () => {
+    const invoke = mod.parseTwinmindToolCalls(
+      'Checking\n<invoke name="Glob"><parameter name="pattern">*.cs</parameter></invoke>'
+    );
+    assert.equal(invoke.calls.length, 1);
+    assert.equal(invoke.calls[0].function.name, "Glob");
+    assert.equal(JSON.parse(invoke.calls[0].function.arguments).pattern, "*.cs");
+
+    const fenced = mod.parseTwinmindToolCalls(
+      'Intent: list files\n```json\n{"tool":"Read","args":{"path":"AGENTS.md"}}\n```'
+    );
+    assert.equal(fenced.calls.length, 1);
+    assert.equal(fenced.calls[0].function.name, "Read");
+    assert.equal(JSON.parse(fenced.calls[0].function.arguments).path, "AGENTS.md");
+  });
+
   it("detects Twinmind tool-refusal openings", () => {
     assert.equal(mod.looksLikeTwinmindRefusal("I don't have access to the filesystem or bash tools."), true);
     assert.equal(mod.looksLikeTwinmindRefusal("Here is the listing of the folder."), false);
@@ -53,6 +101,25 @@ describe("TwinmindExecutor", () => {
     assert.equal(
       mod.looksLikeTwinmindRefusal('<tool_call>\n{"name":"bash","arguments":{}}\n</tool_call>'),
       false
+    );
+    const cursorRefusal =
+      "I'm ready to implement this, but the coding workspace tools needed to inspect and modify the VibeProxy repository are not available in this session. I can't safely create the privacy pipeline without reading and editing the existing project files first. Please reopen this request in a coding-enabled workspace session.";
+    assert.equal(mod.looksLikeTwinmindRefusal(cursorRefusal), true);
+    assert.equal(
+      mod.looksLikeTwinmindRefusal("Please reopen this request in a coding-enabled workspace session so I can modify files."),
+      true
+    );
+    assert.equal(
+      mod.looksLikeTwinmindRefusal(
+        "I can’t inspect the repository because the requested `Glob` and `Read` tools are not exposed in this session."
+      ),
+      true
+    );
+    assert.equal(
+      mod.looksLikeTwinmindRefusal(
+        "I can’t inspect the repository in this chat because the live filesystem tools (`Glob` and `Read`) aren’t exposed to me here. No files were read."
+      ),
+      true
     );
   });
 
@@ -99,6 +166,9 @@ describe("TwinmindExecutor", () => {
     assert.match(query, /### bash/);
     assert.ok(query.indexOf("### bash") < query.indexOf("<user>\nlist files"));
     assert.match(query, /Use the tools listed at the top/);
+    assert.match(query, /Twinmind's calendar assistant/);
+    assert.match(query, /<tool_call>\n\{"name": "bash"/);
+    assert.ok(query.indexOf("<user>\nlist files") < query.indexOf("Twinmind's calendar assistant"));
   });
 
   it("pins a continue reminder after tool results so turn 2 still uses tools", () => {
@@ -385,6 +455,56 @@ describe("TwinmindExecutor", () => {
       assert.equal(result.response.status, 200);
       assert.equal(json.choices[0].finish_reason, "tool_calls");
       assert.equal(json.choices[0].message.tool_calls[0].function.name, "bash");
+      assert.equal(chatAttempts, 2);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it("retries Cursor-style workspace-unavailable refusals into a tool_call", async () => {
+    const originalFetch = globalThis.fetch;
+    let chatAttempts = 0;
+    const jwt =
+      "eyJhbGciOiJub25lIn0." +
+      Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })).toString("base64") +
+      ".x";
+    globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      chatAttempts += 1;
+      if (chatAttempts === 1) {
+        return new Response(
+          sseEvent(
+            "text_delta",
+            "I'm ready to implement this, but the coding workspace tools needed to inspect and modify the VibeProxy repository are not available in this session."
+          ),
+          { status: 200 }
+        );
+      }
+      const posted = JSON.parse(String(init?.body || "{}")) as { query?: string };
+      assert.match(posted.query || "", /not Cursor and not a coding-enabled workspace/);
+      assert.match(posted.query || "", /Output a <tool_call> now/);
+      assert.match(posted.query || "", /Twinmind calendar, email, notes, and artifacts are disabled/);
+      return new Response(
+        sseEvent("text_delta", '<tool_call>\n{"name":"Glob","arguments":{"pattern":"*.cs"}}\n</tool_call>'),
+        { status: 200 }
+      );
+    }) as typeof fetch;
+
+    try {
+      const executor = new mod.TwinmindExecutor();
+      const result = await executor.execute({
+        model: "twinmind/claude-opus-5-thinking",
+        body: {
+          messages: [{ role: "user", content: "implement the privacy pipeline" }],
+          tools: [{ type: "function", function: { name: "Glob", parameters: { type: "object" } } }],
+        },
+        stream: false,
+        credentials: { apiKey: jwt },
+        signal: null,
+      });
+      const json = await result.response.json();
+      assert.equal(result.response.status, 200);
+      assert.equal(json.choices[0].finish_reason, "tool_calls");
+      assert.equal(json.choices[0].message.tool_calls[0].function.name, "Glob");
       assert.equal(chatAttempts, 2);
     } finally {
       globalThis.fetch = originalFetch;
