@@ -139,12 +139,14 @@ async function main() {
     }
   }
 
+  // Stale targets are reported but do not fail the gate: they only appear
+  // after a refresh run was interrupted (upstream quota 429 on 2026-09-18
+  // left 45 locales behind for ~6 days), and failing every PR's CI for a
+  // backend outage nobody can fix in-branch helps no one. The list is the
+  // work order for `npm run i18n:run -- --locale=<code> --files=<sources>`.
   const staleTargets = findStaleTargets(sources);
   const ok =
-    driftedSources.length === 0 &&
-    missingTargets.length === 0 &&
-    driftedTargets.length === 0 &&
-    staleTargets.length === 0;
+    driftedSources.length === 0 && missingTargets.length === 0 && driftedTargets.length === 0;
 
   if (opts.json) {
     process.stdout.write(
@@ -178,7 +180,7 @@ async function main() {
     }
     if (staleTargets.length) {
       console.log(
-        `[i18n-check] stale targets (${staleTargets.length}) — translated from an older source:`
+        `[i18n-check] WARN stale targets (${staleTargets.length}) — translated from an older source (not blocking; refresh with npm run i18n:run):`
       );
       for (const t of staleTargets) console.log(`  - ${t.rel} [${t.locale}] (stale)`);
     }
