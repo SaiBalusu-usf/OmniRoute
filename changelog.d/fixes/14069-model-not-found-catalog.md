@@ -1,0 +1,1 @@
+- **fix(api):** `GET /v1/models/{id}` now includes `param: "model"` and a clearer message on its `model_not_found` 404 for a catalog miss ([#14069](https://github.com/diegosouzapw/OmniRoute/pull/14069)) — thanks @RaviTharuma
