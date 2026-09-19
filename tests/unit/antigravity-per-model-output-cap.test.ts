@@ -204,7 +204,6 @@ test("Gemini 3.8 Flash retains its output allowance above the thinking budget", 
     "gemini-3.8-flash-high",
     "gemini-3.8-flash-medium",
     "gemini-3.8-flash-low",
-    "gemini-3.8-flash-tiered",
   ]) {
     const result = await executor.transformRequest(
       `antigravity/${model}`,
@@ -232,7 +231,6 @@ test("Gemini 3.8 Flash static spec keeps thinking and context, not only the outp
     "gemini-3.8-flash-high": 24576,
     "gemini-3.8-flash-medium": 8192,
     "gemini-3.8-flash-low": 1024,
-    "gemini-3.8-flash-tiered": 8192,
   };
   for (const model of Object.keys(expectedBudget)) {
     const caps = getResolvedModelCapabilities({

@@ -197,8 +197,7 @@ export const MODEL_SPECS: Record<string, ModelSpec> = {
     supportsTools: true,
     supportsVision: true,
   },
-  // Output limit published at https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash.
-  // Thinking budgets follow the 3.7 Flash high/medium/low/tiered split.
+  // ── Gemini 3.8 Flash (current Antigravity/AGY live tiers) ─────────
   "gemini-3.8-flash-high": {
     maxOutputTokens: 65536,
     contextWindow: 1048576,
@@ -229,23 +228,13 @@ export const MODEL_SPECS: Record<string, ModelSpec> = {
   "gemini-3.8-flash": {
     maxOutputTokens: 65536,
     contextWindow: 1048576,
-    defaultThinkingBudget: 8192,
+    defaultThinkingBudget: 24576,
     thinkingBudgetCap: 24576,
     supportsThinking: true,
     supportsTools: true,
     supportsVision: true,
-    aliases: ["gemini-3.8-flash-tiered"],
+    aliases: ["gemini-3.8-flash-high"],
   },
-  "gemini-3.8-flash-tiered": {
-    maxOutputTokens: 65536,
-    contextWindow: 1048576,
-    defaultThinkingBudget: 8192,
-    thinkingBudgetCap: 24576,
-    supportsThinking: true,
-    supportsTools: true,
-    supportsVision: true,
-  },
-
   // Gemini 3.7 Flash tiers: high 24.5k, medium 8k, low 1k thinking tokens.
   "gemini-3.7-flash-high": {
     maxOutputTokens: 65536,
