@@ -22,7 +22,11 @@ import { parseNonStreamingResponseBody, isJsonRecord } from "./nonStreamingRespo
 import { restoreNonStreamingToolNames } from "./passthroughToolNames.ts";
 import { extractUsageFromResponse } from "../usageExtractor.ts";
 import { sanitizeUsagePayloadForRequest } from "../../utils/usageTracking.ts";
-import { createErrorResult, formatProviderError } from "../../utils/error.ts";
+import {
+  createErrorResult,
+  formatProviderError,
+  normalizeUpstreamErrorCode,
+} from "../../utils/error.ts";
 import { isLocalStreamLifecycleError } from "@/shared/utils/circuitBreaker";
 import { unwrapClinepassEnvelope } from "../../utils/clinepassEnvelope.ts";
 import { unwrapClineNonStreamingEnvelope } from "./clineResponseEnvelope.ts";
@@ -574,8 +578,8 @@ export async function runNonStreamingProviderLeg(
         (typeof errObj?.message === "string" ? errObj.message : null) ??
         errorBodyText.slice(0, 200) ??
         "Provider request failed";
-      upstreamErrorCode = typeof errObj?.code === "string" ? errObj.code : undefined;
-      upstreamErrorType = typeof errObj?.type === "string" ? errObj.type : undefined;
+      upstreamErrorCode = normalizeUpstreamErrorCode(errObj?.code);
+      upstreamErrorType = normalizeUpstreamErrorCode(errObj?.type);
     } catch {
       message = "Provider request failed";
     }
@@ -737,7 +741,13 @@ export async function runNonStreamingProviderLeg(
     }
 
     // -- Standard error return -------------------------------------------------
-    const errMsg = formatProviderError(new Error(message), provider, currentModel, statusCode);
+    const errMsg = formatProviderError(
+      new Error(message),
+      provider,
+      currentModel,
+      statusCode,
+      upstreamErrorCode
+    );
     // Extract usage from error body if present (some providers include usage in error responses)
     let usage: ProviderLegUsage | null = null;
     try {

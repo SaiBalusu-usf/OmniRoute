@@ -816,6 +816,23 @@ export function logRetryHintUnreadable(
 }
 
 /**
+ * Normalize an upstream provider error code to a string.
+ *
+ * Providers disagree on the type of this field: Antigravity and most OpenAI-compatible
+ * gateways send a string (`"rate_limit_exceeded"`), while Tencent CodeBuddy / WorkBuddy
+ * send a NUMBER (`{"code": 11128}`). Every consumer downstream of `parseUpstreamError`
+ * narrows with `typeof errorCode === "string"`, so a numeric code used to be extracted
+ * and then silently dropped — which is why a CodeBuddy failure could only ever surface
+ * as `[400]: request illegal`, with the one field that identifies the cause discarded.
+ * Normalizing at the parse boundary fixes every consumer at once.
+ */
+export function normalizeUpstreamErrorCode(value: unknown): string | undefined {
+  if (typeof value === "string") return value.trim() || undefined;
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return undefined;
+}
+
+/**
  * Parse upstream provider error response
  * @param {Response} response - Fetch response from provider
  * @param {string} provider - Provider name (for Antigravity-specific parsing)
@@ -857,7 +874,9 @@ export async function parseUpstreamError(response: Response, provider: string | 
         typeof extractedMessage === "string"
           ? extractedMessage
           : `Upstream error: ${response.status}`;
-      errorCode = json.error?.data?.code || json.error?.code || json.code;
+      errorCode = normalizeUpstreamErrorCode(
+        json.error?.data?.code || json.error?.code || json.code
+      );
       errorType = json.error?.type || json.type;
     } catch {
       message = text;
@@ -1185,7 +1204,8 @@ export function formatProviderError(
   error: { code?: string | number; message?: string; cause?: unknown } | Error,
   provider: string,
   model: string,
-  statusCode?: string | number | null
+  statusCode?: string | number | null,
+  upstreamCode?: string | number | null
 ): string {
   const providerCode = "code" in error ? error.code : undefined;
   const code = statusCode || providerCode || "FETCH_FAILED";
@@ -1198,5 +1218,19 @@ export function formatProviderError(
   const causeMsg = typeof causeObj?.message === "string" ? causeObj.message : undefined;
   const causeStr =
     causeCode || causeMsg ? ` (cause: ${[causeCode, causeMsg].filter(Boolean).join(": ")})` : "";
-  return `[${code}]: ${message}${causeStr}`;
+  // Surface the upstream's OWN error code when it adds information the HTTP status cannot.
+  // Gateways such as Tencent CodeBuddy discriminate their failures by this code (11128 generic
+  // rejection, 11102 unknown model, 11148 tool-call mismatch) while sending a terse or even
+  // boilerplate `msg`; without it a structural rejection is indistinguishable from a transient
+  // one. Appended rather than folded into the bracket so the `[<status>]:` prefix stays intact
+  // for existing matchers, and omitted when absent or identical to the status to keep the
+  // common case byte-identical.
+  const upstreamStr =
+    upstreamCode !== undefined &&
+    upstreamCode !== null &&
+    String(upstreamCode) !== "" &&
+    String(upstreamCode) !== String(code)
+      ? ` (upstream code ${upstreamCode})`
+      : "";
+  return `[${code}]: ${message}${upstreamStr}${causeStr}`;
 }

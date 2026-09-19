@@ -4701,7 +4701,13 @@ export async function handleChatCore({
         status: `FAILED ${statusCode}`,
       }).catch(() => {});
 
-      const errMsg = formatProviderError(new Error(message), provider, model, statusCode);
+      const errMsg = formatProviderError(
+        new Error(message),
+        provider,
+        model,
+        statusCode,
+        upstreamErrorCode
+      );
       const safeErrMsg = sanitizeErrorMessage(errMsg) || "Upstream provider error";
       const safeUpstreamErrorBody = sanitizeUpstreamDetails(upstreamErrorBody);
       console.log(`${COLORS.red}[ERROR] ${safeErrMsg}${COLORS.reset}`);
