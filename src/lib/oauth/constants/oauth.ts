@@ -5,12 +5,13 @@ import {
 } from "@omniroute/open-sse/config/antigravityUpstream.ts";
 import {
   CODEBUDDY_CN_USER_AGENT,
+  CODEBUDDY_USER_AGENT,
   GITHUB_COPILOT_API_VERSION,
   GITHUB_COPILOT_CHAT_PLUGIN_VERSION,
   GITHUB_COPILOT_CHAT_USER_AGENT,
   GITHUB_COPILOT_EDITOR_VERSION,
 } from "@omniroute/open-sse/config/providerHeaderProfiles.ts";
-export { CODEBUDDY_CN_USER_AGENT };
+export { CODEBUDDY_CN_USER_AGENT, CODEBUDDY_USER_AGENT };
 // userAgent / editorVersion on GITHUB_CONFIG are captured-pin snapshots for
 // lockstep tests. Request construction must call getGitHubCopilotChatUserAgent()
 // (#12417) — see providers/github.ts and providers/ghe-copilot.ts.
@@ -109,7 +110,6 @@ export const QODER_CONFIG = {
 // (Custom Device-Auth Flow: POST stateUrl → open authUrl → GET pollUrl?state=).
 // No client_id/secret — the upstream CLI ships none.
 
-
 export const CODEBUDDY_CN_CONFIG = {
   baseUrl: "https://copilot.tencent.com",
   stateUrl: "https://copilot.tencent.com/v2/plugin/auth/state",
@@ -117,6 +117,17 @@ export const CODEBUDDY_CN_CONFIG = {
   refreshUrl: "https://copilot.tencent.com/v2/plugin/auth/token/refresh",
   userAgent: CODEBUDDY_CN_USER_AGENT,
   platform: "CLI",
+  pollInterval: 5000,
+};
+
+// CodeBuddy / WorkBuddy AI (International) OAuth Configuration
+export const CODEBUDDY_CONFIG = {
+  baseUrl: "https://www.codebuddy.ai",
+  stateUrl: "https://www.codebuddy.ai/v2/plugin/auth/state",
+  tokenUrl: "https://www.codebuddy.ai/v2/plugin/auth/token",
+  refreshUrl: "https://www.codebuddy.ai/v2/plugin/auth/token/refresh",
+  userAgent: CODEBUDDY_USER_AGENT,
+  platform: "workbuddy-ai",
   pollInterval: 5000,
 };
 
@@ -512,6 +523,7 @@ export const PROVIDERS = {
   DEVIN_CLI: "devin-cli",
   TRAE: "trae",
   CODEBUDDY_CN: "codebuddy-cn",
+  CODEBUDDY: "codebuddy",
   GROK_CLI: "grok-cli",
   XAI_OAUTH: "xai-oauth",
   OPENFERENCE: "openference",

@@ -1,0 +1,202 @@
+import { CODEBUDDY_USER_AGENT } from "../../../providerHeaderProfiles.ts";
+import type { RegistryEntry } from "../../shared.ts";
+
+/**
+ * CodeBuddy / WorkBuddy AI (International — codebuddy.ai / workbuddy.ai).
+ *
+ * Tencent's international AI coding gateway. Carries 21 global and flagship
+ * models (GPT-6-Astra, GPT-5.6 Sol/Terra/Luna, Gemini 3.5 Flash, GLM 5.3, Kimi K3,
+ * DeepSeek V4.1 Flash, Hy4/Hy3) and reasons via OpenAI-style `reasoning_effort`.
+ *
+ * Short alias: "cbai" (as reserved in codebuddy-cn).
+ * Endpoint: https://www.codebuddy.ai/v2/chat/completions.
+ */
+export const codebuddyProvider: RegistryEntry = {
+  id: "codebuddy",
+  alias: "cbai",
+  format: "openai",
+  executor: "codebuddy",
+  baseUrl: "https://www.codebuddy.ai/v2/chat/completions",
+  authType: "oauth",
+  authHeader: "bearer",
+  headers: {
+    "User-Agent": CODEBUDDY_USER_AGENT,
+    "X-Product": "SaaS",
+    "X-IDE-Type": "CLI",
+    "X-IDE-Name": "CLI",
+    "x-requested-with": "XMLHttpRequest",
+    "x-codebuddy-request": "1",
+  },
+  models: [
+    {
+      id: "default-model",
+      name: "Auto",
+      contextLength: 176000,
+      maxOutputTokens: 24000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "fast-model",
+      name: "Fast",
+      contextLength: 200000,
+      maxOutputTokens: 32000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "balanced-model",
+      name: "Balanced",
+      contextLength: 256000,
+      maxOutputTokens: 32000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "primary-model",
+      name: "Primary",
+      contextLength: 272000,
+      maxOutputTokens: 72000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "deep-model",
+      name: "Deep",
+      contextLength: 176000,
+      maxOutputTokens: 24000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "deepseek-v4.1-flash",
+      name: "Deepseek-V4.1-Flash",
+      contextLength: 1000000,
+      maxOutputTokens: 128000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "deepseek-v4.1-flash-sg",
+      name: "Deepseek-V4.1-Flash (SG)",
+      contextLength: 1000000,
+      maxOutputTokens: 128000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "gpt-6-astra",
+      name: "GPT-6-Astra",
+      contextLength: 1000000,
+      maxOutputTokens: 128000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "hy4-preview",
+      name: "Hy4 Preview",
+      contextLength: 1000000,
+      maxOutputTokens: 64000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "hy3",
+      name: "Hy3",
+      contextLength: 192000,
+      maxOutputTokens: 64000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "kimi-k2.8-preview",
+      name: "Kimi-K2.8-Preview",
+      contextLength: 1000000,
+      maxOutputTokens: 32000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "gpt-5.6-sol",
+      name: "GPT-5.6-Sol",
+      contextLength: 1000000,
+      maxOutputTokens: 128000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "gpt-5.6-terra",
+      name: "GPT-5.6-Terra",
+      contextLength: 1000000,
+      maxOutputTokens: 128000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "gpt-5.6-luna",
+      name: "GPT-5.6-Luna",
+      contextLength: 1000000,
+      maxOutputTokens: 128000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "gpt-5.5",
+      name: "GPT-5.5",
+      contextLength: 1000000,
+      maxOutputTokens: 128000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "gpt-5.4",
+      name: "GPT-5.4",
+      contextLength: 272000,
+      maxOutputTokens: 72000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "gemini-3.5-flash",
+      name: "Gemini-3.5-Flash",
+      contextLength: 1000000,
+      maxOutputTokens: 65536,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "glm-5.3",
+      name: "GLM-5.3",
+      contextLength: 1000000,
+      maxOutputTokens: 48000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "glm-5.2",
+      name: "GLM-5.2",
+      contextLength: 1000000,
+      maxOutputTokens: 48000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "kimi-k3",
+      name: "Kimi-K3",
+      contextLength: 1000000,
+      maxOutputTokens: 32000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+    {
+      id: "kimi-k2.6",
+      name: "Kimi-K2.6",
+      contextLength: 256000,
+      maxOutputTokens: 32000,
+      supportsReasoning: true,
+      supportsVision: true,
+    },
+  ],
+};
+
+export default codebuddyProvider;
