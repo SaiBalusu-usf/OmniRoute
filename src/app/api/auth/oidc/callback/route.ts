@@ -4,6 +4,7 @@ import { updateSettings } from "@/lib/db/settings";
 import { SignJWT, jwtVerify, createRemoteJWKSet } from "jose";
 import { cookies } from "next/headers";
 import { timingSafeCompare } from "@/shared/utils/timingSafeCompare";
+
 // Test seam (static) — allows tests to inject a cookie store and capture the minted auth_token.
 // Mirrors the pattern in src/app/api/auth/login/route.ts
 export const oidcCallbackInternals = {
@@ -14,6 +15,7 @@ export const oidcCallbackInternals = {
     }
   },
 };
+
 // Cache JWKS clients globally to reuse retrieved keys and avoid fetching JWKS on every login request.
 const jwksClientsCache: Record<string, ReturnType<typeof createRemoteJWKSet>> = {};
 
@@ -74,8 +76,9 @@ export async function GET(request: Request) {
   const settings = await getCachedSettings();
 
   const enabled = settings.oidcEnabled === true;
-  const issuer =
-    typeof settings.oidcIssuer === "string" ? settings.oidcIssuer.trim().replace(/\/$/, "") : "";
+  const configuredIssuer =
+    typeof settings.oidcIssuer === "string" ? settings.oidcIssuer.trim() : "";
+  const issuerBase = configuredIssuer.replace(/\/$/, "");
   const clientId = typeof settings.oidcClientId === "string" ? settings.oidcClientId.trim() : "";
   const clientSecret =
     typeof settings.oidcClientSecret === "string" ? settings.oidcClientSecret.trim() : "";
@@ -84,7 +87,7 @@ export async function GET(request: Request) {
       ? settings.oidcRedirectPath
       : "/api/auth/oidc/callback";
 
-  if (!enabled || !issuer || !clientId || !clientSecret) {
+  if (!enabled || !configuredIssuer || !clientId || !clientSecret) {
     return NextResponse.redirect(new URL("/login?oidc_error=not_configured", originEarly));
   }
 
@@ -100,16 +103,18 @@ export async function GET(request: Request) {
   const redirectUri = `${origin}${redirectPath}`;
 
   // Discover endpoints
-  let tokenEndpoint = `${issuer}/token`;
-  let jwksUri = `${issuer}/jwks`;
+  let discoveredIssuer = configuredIssuer;
+  let tokenEndpoint = `${issuerBase}/token`;
+  let jwksUri = `${issuerBase}/jwks`;
   try {
-    const wellKnownResp = await fetch(`${issuer}/.well-known/openid-configuration`, {
+    const wellKnownResp = await fetch(`${issuerBase}/.well-known/openid-configuration`, {
       signal: AbortSignal.timeout(5000),
     });
     if (wellKnownResp.ok) {
       const data: unknown = await wellKnownResp.json();
       if (data && typeof data === "object") {
         const rec = data as Record<string, unknown>;
+        if (typeof rec.issuer === "string" && rec.issuer.length > 0) discoveredIssuer = rec.issuer;
         if (typeof rec.token_endpoint === "string") tokenEndpoint = rec.token_endpoint;
         if (typeof rec.jwks_uri === "string") jwksUri = rec.jwks_uri;
       }
@@ -164,7 +169,7 @@ export async function GET(request: Request) {
   try {
     const JWKS = getJwksClient(jwksUri);
     const { payload } = await jwtVerify(idToken, JWKS, {
-      issuer,
+      issuer: discoveredIssuer,
       audience: clientId,
     });
 
