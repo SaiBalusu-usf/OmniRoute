@@ -241,10 +241,10 @@ describe("compression worker execution", () => {
     }
   });
 
-  it("drains queue and fails open if workers fail repeatedly", async () => {
+  it("drains queue and rejects on worker timeout (#13145)", async () => {
     const pool = new CompressionWorkerPool({ size: 1, timeoutMs: 1 });
     try {
-      const results = await Promise.all([
+      const results = await Promise.allSettled([
         pool.run(body, "stacked", { config }),
         pool.run(body, "stacked", { config }),
         pool.run(body, "stacked", { config }),
@@ -252,7 +252,10 @@ describe("compression worker execution", () => {
       ]);
       assert.equal(results.length, 4);
       for (const res of results) {
-        assert.equal(res.compressed, false);
+        assert.equal(res.status, "rejected");
+        if (res.status === "rejected") {
+          assert.equal((res.reason as Error).name, "CompressionWorkerError");
+        }
       }
     } finally {
       await pool.close();
