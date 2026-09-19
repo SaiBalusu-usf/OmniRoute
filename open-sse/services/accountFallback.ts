@@ -474,6 +474,32 @@ export const RATE_LIMIT_TEXT_PATTERNS = [
   /频率/, // "frequency" (zh) — request-frequency throttling
 ];
 
+// Transient upstream WAF / security-policy block.
+//
+// Tencent CodeBuddy answers a blocked request with HTTP 400, numeric code 11128, and the
+// terse `msg` "request illegal"; `displayMsg.en` spells out "The request was blocked by
+// security policy. Please retry later or contact support." The upstream itself says
+// "retry later", so this is NOT a malformed request — it is a transient block that
+// clears on its own.
+//
+// Measured 2026-09-19: four DSH turns failed between 17:34:45Z and 17:43:46Z, the
+// identical bodies then replayed 200 minutes later, and a rebuilt 553-message / 597 KB
+// DSH conversation succeeded. No payload property predicts it — 2.5 MB bodies, 545
+// messages, the exact logged failing body and 12 header-fingerprint variants all
+// returned 200 — so a size/shape guard would not have caught it.
+//
+// Without this rule a 400 falls through to the generic "not account-fallback-worthy"
+// return below: the turn dies with no backoff and no account rotation, even though a
+// sibling account would very likely have served it.
+//
+// Both markers are matched because `errorText` reaches this function in two shapes: the
+// combo path passes the raw upstream JSON (both markers present), the single-model path
+// passes the parsed message ("request illegal" verbatim, or the display sentence once
+// parseUpstreamError appends it). Deliberately provider-agnostic, mirroring
+// RATE_LIMIT_TEXT_PATTERNS — the phrasings are specific enough, and the worst case for a
+// false positive is one bounded cooldown, against a dead turn for a false negative.
+const TRANSIENT_SECURITY_BLOCK_PATTERNS = [/blocked by security policy/i, /\brequest illegal\b/i];
+
 // Parameter validation errors — model-specific constraints (different models = different limits)
 const PARAM_VALIDATION_PATTERNS = [
   /max_tokens.*illegal/i,
@@ -2270,6 +2296,17 @@ export function checkFallbackError(
     // connection-cooldown scope so combo can fail over to another target (#4976).
     if (RATE_LIMIT_TEXT_PATTERNS.some((p) => p.test(errorStr))) {
       return buildRetryableFallback(RateLimitReason.RATE_LIMIT_EXCEEDED);
+    }
+
+    // Transient WAF / security-policy block (Tencent CodeBuddy 11128 — see
+    // TRANSIENT_SECURITY_BLOCK_PATTERNS). Placed LAST in the 400 branch so every
+    // genuine client-error classification above keeps winning: a malformed/overflow/
+    // param-validation 400 still returns its #2101 zero-cooldown MODEL_CAPACITY.
+    // Reaches `buildRetryableFallback`, so the upstream "retry later" hint is honored
+    // when present and otherwise the normal bounded exponential backoff applies —
+    // the same treatment 408/429/5xx get, which is what a transient upstream block is.
+    if (TRANSIENT_SECURITY_BLOCK_PATTERNS.some((p) => p.test(errorStr))) {
+      return buildRetryableFallback(RateLimitReason.SERVER_ERROR);
     }
 
     // Generic 400 is not account-fallback-worthy. Combo routing may still try a

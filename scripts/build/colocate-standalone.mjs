@@ -16,8 +16,9 @@
  *
  * Run manually after a build, or automatically via the `postbuild` npm hook.
  */
-import { cpSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { builtinModules, createRequire } from "node:module";
+import { dirname, join, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { runBuildTool } from "./buildToolRunner.mjs";
 import { computeDependencyClosure } from "./colocateOptionals.mjs";
@@ -83,6 +84,131 @@ export function writeEsmWorkerScopes(workerDirs) {
     }
   }
   return written;
+}
+
+/**
+ * Package name behind a bare module specifier (`@scope/pkg/sub` → `@scope/pkg`).
+ * @param {string} specifier
+ * @returns {string}
+ */
+export function packageRootOf(specifier) {
+  const parts = specifier.split("/");
+  return specifier.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0];
+}
+
+/**
+ * Bare (npm) specifiers an esbuild'd worker bundle imports.
+ *
+ * The workers are emitted with `--packages=external`, so every npm dependency stays
+ * a bare import resolved from `<standalone>/node_modules` when the worker thread
+ * starts. Next.js cannot trace a worker that is spawned dynamically, so any
+ * dependency the main app does not ALSO import statically is simply absent from the
+ * standalone tree and the worker throws on load.
+ *
+ * Measured 2026-09-19 against every on-disk release: the compression worker was
+ * missing EIGHT packages (`uuid`, `safe-regex`, `smol-toml`, `socks`, `xxhash-wasm`,
+ * `yazl`, `@toon-format/toon`, `omniglyph`). The worker has existed since 2026-08-25
+ * (04dba0460) and NO release ever carried these, so the gap is structural, not a
+ * one-off. `uuid` is imported at module scope, so the thread died on every spawn.
+ *
+ * The symptom changed on 2026-09-18 (55b6ca657, #13637): before that commit a worker
+ * failure degraded to UNCOMPRESSED with no log line at all; after it the failure is
+ * caught and retried in-process, so compression still happens but on the main event
+ * loop. Do not read the "0 worker failures" in the pre-Sep-18 logs as health — that
+ * log line did not exist yet. Deriving the list from the emitted bundle keeps this
+ * correct when a worker later picks up a new dependency, instead of relying on a
+ * hand-maintained allowlist that drifts.
+ *
+ * @param {string} bundlePath Absolute path to an esbuild ESM worker bundle.
+ * @returns {string[]} Deduplicated package names, builtins and relative paths removed.
+ */
+export function collectBareSpecifiers(bundlePath) {
+  const src = readFileSync(bundlePath, "utf8");
+  const found = new Set();
+  const patterns = [
+    /^\s*(?:import|export)\b[^\n]*?\bfrom\s*["']([^"']+)["']/gm,
+    /^\s*import\s*["']([^"']+)["']/gm,
+    /\bimport\s*\(\s*["']([^"']+)["']\s*\)/g,
+  ];
+  for (const re of patterns) {
+    for (const match of src.matchAll(re)) found.add(match[1]);
+  }
+
+  const packages = new Set();
+  for (const specifier of found) {
+    if (!specifier || specifier.startsWith(".") || specifier.startsWith("/")) continue;
+    if (specifier.startsWith("node:")) continue;
+    const pkg = packageRootOf(specifier);
+    if (builtinModules.includes(pkg)) continue;
+    packages.add(pkg);
+  }
+  return [...packages];
+}
+
+/**
+ * True when `name` resolves from INSIDE the target tree.
+ *
+ * A directory check is not enough: Next's tracer can materialize a package
+ * PARTIALLY (the package.json lands, the files its `main` points at do not), and a
+ * plain `existsSync` then skips it forever while the runtime dies with
+ * "Cannot find module <pkg>/dist/index.js". Mirrors `isPackageIntact` in
+ * colocateOptionals.mjs.
+ *
+ * @param {string} targetNodeModulesDir
+ * @param {string} name
+ * @returns {boolean}
+ */
+function isPackageUsable(targetNodeModulesDir, name) {
+  if (!existsSync(join(targetNodeModulesDir, name))) return false;
+  try {
+    const probe = createRequire(join(targetNodeModulesDir, "__colocate_probe__.js"));
+    const resolved = realpathSync(probe.resolve(name));
+    return resolved.startsWith(realpathSync(targetNodeModulesDir) + sep);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Copy any dependency a runtime worker needs that the standalone trace omitted.
+ *
+ * REQUIRED, not optional: a missing one kills the worker thread outright, and the
+ * failure is silent (the caller falls back). Must therefore run for every build,
+ * before the optional-SLM early return. NO-CLOBBER, so traced instances win.
+ *
+ * @param {{workerBundles: string[], srcNodeModules: string, dstNodeModules: string}} args
+ * @returns {string[]} The package names that were missing.
+ */
+export function colocateWorkerDeps({ workerBundles, srcNodeModules, dstNodeModules }) {
+  const missing = new Set();
+  for (const bundle of workerBundles) {
+    if (!existsSync(bundle)) continue;
+    for (const pkg of collectBareSpecifiers(bundle)) {
+      if (isPackageUsable(dstNodeModules, pkg)) continue;
+      if (!existsSync(join(srcNodeModules, pkg))) continue; // not installed at root either
+      missing.add(pkg);
+    }
+  }
+  if (missing.size === 0) {
+    console.log("[colocate-standalone] ✅ every runtime-worker dependency is already traced");
+    return [];
+  }
+
+  const closure = computeDependencyClosure(srcNodeModules, [...missing]);
+  let copied = 0;
+  for (const pkg of closure) {
+    const src = join(srcNodeModules, pkg);
+    const dst = join(dstNodeModules, pkg);
+    if (!existsSync(src) || existsSync(dst)) continue;
+    mkdirSync(dirname(dst), { recursive: true });
+    cpSync(src, dst, { recursive: true });
+    copied++;
+  }
+  console.log(
+    `[colocate-standalone] ✅ required worker deps: ${missing.size} missing ` +
+      `(${[...missing].join(", ")}) → copied ${copied}/${closure.length} with closure`
+  );
+  return [...missing];
 }
 
 function main() {
@@ -156,6 +282,18 @@ function main() {
     dirname(compressionWorkerDest),
   ];
 
+  const srcNm = join(ROOT, "node_modules");
+  const dstNm = join(STANDALONE, "node_modules");
+
+  // REQUIRED deps first, and before the optional early return: `--packages=external`
+  // means a worker's npm imports resolve from the standalone tree at runtime, and the
+  // trace cannot see a dynamically-spawned worker. A missing one kills the thread.
+  colocateWorkerDeps({
+    workerBundles: [healthWorkerDest, callLogWorkerDest, compressionWorkerDest],
+    srcNodeModules: srcNm,
+    dstNodeModules: dstNm,
+  });
+
   if (!hasOptionals) {
     console.log(
       "[colocate-standalone] optional SLM deps absent at root node_modules — LLMLingua stays fail-open (slim install)."
@@ -200,8 +338,6 @@ function main() {
   workerDirs.push(dirname(workerDest));
 
   // 2) Co-locate the optional-dep closure (NO-CLOBBER, same semantics as colocateOptionals.mjs)
-  const srcNm = join(ROOT, "node_modules");
-  const dstNm = join(STANDALONE, "node_modules");
   const closure = computeDependencyClosure(srcNm);
   let copied = 0;
   for (const pkg of closure) {
