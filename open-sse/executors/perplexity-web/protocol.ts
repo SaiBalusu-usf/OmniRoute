@@ -101,36 +101,19 @@ export const XML_DECL_RE = /<[?]xml[^?]*[?]>/g;
 export const RESPONSE_TAG_RE = /<\/?response\b[^>]*>/gi;
 export const MULTI_NL = /\n{3,}/g;
 
-export const PROTECTED_CODE_RE =
-  /(```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)|`[^`\r\n]*`|<(tool|tool_call|function_call|code)\b[^>]*>[\s\S]*?(?:<\/\2>|$))/gi;
-
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 export function cleanResponse(text: string, strip = true): string {
-  if (!text) return text;
-  const tokens: string[] = [];
-  let t = text.replace(PROTECTED_CODE_RE, (match) => {
-    tokens.push(match);
-    return `__PPLX_PROTECTED_${tokens.length - 1}__`;
-  });
-
+  let t = text;
   t = t.replace(XML_DECL_RE, "");
   t = t.replace(CITATION_RE, "");
   t = t.replace(GROK_TAG_RE, "");
   t = t.replace(GROK_SELF_RE, "");
   t = t.replace(RESPONSE_TAG_RE, "");
-
   if (strip) {
     t = t.replace(MULTI_NL, "\n\n");
     t = t.trim();
   }
-
-  if (tokens.length > 0) {
-    t = t.replace(/__PPLX_PROTECTED_(\d+)__/g, (_, idx) => {
-      return tokens[Number(idx)] ?? "";
-    });
-  }
-
   return t;
 }
 

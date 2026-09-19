@@ -94,63 +94,6 @@ interface OpencodeAccountState extends RotatableAccount {
 
 const EFFORT_LEVELS = ["none", "low", "high", "max"] as const;
 
-/**
- * Free-tier / Zen fingerprint tools quartet required by upstream OpenCode gateway (PR #4145).
- */
-export const OPENCODE_FINGERPRINT_TOOLS = ["bash", "glob", "grep", "read"] as const;
-
-function toolNameOf(tool: unknown): string {
-  if (!tool || typeof tool !== "object" || Array.isArray(tool)) return "";
-  const t = tool as Record<string, unknown>;
-  const fn =
-    t.function && typeof t.function === "object" && !Array.isArray(t.function)
-      ? (t.function as Record<string, unknown>)
-      : null;
-  const raw = typeof t.name === "string" ? t.name : typeof fn?.name === "string" ? fn.name : "";
-  return raw.trim();
-}
-
-/**
- * Inject OpenCode built-in fingerprint tools (bash, glob, grep, read) if missing.
- */
-export function ensureOpencodeFingerprintTools(
-  body: Record<string, unknown>,
-  targetFormat: string = "openai"
-): void {
-  if (!body || typeof body !== "object") return;
-  const present = new Set<string>();
-  if (Array.isArray(body.tools)) {
-    for (const tool of body.tools) {
-      const name = toolNameOf(tool);
-      if (name) present.add(name);
-    }
-  } else {
-    body.tools = [];
-  }
-  const isResponses = targetFormat === "openai-responses";
-  for (const name of OPENCODE_FINGERPRINT_TOOLS) {
-    if (present.has(name)) continue;
-    if (isResponses) {
-      (body.tools as unknown[]).push({
-        type: "function",
-        name,
-        description: `OpenCode built-in ${name} tool`,
-        parameters: { type: "object", properties: {} },
-      });
-    } else {
-      (body.tools as unknown[]).push({
-        type: "function",
-        function: {
-          name,
-          description: `OpenCode built-in ${name} tool`,
-          parameters: { type: "object", properties: {} },
-        },
-      });
-    }
-    present.add(name);
-  }
-}
-
 const MAX_TOOL_NAME_LEN = 128;
 
 function clampResponsesCallId(callId: unknown): string {
@@ -183,11 +126,11 @@ function coerceResponsesOutput(output: unknown): string {
 }
 
 /**
- * Sanitize body for OpenAI Responses API endpoint (/responses) (PR #4145).
+ * Move a legacy max_tokens/max_completion_tokens value to the Responses API's
+ * max_output_tokens field, in place. Extracted from sanitizeResponsesBody to
+ * keep that function under the max-lines-per-function ratchet.
  */
-export function sanitizeResponsesBody(body: Record<string, unknown>): void {
-  if (!body || typeof body !== "object") return;
-
+function normalizeResponsesTokenFields(body: Record<string, unknown>): void {
   if (body.max_output_tokens === undefined) {
     if (body.max_completion_tokens !== undefined) {
       body.max_output_tokens = body.max_completion_tokens;
@@ -197,7 +140,13 @@ export function sanitizeResponsesBody(body: Record<string, unknown>): void {
   }
   delete body.max_tokens;
   delete body.max_completion_tokens;
+}
 
+/**
+ * Fold a legacy reasoning_effort field into the Responses API's reasoning
+ * object, in place. Extracted from sanitizeResponsesBody (see above).
+ */
+function normalizeResponsesReasoningField(body: Record<string, unknown>): void {
   if (body.reasoning_effort !== undefined && body.reasoning === undefined) {
     body.reasoning = { effort: body.reasoning_effort, summary: "auto" };
   }
@@ -206,73 +155,111 @@ export function sanitizeResponsesBody(body: Record<string, unknown>): void {
     if (!r.summary) r.summary = "auto";
   }
   delete body.reasoning_effort;
+}
+
+/** Whether `value` is a non-array, non-null object. */
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * A string field on `toolObj`, falling back to the same field on a nested
+ * Chat-Completions `function` object when `toolObj` itself does not have it.
+ */
+function pickToolStringField(
+  toolObj: Record<string, unknown>,
+  fn: Record<string, unknown> | null,
+  key: "name" | "description"
+): string {
+  if (typeof toolObj[key] === "string") return toolObj[key] as string;
+  const nested = fn?.[key];
+  return typeof nested === "string" ? nested : "";
+}
+
+/**
+ * The tool's JSON-schema parameters object, from `toolObj` or a nested
+ * `function` object, defaulting to an empty object schema and always
+ * carrying a `properties` map (the Responses API rejects one without it).
+ */
+function resolveToolParameters(
+  toolObj: Record<string, unknown>,
+  fn: Record<string, unknown> | null
+): Record<string, unknown> {
+  const parameters = (isPlainRecord(toolObj.parameters) ? toolObj.parameters : null) ??
+    (isPlainRecord(fn?.parameters) ? (fn!.parameters as Record<string, unknown>) : null) ?? {
+      type: "object",
+      properties: {},
+    };
+  return parameters.type === "object" && !parameters.properties
+    ? { ...parameters, properties: {} }
+    : parameters;
+}
+
+/**
+ * Normalize one Responses-API tool entry to the flat `{type, name, description,
+ * parameters}` shape (accepting either that shape or a nested Chat-Completions
+ * `{function: {...}}` shape as input), mutating it in place. Returns `null` for
+ * an entry with no resolvable name, which the caller drops.
+ */
+function normalizeResponsesToolEntry(t: unknown): Record<string, unknown> | null {
+  if (!isPlainRecord(t)) return null;
+  const toolObj = t;
+  const fn = isPlainRecord(toolObj.function) ? toolObj.function : null;
+  const name = pickToolStringField(toolObj, fn, "name").trim();
+  if (!name) return null;
+  const description = pickToolStringField(toolObj, fn, "description");
+  const parameters = resolveToolParameters(toolObj, fn);
+  for (const k of Object.keys(toolObj)) delete toolObj[k];
+  toolObj.type = "function";
+  toolObj.name = name.slice(0, MAX_TOOL_NAME_LEN);
+  if (description) toolObj.description = description;
+  toolObj.parameters = parameters;
+  return toolObj;
+}
+
+/**
+ * Whether a Responses-API `input` item should be kept, normalizing
+ * function_call/function_call_output entries in place as a side effect.
+ */
+function shouldKeepResponsesInputItem(item: unknown): boolean {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return true;
+  const rec = item as Record<string, unknown>;
+  if (rec.type === "reasoning") return false;
+  delete rec.encrypted_content;
+  delete rec.reasoning_encrypted_content;
+  if (rec.type === "function_call") {
+    if (!rec.name || typeof rec.name !== "string" || (rec.name as string).trim() === "")
+      return false;
+    rec.name = (rec.name as string).trim().slice(0, MAX_TOOL_NAME_LEN);
+    rec.call_id = clampResponsesCallId(rec.call_id);
+    rec.arguments = coerceResponsesArguments(rec.arguments);
+    return true;
+  }
+  if (rec.type === "function_call_output") {
+    rec.call_id = clampResponsesCallId(rec.call_id);
+    rec.output = coerceResponsesOutput(rec.output);
+    return true;
+  }
+  return true;
+}
+
+/**
+ * Sanitize body for OpenAI Responses API endpoint (/responses) (PR #4145).
+ */
+export function sanitizeResponsesBody(body: Record<string, unknown>): void {
+  if (!body || typeof body !== "object") return;
+
+  normalizeResponsesTokenFields(body);
+  normalizeResponsesReasoningField(body);
 
   if (Array.isArray(body.tools)) {
-    const validNames = new Set<string>();
-    body.tools = body.tools.filter((t: unknown) => {
-      if (!t || typeof t !== "object" || Array.isArray(t)) return false;
-      const toolObj = t as Record<string, unknown>;
-      const fn =
-        toolObj.function && typeof toolObj.function === "object" && !Array.isArray(toolObj.function)
-          ? (toolObj.function as Record<string, unknown>)
-          : null;
-      const rawName =
-        typeof toolObj.name === "string"
-          ? toolObj.name
-          : typeof fn?.name === "string"
-            ? fn.name
-            : "";
-      const name = rawName.trim();
-      if (!name) return false;
-      const description =
-        typeof toolObj.description === "string"
-          ? toolObj.description
-          : typeof fn?.description === "string"
-            ? fn.description
-            : "";
-      let parameters =
-        toolObj.parameters &&
-        typeof toolObj.parameters === "object" &&
-        !Array.isArray(toolObj.parameters)
-          ? (toolObj.parameters as Record<string, unknown>)
-          : fn?.parameters && typeof fn.parameters === "object" && !Array.isArray(fn.parameters)
-            ? (fn.parameters as Record<string, unknown>)
-            : { type: "object", properties: {} };
-      if (parameters.type === "object" && !parameters.properties) {
-        parameters = { ...parameters, properties: {} };
-      }
-      for (const k of Object.keys(toolObj)) delete toolObj[k];
-      toolObj.type = "function";
-      toolObj.name = name.slice(0, MAX_TOOL_NAME_LEN);
-      if (description) toolObj.description = description;
-      toolObj.parameters = parameters;
-      validNames.add(toolObj.name as string);
-      return true;
-    });
+    body.tools = body.tools
+      .map((t: unknown) => normalizeResponsesToolEntry(t))
+      .filter((t: Record<string, unknown> | null): t is Record<string, unknown> => t !== null);
   }
 
   if (Array.isArray(body.input)) {
-    body.input = body.input.filter((item: unknown) => {
-      if (!item || typeof item !== "object" || Array.isArray(item)) return true;
-      const rec = item as Record<string, unknown>;
-      if (rec.type === "reasoning") return false;
-      delete rec.encrypted_content;
-      delete rec.reasoning_encrypted_content;
-      if (rec.type === "function_call") {
-        if (!rec.name || typeof rec.name !== "string" || (rec.name as string).trim() === "")
-          return false;
-        rec.name = (rec.name as string).trim().slice(0, MAX_TOOL_NAME_LEN);
-        rec.call_id = clampResponsesCallId(rec.call_id);
-        rec.arguments = coerceResponsesArguments(rec.arguments);
-        return true;
-      }
-      if (rec.type === "function_call_output") {
-        rec.call_id = clampResponsesCallId(rec.call_id);
-        rec.output = coerceResponsesOutput(rec.output);
-        return true;
-      }
-      return true;
-    });
+    body.input = body.input.filter(shouldKeepResponsesInputItem);
   }
 }
 
@@ -1338,17 +1325,13 @@ export class OpencodeExecutor extends BaseExecutor {
     if (modifiedBody && typeof modifiedBody === "object" && !Array.isArray(modifiedBody)) {
       const mb = modifiedBody as Record<string, unknown>;
 
-      // PR #4145: Upstream OpenCode 403s stream:false requests on opencode / opencode-zen
-      if (this.provider === "opencode" || this.provider === "opencode-zen") {
-        mb.stream = true;
-      }
-
-      // PR #4145: Inject built-in fingerprint tools (bash, glob, grep, read) to prevent 403s
-      if (this.provider === "opencode" || this.provider === "opencode-zen") {
-        ensureOpencodeFingerprintTools(mb, this._requestFormat ?? "openai");
-      }
-
-      // PR #4145: Responses API payload sanitization
+      // PR #4145 (9router): Responses API payload sanitization — additive and safe on every
+      // surface, unlike the stream:true forcing / fingerprint-tool injection this port also
+      // proposed (dropped here): both are already fully covered on this tip by the free-tier
+      // request contract above for gated requests, and forcing them for a NON-gated (paid)
+      // request regressed the "a paid model keeps the client's own stream/tools" contract
+      // (see the "transformRequest: ... skipped for a paid one" test in
+      // opencode-free-tier-request-contract.test.ts) — so only the sanitizer is wired in.
       if (this._requestFormat === "openai-responses") {
         sanitizeResponsesBody(mb);
       }
