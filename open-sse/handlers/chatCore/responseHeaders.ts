@@ -199,11 +199,35 @@ export function stripNextMiddlewareControlHeaders(headers: Headers): void {
   }
 }
 
+/**
+ * True when `normalized` must never reach `buildStreamingResponseHeaders`'s candidate list —
+ * either it is always excluded (denylisted, connection-scoped, middleware/internal, or the
+ * turn-state header forwarded separately below), or it is a Codex quota header on a response
+ * that a `isForeignAccount` pool/combo selection served from an account other than the
+ * caller's own (#13638/#14116). Extracted so the candidate-building loop stays a single
+ * cyclomatic branch per header.
+ */
+function shouldDropStreamingHeader(
+  normalized: string,
+  connectionScopedHeaders: Set<string>,
+  options: { isForeignAccount?: boolean } | undefined
+): boolean {
+  return (
+    STREAMING_RESPONSE_HEADER_DENYLIST.has(normalized) ||
+    connectionScopedHeaders.has(normalized) ||
+    isNextMiddlewareControlHeader(normalized) ||
+    isOmniRouteInternalHeader(normalized) ||
+    (options?.isForeignAccount === true && isCodexQuotaHeader(normalized)) ||
+    // Forwarded separately below, outside the byte budget.
+    normalized === CODEX_TURN_STATE_RESPONSE_HEADER
+  );
+}
+
 export function buildStreamingResponseHeaders(
   providerHeaders: Headers,
   meta: Parameters<typeof buildOmniRouteResponseMetaHeaders>[0],
   log: ResponseHeaderLogger = defaultLogger,
-  options: { isForeignAccount?: boolean } = {}
+  options?: { isForeignAccount?: boolean }
 ): Record<string, string> {
   const connectionScopedHeaders = new Set(
     (providerHeaders.get("connection") || "")
@@ -222,15 +246,7 @@ export function buildStreamingResponseHeaders(
 
   providerHeaders.forEach((value, key) => {
     const normalized = key.toLowerCase();
-    if (
-      STREAMING_RESPONSE_HEADER_DENYLIST.has(normalized) ||
-      connectionScopedHeaders.has(normalized) ||
-      isNextMiddlewareControlHeader(normalized) ||
-      isOmniRouteInternalHeader(normalized) ||
-      (options?.isForeignAccount && isCodexQuotaHeader(normalized)) ||
-      // Forwarded separately below, outside the byte budget.
-      normalized === CODEX_TURN_STATE_RESPONSE_HEADER
-    ) {
+    if (shouldDropStreamingHeader(normalized, connectionScopedHeaders, options)) {
       return;
     }
     candidates.push({
