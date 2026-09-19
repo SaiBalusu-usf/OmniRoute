@@ -1,60 +1,46 @@
 import { getDbInstance } from "../db/core";
 import type { PendingRequestDetail } from "./usageHistory";
-import { truncatePendingPreview } from "./usageHistory/helpers";
 
-const COMPLETED_DETAIL_TTL_MS = 30_000;
-const MAX_COMPLETED_DETAILS = 16;
-const MAX_COMPLETED_DETAILS_BYTES = 8 * 1024 * 1024; // 8 MiB byte budget (#13621 / PR #13623)
+const COMPLETED_DETAIL_TTL_MS = 120_000;
+const MAX_COMPLETED_DETAILS = 256;
+/**
+ * JON-562: completed details are a short-lived dashboard bridge, not a second payload store.
+ * The 16 MiB estimated cache payload budget keeps room for normal bridge entries while bounding
+ * the strings and object fields this module accounts for. It is not a process-memory ceiling.
+ */
+export const MAX_COMPLETED_DETAILS_BYTES = 16 * 1024 * 1024;
 
 const completedDetails = new Map<string, PendingRequestDetail>();
 const completedDetailTimers = new Map<string, ReturnType<typeof setTimeout>>();
-const detailBytes = new Map<string, number>();
-let totalCompletedDetailsBytes = 0;
+const completedDetailBytes = new Map<string, number>();
+let totalCompletedDetailBytes = 0;
 
-function detachValue<T>(val: T): T {
-  if (typeof val === "string") {
-    return Buffer.from(val).toString() as unknown as T;
-  }
-  if (Array.isArray(val)) {
-    return val.map(detachValue) as unknown as T;
-  }
-  if (val && typeof val === "object") {
-    const out: Record<string, unknown> = {};
-    for (const [k, v] of Object.entries(val)) {
-      out[k] = detachValue(v);
-    }
-    return out as unknown as T;
-  }
-  return val;
-}
+function estimateRetainedBytes(value: unknown, seen = new WeakSet<object>()): number {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === "string") return Buffer.byteLength(value, "utf8");
+  if (typeof value === "number" || typeof value === "bigint") return 8;
+  if (typeof value === "boolean") return 4;
+  if (typeof value !== "object" || seen.has(value)) return 0;
+  seen.add(value);
 
-function estimateDetailBytes(detail: PendingRequestDetail): number {
-  let bytes = 256;
-  const measure = (val: unknown) => {
-    if (typeof val === "string") return val.length * 2;
-    if (val && typeof val === "object") {
-      try {
-        return JSON.stringify(val).length * 2;
-      } catch {
-        return 512;
-      }
-    }
-    return 0;
-  };
-  bytes += measure(detail.clientRequest);
-  bytes += measure(detail.providerRequest);
-  bytes += measure(detail.clientResponse);
-  bytes += measure(detail.providerResponse);
+  if (Array.isArray(value)) {
+    return 32 + value.reduce((total, entry) => total + estimateRetainedBytes(entry, seen), 0);
+  }
+
+  let bytes = 64;
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    bytes += Buffer.byteLength(key, "utf8") + estimateRetainedBytes(entry, seen);
+  }
   return bytes;
 }
 
 function deleteCompletedDetail(id: string) {
   completedDetails.delete(id);
-  const bytes = detailBytes.get(id);
-  if (bytes) {
-    totalCompletedDetailsBytes = Math.max(0, totalCompletedDetailsBytes - bytes);
-    detailBytes.delete(id);
-  }
+  totalCompletedDetailBytes = Math.max(
+    0,
+    totalCompletedDetailBytes - (completedDetailBytes.get(id) ?? 0)
+  );
+  completedDetailBytes.delete(id);
   const existingTimer = completedDetailTimers.get(id);
   if (existingTimer) {
     clearTimeout(existingTimer);
@@ -65,7 +51,7 @@ function deleteCompletedDetail(id: string) {
 function trimCompletedDetails() {
   while (
     completedDetails.size > MAX_COMPLETED_DETAILS ||
-    totalCompletedDetailsBytes > MAX_COMPLETED_DETAILS_BYTES
+    totalCompletedDetailBytes > MAX_COMPLETED_DETAILS_BYTES
   ) {
     const oldestId = completedDetails.keys().next().value;
     if (!oldestId) break;
@@ -77,22 +63,54 @@ export function getCompletedDetails(): Map<string, PendingRequestDetail> {
   return completedDetails;
 }
 
-export function storeCompletedDetail(detail: PendingRequestDetail) {
-  if (completedDetails.has(detail.id)) {
-    deleteCompletedDetail(detail.id);
-  }
-  const cleanDetail: PendingRequestDetail = {
-    ...detail,
-    clientRequest: truncatePendingPreview(detachValue(detail.clientRequest)),
-    providerRequest: truncatePendingPreview(detachValue(detail.providerRequest)),
-    clientResponse: truncatePendingPreview(detachValue(detail.clientResponse)),
-    providerResponse: truncatePendingPreview(detachValue(detail.providerResponse)),
+/**
+ * Read the estimated payload bytes currently accounted to the completed-detail cache.
+ * @returns The cache's estimated payload-byte total.
+ */
+export function getCompletedDetailsByteSize(): number {
+  return totalCompletedDetailBytes;
+}
+
+/**
+ * Read the completed-detail cache counters.
+ * @returns Entry, cleanup-timer and estimated payload-byte counts.
+ */
+export function getCompletedDetailsCacheStats(): {
+  entries: number;
+  cleanupTimers: number;
+  bytes: number;
+} {
+  return {
+    entries: completedDetails.size,
+    cleanupTimers: completedDetailTimers.size,
+    bytes: totalCompletedDetailBytes,
   };
-  const bytes = estimateDetailBytes(cleanDetail);
-  completedDetails.set(cleanDetail.id, cleanDetail);
-  detailBytes.set(cleanDetail.id, bytes);
-  totalCompletedDetailsBytes += bytes;
+}
+
+/**
+ * Store a detached completed-request preview.
+ * @param detail - Completed request detail to detach and cache.
+ * @returns `true` only when the entry remains cached after count and byte-budget eviction.
+ * @throws If `detail` contains a value that `structuredClone` cannot copy.
+ */
+export function storeCompletedDetail(detail: PendingRequestDetail): boolean {
+  const inputBytes = estimateRetainedBytes(detail);
+  if (inputBytes > MAX_COMPLETED_DETAILS_BYTES) {
+    deleteCompletedDetail(detail.id);
+    return false;
+  }
+
+  // `truncatePendingPreview()` uses String#slice. V8 may represent that short preview as a
+  // sliced string whose hidden parent is the full multi-megabyte request. A structured clone
+  // materializes the visible preview into cache-owned storage and drops the pending graph.
+  const detached = structuredClone(detail);
+  const detachedBytes = estimateRetainedBytes(detached);
+  totalCompletedDetailBytes -= completedDetailBytes.get(detail.id) ?? 0;
+  completedDetails.set(detail.id, detached);
+  completedDetailBytes.set(detail.id, detachedBytes);
+  totalCompletedDetailBytes += detachedBytes;
   trimCompletedDetails();
+  return completedDetails.has(detail.id);
 }
 
 export function scheduleCompletedDetailCleanup(id: string) {
@@ -109,8 +127,8 @@ export function clearCompletedDetails() {
   for (const timer of completedDetailTimers.values()) clearTimeout(timer);
   completedDetailTimers.clear();
   completedDetails.clear();
-  detailBytes.clear();
-  totalCompletedDetailsBytes = 0;
+  completedDetailBytes.clear();
+  totalCompletedDetailBytes = 0;
 }
 
 function isUnset(value: unknown): boolean {
@@ -135,17 +153,18 @@ export function maybeEnrichCompletedDetail(updated: PendingRequestDetail, connec
         const art = readCallArtifact(row.artifact_relpath);
         if (art.state !== "ready" || !art.artifact) continue;
         const pipeline = art.artifact.pipeline as
-          { providerResponse?: unknown; clientResponse?: unknown } | undefined;
+          | { providerResponse?: unknown; clientResponse?: unknown }
+          | undefined;
         // pipeline.* first: it is the translated payload of one specific side.
         // `responseBody` is a single coarse value handed to both sides, so it
         // may only fill a side still empty AFTER the pipeline had its turn --
         // testing emptiness once before the loop let it overwrite the payload
         // just recovered, showing a provider payload as the client response.
         if (isUnset(updated.providerResponse) && pipeline?.providerResponse) {
-          updated.providerResponse = truncatePendingPreview(pipeline.providerResponse);
+          updated.providerResponse = pipeline.providerResponse;
         }
         if (isUnset(updated.clientResponse) && pipeline?.clientResponse) {
-          updated.clientResponse = truncatePendingPreview(pipeline.clientResponse);
+          updated.clientResponse = pipeline.clientResponse;
         }
         // A size-limited artifact stores an omission marker string in place of
         // the body. It is truthy, so recovering it here overwrites a real
@@ -154,9 +173,8 @@ export function maybeEnrichCompletedDetail(updated: PendingRequestDetail, connec
           ? null
           : art.artifact.responseBody;
         if (responseBody) {
-          const truncatedBody = truncatePendingPreview(responseBody);
-          if (isUnset(updated.providerResponse)) updated.providerResponse = truncatedBody;
-          if (isUnset(updated.clientResponse)) updated.clientResponse = truncatedBody;
+          if (isUnset(updated.providerResponse)) updated.providerResponse = responseBody;
+          if (isUnset(updated.clientResponse)) updated.clientResponse = responseBody;
         }
         if (updated.providerResponse || updated.clientResponse) {
           if (completedDetails.has(updated.id)) storeCompletedDetail(updated);
