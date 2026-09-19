@@ -449,6 +449,7 @@ const LOBE_PROVIDER_ALIASES = {
   tencent: "Tencent",
   "codebuddy-cn": "Tencent",
   codebuddy: "Tencent",
+  cbai: "Tencent",
   together: "Together",
   topaz: "TopazLabs",
   trae: "Trae",

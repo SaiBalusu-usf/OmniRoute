@@ -181,14 +181,32 @@ export async function getCodeBuddyUsage(
         unlimited: false,
       };
     });
-    bonuses.forEach((acc, i) => {
-      quotas[`Bonus Pack ${i + 1}`] = {
-        used: num(acc.CapacityUsedPrecise, acc.CapacityUsed),
-        total: num(acc.CapacitySizePrecise, acc.CapacitySize),
-        resetAt: parseResetTime(acc.CycleEndTime),
+    const activeBonuses = bonuses.filter((acc) => {
+      const total = num(acc.CapacitySizePrecise, acc.CapacitySize);
+      const used = num(acc.CapacityUsedPrecise, acc.CapacityUsed);
+      return total > 0 && total - used > 0.001;
+    });
+
+    if (activeBonuses.length > 0) {
+      activeBonuses.forEach((acc, i) => {
+        quotas[`Bonus Pack ${i + 1}`] = {
+          used: num(acc.CapacityUsedPrecise, acc.CapacityUsed),
+          total: num(acc.CapacitySizePrecise, acc.CapacitySize),
+          resetAt: parseResetTime(acc.CycleEndTime),
+          unlimited: false,
+        };
+      });
+    } else if (bonuses.length > 0) {
+      // All historical bonus packs are exhausted — surface a single clean exhausted indicator
+      const last = bonuses[bonuses.length - 1];
+      const size = num(last.CapacitySizePrecise, last.CapacitySize) || 30;
+      quotas["Bonus Credits"] = {
+        used: size,
+        total: size,
+        resetAt: parseResetTime(last.CycleEndTime),
         unlimited: false,
       };
-    });
+    }
 
     const basePkg = refills[0] || accountsRaw[0] || {};
     const plan = basePkg.PackageName || basePkg.SubProductName || "WorkBuddy AI";

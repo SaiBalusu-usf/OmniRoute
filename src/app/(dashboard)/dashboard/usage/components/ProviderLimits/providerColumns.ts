@@ -30,6 +30,9 @@ const PROVIDER_COLUMNS: Record<string, string[]> = {
   "minimax-cn": ["session"],
   "kimi-coding": ["session", "weekly"],
   "command-code": ["five_hour", "weekly", "credits"],
+  codebuddy: ["Monthly", "Bonus Pack 1", "Bonus Credits"],
+  cbai: ["Monthly", "Bonus Pack 1", "Bonus Credits"],
+  "codebuddy-cn": ["Monthly", "Bonus Pack 1", "Bonus Credits"],
 };
 
 /** Hard cap for the dynamic schema (Antigravity and fallback providers). */
