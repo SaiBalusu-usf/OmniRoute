@@ -53,6 +53,8 @@ export const APP_STAGING_ALLOWED_EXACT_PATHS: string[] = [
   // server-ws.mjs import (sd_notify helper) — enforced by the closure test
   // tests/unit/pack-artifact-server-ws-closure.test.ts.
   "systemd-notify.mjs",
+  // server-ws.mjs import (process crash guard, #13636) — enforced by the closure test.
+  "httpClientAbortGuard.mjs",
   "responses-ws-proxy.mjs",
   "bin/chatgpt-web-codex-mcp.mjs",
   "scripts/dev/sync-env.mjs",
@@ -109,6 +111,8 @@ export const PACK_ARTIFACT_ROOT_ALLOWED_EXACT_PATHS: string[] = [
   "bin/nodeRuntimeSupport.mjs",
   "bin/omniroute.mjs",
   "bin/reset-password.mjs",
+  // #14006: standalone operator-run Antigravity bridge proxy shipped via package.json files[].
+  "bin/antigravity-bridge.mjs",
   // Operator incident-recovery / cold-start shell tooling (rollback, snapshot,
   // restore, cold-start bench) shipped in bin/ for self-hosters — not imported by
   // the runtime. Included via the package.json "files": ["bin/"] entry, so they
@@ -190,6 +194,7 @@ export const PACK_ARTIFACT_REQUIRED_PATHS: string[] = [
   "dist/main-server-timeouts.mjs",
   // server-ws.mjs import (sd_notify helper) — enforced by the closure test.
   "dist/systemd-notify.mjs",
+  "dist/httpClientAbortGuard.mjs",
   "dist/http-method-guard.cjs",
   // #5452: regression guard — make check:pack-artifact fail loudly if the TLS
   // opt-in sidecar (imported by dist/server-ws.mjs) ever vanishes from the tarball.
