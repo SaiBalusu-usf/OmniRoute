@@ -158,9 +158,10 @@ type StreamOptions = {
   /** Suppress the `</think>` close marker for clients that render it verbatim (#5245). */
   suppressThinkClose?: boolean;
   /**
-   * Controls whether upstream reasoning is emitted as Claude thinking blocks.
-   * Without enabled or adaptive thinking, reasoning-only output may still be
-   * relayed as ordinary text; this is not a general reasoning-suppression switch.
+   * True when the CLIENT explicitly asked for thinking (body.thinking.type ===
+   * "enabled"). The response translator only relays upstream reasoning_content
+   * as Claude thinking blocks when this is set — otherwise DeepSeek/GLM
+   * reasoning would leak into UIs that never opted in.
    */
   requestedThinking?: boolean;
   /**

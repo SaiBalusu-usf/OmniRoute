@@ -46,6 +46,7 @@ import {
   isExplicitClaudeQuota429Text,
   isClaudeQuotaMetadata,
 } from "@omniroute/open-sse/services/usage/claudeQuota.ts";
+import { readClaudeUsageLimitConfig } from "@omniroute/open-sse/services/claudeLowPriority.ts";
 import type { ClaudeQuotaMetadata } from "@omniroute/open-sse/services/usage/quota.ts";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -461,8 +462,12 @@ function isActiveClaudeExhaustion(quota: QuotaInfo, now: number): boolean {
 function isClaudeQuotaExhaustedForRequest(
   entry: QuotaCacheEntry,
   requestedModel: string | null,
-  now: number
+  now: number,
+  providerSpecificData?: unknown
 ): boolean {
+  const usageLimitConfig = readClaudeUsageLimitConfig(providerSpecificData);
+  const sessionRecoveryEnabled =
+    usageLimitConfig.lowPriorityMode || usageLimitConfig.autoLimitReset;
   const globalWindows = Object.values(entry.quotas).filter(
     (quota): quota is QuotaInfo & { claudeQuota: ClaudeQuotaMetadata } =>
       quota.claudeQuota !== undefined && quota.claudeQuota.kind !== "weekly_scoped"
@@ -474,7 +479,13 @@ function isClaudeQuotaExhaustedForRequest(
   if (globalWindows.length === 0 && scopedWindows.length === 0) {
     return isStandardQuotaExhausted(entry, now);
   }
-  if (globalWindows.some((quota) => isActiveClaudeExhaustion(quota, now))) {
+  if (
+    globalWindows.some(
+      (quota) =>
+        isActiveClaudeExhaustion(quota, now) &&
+        (quota.claudeQuota.kind !== "session" || !sessionRecoveryEnabled)
+    )
+  ) {
     return true;
   }
   if (!requestedModel) return isStandardQuotaExhausted(entry, now);
@@ -631,7 +642,7 @@ export function isQuotaExhaustedForRequest(
   }
 
   if (resolveProviderId(provider) === "claude") {
-    return isClaudeQuotaExhaustedForRequest(entry, requestedModel, now);
+    return isClaudeQuotaExhaustedForRequest(entry, requestedModel, now, providerSpecificData);
   }
 
   // Standard (non-per-model-quota) providers: check connection-wide aggregate

@@ -280,6 +280,70 @@ test("verified current Claude payload flows from parser through live cache to mo
   );
 });
 
+test("Claude session preflight allows upstream recovery opt-ins without bypassing weekly limits", () => {
+  const connectionId = "claude-session-recovery-preflight";
+  const futureReset = new Date(Date.now() + 120_000).toISOString();
+  const sessionQuota = {
+    remainingPercentage: 0,
+    resetAt: futureReset,
+    claudeQuota: {
+      kind: "session" as const,
+      active: true,
+      severity: "critical",
+      scopeKey: null,
+      modelId: null,
+      modelDisplayName: null,
+    },
+  };
+  const weeklyQuota = {
+    ...sessionQuota,
+    claudeQuota: { ...sessionQuota.claudeQuota, kind: "weekly_all" as const },
+  };
+
+  quotaCache.setQuotaCache(connectionId, "claude", { "session (5h)": sessionQuota });
+  assert.equal(
+    quotaCache.isQuotaExhaustedForRequest(connectionId, "claude", "claude-opus-5"),
+    true
+  );
+  for (const providerSpecificData of [
+    { lowPriorityMode: true, autoLimitReset: false },
+    { lowPriorityMode: false, autoLimitReset: true },
+  ]) {
+    assert.equal(
+      quotaCache.isQuotaExhaustedForRequest(
+        connectionId,
+        "claude",
+        "claude-opus-5",
+        providerSpecificData
+      ),
+      false
+    );
+  }
+
+  quotaCache.setQuotaCache(connectionId, "claude", { "weekly (7d)": weeklyQuota });
+  assert.equal(
+    quotaCache.isQuotaExhaustedForRequest(connectionId, "claude", "claude-opus-5", {
+      lowPriorityMode: true,
+      autoLimitReset: true,
+    }),
+    true
+  );
+
+  quotaCache.setQuotaCache(
+    connectionId,
+    "claude",
+    {},
+    { "weekly Fable (7d)": scopedQuota(futureReset) }
+  );
+  assert.equal(
+    quotaCache.isQuotaExhaustedForRequest(connectionId, "claude", "claude-fable-5-1", {
+      lowPriorityMode: true,
+      autoLimitReset: true,
+    }),
+    true
+  );
+});
+
 test("active critical current limits route by upstream state without a percent threshold", () => {
   const connectionId = "claude-current-active-state";
   const now = Date.now();
@@ -718,18 +782,54 @@ test("global or unproven native Claude quota failures stay connection-wide", asy
   }
 });
 
-test("Claude non-429 and Anthropic API-key failures remain connection-wide", async () => {
-  for (const status of [402, 404, 500, 502, 503, 504]) {
+test("Claude non-quota failure scopes and Anthropic API-key behavior follow provider policy", async () => {
+  const paymentRequired = await seedConnection("claude", {
+    name: "claude-status-402",
+    authType: "oauth",
+    accessToken: "claude-status-402-access",
+    refreshToken: "claude-status-402-refresh",
+  });
+  await auth.markAccountUnavailable(
+    paymentRequired.id,
+    402,
+    "payment required",
+    "claude",
+    "claude-fable-5-1"
+  );
+  await flushWrites();
+  const paymentUpdated = await providersDb.getProviderConnectionById(paymentRequired.id);
+  assert.equal(fallback.isModelLocked("claude", paymentRequired.id, "claude-fable-5-1"), false);
+  assert.notEqual(paymentUpdated.testStatus, "active");
+
+  const transient500 = await seedConnection("claude", {
+    name: "claude-status-500",
+    authType: "oauth",
+    accessToken: "claude-status-500-access",
+    refreshToken: "claude-status-500-refresh",
+  });
+  await auth.markAccountUnavailable(
+    transient500.id,
+    500,
+    "upstream unavailable",
+    "claude",
+    "claude-fable-5-1"
+  );
+  await flushWrites();
+  const transientUpdated = await providersDb.getProviderConnectionById(transient500.id);
+  assert.equal(fallback.isModelLocked("claude", transient500.id, "claude-fable-5-1"), false);
+  assert.equal(transientUpdated.testStatus, "active");
+
+  for (const status of [404, 502, 503, 504]) {
     const connection = await seedConnection("claude", {
-      name: `claude-status-${status}`,
+      name: `claude-model-status-${status}`,
       authType: "oauth",
-      accessToken: `claude-status-${status}-access`,
-      refreshToken: `claude-status-${status}-refresh`,
+      accessToken: `claude-model-status-${status}-access`,
+      refreshToken: `claude-model-status-${status}-refresh`,
     });
     await auth.markAccountUnavailable(
       connection.id,
       status,
-      status === 402 ? "payment required" : "upstream unavailable",
+      "upstream unavailable",
       "claude",
       "claude-fable-5-1"
     );
@@ -737,10 +837,10 @@ test("Claude non-429 and Anthropic API-key failures remain connection-wide", asy
     const updated = await providersDb.getProviderConnectionById(connection.id);
     assert.equal(
       fallback.isModelLocked("claude", connection.id, "claude-fable-5-1"),
-      false,
+      true,
       String(status)
     );
-    assert.notEqual(updated.testStatus, "active", String(status));
+    assert.equal(updated.testStatus, "active", String(status));
   }
 
   const anthropic = await seedConnection("anthropic", { name: "anthropic-api-key-quota" });
