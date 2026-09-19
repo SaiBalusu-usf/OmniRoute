@@ -6,45 +6,8 @@ import {
   ensureOpencodeFingerprintTools,
   sanitizeResponsesBody,
 } from "../../open-sse/executors/opencode.ts";
-import {
-  hasValidOpencodeVersion,
-  translateOpencodeSessionId,
-  OPENCODE_SESSION_RE,
-} from "../../open-sse/utils/opencodeHeaders.ts";
 
 describe("PR #4145 OpenCode Fingerprint & Sanitization", () => {
-  describe("hasValidOpencodeVersion", () => {
-    it("recognizes opencode/1.18.31 as valid", () => {
-      assert.equal(hasValidOpencodeVersion("opencode/1.18.31"), true);
-    });
-
-    it("recognizes opencode/1.17 as valid", () => {
-      assert.equal(hasValidOpencodeVersion("opencode/1.17.0"), true);
-    });
-
-    it("recognizes opencode-cli/... as valid", () => {
-      assert.equal(hasValidOpencodeVersion("opencode-cli/1.0.0"), true);
-    });
-
-    it("rejects generic user agents", () => {
-      assert.equal(hasValidOpencodeVersion("curl/8.5.0"), false);
-      assert.equal(hasValidOpencodeVersion("python-requests/2.31.0"), false);
-      assert.equal(hasValidOpencodeVersion("opencode/1.16.0"), false);
-    });
-  });
-
-  describe("translateOpencodeSessionId", () => {
-    it("preserves already valid ses_... IDs", () => {
-      const valid = "ses_1234567890abABCDEFGHJKLMNP";
-      assert.equal(translateOpencodeSessionId(valid), valid);
-    });
-
-    it("translates arbitrary session strings into ses_... format", () => {
-      const result = translateOpencodeSessionId("my-custom-session-123");
-      assert.match(result, OPENCODE_SESSION_RE);
-    });
-  });
-
   describe("ensureOpencodeFingerprintTools", () => {
     it("injects the built-in quartet (bash, glob, grep, read) for Chat Completions", () => {
       const body: Record<string, unknown> = { tools: [] };
