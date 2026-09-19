@@ -17,6 +17,55 @@ import type { RefreshLogger } from "../shared.ts";
  * Separate from CodeBuddy CN on purpose: different host, different account, and
  * a credential from one is not valid on the other.
  */
+function postRefreshRequest(url: string, refreshToken: string, proxyConfig: unknown) {
+  return runWithProxyContext(proxyConfig, () =>
+    fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-Refresh-Token": refreshToken,
+        "X-Product": "SaaS",
+      },
+      body: "{}",
+    })
+  );
+}
+
+function logRefreshFailure(log: RefreshLogger, data: { code?: number; msg?: string }): null {
+  log?.error?.("TOKEN_REFRESH", "WorkBuddy token refresh returned no token", {
+    code: data?.code,
+    msg: data?.msg,
+  });
+  return null;
+}
+
+async function readRefreshPayload(response, refreshToken: string, log: RefreshLogger) {
+  if (!response.ok) {
+    log?.error?.("TOKEN_REFRESH", "Failed to refresh WorkBuddy token", {
+      status: response.status,
+      error: await response.text(),
+    });
+    return null;
+  }
+
+  const data = await response.json();
+  if (data?.code !== 0 || !data?.data?.accessToken) return logRefreshFailure(log, data);
+
+  log?.info?.("TOKEN_REFRESH", "Successfully refreshed WorkBuddy token", {
+    hasNewAccessToken: !!data.data.accessToken,
+    hasNewRefreshToken: !!data.data.refreshToken,
+    expiresIn: data.data.expiresIn,
+  });
+
+  return {
+    accessToken: data.data.accessToken,
+    // The gateway rotates the refresh token; keep the old one if it does not.
+    refreshToken: data.data.refreshToken || refreshToken,
+    expiresIn: data.data.expiresIn,
+  };
+}
+
 export async function refreshWorkbuddyToken(
   refreshToken: string,
   log: RefreshLogger,
@@ -24,51 +73,13 @@ export async function refreshWorkbuddyToken(
 ) {
   if (!refreshToken) return null;
   const { WORKBUDDY_CONFIG } = await import("@/lib/oauth/constants/oauth");
-  const oauth = WORKBUDDY_CONFIG;
   try {
-    const response = await runWithProxyContext(proxyConfig, () =>
-      fetch(oauth.refreshUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          "X-Refresh-Token": refreshToken,
-          "X-Product": "SaaS",
-        },
-        body: "{}",
-      })
+    const response = await postRefreshRequest(
+      WORKBUDDY_CONFIG.refreshUrl,
+      refreshToken,
+      proxyConfig
     );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      log?.error?.("TOKEN_REFRESH", "Failed to refresh WorkBuddy token", {
-        status: response.status,
-        error: errorText,
-      });
-      return null;
-    }
-
-    const data = await response.json();
-    if (data?.code !== 0 || !data?.data?.accessToken) {
-      log?.error?.("TOKEN_REFRESH", "WorkBuddy token refresh returned no token", {
-        code: data?.code,
-        msg: data?.msg,
-      });
-      return null;
-    }
-
-    log?.info?.("TOKEN_REFRESH", "Successfully refreshed WorkBuddy token", {
-      hasNewAccessToken: !!data.data.accessToken,
-      hasNewRefreshToken: !!data.data.refreshToken,
-      expiresIn: data.data.expiresIn,
-    });
-
-    return {
-      accessToken: data.data.accessToken,
-      // The gateway rotates the refresh token; keep the old one if it does not.
-      refreshToken: data.data.refreshToken || refreshToken,
-      expiresIn: data.data.expiresIn,
-    };
+    return await readRefreshPayload(response, refreshToken, log);
   } catch (error) {
     log?.error?.("TOKEN_REFRESH", `Network error refreshing WorkBuddy token: ${error?.message}`);
     return null;

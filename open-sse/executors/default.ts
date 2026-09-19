@@ -65,7 +65,7 @@ import { normalizePoolConfig } from "./default/poolConfig.ts";
 import { acquireNvidiaConcurrencySlot } from "./default/nvidiaConcurrencyGate.ts";
 import { resolveAlibabaProviderBaseUrl } from "@/shared/constants/alibabaProviderRegions";
 import { usesCcWireImage } from "../services/ccWireImageBuiltins.ts";
-import { repairChatHistory } from "../utils/strictChatHistory.ts";
+import { applyRegistryBodyRepairs } from "../utils/strictChatHistory.ts";
 
 const NVIDIA_TOOL_CALL_ID_PATTERN = /^[A-Za-z0-9]{9}$/;
 const PERPLEXITY_AGENT_DEFAULT_MAX_OUTPUT_TOKENS = 4096;
@@ -1068,22 +1068,7 @@ export class DefaultExecutor extends BaseExecutor {
       }
     }
 
-    // Upstreams that accept a single-turn request but reject the replayed
-    // history an agent client sends from turn two on (RegistryEntry
-    // .strictChatHistory / .bodyStringReplacements — WorkBuddy is the reference
-    // case: 11148 tool_call_sequence_broken, 11155 missing reasoning echo,
-    // 11128 unapproved channel). Runs last so the repair sees the fully shaped
-    // body, and is a no-op for every provider that does not declare the flags.
-    const strictChatHistory = getRegistryEntry(this.provider)?.strictChatHistory === true;
-    const bodyStringReplacements = getRegistryEntry(this.provider)?.bodyStringReplacements;
-    if (strictChatHistory || (bodyStringReplacements?.length ?? 0) > 0) {
-      withDefaults = repairChatHistory(withDefaults, {
-        bodyStringReplacements,
-        repairSequence: strictChatHistory,
-      });
-    }
-
-    return withDefaults;
+    return applyRegistryBodyRepairs(this.provider, withDefaults);
   }
 
   // Reasoning models (ClinePass, OpenRouter, etc.) leave content empty when the reasoning

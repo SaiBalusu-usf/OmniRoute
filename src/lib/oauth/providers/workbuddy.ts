@@ -126,5 +126,3 @@ export const workbuddy = {
     providerSpecificData: {},
   }),
 };
-
-export default workbuddy;

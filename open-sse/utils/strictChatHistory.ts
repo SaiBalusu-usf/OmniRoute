@@ -32,6 +32,8 @@
  * matches, which is what `interleavedField` on a registry model declares.
  */
 
+import { getRegistryEntry } from "../config/providerRegistry.ts";
+
 type JsonRecord = Record<string, unknown>;
 
 const MERGED_KEYS = new Set(["role", "content", "reasoning_content", "tool_calls"]);
@@ -168,84 +170,106 @@ function toolCallIds(message: unknown): string[] {
  * A late duplicate for an already-emitted group upgrades that result in place
  * rather than appending a second one.
  */
+interface SequenceState {
+  out: unknown[];
+  deferred: unknown[];
+  order: string[];
+  results: Map<string, JsonRecord>;
+  closed: Map<string, number>;
+}
+
+/**
+ * Emit the open group's results in call order, then re-emit whatever was held
+ * back. Unanswered calls are emitted as-is rather than held forever.
+ */
+function flushGroup(state: SequenceState): void {
+  for (const callId of state.order) {
+    const result = state.results.get(callId);
+    if (result === undefined) continue;
+    state.closed.set(callId, state.out.length);
+    state.out.push(result);
+  }
+  for (const [callId, result] of state.results) {
+    if (state.order.includes(callId)) continue;
+    state.closed.set(callId, state.out.length);
+    state.out.push(result);
+  }
+  state.out.push(...state.deferred);
+  state.order = [];
+  state.results = new Map();
+  state.deferred.length = 0;
+}
+
+/** Hold a message back while a call group is open, otherwise emit it now. */
+function pushHeld(state: SequenceState, message: unknown): void {
+  if (state.order.length > 0) state.deferred.push(message);
+  else state.out.push(message);
+}
+
+/** Record a tool result for the open group, or upgrade an already-emitted one. */
+function acceptToolResult(state: SequenceState, message: JsonRecord): void {
+  const callId = typeof message.tool_call_id === "string" ? message.tool_call_id : undefined;
+
+  if (state.order.length > 0) {
+    if (callId !== undefined) {
+      state.results.set(callId, preferResult(state.results.get(callId), message));
+    }
+    if (state.order.every((known) => state.results.has(known))) flushGroup(state);
+    return;
+  }
+
+  if (callId === undefined || !state.closed.has(callId)) {
+    state.out.push(message);
+    return;
+  }
+
+  const index = state.closed.get(callId) as number;
+  if (preferResult(state.out[index] as JsonRecord, message) === message) {
+    state.out[index] = message;
+  }
+}
+
+/** Open a new call group; whatever the previous one never answered is flushed. */
+function openCallGroup(state: SequenceState, message: JsonRecord, ids: string[]): void {
+  if (state.order.length > 0) flushGroup(state);
+  state.closed.clear();
+  state.out.push(message);
+  state.order.push(...ids);
+}
+
+function sameOrder(next: unknown[], original: unknown[]): boolean {
+  return (
+    next.length === original.length && next.every((value, index) => value === original[index])
+  );
+}
+
 export function normalizeToolSequence(messages: unknown[]): unknown[] {
   if (messages.length < 2) return messages;
-  const out: unknown[] = [];
-  const deferred: unknown[] = [];
-  let order: string[] = [];
-  let results = new Map<string, JsonRecord>();
-  const closed = new Map<string, number>();
-
-  const flushGroup = (): void => {
-    for (const callId of order) {
-      const result = results.get(callId);
-      if (result !== undefined) {
-        closed.set(callId, out.length);
-        out.push(result);
-      }
-    }
-    for (const [callId, result] of results) {
-      if (!order.includes(callId)) {
-        closed.set(callId, out.length);
-        out.push(result);
-      }
-    }
-    out.push(...deferred);
-    order = [];
-    results = new Map();
-    deferred.length = 0;
+  const state: SequenceState = {
+    out: [],
+    deferred: [],
+    order: [],
+    results: new Map(),
+    closed: new Map(),
   };
 
   for (const message of messages) {
     if (!isRecord(message)) {
-      if (order.length > 0) deferred.push(message);
-      else out.push(message);
+      pushHeld(state, message);
       continue;
     }
-
     if (message.role === "tool") {
-      const callId = typeof message.tool_call_id === "string" ? message.tool_call_id : undefined;
-      if (order.length > 0) {
-        if (callId !== undefined) {
-          results.set(callId, preferResult(results.get(callId), message));
-        }
-        if (order.every((known) => results.has(known))) flushGroup();
-        continue;
-      }
-      if (callId !== undefined && closed.has(callId)) {
-        const index = closed.get(callId) as number;
-        const chosen = preferResult(out[index] as JsonRecord, message);
-        if (chosen === message) out[index] = message;
-        continue;
-      }
-      out.push(message);
+      acceptToolResult(state, message);
       continue;
     }
-
     const ids = toolCallIds(message);
-    if (ids.length > 0) {
-      // A new call group: whatever the previous one never answered is emitted
-      // as-is rather than held forever.
-      if (order.length > 0) flushGroup();
-      closed.clear();
-      out.push(message);
-      order.push(...ids);
-      continue;
-    }
-
-    if (order.length > 0) {
-      deferred.push(message);
-      continue;
-    }
-
-    out.push(message);
+    if (ids.length > 0) openCallGroup(state, message, ids);
+    else pushHeld(state, message);
   }
 
-  if (order.length > 0) flushGroup();
+  if (state.order.length > 0) flushGroup(state);
 
-  const unchanged =
-    out.length === messages.length && out.every((value, index) => value === messages[index]);
-  return unchanged ? messages : out;
+  return sameOrder(state.out, messages) ? messages : state.out;
 }
 
 /**
@@ -259,20 +283,30 @@ export function normalizeToolSequence(messages: unknown[]): unknown[] {
  * lifted image sitting behind another user turn. Merging preserves every
  * content part and the original order; only the message boundary is lost.
  */
+/** Fold `second` into `first`. Only the message boundary is lost. */
+function mergeUserPair(first: JsonRecord, second: JsonRecord): JsonRecord {
+  const merged: JsonRecord = { ...first };
+  merged.content = combineContent(first.content, second.content);
+  for (const [key, value] of Object.entries(second)) {
+    if (key === "role" || key === "content") continue;
+    if (!(key in merged) || isBlank(merged[key])) merged[key] = value;
+  }
+  return merged;
+}
+
+/** True when both sides are records sharing `role`. */
+function isSameRolePair(message: unknown, previous: unknown, role: string): boolean {
+  return isRecord(message) && isRecord(previous) && message.role === role && previous.role === role;
+}
+
 export function mergeAdjacentUserMessages(messages: unknown[]): unknown[] {
   if (messages.length < 2) return messages;
   const out: unknown[] = [];
   let mergedAny = false;
   for (const message of messages) {
     const previous = out.length > 0 ? out[out.length - 1] : undefined;
-    if (isRecord(message) && isRecord(previous) && message.role === "user" && previous.role === "user") {
-      const merged: JsonRecord = { ...previous };
-      merged.content = combineContent(previous.content, message.content);
-      for (const [key, value] of Object.entries(message)) {
-        if (key === "role" || key === "content") continue;
-        if (!(key in merged) || isBlank(merged[key])) merged[key] = value;
-      }
-      out[out.length - 1] = merged;
+    if (isSameRolePair(message, previous, "user")) {
+      out[out.length - 1] = mergeUserPair(previous as JsonRecord, message as JsonRecord);
       mergedAny = true;
       continue;
     }
@@ -296,44 +330,34 @@ export function mergeAdjacentUserMessages(messages: unknown[]): unknown[] {
  * into there is nothing to attach it to, so the message is dropped rather than
  * left in the one position the gateway refuses.
  */
+/** True when `message` is a tool result. */
+function isToolMessage(message: unknown): boolean {
+  return isRecord(message) && message.role === "tool";
+}
+
+/** The run of trailing tool results: `start` is its first index. */
+function trailingToolResultRun(messages: unknown[]): { start: number; sawResult: boolean } {
+  let start = messages.length - 1;
+  while (start - 1 >= 0 && isToolMessage(messages[start - 1])) start -= 1;
+  return { start, sawResult: start <= messages.length - 2 };
+}
+
 export function foldTrailingCommentary(messages: unknown[], declaresTools: boolean): unknown[] {
   if (!declaresTools || messages.length < 2) return messages;
   const last = messages[messages.length - 1];
   if (!isRecord(last) || last.role !== "assistant" || hasToolCalls(last)) return messages;
 
-  let index = messages.length - 2;
-  let sawToolResult = false;
-  while (index >= 0) {
-    const candidate = messages[index];
-    if (isRecord(candidate) && candidate.role === "tool") {
-      sawToolResult = true;
-      index -= 1;
-      continue;
-    }
-    break;
-  }
-
-  const target = index >= 0 ? messages[index] : undefined;
-  if (
-    !sawToolResult ||
-    !isRecord(target) ||
-    target.role !== "assistant" ||
-    !hasToolCalls(target)
-  ) {
+  const { start, sawResult } = trailingToolResultRun(messages);
+  const target = start > 0 ? messages[start - 1] : undefined;
+  if (!sawResult || !isRecord(target) || target.role !== "assistant" || !hasToolCalls(target)) {
     return messages.slice(0, -1);
   }
 
-  const folded: JsonRecord = { ...target };
-  folded.content = combineContent(target.content, last.content);
-  for (const [key, value] of Object.entries(last)) {
-    if (MERGED_KEYS.has(key)) continue;
-    if (!(key in folded) || isBlank(folded[key])) folded[key] = value;
-  }
-  const reasoning = combineReasoning(target.reasoning_content, last.reasoning_content);
-  if (!isBlank(reasoning)) folded.reasoning_content = reasoning;
-
+  // `last` carries no tool_calls (returned above), so the assistant-pair merge is
+  // exactly the fold this needs: content concatenated, other keys filled in,
+  // reasoning combined.
   const out = [...messages];
-  out[index] = folded;
+  out[start - 1] = mergeAssistantPair(target, last);
   out.pop();
   return out;
 }
@@ -406,4 +430,21 @@ export function repairChatHistory(body: unknown, options: ChatHistoryRepairOptio
 
   if (messages === sanitized.messages) return sanitized;
   return { ...sanitized, messages };
+}
+
+/**
+ * Apply the repairs a provider declared on its registry entry.
+ *
+ * This is the single entry point the executor calls: it reads
+ * `strictChatHistory` / `bodyStringReplacements` off the entry and runs the
+ * pipeline. A provider that declares neither gets its body back by identity, so
+ * the executor call site needs no provider-specific branch and stays inert for
+ * every provider that does not opt in.
+ */
+export function applyRegistryBodyRepairs(provider: string, body: unknown): unknown {
+  const entry = getRegistryEntry(provider);
+  const bodyStringReplacements = entry?.bodyStringReplacements;
+  const strictChatHistory = entry?.strictChatHistory === true;
+  if (!strictChatHistory && !bodyStringReplacements?.length) return body;
+  return repairChatHistory(body, { bodyStringReplacements, repairSequence: strictChatHistory });
 }
