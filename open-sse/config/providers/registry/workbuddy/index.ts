@@ -1,5 +1,4 @@
 import type { RegistryEntry } from "../../shared.ts";
-import { buildOpenAiCompatibleRegistryEntry } from "../../shared.ts";
 
 /**
  * WorkBuddy (www.workbuddy.ai) — Tencent's agent platform.
@@ -35,9 +34,11 @@ import { buildOpenAiCompatibleRegistryEntry } from "../../shared.ts";
  * thinking families by model id, provider-agnostically, which covers the
  * DeepSeek V4 point releases WorkBuddy serves (`deepseek-v4.1-flash`).
  */
-export const workbuddyProvider: RegistryEntry = buildOpenAiCompatibleRegistryEntry({
+export const workbuddyProvider: RegistryEntry = {
   id: "workbuddy",
   alias: "wb",
+  format: "openai",
+  executor: "default",
   baseUrl: "https://www.workbuddy.ai/v2/chat/completions",
   authType: "oauth",
   authHeader: "Authorization",
@@ -60,4 +61,4 @@ export const workbuddyProvider: RegistryEntry = buildOpenAiCompatibleRegistryEnt
   ],
   models: [],
   passthroughModels: true,
-});
+};
