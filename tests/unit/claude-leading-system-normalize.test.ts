@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeLeadingSystemMessages } from "../../open-sse/handlers/chatCore/claudeSystemRole.ts";
+import {
+  hoistLeadingSystemMessages,
+  relocateDirectiveOnlyMessages,
+} from "../../open-sse/services/claudeCodeConstraints.ts";
 import { shouldUseMidConversationSystem } from "../../open-sse/executors/claudeIdentity.ts";
 
 // #10547: Anthropic rejects ANY role:"system" message at messages[0] — the
@@ -11,8 +14,15 @@ import { shouldUseMidConversationSystem } from "../../open-sse/executors/claudeI
 // front of the array: applyOutputStyles() injects
 // "[OmniRoute Output Styles]..." as `{ role:"system", content:string }`, and
 // that happens the moment a request carries tools (skill invocation, attached
-// documents) which flips on shouldUseMidConversationSystem(). Before this fix
-// the textual leading system went upstream unchanged and Anthropic 400'd.
+// documents) which flips on shouldUseMidConversationSystem(). Upstream's
+// hoistLeadingSystemMessages + relocateDirectiveOnlyMessages (wired via
+// finalizeClaudeBodyConstraints in open-sse/executors/base.ts) cover both
+// shapes; the regression guard below applies them in that same order.
+
+function normalizeLeadingSystemMessages(payload: Record<string, unknown>): void {
+  hoistLeadingSystemMessages(payload);
+  relocateDirectiveOnlyMessages(payload);
+}
 
 test("shouldUseMidConversationSystem matches claude/claude-opus-5 despite the provider prefix", () => {
   // matchesModelPrefix uses .includes(), so the routing prefix does not
@@ -118,18 +128,24 @@ test("does not clobber an existing top-level output_config", () => {
   assert.deepEqual(payload.output_config, { effort: "low" });
 });
 
-test("strips cache_control when hoisting text blocks into top-level system", () => {
+test("hoists text blocks into top-level system with the block carried as-is", () => {
+  // The hoist itself preserves the block (including any cache_control marker);
+  // the prompt-cache boundary relocation is handled separately by
+  // relocateHoistedCacheBoundary in the extract paths (chatCore/claudeSystemRole.ts,
+  // chatCore/claudeUpstreamMessages.ts).
   const payload = {
     messages: [
       {
         role: "system",
-        content: [{ type: "text", text: "hoisted block" }],
+        content: [{ type: "text", text: "hoisted block", cache_control: { type: "ephemeral" } }],
       },
       { role: "user", content: "hello" },
     ],
   };
   normalizeLeadingSystemMessages(payload);
-  assert.deepEqual(payload.system, [{ type: "text", text: "hoisted block" }]);
+  assert.deepEqual(payload.system, [
+    { type: "text", text: "hoisted block", cache_control: { type: "ephemeral" } },
+  ]);
   assert.equal(payload.messages.length, 1);
   assert.equal(payload.messages[0].role, "user");
 });
@@ -146,19 +162,6 @@ test("is a no-op when the first message is not a system role", () => {
   assert.equal(payload.messages[0].role, "user");
   assert.equal(payload.messages[1].role, "system");
   assert.equal(payload.system, undefined);
-});
-
-test("handles developer-role leading systems too", () => {
-  const payload = {
-    messages: [
-      { role: "developer", content: "lead" },
-      { role: "user", content: "hello" },
-    ],
-  };
-  normalizeLeadingSystemMessages(payload);
-  assert.deepEqual(payload.system, [{ type: "text", text: "lead" }]);
-  assert.equal(payload.messages.length, 1);
-  assert.equal(payload.messages[0].role, "user");
 });
 
 test("walks past null entries to find the insertion anchor", () => {

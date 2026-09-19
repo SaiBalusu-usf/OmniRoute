@@ -1,5 +1,6 @@
 import { normalizeComboModels, type ComboStep } from "./steps";
 import { resolveComboTargetModelStr } from "../../../open-sse/services/combo/opencodeTargetAlias.ts";
+import { resolveProviderAlias } from "../../../open-sse/services/providerAlias.ts";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -109,18 +110,15 @@ function toString(value: unknown): string | null {
 
 function providerFromModel(model: string | null | undefined): string | null {
   if (!model) return null;
-  // #11912: resolve the "opencode" -> "oc" combo-target alias so this label
-  // matches the provider the step actually dispatched to. NOTE: the general
-  // alias table (open-sse/services/model.ts) is deliberately NOT consulted
-  // here — this file is bundled into the dashboard's CLIENT graph, and that
-  // module pulls the server dependency chain (credentialLoader/fs,
-  // tokenRefresh/node:async_hooks, codexClient) into a bundle compiled
-  // without node builtins. Ported from upstream #13283 minus that import —
-  // it broke `npm run build` (168 Turbopack module-not-found errors).
+  // #11912: resolve through the same "opencode" -> "oc" combo-target alias
+  // treatment (and then the general alias table) that target resolution
+  // applies before dispatch, so this label matches what actually executed
+  // upstream instead of a raw, un-aliased prefix slice.
   const normalized = resolveComboTargetModelStr(model);
   const slashIndex = normalized.indexOf("/");
   if (slashIndex <= 0) return null;
-  return normalized.slice(0, slashIndex);
+  const prefix = normalized.slice(0, slashIndex);
+  return resolveProviderAlias(prefix) || prefix;
 }
 
 function normalizeSuccessRate(value: unknown): number {

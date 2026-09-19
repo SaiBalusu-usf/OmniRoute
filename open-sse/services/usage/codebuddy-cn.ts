@@ -14,16 +14,7 @@
  * packs, "Bonus Pack N" for bonus packs (soonest-expiring first).
  */
 
-// Single source of truth for the CLI/CodeBuddy version string — lives HERE, not in
-// src/lib/oauth/constants/oauth.ts: this module is bundled into the dashboard's CLIENT
-// graph (open-sse/services/usage.ts → usage/ProviderLimits components), and importing
-// the constant from src/lib pulled the server dependency chain (providerHeaderProfiles →
-// provider registries → credentialLoader/fs) into a client bundle compiled without node
-// builtins, breaking `npm run build`. Ported from upstream #13264 with the import
-// direction reversed — src/lib/oauth/constants/oauth.ts re-exports this constant, so the
-// lockstep guarantee (auth vs. chat vs. usage must carry the identical fingerprint,
-// #12702) is unchanged.
-export const CODEBUDDY_CN_USER_AGENT = "CLI/2.108.1 CodeBuddy/2.108.1";
+import { CODEBUDDY_CN_USER_AGENT } from "../../config/providerHeaderProfiles.ts";
 
 const USAGE_URL = "https://copilot.tencent.com/v2/billing/meter/get-user-resource";
 

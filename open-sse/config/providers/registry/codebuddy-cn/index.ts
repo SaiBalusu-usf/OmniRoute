@@ -1,12 +1,4 @@
-// The constant's home is open-sse/services/usage/codebuddy-cn.ts. Upstream #13264
-// imported it from src/lib/oauth/constants/oauth, which pulled this file's server
-// dependency chain (providerHeaderProfiles → provider registries → credentialLoader/fs)
-// into the dashboard's client bundle — every dashboard client component imports
-// providerModels.ts, which reaches this registry — breaking `npm run build`. The usage
-// module is import-free, so it is safe for the client graph. Ported with the import
-// redirected; the #12702 lockstep guarantee (identical fingerprint across auth/chat/
-// usage) is unchanged because oauth.ts re-exports the same constant.
-import { CODEBUDDY_CN_USER_AGENT } from "../../../../services/usage/codebuddy-cn.ts";
+import { CODEBUDDY_CN_USER_AGENT } from "../../../providerHeaderProfiles.ts";
 import type { RegistryEntry } from "../../shared.ts";
 
 /**
