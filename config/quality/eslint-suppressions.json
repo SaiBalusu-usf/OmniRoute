@@ -535,11 +535,6 @@
       "count": 1
     }
   },
-  "open-sse/services/genericQuotaFetcher.ts": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "open-sse/services/grokQuotaFetcher.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
@@ -562,11 +557,6 @@
   },
   "open-sse/services/opencodeOllamaUsage.ts": {
     "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "open-sse/services/rateLimitManager.ts": {
-    "@typescript-eslint/no-unused-vars": {
       "count": 1
     }
   },
