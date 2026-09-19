@@ -218,20 +218,21 @@ export type ChatAdmissionShedReason =
   | "inflight_bytes_budget"
   | "resource_pressure";
 
+function tryGcAndRefreshPressure(): void {
+  try {
+    (globalThis as unknown as { gc?: () => void }).gc?.();
+  } catch {}
+  try {
+    checkResourcePressureGuard();
+  } catch {}
+}
+
 /** Read pressure severity; when critical, attempt GC & fresh sample before confirming shed (#13821). */
 export function defaultPressureSeverity(): PressureSeverity {
   try {
     const observation = getResourcePressureObservation();
     if (observation.state.severity === "critical") {
-      const globalWithGc = globalThis as unknown as { gc?: () => void };
-      if (typeof globalWithGc.gc === "function") {
-        try {
-          globalWithGc.gc();
-        } catch {}
-      }
-      try {
-        checkResourcePressureGuard();
-      } catch {}
+      tryGcAndRefreshPressure();
       return getResourcePressureObservation().state.severity;
     }
     return observation.state.severity;
@@ -1020,15 +1021,7 @@ export async function admitChatRequest(
   // is under genuine critical resource pressure. No-op for every controller a
   // test constructs directly (default severity is always "normal").
   if (controller.pressureSeverity() === "critical") {
-    const globalWithGc = globalThis as unknown as { gc?: () => void };
-    if (typeof globalWithGc.gc === "function") {
-      try {
-        globalWithGc.gc();
-      } catch {}
-    }
-    try {
-      checkResourcePressureGuard();
-    } catch {}
+    tryGcAndRefreshPressure();
     if (controller.pressureSeverity() === "critical") {
       controller.recordShed("resource_pressure", sessionId);
       return { admit: false, response: resourcePressureRejectionResponse() };
@@ -1155,14 +1148,11 @@ export async function releaseChatAdmissionAfterHandler(
 
 function releaseLeaseAndScheduleGc(lease: ChatAdmissionLease) {
   lease.release();
-  const globalWithGc = globalThis as unknown as { gc?: () => void };
-  if (typeof globalWithGc.gc === "function") {
-    setImmediate(() => {
-      try {
-        globalWithGc.gc?.();
-      } catch {}
-    });
-  }
+  setImmediate(() => {
+    try {
+      (globalThis as unknown as { gc?: () => void }).gc?.();
+    } catch {}
+  });
 }
 
 /** Hold a heavyweight lease through an SSE response without buffering the response body. */
