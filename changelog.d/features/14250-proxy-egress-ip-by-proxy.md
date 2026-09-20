@@ -1,0 +1,1 @@
+- **feat(db):** look up a proxy's last seen egress IP by host and port ([#14250](https://github.com/diegosouzapw/OmniRoute/pull/14250)) — thanks @maxmad64bis
