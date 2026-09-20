@@ -32,13 +32,35 @@ export async function refreshCodebuddyToken(
       })
     );
 
+    const tryDesktopFallback = async () => {
+      try {
+        const { tryWorkBuddyDesktopAuth } = await import("@/lib/codebuddy/tokenExtractor");
+        const desktopAuth = await tryWorkBuddyDesktopAuth();
+        if (desktopAuth.found && desktopAuth.accessToken) {
+          log?.info?.("TOKEN_REFRESH", "Recovered fresh CodeBuddy token from local desktop auth", {
+            nickname: desktopAuth.nickname,
+            expiresIn: desktopAuth.expiresIn,
+          });
+          return {
+            accessToken: desktopAuth.accessToken,
+            refreshToken: desktopAuth.refreshToken || refreshToken,
+            expiresIn: desktopAuth.expiresIn,
+          };
+        }
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        log?.warn?.("TOKEN_REFRESH", `Local desktop auth fallback failed: ${msg}`);
+      }
+      return null;
+    };
+
     if (!response.ok) {
       const errorText = await response.text();
       log?.error?.("TOKEN_REFRESH", "Failed to refresh CodeBuddy token", {
         status: response.status,
         error: errorText,
       });
-      return null;
+      return await tryDesktopFallback();
     }
 
     const data = await response.json();
@@ -47,7 +69,7 @@ export async function refreshCodebuddyToken(
         code: data?.code,
         msg: data?.msg,
       });
-      return null;
+      return await tryDesktopFallback();
     }
 
     log?.info?.("TOKEN_REFRESH", "Successfully refreshed CodeBuddy token", {

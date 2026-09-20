@@ -285,3 +285,27 @@ test("CodeBuddyExecutor and CodeBuddyCnExecutor strip provider prefixes from mod
 
   assert.equal(transformedCbai.model, "deepseek-v4.1-flash-sg");
 });
+
+test("CodeBuddyExecutor buildHeaders faithfully mimics WorkBuddy Desktop headers", () => {
+  const executor = new CodeBuddyExecutor();
+  const headers = executor.buildHeaders(
+    { accessToken: "mock-token" } as never,
+    true,
+    null,
+    "codebuddy/deepseek-v4.1-flash-sg"
+  );
+
+  assert.equal(headers["X-Product"], "SaaS");
+  assert.equal(headers["X-IDE-Type"], "Desktop");
+  assert.equal(headers["X-IDE-Name"], "WorkBuddy");
+  assert.equal(headers["X-IDE-Version"], "5.5.6");
+  assert.equal(headers["X-Product-Version"], "5.5.6");
+  assert.equal(headers["X-Agent-Intent"], "chat");
+  assert.equal(headers["X-Model-ID"], "deepseek-v4.1-flash-sg");
+  assert.equal(headers["x-codebuddy-request"], "1");
+  assert.equal(headers["x-requested-with"], "XMLHttpRequest");
+  assert.match(headers["X-Trace-ID"], /^[0-9a-f]{32}$/i);
+  assert.match(headers["X-Request-ID"], /^[0-9a-f]{32}$/i);
+  assert.match(headers["X-Conversation-ID"], /^[0-9a-f]{32}$/i);
+  assert.match(headers["X-Session-ID"], /^[0-9a-f]{32}$/i);
+});
