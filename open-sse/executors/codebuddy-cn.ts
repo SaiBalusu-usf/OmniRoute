@@ -139,6 +139,15 @@ export class CodeBuddyCnExecutor extends DefaultExecutor {
     const out = transformed as Record<string, unknown>;
     out.stream = true;
 
+    const stripProviderPrefix = (m: string): string =>
+      m.replace(/^(?:codebuddy-cn|codebuddy|cbai|cbcn|workbuddy|wb)\//i, "");
+
+    if (typeof out.model === "string") {
+      out.model = stripProviderPrefix(out.model);
+    } else if (typeof model === "string") {
+      out.model = stripProviderPrefix(model);
+    }
+
     const eff = out.reasoning_effort;
     if (eff === "none" || eff === "off") {
       delete out.reasoning_effort;

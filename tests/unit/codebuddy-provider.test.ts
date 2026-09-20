@@ -261,6 +261,27 @@ test("parseUpstreamError unwraps nested Tencent CodeBuddy credits exhausted erro
     parsed.message,
     "Credits exhausted. Please visit the link below to purchase add-on packs and get more credits: https://www.codebuddy.ai/profile/usage "
   );
-  assert.equal(parsed.errorCode, 14018);
+  assert.equal(parsed.errorCode, "14018");
   assert.equal(isCreditsExhausted(parsed.message), true);
+});
+
+test("CodeBuddyExecutor and CodeBuddyCnExecutor strip provider prefixes from model", () => {
+  const executor = new CodeBuddyExecutor();
+  const transformed = executor.transformRequest(
+    "codebuddy/deepseek-v4.1-flash-sg",
+    { model: "codebuddy/deepseek-v4.1-flash-sg", messages: [{ role: "user", content: "hi" }] },
+    false,
+    {} as never
+  ) as Record<string, unknown>;
+
+  assert.equal(transformed.model, "deepseek-v4.1-flash-sg");
+
+  const transformedCbai = executor.transformRequest(
+    "cbai/deepseek-v4.1-flash-sg",
+    { model: "cbai/deepseek-v4.1-flash-sg", messages: [{ role: "user", content: "hi" }] },
+    false,
+    {} as never
+  ) as Record<string, unknown>;
+
+  assert.equal(transformedCbai.model, "deepseek-v4.1-flash-sg");
 });
