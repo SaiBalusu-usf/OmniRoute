@@ -330,6 +330,130 @@ describe("model discovery", () => {
       ["deepseek-v4.1-flash"]
     );
   });
+
+  it("reads a real catalogue entry, fields and all", () => {
+    // Copied from the 26-entry catalogue the CLI ships in `cli/product.json`, so
+    // the parser is pinned against what the product actually serves rather than
+    // an invented fixture: the extra fields it ignores must not disturb it.
+    const payload = {
+      data: {
+        models: [
+          {
+            credits: "x3.31 credits",
+            id: "gpt-5.5",
+            name: "GPT-5.5",
+            vendor: "e",
+            maxOutputTokens: 72000,
+            maxInputTokens: 1000000,
+            supportsToolCall: true,
+            supportsImages: true,
+            supportsReasoning: true,
+            onlyReasoning: true,
+            reasoning: { effort: "high", summary: "auto" },
+            maxAllowedSize: 1000000,
+            relatedModels: { lite: "default-model-lite", reasoning: "gpt-5.5" },
+          },
+        ],
+      },
+    };
+    const models = PROVIDER_MODELS_CONFIG.workbuddy.parseResponse(payload) as Array<{
+      id: string;
+      name: string;
+      owned_by: string;
+    }>;
+    assert.deepEqual(models, [{ id: "gpt-5.5", name: "GPT-5.5", owned_by: "workbuddy" }]);
+  });
+
+  it("keeps a chat entry that carries a non-media tag", () => {
+    // `lite` and `craft` are catalogue tags on chat models, so a tag alone must
+    // never be grounds for exclusion.
+    const payload = {
+      data: {
+        models: [
+          { id: "default-model-lite", name: "Default-Lite", tags: ["lite"] },
+          { id: "balanced-model", name: "Balanced", tags: ["craft"] },
+        ],
+      },
+    };
+    const models = PROVIDER_MODELS_CONFIG.workbuddy.parseResponse(payload) as Array<{ id: string }>;
+    assert.deepEqual(
+      models.map((m) => m.id),
+      ["default-model-lite", "balanced-model"]
+    );
+  });
+
+  it("drops the media entries that share the catalogue array", () => {
+    // The catalogue lists image and video models alongside chat models, tagged by
+    // capability. They cannot serve a chat completion, so they must not reach the
+    // roster: offering them would produce a model that fails on every request.
+    const payload = {
+      data: {
+        models: [
+          { id: "deepseek-v4.1-flash", name: "DeepSeek V4.1 Flash" },
+          { id: "gemini-3.0-pro-image", name: "Gemini-3.0-Pro-Image", tags: ["text-to-image", "image-to-image"] },
+          { id: "hunyuan-video-art", name: "Hunyuan-Video-Art", tags: ["text-to-video", "image-to-video"] },
+        ],
+      },
+    };
+    const models = PROVIDER_MODELS_CONFIG.workbuddy.parseResponse(payload) as Array<{ id: string }>;
+    assert.deepEqual(
+      models.map((m) => m.id),
+      ["deepseek-v4.1-flash"]
+    );
+  });
+
+  it("keeps the 20 chat entries of the shipped 26-entry catalogue", () => {
+    // The id and tag projection of every entry in `cli/product.json`, so the
+    // chat/media split is pinned against the real catalogue rather than a guess.
+    const catalogue: Array<{ id: string; tags?: string[] }> = [
+      { id: "default-model" },
+      { id: "default-model-lite", tags: ["lite"] },
+      { id: "gpt-5.5" },
+      { id: "gpt-5.4" },
+      { id: "gpt-5.3-codex" },
+      { id: "gpt-5.1-codex" },
+      { id: "gpt-5.1-codex-mini" },
+      { id: "gemini-3.1-pro" },
+      { id: "gemini-3.0-flash" },
+      { id: "gemini-3.5-flash" },
+      { id: "gemini-2.5-flash" },
+      { id: "gemini-3.1-flash-lite" },
+      { id: "gemini-2.5-pro" },
+      { id: "deepseek-v3-2-volc" },
+      { id: "glm-5.0" },
+      { id: "kimi-k2.5" },
+      { id: "gemini-3.0-pro-image", tags: ["text-to-image", "image-to-image"] },
+      { id: "gemini-3.1-flash-image", tags: ["text-to-image", "image-to-image"] },
+      { id: "gemini-2.5-flash-image", tags: ["text-to-image", "image-to-image"] },
+      { id: "hunyuan-image-v3.0", tags: ["text-to-image"] },
+      { id: "hunyuan-image-v2.0-general-edit", tags: ["image-to-image"] },
+      { id: "hunyuan-video-art", tags: ["text-to-video", "image-to-video"] },
+      { id: "fast-model" },
+      { id: "balanced-model", tags: ["craft"] },
+      { id: "primary-model" },
+      { id: "deep-model" },
+    ];
+    assert.equal(catalogue.length, 26);
+
+    const models = PROVIDER_MODELS_CONFIG.workbuddy.parseResponse({ data: { models: catalogue } }) as Array<{
+      id: string;
+    }>;
+    assert.equal(models.length, 20);
+
+    for (const dropped of [
+      "gemini-3.0-pro-image",
+      "gemini-3.1-flash-image",
+      "gemini-2.5-flash-image",
+      "hunyuan-image-v3.0",
+      "hunyuan-image-v2.0-general-edit",
+      "hunyuan-video-art",
+    ]) {
+      assert.ok(
+        !models.some((m) => m.id === dropped),
+        `${dropped} must not reach a chat roster`
+      );
+    }
+  });
 });
 
 describe("blast radius", () => {

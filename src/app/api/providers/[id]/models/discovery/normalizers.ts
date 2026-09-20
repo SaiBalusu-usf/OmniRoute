@@ -274,15 +274,26 @@ export function normalizeOpenAiLikeModelsResponse(
  * The gateway answers `GET /v3/config` with `{ code, msg, requestId, data }` and
  * the roster under `data.models`. Verified live (2026-09-19): the wrapper shape
  * is as above and `data.models` is `null` on an unauthenticated request, so a
- * token is required to see the roster. The item schema below (id / name /
- * maxInputTokens / maxOutputTokens / supportsToolCall / supportsImages /
- * supportsReasoning) is taken from the catalogue WorkBuddy's own CLI ships in
- * `cli/product.json`, which is the same product's config family; the *populated*
+ * token is required to see the roster.
+ *
+ * The item schema (id / name / maxInputTokens / maxOutputTokens /
+ * supportsToolCall / supportsImages / supportsReasoning) is the one WorkBuddy's
+ * own CLI ships in `cli/product.json`, confirmed against the 26-entry catalogue
+ * in the macOS build. That file is the built-in layer of the same product's
+ * config chain, and the cloud payload is merged onto it by id: the CLI's
+ * `CloudProductProvider` calls `mergeModelsById`, so a cloud entry wins
+ * field-by-field on an id collision and an unseen id is appended. `data.models`
+ * is therefore an overlay on the built-in list rather than a full replacement,
+ * and any field the cloud omits falls back to the built-in value. The populated
  * authenticated array was not directly observed, so the field probes stay
  * defensive and an item without an id is dropped rather than guessed at.
  *
  * An object map is accepted alongside an array because the same config family
  * ships `relatedModels` keyed by name.
+ *
+ * The catalogue lists image and video models in the same array as chat models,
+ * discriminated only by `tags`. Discovery feeds a chat roster, so those entries
+ * are dropped. See `isWorkbuddyMediaModel`.
  */
 export function normalizeWorkbuddyModelsResponse(
   data: unknown
@@ -302,10 +313,39 @@ export function normalizeWorkbuddyModelsResponse(
       const item = asRecord(value);
       const id = toNonEmptyString(item.id) || toNonEmptyString(item.model);
       if (!id) return null;
+      if (isWorkbuddyMediaModel(item)) return null;
       const name = toNonEmptyString(item.name) || toNonEmptyString(item.displayName) || id;
       return { id, name, owned_by: "workbuddy" };
     })
     .filter((value): value is { id: string; name: string; owned_by: string } => Boolean(value));
+}
+
+/**
+ * Media-generation capabilities, as they appear in an entry's `tags`.
+ *
+ * WorkBuddy lists its image and video models in the same array as its chat
+ * models (`gemini-3.0-pro-image`, `hunyuan-image-v3.0`, `hunyuan-video-art` and
+ * friends in the shipped catalogue), so the tag is the only thing separating
+ * them. They cannot serve a chat completion, so they must not reach a chat
+ * roster.
+ */
+const WORKBUDDY_MEDIA_TAGS = new Set([
+  "text-to-image",
+  "image-to-image",
+  "text-to-video",
+  "image-to-video",
+]);
+
+/**
+ * True when every tag on the entry names a media-generation capability, which
+ * makes it unusable for chat completions. An untagged entry, or one carrying any
+ * other tag (`lite`, `craft`, `custom`), is kept: only a model that is media and
+ * nothing else is dropped.
+ */
+function isWorkbuddyMediaModel(item: Record<string, unknown>): boolean {
+  const tags = item.tags;
+  if (!Array.isArray(tags) || tags.length === 0) return false;
+  return tags.every((tag) => typeof tag === "string" && WORKBUDDY_MEDIA_TAGS.has(tag));
 }
 
 export function normalizeSapModelsResponse(
