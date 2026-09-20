@@ -13,6 +13,11 @@ import { buildOpenAiCompatibleRegistryEntry } from "../../shared.ts";
 export const muse_codeProvider: RegistryEntry = buildOpenAiCompatibleRegistryEntry({
   id: "muse-code",
   alias: "mc",
+  // Subscription and API-key connections share this entry: inference is the
+  // Responses API in both cases, authenticated by the connection bearer
+  // (subscription key for OAuth, META_API_KEY for API-key connections).
+  baseUrl: "https://api.meta.ai/v1",
+  urlSuffix: "/responses",
   passthroughModels: true,
   reasoningTransport: "opaque",
   defaultContextLength: 200000,

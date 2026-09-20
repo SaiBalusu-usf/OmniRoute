@@ -220,15 +220,46 @@ test("mapTokens stores the subscription key as the inference bearer", () => {
   assert.ok(!("refreshToken" in mapped), "no refresh grant exists for this flow");
   assert.ok(!("expiresIn" in mapped), "no advertised expiry; reconnect replaces the key");
   const specific = mapped.providerSpecificData as Record<string, unknown>;
-  assert.equal(specific.accountToken, FAKE_ACCOUNT_TOKEN);
   assert.equal(specific.accountId, "user-123");
+  assert.ok(!("accountToken" in specific), "device token is discarded, never persisted");
 });
 
-test("mapTokens degrades to a null bearer without an exchange", () => {
-  const degraded = museCode.mapTokens({ access_token: FAKE_ACCOUNT_TOKEN }, null);
-  assert.equal(degraded.accessToken, null);
-  const specific = degraded.providerSpecificData as Record<string, unknown>;
-  assert.equal(specific.accountToken, FAKE_ACCOUNT_TOKEN);
+test("mapTokens rejects incomplete exchanges", () => {
+  assert.throws(() => museCode.mapTokens({ access_token: FAKE_ACCOUNT_TOKEN }, null));
+  assert.throws(() =>
+    museCode.mapTokens(
+      { access_token: FAKE_ACCOUNT_TOKEN },
+      { apiKey: "", accountId: "u", email: null, isSubsActive: true }
+    )
+  );
+  assert.throws(() =>
+    museCode.mapTokens(
+      { access_token: FAKE_ACCOUNT_TOKEN },
+      { apiKey: FAKE_API_KEY, accountId: "  ", email: null, isSubsActive: true }
+    )
+  );
+});
+
+test("requestDeviceCode rejects embedded credentials in authorization URLs", async () => {
+  useFetch(async () =>
+    jsonResponse({
+      ...DEVICE_OK,
+      verification_uri_complete: "https://user:pass@auth.meta.com/device?code=X",
+    })
+  );
+  await assert.rejects(museCode.requestDeviceCode(MUSE_CODE_CONFIG));
+  useFetch(async () =>
+    jsonResponse({ ...DEVICE_OK, verification_uri: "https://auth.meta.com@evil.example.com/" })
+  );
+  await assert.rejects(museCode.requestDeviceCode(MUSE_CODE_CONFIG));
+});
+
+test("pollToken passes only allowlisted fields to the shared loop", async () => {
+  useFetch(async () =>
+    jsonResponse({ access_token: FAKE_ACCOUNT_TOKEN, junk: "drop-me", nested: { a: 1 } })
+  );
+  const ok = await museCode.pollToken(MUSE_CODE_CONFIG, "dev-code-1");
+  assert.deepEqual(Object.keys(ok.data).sort(), ["access_token"]);
 });
 
 test("provider is registered as a device_code flow with masked client id", () => {

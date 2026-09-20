@@ -5,6 +5,9 @@ const AUTH_ORIGIN = "https://auth.meta.com";
 // The device endpoint never issues codes valid longer than a day; refuse
 // anything outside (0, 24h] instead of polling a bogus deadline.
 const MAX_DEVICE_EXPIRY_SECONDS = 86400;
+// Bounded upstream calls: the device endpoints are interactive-paced, so a
+// hung socket must fail instead of stalling the connect flow.
+const REQUEST_TIMEOUT_MS = 20000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -23,16 +26,32 @@ function verifiedAuthorizationUrl(data: Record<string, unknown>): {
 } {
   const complete = requiredText(data.verification_uri_complete, "verification_uri_complete");
   const plain = typeof data.verification_uri === "string" ? data.verification_uri : "";
-  let origin: string;
-  try {
-    origin = new URL(complete).origin;
-  } catch {
-    throw new Error("Muse Code returned an invalid authorization URL.");
-  }
-  if (origin !== AUTH_ORIGIN) {
-    throw new Error("Muse Code returned an authorization URL for an unexpected origin.");
+  for (const candidate of [complete, plain]) {
+    if (!candidate) continue;
+    let url: URL;
+    try {
+      url = new URL(candidate);
+    } catch {
+      throw new Error("Muse Code returned an invalid authorization URL.");
+    }
+    if (url.origin !== AUTH_ORIGIN || url.username || url.password) {
+      throw new Error("Muse Code returned an authorization URL for an unexpected origin.");
+    }
   }
   return { url: plain, complete };
+}
+
+async function postForm(url: string, params: Record<string, string>): Promise<Response> {
+  return fetch(url, {
+    method: "POST",
+    redirect: "error",
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json",
+    },
+    body: new URLSearchParams(params).toString(),
+  });
 }
 
 export const museCode = {
@@ -41,14 +60,7 @@ export const museCode = {
   requestDeviceCode: async (config: typeof MUSE_CODE_CONFIG) => {
     let response: Response;
     try {
-      response = await fetch(config.deviceCodeUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Accept: "application/json",
-        },
-        body: new URLSearchParams({ client_id: config.clientId }).toString(),
-      });
+      response = await postForm(config.deviceCodeUrl, { client_id: config.clientId });
     } catch {
       throw new Error("Muse Code device authorization request failed.");
     }
@@ -93,34 +105,45 @@ export const museCode = {
   ): Promise<{ ok: boolean; data: Record<string, unknown> }> => {
     let response: Response;
     try {
-      response = await fetch(config.tokenUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Accept: "application/json",
-        },
-        body: new URLSearchParams({
-          client_id: config.clientId,
-          device_code: deviceCode,
-          grant_type: DEVICE_GRANT,
-        }).toString(),
+      response = await postForm(config.tokenUrl, {
+        client_id: config.clientId,
+        device_code: deviceCode,
+        grant_type: DEVICE_GRANT,
       });
     } catch {
       return { ok: false, data: { error: "network_error" } };
     }
-    let data: Record<string, unknown>;
+    let parsed: unknown;
     try {
-      const parsed: unknown = await response.json();
-      data = isRecord(parsed) ? parsed : { error: "invalid_response" };
+      parsed = await response.json();
     } catch {
-      data = { error: "invalid_response" };
+      return { ok: response.ok, data: { error: "invalid_response" } };
+    }
+    if (!isRecord(parsed)) {
+      return { ok: response.ok, data: { error: "invalid_response" } };
+    }
+    // Allowlist the fields the shared poll loop consumes. Anything else the
+    // upstream sends stays out of error paths and persisted state.
+    if (typeof parsed.access_token === "string" && parsed.access_token.trim()) {
+      const data: Record<string, unknown> = { access_token: parsed.access_token };
+      if (typeof parsed.expires_in === "number" && Number.isFinite(parsed.expires_in)) {
+        data.expires_in = parsed.expires_in;
+      }
+      return { ok: response.ok, data };
+    }
+    const error =
+      typeof parsed.error === "string" && parsed.error.trim() ? parsed.error : "invalid_response";
+    const data: Record<string, unknown> = { error };
+    if (typeof parsed.error_description === "string" && parsed.error_description.trim()) {
+      data.error_description = parsed.error_description;
     }
     return { ok: response.ok, data };
   },
   /**
    * Post-exchange hook: trade the granted device token for a subscription
-   * inference key. The device (account) token never leaves this call as an
-   * inference credential — it only authorizes the key exchange.
+   * inference key. Only the inference key and the account identity leave this
+   * call — the device (account) token authorizes the exchange and is then
+   * discarded. There is no refresh grant: reconnect replaces the key.
    *
    * Error bodies are deliberately NOT propagated: a successful body carries
    * the inference key itself, so it must never flow into logs or responses.
@@ -137,6 +160,8 @@ export const museCode = {
     try {
       response = await fetch(MUSE_CODE_CONFIG.keyUrl, {
         method: "POST",
+        redirect: "error",
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
@@ -194,26 +219,23 @@ export const museCode = {
       isSubsActive: boolean;
     } | null
   ) => {
-    // Total by framework convention: the registry test invokes mapTokens({})
-    // for every provider. Incompleteness is rejected upstream in
-    // postExchange; here a missing exchange degrades to a null bearer, which
-    // fails closed at request time instead of persisting a wrong credential.
-    const apiKey =
-      extra && typeof extra.apiKey === "string" && extra.apiKey.trim() ? extra.apiKey : null;
-    const accountId =
-      extra && typeof extra.accountId === "string" && extra.accountId.trim()
-        ? extra.accountId
-        : null;
+    void tokens;
+    if (!extra || typeof extra.apiKey !== "string" || !extra.apiKey.trim()) {
+      throw new Error("Muse Code subscription key exchange did not complete.");
+    }
+    if (typeof extra.accountId !== "string" || !extra.accountId.trim()) {
+      throw new Error("Muse Code subscription key exchange returned no account identity.");
+    }
     return {
       // Inference authenticates with the exchanged subscription key. The
       // default executor prefers accessToken for OAuth connections, so the
-      // key goes here — never the device (account) token.
-      accessToken: apiKey,
-      email: extra?.email ?? null,
+      // key goes here — never the device (account) token, which is discarded
+      // after the exchange and never persisted.
+      accessToken: extra.apiKey,
+      email: extra.email,
       providerSpecificData: {
-        accountToken: typeof tokens.access_token === "string" ? tokens.access_token : null,
-        accountId,
-        isSubsActive: extra?.isSubsActive === true,
+        accountId: extra.accountId,
+        isSubsActive: extra.isSubsActive,
       },
     };
   },

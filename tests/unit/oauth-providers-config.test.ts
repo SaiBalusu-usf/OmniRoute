@@ -269,7 +269,21 @@ test("every registered OAuth provider has a valid config object, flow type and t
     assert.ok(allowedFlowTypes.has(provider.flowType), `${providerId} has unsupported flowType`);
     assert.equal(typeof provider.mapTokens, "function", `${providerId} must expose mapTokens`);
 
-    const mapped = provider.mapTokens({});
+    // muse-code rejects incomplete exchanges (no usable credential exists
+    // without the key-exchange step), so it gets a completed fixture while
+    // every other provider keeps the empty-input contract.
+    const mapped =
+      providerId === "muse-code"
+        ? provider.mapTokens(
+            { access_token: "test-device-token" },
+            {
+              apiKey: "test-subscription-key",
+              accountId: "test-account",
+              email: null,
+              isSubsActive: true,
+            }
+          )
+        : provider.mapTokens({});
     assert.ok(
       mapped && typeof mapped === "object",
       `${providerId} mapTokens must return an object`
