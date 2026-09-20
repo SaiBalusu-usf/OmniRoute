@@ -456,6 +456,7 @@ export async function runNonStreamingProviderLeg(
             rawMessage: outcome.result.rawMessage || outcome.result.error,
             upstreamErrorBody: outcome.result.upstreamErrorBody,
             upstreamHeaders: outcome.result.upstreamHeaders ?? outcome.result.response?.headers,
+            noFreshSiblingThrottle: outcome.result.noFreshSiblingThrottle,
           },
           receipt,
           usage: outcome.providerUsage,

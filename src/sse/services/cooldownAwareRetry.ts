@@ -109,6 +109,7 @@ export function getCooldownAwareRetryDecision({
   settings,
   attempt,
   budgetLeftMs,
+  suppressLocalCooldownRetry,
 }: {
   retryAfter: unknown;
   settings: CooldownAwareRetrySettings;
@@ -120,6 +121,13 @@ export function getCooldownAwareRetryDecision({
    * across attempts (#7360 follow-up).
    */
   budgetLeftMs?: number;
+  /**
+   * #11128-followup: true when the last attempt's 429 was a locally-synthesized
+   * burst-throttle restatement (no fresh sibling account). The upstream already
+   * answered that exact request, so a +1s cooldown re-send is a redundant
+   * duplicate probe — suppress it and surface the restated 429 to the client.
+   */
+  suppressLocalCooldownRetry?: boolean;
 }): {
   shouldRetry: boolean;
   retryAfter: string | null;
@@ -129,6 +137,7 @@ export function getCooldownAwareRetryDecision({
   const closest = computeClosestRetryAfter(retryAfter);
   const effectiveBudgetLeftMs = budgetLeftMs ?? settings.budgetMs;
   if (
+    suppressLocalCooldownRetry ||
     !settings.enabled ||
     settings.maxRetries <= 0 ||
     settings.maxRetryWaitMs <= 0 ||

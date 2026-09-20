@@ -520,12 +520,21 @@ export async function runProviderExecutionPipeline(
         // allowRateLimitedConnections) cannot succeed — it only feeds the
         // upstream throttle and triples per-request latency. Fail fast so the
         // client's spaced retry is the next attempt.
-        return toOutcome(
+        const failFastOutcome = await toOutcome(
           attempt,
           wire.currentModel,
           currentConnectionId(connection),
           target.provider
         );
+        if (failFastOutcome.kind === "error") {
+          // #11128-followup: this 429 is a locally-synthesized burst-throttle
+          // restatement (no fresh sibling account). The upstream already
+          // answered this exact request, so the client-side cooldown loop must
+          // not pace a +1s duplicate re-send — the client's own spaced retry
+          // is the next attempt.
+          failFastOutcome.result.noFreshSiblingThrottle = true;
+        }
+        return failFastOutcome;
       }
     }
 

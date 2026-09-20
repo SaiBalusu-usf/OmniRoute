@@ -46,6 +46,15 @@ export interface ChatCoreErrorResult {
   rawMessage?: string;
   upstreamHeaders?: Headers;
   upstreamErrorBody?: unknown;
+  /**
+   * #11128-followup: true when this 429 was synthesized locally by the
+   * provider-execution pipeline's fail-fast gate (burst-throttle restatement
+   * with no fresh sibling account to rotate to). The upstream already answered
+   * this exact request, so client-side cooldown loops must NOT pace a +1s
+   * duplicate re-send — flag it through to the caller so the next attempt is
+   * the client's own spaced retry.
+   */
+  noFreshSiblingThrottle?: boolean;
 }
 
 export type NonStreamingProviderLegResult =

@@ -1655,6 +1655,11 @@ async function handleSingleModelChat(
   let requestRetryLastError = null;
   let requestRetryLastStatus = null;
   let requestRetryLastCooldownMs = 0;
+  // #11128-followup: the last attempt's 429 was a locally-synthesized
+  // burst-throttle restatement (fail-fast, no fresh sibling account). Such an
+  // attempt is NOT an upstream quota signal — we must skip the +1s cooldown
+  // re-send, because the upstream already answered this exact request.
+  let requestRetryLastNoFreshSibling = false;
   // Bug #3758: per-request counter bounding the early-close (STREAM_EARLY_EOF)
   // re-attempt to exactly one for the whole request. Declared outside both retry
   // loops so it can never reset and loop.
@@ -1675,6 +1680,7 @@ async function handleSingleModelChat(
     let lastError = requestRetryLastError;
     let lastStatus = requestRetryLastStatus;
     let lastCooldownMs = requestRetryLastCooldownMs;
+    let lastNoFreshSibling = requestRetryLastNoFreshSibling;
     let preselectedCredentials = initialPreselectedCredentials;
     initialPreselectedCredentials = null;
 
@@ -1755,6 +1761,7 @@ async function handleSingleModelChat(
             settings: retrySettings,
             attempt: requestRetryAttempt,
             budgetLeftMs: requestRetryBudgetLeftMs,
+            suppressLocalCooldownRetry: lastNoFreshSibling,
           });
 
           if (retryDecision.shouldRetry) {
@@ -1780,6 +1787,16 @@ async function handleSingleModelChat(
               `${provider}/${model} cooldown elapsed — restarting request attempt ${requestRetryAttempt + 1}/${retrySettings.maxRetries}`
             );
             continue requestAttemptLoop;
+          } else if (lastNoFreshSibling) {
+            // #11128-followup: the last attempt's 429 was a locally-synthesized
+            // burst-throttle restatement (no fresh sibling account). Re-sending
+            // the identical request after +1s is a redundant duplicate probe —
+            // the upstream already answered this exact request. Return the
+            // restated 429 now; the client's own spaced retry picks up pacing.
+            log.info(
+              "COOLDOWN_RETRY_SKIP",
+              `${provider}/${model} no-fresh-sibling burst-throttle 429 — returning restated response instead of pacing a duplicate +1s re-send`
+            );
           }
         }
 
@@ -2214,6 +2231,10 @@ async function handleSingleModelChat(
           lastStatus = result.status;
           requestRetryLastError = classificationError;
           requestRetryLastStatus = result.status;
+          if (result.noFreshSiblingThrottle) {
+            lastNoFreshSibling = true;
+            requestRetryLastNoFreshSibling = true;
+          }
           continue;
         }
         return withSelectedConnectionHeader(result.response, credentials?.connectionId);
@@ -2263,6 +2284,10 @@ async function handleSingleModelChat(
           lastStatus = result.status;
           requestRetryLastError = result.error;
           requestRetryLastStatus = result.status;
+          if (result.noFreshSiblingThrottle) {
+            lastNoFreshSibling = true;
+            requestRetryLastNoFreshSibling = true;
+          }
           continue;
         }
 
@@ -2285,6 +2310,10 @@ async function handleSingleModelChat(
         lastStatus = result.status;
         requestRetryLastError = result.error;
         requestRetryLastStatus = result.status;
+        if (result.noFreshSiblingThrottle) {
+          lastNoFreshSibling = true;
+          requestRetryLastNoFreshSibling = true;
+        }
         continue;
       }
 
@@ -2522,6 +2551,10 @@ async function handleSingleModelChat(
         lastStatus = result.status;
         requestRetryLastError = result.error;
         requestRetryLastStatus = result.status;
+        if (result.noFreshSiblingThrottle) {
+          lastNoFreshSibling = true;
+          requestRetryLastNoFreshSibling = true;
+        }
         continue;
       }
 
