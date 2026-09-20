@@ -470,7 +470,10 @@ export async function runProviderExecutionPipeline(
       }
       if (isCodeBuddyThrottled) {
         const failedId = currentConnectionId(connection);
-        const retryAfterMs = retryAfterMsFrom(attempt) || 3_000;
+        // 1s fallback matches the accountFallback/upstreamStatusRestatement
+        // 11128 values; the 1.5s drainage below already spaces the same-account
+        // re-send past this window.
+        const retryAfterMs = retryAfterMsFrom(attempt) || 1_000;
         if (failedId && !excludedIds.includes(failedId)) excludedIds.push(failedId);
         if (failedId) {
           await state.setConnectionRateLimitedUntil(failedId, Date.now() + retryAfterMs);

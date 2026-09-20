@@ -2300,11 +2300,14 @@ export function checkFallbackError(
     // it returns msg: "request illegal". This is distinct from the deterministic structural rejection
     // ("first message is not system prompt"), which remains terminal.
     // Marking "request illegal" fallback-worthy enables rotating to a sibling account or backing off.
+    // Cooldown is 1s (not 3s): the pipeline's burstDrainageDelayMs (1.5s) already
+    // spaces the internal same-account retry past this window, and single-account
+    // clients retrying at sub-second intervals would otherwise hit total lockout.
     if (
       /\brequest illegal\b/i.test(errorStr) &&
       !/first message is not system prompt/i.test(errorStr)
     ) {
-      return buildRetryableFallback(RateLimitReason.RATE_LIMIT_EXCEEDED, 3_000);
+      return buildRetryableFallback(RateLimitReason.RATE_LIMIT_EXCEEDED, 1_000);
     }
 
     // Generic 400 is not account-fallback-worthy. Combo routing may still try a

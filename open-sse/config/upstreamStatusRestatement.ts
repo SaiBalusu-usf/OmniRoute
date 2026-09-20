@@ -95,7 +95,10 @@ const CODEBUDDY_RULES: UpstreamStatusRestatementRule[] = [
     toStatus: 429,
     textMarkers: ["request illegal"],
     excludeMarkers: ["first message is not system prompt"],
-    defaultRetryAfterMs: 3_000,
+    // 1s: kept in lockstep with the accountFallback cooldown for the same
+    // signal so the client-facing Retry-After and the connection lockout
+    // expire together (see accountFallback.ts "request illegal" branch).
+    defaultRetryAfterMs: 1_000,
   },
 ];
 
