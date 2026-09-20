@@ -31,6 +31,7 @@ export interface ProviderExecutionPolicy {
   allowAccountRotation: boolean;
   allowModelFallback: boolean;
   expectedConnectionId?: string;
+  burstDrainageDelayMs?: number;
 }
 
 export type ProviderExecutionOutcome =
@@ -101,7 +102,7 @@ export interface PipelineStateHooks {
   }) => void | Promise<void>;
   onClearSessionAffinity?: (params: { failedConnectionId: string }) => void | Promise<void>;
   onAuditAccountRotation?: (params: {
-    action: "codex.account_rotation";
+    action: "codex.account_rotation" | "codebuddy.account_rotation";
     failedConnectionId: string;
     newConnectionId: string;
     attempt: number;
@@ -469,17 +470,28 @@ export async function runProviderExecutionPipeline(
       }
       if (isCodeBuddyThrottled) {
         const failedId = currentConnectionId(connection);
-        const retryAfterMs = retryAfterMsFrom(attempt) || 60_000;
+        const retryAfterMs = retryAfterMsFrom(attempt) || 3_000;
         if (failedId && !excludedIds.includes(failedId)) excludedIds.push(failedId);
         if (failedId) {
           await state.setConnectionRateLimitedUntil(failedId, Date.now() + retryAfterMs);
           await state.onClearSessionAffinity?.({ failedConnectionId: failedId });
         }
-        const nextCreds = await connection
+        const drainageDelayMs = policy.burstDrainageDelayMs ?? 1500;
+        if (drainageDelayMs > 0) {
+          await new Promise((resolve) => setTimeout(resolve, drainageDelayMs));
+        }
+        let nextCreds = await connection
           .getProviderCredentials(target.provider, null, null, wire.currentModel, {
             excludeConnectionIds: [...excludedIds],
           })
           .catch(() => null);
+        if ((!nextCreds || nextCreds.allRateLimited) && attempts < maxAttempts - 1) {
+          nextCreds = await connection
+            .getProviderCredentials(target.provider, null, null, wire.currentModel, {
+              allowRateLimitedConnections: true,
+            })
+            .catch(() => null);
+        }
         if (nextCreds && !nextCreds.allRateLimited && nextCreds.connectionId) {
           await state.onAuditAccountRotation?.({
             action: "codebuddy.account_rotation",

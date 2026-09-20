@@ -174,7 +174,7 @@ test("R12: codebuddy 400 + request illegal → 429 with synthetic Retry-After", 
     body: { code: 11128, msg: "request illegal" },
   });
   assert.equal(res.status, 429);
-  assert.equal(res.retryAfterMs, 60_000);
+  assert.equal(res.retryAfterMs, 3_000);
   assert.equal(res.ruleId, "codebuddy-waf-rate-limit-misstatus");
   assert.equal(res.fromStatus, 400);
 });

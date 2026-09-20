@@ -95,7 +95,7 @@ const CODEBUDDY_RULES: UpstreamStatusRestatementRule[] = [
     toStatus: 429,
     textMarkers: ["request illegal"],
     excludeMarkers: ["first message is not system prompt"],
-    defaultRetryAfterMs: 60_000,
+    defaultRetryAfterMs: 3_000,
   },
 ];
 

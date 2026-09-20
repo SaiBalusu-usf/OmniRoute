@@ -60,6 +60,7 @@ test("the transient 11128 'request illegal' without structural error is fallback
   const res = checkFallbackError(400, "request illegal", 0, null, "codebuddy");
   assert.equal(res.shouldFallback, true);
   assert.equal(res.reason, RateLimitReason.RATE_LIMIT_EXCEEDED);
+  assert.equal(res.cooldownMs, 3_000);
 });
 
 test("regression: a genuine rate-limit 400 is still retryable (#4976 must not break)", () => {

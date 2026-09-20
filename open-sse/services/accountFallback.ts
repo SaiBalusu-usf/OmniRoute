@@ -1845,7 +1845,18 @@ export function checkFallbackError(
     };
   }
 
-  function buildRetryableFallback(reason: RateLimitReasonValue) {
+  function buildRetryableFallback(reason: RateLimitReasonValue, overrideCooldownMs?: number) {
+    if (overrideCooldownMs !== undefined) {
+      return {
+        shouldFallback: true,
+        cooldownMs: overrideCooldownMs,
+        baseCooldownMs: overrideCooldownMs,
+        newBackoffLevel: 0,
+        usedUpstreamRetryHint: false,
+        reason,
+      };
+    }
+
     const upstreamRetryHint = getUpstreamRetryHint();
     if (upstreamRetryHint && upstreamRetryHint.retryAfterMs > 0) {
       return {
@@ -2293,7 +2304,7 @@ export function checkFallbackError(
       /\brequest illegal\b/i.test(errorStr) &&
       !/first message is not system prompt/i.test(errorStr)
     ) {
-      return buildRetryableFallback(RateLimitReason.RATE_LIMIT_EXCEEDED);
+      return buildRetryableFallback(RateLimitReason.RATE_LIMIT_EXCEEDED, 3_000);
     }
 
     // Generic 400 is not account-fallback-worthy. Combo routing may still try a

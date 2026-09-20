@@ -209,7 +209,7 @@ test("initial CodeBuddy 400 request illegal: rotation resolver>=1 and successful
   let sendCount = 0;
   let resolverCallCount = 0;
   const input = makeInput({
-    policy: { allowAccountRotation: true, allowModelFallback: true },
+    policy: { allowAccountRotation: true, allowModelFallback: true, burstDrainageDelayMs: 0 },
     provider: "codebuddy",
     connectionId: "cb-a",
     send: async () => {
