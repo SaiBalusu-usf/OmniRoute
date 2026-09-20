@@ -211,6 +211,47 @@ export const RENAMED_MIGRATION_COMPATIBILITY = [
     toVersion: "101",
     toName: "api_key_usage_limits",
   },
+  // Bifrost-era migrations that occupied slots 100–105 before the canonical
+  // migrations landed (cli_access_tokens, api_key_usage_limits, etc.).
+  // Old installs have these names in their ledger; clearing the stale row
+  // lets the current migration run and silences the CRITICAL boot warning.
+  // See https://github.com/diegosouzapw/OmniRoute/issues/14262.
+  {
+    fromVersion: "100",
+    fromName: "bifrost_models",
+    toVersion: "100",
+    toName: "cli_access_tokens",
+  },
+  {
+    fromVersion: "101",
+    fromName: "bifrost_shadow",
+    toVersion: "101",
+    toName: "api_key_usage_limits",
+  },
+  {
+    fromVersion: "102",
+    fromName: "virtual_keys",
+    toVersion: "102",
+    toName: "compression_engines_map",
+  },
+  {
+    fromVersion: "103",
+    fromName: "cost_events",
+    toVersion: "103",
+    toName: "strip_legacy_combo_config_keys",
+  },
+  {
+    fromVersion: "104",
+    fromName: "traffic_shadow_log",
+    toVersion: "104",
+    toName: "normalize_database_cache_size",
+  },
+  {
+    fromVersion: "105",
+    fromName: "traffic_shadow_config",
+    toVersion: "105",
+    toName: "usage_history_endpoint",
+  },
 ] as const;
 
 export const LEGACY_VERSION_SLOT_MIGRATIONS = [
