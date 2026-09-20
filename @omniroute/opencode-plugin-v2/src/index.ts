@@ -533,6 +533,29 @@ export default define({
       }
     }
 
+    /**
+     * `aisdk.sdk` carries inference-telemetry options; like `aisdk.language`
+     * it may be absent on an older host, which must still load the catalog.
+     * Strict fallback (no proven options-only marking): register the hook and
+     * record the observation in `options` only — never wrap fetch, never
+     * assign `sdk`. Gated on the opt-in `telemetry` flag (off by default).
+     */
+    const sdkHook = (ctx.aisdk as Partial<PluginContext["aisdk"]> | undefined)?.sdk;
+    let sdkRegistration: Promise<{ dispose: () => Promise<void> }> | undefined;
+    if (parsed.telemetry === true && typeof sdkHook === "function") {
+      try {
+        sdkRegistration = sdkHook((input) => {
+          if (input.model.providerID !== X) return;
+          if (!input.package.includes("@ai-sdk/openai-compatible")) return;
+          input.options.telemetry = true;
+        });
+      } catch (err) {
+        log.warn(
+          `[omniroute-v2] host refused the sdk hook, inference telemetry will not be marked: ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
+    }
+
     await catalogRegistration;
     if (integrationRegistration !== undefined) {
       try {
@@ -549,6 +572,15 @@ export default define({
       } catch (err) {
         log.warn(
           `[omniroute-v2] language-model hook registration failed, Gemini tool schemas will not be cleaned: ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
+    }
+    if (sdkRegistration !== undefined) {
+      try {
+        await sdkRegistration;
+      } catch (err) {
+        log.warn(
+          `[omniroute-v2] sdk hook registration failed, inference telemetry will not be marked: ${err instanceof Error ? err.message : String(err)}`
         );
       }
     }
