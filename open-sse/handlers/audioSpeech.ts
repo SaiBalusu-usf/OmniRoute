@@ -24,6 +24,7 @@ import { vertexGenerateSpeech } from "../executors/vertexMedia.ts";
 import { handleGeminiTtsSpeech } from "../executors/geminiTts.ts";
 import { handleAwsPollySpeech } from "../executors/awsPollyTts.ts";
 import { GttsUpstreamError, normalizeGttsLang, synthesizeGtts } from "../executors/gtts.ts";
+import { handleFishAudioSpeech } from "../executors/fishAudioTts.ts";
 import { errorResponse } from "../utils/error.ts";
 import { resolveElevenLabsVoiceId } from "./elevenLabsVoiceMap.ts";
 import { audioStreamResponse, upstreamErrorResponse } from "../utils/audioResponse.ts";
@@ -453,35 +454,6 @@ async function handleCartesiaSpeech(providerConfig, body, modelId, token) {
 }
 
 /**
- * Handle Fish Audio TTS
- * POST { text, format, reference_id, prosody } → binary audio bytes
- * Auth: Authorization: Bearer <api-key>, model as an HTTP header
- * Docs: https://docs.fish.audio/api-reference/endpoint/openapi-v1/text-to-speech
- */
-async function handleFishAudioSpeech(providerConfig, body, modelId, token) {
-  const res = await fetch(providerConfig.baseUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-      model: modelId,
-    },
-    body: JSON.stringify({
-      text: body.input,
-      format: body.response_format || "mp3",
-      ...(body.voice ? { reference_id: body.voice } : {}),
-      ...(body.speed ? { prosody: { speed: body.speed } } : {}),
-    }),
-  });
-
-  if (!res.ok) {
-    return upstreamErrorResponse(res, await res.text());
-  }
-
-  return audioStreamResponse(res);
-}
-
-/**
  * Handle PlayHT TTS
  * POST { text, voice, voice_engine, output_format } → audio stream
  * Auth: X-USER-ID header (from token string "userId:apiKey")
@@ -868,15 +840,33 @@ export async function handleAudioSpeech({
     );
   }
 
-  // Skip credential check for local providers (authType: "none")
+  // Skip credential check for local providers (authType: "none") and for UC TTS,
+  // whose durable Clerk credential lives in providerSpecificData (no apiKey token).
   const token =
     providerConfig.authType === "none" ? null : credentials?.apiKey || credentials?.accessToken;
-  if (providerConfig.authType !== "none" && !token) {
+  if (providerConfig.authType !== "none" && providerConfig.format !== "uc-tts" && !token) {
     return errorResponse(401, `No credentials for speech provider: ${providerConfig.id}`);
   }
 
   try {
     // Route to provider-specific handler
+    if (providerConfig.format === "uc-tts") {
+      const { handleUcTextToSpeech } = await import("./uc/ucTts.ts");
+      const result = await handleUcTextToSpeech({
+        text: typeof body.input === "string" ? body.input : "",
+        voice: typeof body.voice === "string" ? body.voice : undefined,
+        model: modelId,
+        credentials,
+      });
+      if (!result.ok || !result.audio) {
+        return errorResponse(result.status ?? 502, result.error || "UC TTS failed");
+      }
+      return new Response(result.audio, {
+        status: 200,
+        headers: { ...CORS_HEADERS, "Content-Type": result.contentType || "audio/mpeg" },
+      });
+    }
+
     if (providerConfig.format === "vertex-gemini-tts") {
       const { audio, contentType } = await vertexGenerateSpeech(credentials, {
         model: modelId,

@@ -54,8 +54,10 @@ import { handleLeonardoImageGeneration } from "./imageGeneration/providers/leona
 import { handleMagnificImageGeneration } from "./imageGeneration/providers/magnific.ts";
 import { handleNvidiaNimImageGeneration } from "./imageGeneration/providers/nvidiaNim.ts";
 import { handleSegmindImageGeneration } from "./imageGeneration/providers/segmind.ts";
+import { handleUcImageGeneration } from "./imageGeneration/providers/ucImage.ts";
 import { handleCursorAgentImageGeneration } from "./imageGeneration/providers/cursorAgentImage.ts";
 import { handleMinimaxImageGeneration } from "./imageGeneration/providers/minimax.ts";
+import { handleMaxaiImageGeneration } from "./imageGeneration/providers/maxaiImage.ts";
 import { handleAdobeFireflyImageGeneration } from "./imageGeneration/providers/adobeFirefly.ts";
 import { handleAlibabaImageGeneration } from "./imageGeneration/providers/alibabaImage.ts";
 import { handleAiHordeImageGeneration } from "./imageGeneration/providers/aihorde.ts";
@@ -613,6 +615,28 @@ export async function handleImageGeneration({
       credentials,
       log,
       peerLocality,
+    });
+  }
+
+  if (providerConfig.format === "maxai-image") {
+    return handleMaxaiImageGeneration({
+      model,
+      provider,
+      body,
+      credentials,
+      log,
+      signal,
+    });
+  }
+
+  if (providerConfig.format === "uc-image") {
+    return handleUcImageGeneration({
+      model,
+      provider,
+      body,
+      credentials,
+      log,
+      signal,
     });
   }
 
@@ -2202,7 +2226,7 @@ function extractImageInputs(body) {
   };
 }
 
-async function resolveImageSource(source) {
+export async function resolveImageSource(source) {
   if (typeof source !== "string" || source.trim().length === 0) {
     throw new Error("Invalid image source");
   }
@@ -2219,7 +2243,11 @@ async function resolveImageSource(source) {
   }
 
   if (isHttpUrl(trimmed)) {
-    const remoteImage = await fetchRemoteImage(trimmed);
+    // GHSA-34rg-3pqj-35g9 / #13883: caller-input URL — pin `public-only` (never the operator
+    // outbound policy, which would let a request body reach loopback/LAN) and `pinDns: true`
+    // to close the DNS-rebinding TOCTOU where a second, un-pinned resolution at connect time
+    // could answer differently than the validated lookup and bypass the guard.
+    const remoteImage = await fetchRemoteImage(trimmed, { guard: "public-only", pinDns: true });
     return {
       buffer: remoteImage.buffer,
       base64: remoteImage.buffer.toString("base64"),
@@ -2655,7 +2683,11 @@ async function handleCodexImageGeneration({
     }
   }
 
-  const wantsUrl = body.response_format !== "b64_json";
+  // OpenAI returns b64_json for the gpt-image-* family and reserves `url` for
+  // fetchable HTTPS links, so clients that omit response_format (Codex CLI's
+  // built-in image_gen among them) expect the bytes in b64_json. Only emit the
+  // data: URI when the caller explicitly asks for `url` (#12268).
+  const wantsUrl = body.response_format === "url";
   const data = wantsUrl
     ? collected.map((item) => ({
         url: `data:image/png;base64,${item.b64_json}`,
@@ -2750,6 +2782,40 @@ export function saveImageSuccessResult({
   };
 }
 
+/**
+ * Render an arbitrary `error` value as a call-log string.
+ *
+ * `saveImageErrorResult` takes `error: unknown`, and the Codex fan-out forwards
+ * whatever `sanitizeImageProviderError()` produced — i.e. the output of
+ * `sanitizeUpstreamDetails()`, which builds every object with
+ * `Object.create(null)` on purpose (#12506) so a hostile upstream key such as
+ * `__proto__` or `constructor` can never reach a real prototype. That object
+ * therefore has NO `toString`/`Symbol.toPrimitive`, so a bare `String(value)`
+ * throws `TypeError: Cannot convert object to primitive value` and turned every
+ * Codex image failure into an unhandled crash instead of the sanitized error.
+ * The null prototype is the correct behavior at the source, so the sink is what
+ * has to be total: serialize objects structurally (the same way the Antigravity
+ * branch already logs its sanitized payload) and keep `String()` semantics for
+ * everything else.
+ */
+function stringifyImageErrorForLog(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value instanceof Error) return `${value.name}: ${value.message}`;
+  if (value !== null && typeof value === "object") {
+    try {
+      const serialized = JSON.stringify(value);
+      if (typeof serialized === "string") return serialized;
+    } catch {
+      // Circular graph or a throwing toJSON — fall through to String().
+    }
+  }
+  try {
+    return String(value);
+  } catch {
+    return "[unserializable error]";
+  }
+}
+
 export function saveImageErrorResult({
   provider,
   model,
@@ -2782,7 +2848,7 @@ export function saveImageErrorResult({
     model: `${provider}/${model}`,
     provider,
     duration: Date.now() - startTime,
-    error: typeof error === "string" ? error.slice(0, 500) : String(error).slice(0, 500),
+    error: stringifyImageErrorForLog(error).slice(0, 500),
     requestBody,
   }).catch(() => {});
 
@@ -2842,11 +2908,41 @@ async function fetchImageEndpoint(url, headers, body, provider, log) {
     const data = await response.json();
 
     // Normalize response to OpenAI format
+    const items = Array.isArray(data?.data) ? data.data : [];
+
+    // Some providers return HTTP 2xx with an empty or malformed image
+    // payload (empty data array, missing/blank b64_json and url). Treating that
+    // as success makes image-combo strategies stop on the first leg and hand an
+    // image-less 200 to the client. Require at least one usable image item and
+    // surface an empty 2xx as a retryable 502 so combos fall back to the next
+    // priority leg.
+    const hasUsableImage = items.some(
+      (item: unknown) =>
+        isJsonObject(item) &&
+        ((typeof item.b64_json === "string" && item.b64_json.length > 0) ||
+          (typeof item.url === "string" && item.url.length > 0))
+    );
+    if (!hasUsableImage) {
+      if (log) {
+        log.warn(
+          "IMAGE",
+          `${provider} returned 200 without a usable image payload; treating as retryable 502`
+        );
+      }
+      return {
+        success: false,
+        status: HTTP_STATUS.BAD_GATEWAY,
+        error: sanitizeErrorMessage(
+          "Image provider returned a success status without an image payload"
+        ),
+      };
+    }
+
     return {
       success: true,
       data: {
         created: data.created || Math.floor(Date.now() / 1000),
-        data: data.data || [],
+        data: items,
       },
     };
   } catch (err: unknown) {
@@ -3142,7 +3238,7 @@ function normalizeNanoBananaSyncPayload(data, prompt) {
   return { data: images.filter(Boolean) };
 }
 
-async function normalizeNanoBananaTaskResult(taskData, body, log) {
+export async function normalizeNanoBananaTaskResult(taskData, body, log) {
   const response = taskData?.response || {};
 
   const urlCandidates = [
@@ -3180,7 +3276,10 @@ async function normalizeNanoBananaTaskResult(taskData, body, log) {
 
     if (urlCandidates.length > 0) {
       const firstUrl = urlCandidates[0];
-      const remoteImage = await fetchRemoteImage(firstUrl);
+      // GHSA-34rg-3pqj-35g9 / #13883: upstream-supplied result URL, not an OmniRoute-
+      // controlled host — pin `public-only`, never the operator outbound policy, and
+      // `pinDns: true` to close the DNS-rebinding TOCTOU (see `resolveImageSource`).
+      const remoteImage = await fetchRemoteImage(firstUrl, { guard: "public-only", pinDns: true });
       const base64 = remoteImage.buffer.toString("base64");
       return [{ b64_json: base64, revised_prompt: body.prompt }];
     }
