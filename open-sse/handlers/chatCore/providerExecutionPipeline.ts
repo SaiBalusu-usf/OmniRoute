@@ -9,6 +9,7 @@ import type {
 } from "../../services/accountFallback.ts";
 import { createErrorResult } from "../../utils/error.ts";
 import { applyStatusRestatement } from "../../config/upstreamStatusRestatement.ts";
+import { isPacingBusyBodyText } from "../../executors/codebuddy-cn.ts";
 import { recoverAnthropicThinkingSignature } from "./thinkingSignatureRecovery.ts";
 import {
   isModelUnavailableError,
@@ -456,6 +457,18 @@ export async function runProviderExecutionPipeline(
 
     if (canRotateAccount && isCodeBuddyProvider && attempts < maxAttempts - 1) {
       let isCodeBuddyThrottled = status === 429;
+      if (isCodeBuddyThrottled) {
+        // Local pacing-busy signal, not an upstream throttle: the send never
+        // reached Tencent, so there is nothing to cool down or rotate away
+        // from. Fall through to the normal error return with its Retry-After.
+        const busyBody = await attempt.response
+          .clone()
+          .text()
+          .catch(() => "");
+        if (isPacingBusyBodyText(busyBody)) {
+          isCodeBuddyThrottled = false;
+        }
+      }
       if (!isCodeBuddyThrottled && status === 400) {
         const errorBody = await attempt.response
           .clone()

@@ -1,9 +1,40 @@
 import { DefaultExecutor } from "./default.ts";
 import type { ExecuteInput, ExecutorExecuteResult, ProviderCredentials } from "./base.ts";
+import {
+  acquireCodeBuddyPacingSlot,
+  CodeBuddyPacingBusyError,
+} from "./default/codebuddyPacingGate.ts";
 
 const SENSITIVE_CONTENT_REJECTION =
   "抱歉，系统检测到您当前输入的信息存在敏感内容，我无法响应您的请求，请检查后重新输入";
 const LARGE_TOOL_METADATA_BYTES = 64 * 1024;
+
+const PACING_BUSY_MARKER = "codebuddy_pacing_busy";
+
+/** Synthetic 429 for pacing-budget exhaustion. Carries a real Retry-After so
+ * fallback bookkeeping and clients back off; the `code` marker lets the
+ * pipeline tell this LOCAL signal apart from an upstream 11128 throttle
+ * (no cooldown mark, no account rotation for a queue that is itself pacing). */
+function pacingBusyResponse(retryAfterSecs: number): Response {
+  return new Response(
+    JSON.stringify({
+      code: 429,
+      msg: "CodeBuddy pacing wait exceeded; retry later",
+      marker: PACING_BUSY_MARKER,
+    }),
+    {
+      status: 429,
+      headers: {
+        "content-type": "application/json",
+        "Retry-After": String(Math.max(1, retryAfterSecs)),
+      },
+    }
+  );
+}
+
+export function isPacingBusyBodyText(bodyText: string): boolean {
+  return bodyText.includes(PACING_BUSY_MARKER);
+}
 
 function responseFromResult(result: ExecutorExecuteResult): Response {
   return result instanceof Response ? result : result.response;
@@ -107,6 +138,19 @@ export class CodeBuddyCnExecutor extends DefaultExecutor {
   }
 
   async execute(input: ExecuteInput): Promise<ExecutorExecuteResult> {
+    // Provider-wide pacing: Tencent throttles sustained upstream send rate
+    // (shared across accounts), so excess requests wait here instead of
+    // firing doomed sends that keep the throttle engaged. Acquired once per
+    // logical request — the compact-descriptions retry below reuses the slot.
+    try {
+      await acquireCodeBuddyPacingSlot(this.provider, input.signal ?? null);
+    } catch (err) {
+      if (err instanceof CodeBuddyPacingBusyError) {
+        return pacingBusyResponse(err.retryAfterSecs);
+      }
+      throw err;
+    }
+
     const result = await super.execute(input);
     if (!(await isSensitiveContentRejection(responseFromResult(result)))) {
       return result;

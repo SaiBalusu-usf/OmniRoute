@@ -773,3 +773,46 @@ test("CodeBuddy 400 request illegal with no fresh sibling fails fast (no same-ac
     assert.equal(outcome.result.status, 429, "400 request illegal is restated to 429");
   }
 });
+
+test("CodeBuddy local pacing-busy 429 triggers no cooldown mark and no rotation", async () => {
+  const { runProviderExecutionPipeline } =
+    await import("../../open-sse/handlers/chatCore/providerExecutionPipeline.ts");
+  let sendCount = 0;
+  let resolverCallCount = 0;
+  let cooldownMarked = false;
+  const input = makeInput({
+    policy: { allowAccountRotation: true, allowModelFallback: true, burstDrainageDelayMs: 0 },
+    provider: "cbai",
+    connectionId: "cb-a",
+    send: async () => {
+      sendCount += 1;
+      return makeAttempt(
+        {
+          code: 429,
+          msg: "CodeBuddy pacing wait exceeded; retry later",
+          marker: "codebuddy_pacing_busy",
+        },
+        429,
+        { headers: { "Retry-After": "45" } }
+      );
+    },
+    getProviderCredentials: (async () => {
+      resolverCallCount += 1;
+      return { connectionId: "cb-b", allRateLimited: false };
+    }) as PipelineConnectionContext["getProviderCredentials"],
+    state: {
+      setConnectionRateLimitedUntil: () => {
+        cooldownMarked = true;
+      },
+    },
+  });
+
+  const outcome = await runProviderExecutionPipeline(input);
+  assert.equal(sendCount, 1, "pacing-busy must not re-send");
+  assert.equal(resolverCallCount, 0, "pacing-busy must not rotate accounts");
+  assert.equal(cooldownMarked, false, "a send that never reached Tencent marks no cooldown");
+  assert.equal(outcome.kind, "error");
+  if (outcome.kind === "error") {
+    assert.equal(outcome.result.status, 429);
+  }
+});
