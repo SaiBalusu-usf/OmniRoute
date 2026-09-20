@@ -227,6 +227,20 @@ export const OAUTH_PROVIDERS = {
     authHint:
       "Sign in with the same Kimi account used by Kimi Code CLI. OmniRoute uses the CLI OAuth flow and Kimi Coding Plan endpoints.",
   },
+  "muse-code": {
+    id: "muse-code",
+    serviceKinds: ["llm"],
+    alias: "mc",
+    name: "Muse Code (Subscription)",
+    icon: "psychology",
+    color: "#0064E0",
+    textIcon: "MC",
+    website: "https://www.meta.ai",
+    subscriptionRisk: true,
+    riskNoticeVariant: "oauth",
+    authHint:
+      "Sign in with the Meta account holding your Muse Code subscription via the device flow. OmniRoute exchanges the grant for a subscription inference key; Contributor models may use prompts for training.",
+  },
   kilocode: {
     id: "kilocode",
     serviceKinds: ["llm"],
