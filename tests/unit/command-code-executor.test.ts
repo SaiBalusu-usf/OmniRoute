@@ -334,6 +334,37 @@ test("Command Code executor honors a smaller client-provided max_tokens", async 
   assert.equal((calls[0].body as Record<string, unknown>).max_tokens, 2048);
 });
 
+test("Command Code executor floors tiny muse-spark output budgets so hidden reasoning cannot consume the whole budget", async () => {
+  const calls = captureFetch({});
+  (await getExecutor("command-code")).execute({
+    model: "meta/muse-spark-1.2-contributor",
+    stream: false,
+    credentials: { apiKey: "cc_test_key" },
+    body: {
+      messages: [{ role: "user", content: "Hi" }],
+      max_tokens: 64,
+    },
+  });
+  // The prefixed id must be caught by the prefix-aware detection, and the tiny
+  // caller budget raised to the floor so the upstream emits visible content
+  // instead of a 200 with null content (out=64, reasoning=61).
+  assert.equal((calls[0].body as Record<string, unknown>).max_tokens, 512);
+});
+
+test("Command Code executor leaves existing large muse-spark budgets untouched", async () => {
+  const calls = captureFetch({});
+  (await getExecutor("command-code")).execute({
+    model: "meta/muse-spark-1.2-contributor",
+    stream: false,
+    credentials: { apiKey: "cc_test_key" },
+    body: {
+      messages: [{ role: "user", content: "Hi" }],
+      max_tokens: 4096,
+    },
+  });
+  assert.equal((calls[0].body as Record<string, unknown>).max_tokens, 4096);
+});
+
 test("Command Code stream preserves the upstream OpenAI usage chunk (passthrough)", async () => {
   const sse =
     openAiSse({
@@ -483,6 +514,117 @@ test("Command Code executor falls back to /alpha/generate on 403 (Go plan) for n
   assert.equal(choices[0].message.content, "Non-stream answer");
   const usage = json.usage as { total_tokens: number };
   assert.equal(usage.total_tokens, 5);
+});
+
+// Simulates a Go-plan key: /provider/v1/chat/completions answers 403 and the executor
+// falls back to /alpha/generate, whose CLI SSE stream is built from `cliLines`.
+function goPlanFallbackFetch(cliLines: unknown[]) {
+  const calls: string[] = [];
+  globalThis.fetch = async (url) => {
+    const urlStr = String(url);
+    calls.push(urlStr);
+
+    if (urlStr.includes("/provider/v1/chat/completions")) {
+      return new Response(
+        JSON.stringify({ error: { message: "upgrade_required", code: "upgrade_required" } }),
+        { status: 403, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    if (urlStr.includes("/alpha/generate")) {
+      const cliSse = cliLines.map((line) => `data: ${JSON.stringify(line)}\n\n`).join("");
+      return new Response(cliSse, {
+        status: 200,
+        headers: { "Content-Type": "text/event-stream" },
+      });
+    }
+
+    return new Response("Not found", { status: 404 });
+  };
+  return calls;
+}
+
+test("Command Code /alpha/generate fallback: reasoning-only output falls back to reasoning as content (non-stream) (#10986)", async () => {
+  const calls = goPlanFallbackFetch([
+    { type: "reasoning-delta", text: "The user wants 79874+93658. " },
+    { type: "reasoning-delta", text: "That equals 173532." },
+    {
+      type: "finish",
+      finishReason: "stop",
+      totalUsage: {
+        inputTokens: 20,
+        outputTokens: 64,
+        outputTokenDetails: { reasoningTokens: 61 },
+      },
+    },
+  ]);
+
+  const { response, url } = await (
+    await getExecutor("command-code")
+  ).execute({
+    model: "deepseek/deepseek-v4-flash",
+    stream: false,
+    credentials: { apiKey: "cc_go_plan_key" },
+    body: {
+      messages: [
+        { role: "user", content: "Calculate 79874+93658, and reply with the result only." },
+      ],
+    },
+  });
+
+  assert.equal(calls.length, 2, "probed /provider/v1 first, then fell back to /alpha/generate");
+  assert.ok(url.includes("/alpha/generate"));
+  const json = (await response.json()) as {
+    choices: Array<{
+      message: { content: string; reasoning_content?: string };
+      finish_reason: string;
+    }>;
+    usage: { completion_tokens_details: { reasoning_tokens: number } };
+  };
+  const message = json.choices[0].message;
+  // Regression #10986: when the model emits only reasoning-delta events (never a
+  // text-delta), content must fall back to the reasoning text instead of "" (which
+  // OpenAI-compatible clients treat as null/no answer).
+  assert.equal(message.content, "The user wants 79874+93658. That equals 173532.");
+  // reasoning_content must STAY populated for reasoning-aware clients.
+  assert.equal(message.reasoning_content, "The user wants 79874+93658. That equals 173532.");
+  assert.equal(json.choices[0].finish_reason, "stop");
+  assert.equal(json.usage.completion_tokens_details.reasoning_tokens, 61);
+});
+
+test("Command Code /alpha/generate fallback: reasoning-only output emits a content delta chunk when streaming (#10986)", async () => {
+  const calls = goPlanFallbackFetch([
+    { type: "reasoning-delta", text: "The result is 173532." },
+    { type: "finish", finishReason: "stop" },
+  ]);
+
+  const { response, url } = await (
+    await getExecutor("command-code")
+  ).execute({
+    model: "deepseek/deepseek-v4-flash",
+    stream: true,
+    credentials: { apiKey: "cc_go_plan_key" },
+    body: { messages: [{ role: "user", content: "Calcular 79874+93658" }] },
+  });
+
+  assert.equal(calls.length, 2, "probed /provider/v1 first, then fell back to /alpha/generate");
+  assert.ok(url.includes("/alpha/generate"));
+  const sse = await response.text();
+  assert.match(sse, /data: \[DONE\]/);
+  const chunks = parseSsePayloads(sse);
+  assert.equal(chunks[0].choices[0].delta.role, "assistant");
+  // Regression #10986: the reasoning-only stream must emit a content delta when it
+  // otherwise ends with no content. reasoning_content stays present too.
+  const contentChunks = chunks.filter((c) => c.choices[0]?.delta?.content !== undefined);
+  assert.equal(contentChunks.length, 1, "exactly one synthesized content delta");
+  assert.equal(contentChunks[0].choices[0].delta.content, "The result is 173532.");
+  const reasoningDelta = chunks.find((c) => c.choices[0]?.delta?.reasoning_content !== undefined);
+  assert.equal(reasoningDelta.choices[0].delta.reasoning_content, "The result is 173532.");
+  // The synthesized content lands after the reasoning delta and before the finish chunk.
+  const finishIndex = chunks.findIndex((c) => c.choices[0]?.finish_reason === "stop");
+  assert.ok(finishIndex > chunks.indexOf(contentChunks[0]));
+  assert.ok(chunks.indexOf(contentChunks[0]) > chunks.indexOf(reasoningDelta));
+  assert.equal(chunks[finishIndex].choices[0].finish_reason, "stop");
 });
 
 test("Command Code executor surfaces fallback error when both /provider/v1 and /alpha/generate fail", async () => {
