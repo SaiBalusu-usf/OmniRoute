@@ -1,0 +1,1 @@
+- **fix(combos):** keep server-only code out of the combos page client bundle — the page imported `open-sse/services/model.ts`, which pulled the DB layer, playwright and sharp into the browser bundle and broke `next build` ([#14283](https://github.com/diegosouzapw/OmniRoute/pull/14283)) — thanks @bufftop25
