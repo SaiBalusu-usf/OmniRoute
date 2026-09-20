@@ -454,6 +454,59 @@ describe("model discovery", () => {
       );
     }
   });
+
+  it("maps the roster the gateway actually returns when authenticated", () => {
+    // Observed live (2026-09-19) from the desktop app's own CloudProductManager
+    // log, which prints the ids of every successful fetch. This is the populated
+    // authenticated payload, and it barely overlaps the built-in catalogue in
+    // cli/product.json: the cloud list replaces the built-in membership rather
+    // than extending it, which is why the 6 media entries are absent here.
+    const observed = [
+      "default-model",
+      "fast-model",
+      "balanced-model",
+      "primary-model",
+      "deep-model",
+      "kimi-k2.8-preview",
+      "deepseek-v4.1-flash",
+      "deepseek-v4.1-flash-sg",
+      "gpt-6-astra",
+      "hy4-preview-f",
+      "hy4-preview",
+      "hy3",
+      "gpt-5.6-sol",
+      "gpt-5.6-terra",
+      "gpt-5.6-luna",
+      "gpt-5.5",
+      "gpt-5.4",
+      "gemini-3.5-flash",
+      "glm-5.3",
+      "glm-5.2",
+      "kimi-k3",
+      "kimi-k2.6",
+    ];
+    assert.equal(observed.length, 22);
+
+    const models = PROVIDER_MODELS_CONFIG.workbuddy.parseResponse({
+      code: 0,
+      msg: "OK",
+      requestId: "abc",
+      data: {
+        agent: { agents: null },
+        models: observed.map((id) => ({ id, name: id, supportsToolCall: true })),
+        mcp: { enableFilterCount: 0 },
+        codebase: { remote: { disabled: false } },
+        features: null,
+      },
+    }) as Array<{ id: string; owned_by: string }>;
+
+    assert.deepEqual(
+      models.map((m) => m.id),
+      observed
+    );
+    // Order is the gateway's, and every entry is attributed to the provider.
+    assert.equal(models[0].owned_by, "workbuddy");
+  });
 });
 
 describe("blast radius", () => {

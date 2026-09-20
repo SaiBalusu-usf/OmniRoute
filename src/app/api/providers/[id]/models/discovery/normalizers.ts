@@ -272,28 +272,38 @@ export function normalizeOpenAiLikeModelsResponse(
  * WorkBuddy (www.workbuddy.ai) catalogue.
  *
  * The gateway answers `GET /v3/config` with `{ code, msg, requestId, data }` and
- * the roster under `data.models`. Verified live (2026-09-19): the wrapper shape
- * is as above and `data.models` is `null` on an unauthenticated request, so a
- * token is required to see the roster.
+ * the roster under `data.models`. An unauthenticated caller gets `data.models:
+ * null`, so a token is required. Observed live (2026-09-19) from the desktop
+ * app's own `CloudProductManager` log, an authenticated fetch returns **22**
+ * models, all of them chat models: `default-model`, `fast-model`,
+ * `balanced-model`, `primary-model`, `deep-model`, `kimi-k2.8-preview`,
+ * `deepseek-v4.1-flash`, `deepseek-v4.1-flash-sg`, `gpt-6-astra`,
+ * `hy4-preview-f`, `hy4-preview`, `hy3`, `gpt-5.6-sol`, `gpt-5.6-terra`,
+ * `gpt-5.6-luna`, `gpt-5.5`, `gpt-5.4`, `gemini-3.5-flash`, `glm-5.3`,
+ * `glm-5.2`, `kimi-k3`, `kimi-k2.6`.
  *
  * The item schema (id / name / maxInputTokens / maxOutputTokens /
  * supportsToolCall / supportsImages / supportsReasoning) is the one WorkBuddy's
  * own CLI ships in `cli/product.json`, confirmed against the 26-entry catalogue
- * in the macOS build. That file is the built-in layer of the same product's
- * config chain, and the cloud payload is merged onto it by id: the CLI's
- * `CloudProductProvider` calls `mergeModelsById`, so a cloud entry wins
- * field-by-field on an id collision and an unseen id is appended. `data.models`
- * is therefore an overlay on the built-in list rather than a full replacement,
- * and any field the cloud omits falls back to the built-in value. The populated
- * authenticated array was not directly observed, so the field probes stay
- * defensive and an item without an id is dropped rather than guessed at.
+ * in the macOS build. That file is a *fallback* layer rather than a base to
+ * merge into. The CLI's `CloudProductProvider` runs `mergeModelsById`, which
+ * indexes the built-in list by id and then maps over the **cloud** array, so
+ * membership comes entirely from the cloud; the built-in layer only supplies
+ * field defaults for ids the cloud also names. The effective roster the CLI logs
+ * bears this out: with the cloud live it is the 22 above plus local overrides,
+ * and the 6 media entries that exist only in `product.json` are absent, while an
+ * instance that could not reach the cloud falls back to the built-in 26. The
+ * field probes stay defensive regardless, and an item without an id is dropped
+ * rather than guessed at.
  *
  * An object map is accepted alongside an array because the same config family
  * ships `relatedModels` keyed by name.
  *
- * The catalogue lists image and video models in the same array as chat models,
- * discriminated only by `tags`. Discovery feeds a chat roster, so those entries
- * are dropped. See `isWorkbuddyMediaModel`.
+ * The built-in catalogue lists image and video models in the same array as chat
+ * models, discriminated only by `tags`. The observed cloud payload contains none
+ * of them, so the exclusion below guards the fallback path and any future
+ * payload that does list them, rather than repairing a live symptom. See
+ * `isWorkbuddyMediaModel`.
  */
 export function normalizeWorkbuddyModelsResponse(
   data: unknown
