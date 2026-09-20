@@ -20,6 +20,13 @@ export interface ResilienceConnectionsResponse {
   };
 }
 
+export interface RotationAccountState {
+  masked: string;
+  ready: boolean;
+  cooldownUntilMs: number | null;
+  consecutiveFails: number;
+}
+
 export interface ConnectionState {
   id: string;
   provider: string;
@@ -27,8 +34,7 @@ export interface ConnectionState {
   authType: string;
   priority: number;
   isActive: boolean;
-  connectionStatus: "healthy" | "cooling_down" | "circuit_open" | "terminal";
-  rateLimitedUntil: string | null;
+  connectionStatus: "healthy" | "cooling_down" | "circuit_open" | "terminal";  rateLimitedUntil: string | null;
   backoffLevel: number;
   testStatus: string | null;
   lastErrorType: string | null;
@@ -44,6 +50,9 @@ export interface ConnectionState {
     lastFailureKind: string | null;
   } | null;
   lockouts: Array<{ model: string; reason: string; remainingMs: number }>;
+  /** Per-account rotation state (loopback-gated read-only) — null when the
+   * attribution flag is off or no rotation snapshot was recorded. */
+  rotation: RotationAccountState[] | null;
 }
 
 export interface BreakerWithHistory {
