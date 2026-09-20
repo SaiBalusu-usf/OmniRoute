@@ -20,6 +20,16 @@ const { clearGeminiThoughtSignatures } =
 type UnknownRecord = Record<string, unknown>;
 type GeminiRequestWithConfig = { generationConfig: UnknownRecord };
 type GeminiRequestWithSystem = { systemInstruction: { role?: unknown; parts?: unknown } };
+type GeminiPart = {
+  text?: unknown;
+  functionCall?: { id?: string; name?: string; args?: unknown };
+  functionResponse?: { id?: string; name?: string; response?: { result?: unknown } };
+};
+type GeminiContent = { role?: string; parts?: GeminiPart[] };
+type GeminiRequestWithContents = { contents: GeminiContent[] };
+type GeminiRequestWithThinking = {
+  generationConfig: { thinkingConfig: { thinkingBudget?: unknown; includeThoughts?: unknown } };
+};
 
 test.beforeEach(() => {
   clearGeminiThoughtSignatures();
@@ -1644,7 +1654,7 @@ test("OpenAI -> Gemini allows thinkingConfig for unknown model (no spec)", () =>
       thinking: { type: "enabled", budget_tokens: 5000 },
     },
     false
-  ) as any;
+  ) as GeminiRequestWithThinking;
   assert.equal(result.generationConfig.thinkingConfig.thinkingBudget, 5000);
   assert.equal(result.generationConfig.thinkingConfig.includeThoughts, true);
 });
@@ -1692,23 +1702,24 @@ test("OpenAI -> Gemini pairs tool calls and responses per turn without cross-tur
       ],
     },
     false
-  ) as any;
+  ) as GeminiRequestWithContents;
 
   // Verify Turn 1 functionCall and functionResponse
-  const turn1Model = result.contents.find((c: any) =>
-    c.parts?.some((p: any) => p.functionCall?.name === "read_file")
+  const turn1Model = result.contents.find((c) =>
+    c.parts?.some((p) => p.functionCall?.name === "read_file")
   );
   assert.ok(turn1Model, "Turn 1 model functionCall must be read_file");
 
-  const turn1User = result.contents.find((c: any) =>
+  const turn1User = result.contents.find((c) =>
     c.parts?.some(
-      (p: any) =>
+      (p) =>
         p.functionResponse?.response?.result === "file content from turn 1" ||
         p.functionResponse?.name === "read_file"
     )
   );
   assert.ok(turn1User, "Turn 1 user functionResponse must exist");
-  const turn1Resp = turn1User.parts.find((p: any) => p.functionResponse);
+  const turn1Resp = turn1User.parts?.find((p) => p.functionResponse);
+  assert.ok(turn1Resp?.functionResponse, "Turn 1 functionResponse part must exist");
   assert.equal(
     turn1Resp.functionResponse.name,
     "read_file",
@@ -1721,15 +1732,16 @@ test("OpenAI -> Gemini pairs tool calls and responses per turn without cross-tur
   );
 
   // Verify Turn 2 functionCall and functionResponse
-  const turn2User = result.contents.find((c: any) =>
+  const turn2User = result.contents.find((c) =>
     c.parts?.some(
-      (p: any) =>
+      (p) =>
         p.functionResponse?.response?.result === "terminal output from turn 2" ||
         p.functionResponse?.name === "run_terminal_command"
     )
   );
   assert.ok(turn2User, "Turn 2 user functionResponse must exist");
-  const turn2Resp = turn2User.parts.find((p: any) => p.functionResponse);
+  const turn2Resp = turn2User.parts?.find((p) => p.functionResponse);
+  assert.ok(turn2Resp?.functionResponse, "Turn 2 functionResponse part must exist");
   assert.equal(
     turn2Resp.functionResponse.name,
     "run_terminal_command",
@@ -1787,11 +1799,13 @@ test("OpenAI -> Gemini pairs tool calls and responses in context mode without ID
     false,
     null,
     { signaturelessToolCallMode: "context" }
-  ) as any;
+  ) as GeminiRequestWithContents;
 
   // In context mode without thought signatures, tool responses are emitted as context text
-  const textParts = result.contents.flatMap((c: any) =>
-    (c.parts || []).filter((p: any) => typeof p.text === "string").map((p: any) => p.text)
+  const textParts = result.contents.flatMap((c) =>
+    (c.parts || [])
+      .filter((p): p is GeminiPart & { text: string } => typeof p.text === "string")
+      .map((p) => p.text)
   );
   assert.ok(
     textParts.some(
