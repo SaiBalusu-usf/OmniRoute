@@ -325,6 +325,113 @@ function buildSchemaParamMap(requestedTools: unknown): Map<string, Set<string>> 
   return map;
 }
 
+interface DsmlTagToken {
+  start: number;
+  end: number;
+  closing: boolean;
+  kind: "calls" | "invoke" | "parameter";
+  attrs: string;
+}
+
+const DSML_TAG_RE = /<\uFF5C\uFF5CDSML\uFF5C\uFF5C\s*(\/?)\s*(calls|invoke|parameter)\b([^>]*)>/gu;
+
+function tokenizeDsmlTags(text: string): DsmlTagToken[] {
+  const tokens: DsmlTagToken[] = [];
+  let match: RegExpExecArray | null;
+  DSML_TAG_RE.lastIndex = 0;
+  while ((match = DSML_TAG_RE.exec(text)) !== null) {
+    tokens.push({
+      start: match.index,
+      end: DSML_TAG_RE.lastIndex,
+      closing: match[1] === "/",
+      kind: match[2] as DsmlTagToken["kind"],
+      attrs: match[3] || "",
+    });
+  }
+  return tokens;
+}
+
+function findDsmlClose(
+  tokens: DsmlTagToken[],
+  openIndex: number,
+  kind: DsmlTagToken["kind"]
+): DsmlTagToken | null {
+  let depth = 0;
+  for (let i = openIndex + 1; i < tokens.length; i += 1) {
+    const token = tokens[i];
+    if (token.kind !== kind) continue;
+    if (token.closing) {
+      depth -= 1;
+      if (depth === -1) return token;
+    } else {
+      depth += 1;
+    }
+  }
+  return null;
+}
+
+function parseDsmlToolCalls(
+  text: string,
+  idSeed: string,
+  requestedTools: unknown
+): { content: string; toolCalls: OpenAIToolCall[] | null } | null {
+  const tokens = tokenizeDsmlTags(text);
+  if (tokens.length === 0 || !tokens.some((token) => !token.closing && token.kind === "invoke")) {
+    return null;
+  }
+
+  const requested = getRequestedToolNames(requestedTools);
+  const toolCalls: OpenAIToolCall[] = [];
+  const acceptedRanges: Array<{ start: number; end: number }> = [];
+
+  for (let i = 0; i < tokens.length; i += 1) {
+    const open = tokens[i];
+    if (open.closing || open.kind !== "invoke") continue;
+
+    const close = findDsmlClose(tokens, i, "invoke");
+    const innerEnd = close?.start ?? text.length;
+    const name = getAttr(open.attrs, "name");
+    const args: Record<string, string> = {};
+    let hasParameter = false;
+
+    for (let j = i + 1; j < tokens.length; j += 1) {
+      const parameter = tokens[j];
+      if (parameter.start >= innerEnd) break;
+      if (parameter.closing || parameter.kind !== "parameter") continue;
+      const parameterClose = findDsmlClose(tokens, j, "parameter");
+      const valueEnd =
+        parameterClose && parameterClose.start < innerEnd ? parameterClose.start : innerEnd;
+      const parameterName = getAttr(parameter.attrs, "name");
+      if (!parameterName) continue;
+      args[parameterName] =
+        getAttr(parameter.attrs, "content") ?? text.slice(parameter.end, valueEnd).trim();
+      hasParameter = true;
+    }
+
+    const resolvedName = name ? resolveRequestedToolName(name, requested) : null;
+    if (!resolvedName || !hasParameter) continue;
+
+    toolCalls.push({
+      id: `${idSeed}_${toolCalls.length}`,
+      type: "function",
+      function: { name: resolvedName, arguments: JSON.stringify(args) },
+    });
+    acceptedRanges.push({ start: open.start, end: close?.end ?? text.length });
+  }
+
+  if (toolCalls.length === 0) return { content: text, toolCalls: null };
+
+  const within = (token: DsmlTagToken) =>
+    acceptedRanges.some((range) => token.start >= range.start && token.end <= range.end);
+  const ranges = [
+    ...acceptedRanges,
+    ...tokens
+      .filter((token) => token.kind === "calls" && !within(token))
+      .map((token) => ({ start: token.start, end: token.end })),
+  ];
+  return { content: stripRanges(text, ranges), toolCalls };
+}
+
 // DeepSeek's web session occasionally leaks malformed/internal formatting tokens right
 // after an otherwise-complete JSON tool call body (observed in production: a valid
 // `{"name": ..., "arguments": {...}}` object immediately followed by corrupted
@@ -487,6 +594,9 @@ export function parseDeepSeekToolCalls(
   if (typeof text !== "string" || text.length === 0) {
     return { content: text ?? "", toolCalls: null };
   }
+
+  const dsmlResult = parseDsmlToolCalls(text, idSeed, requestedTools);
+  if (dsmlResult) return dsmlResult;
 
   const tokens = tokenizeToolTags(text);
   if (tokens.length === 0) {
