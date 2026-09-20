@@ -128,8 +128,55 @@ function loadAuthModule(): Promise<typeof import("../../sse/services/auth.ts")> 
   return authModulePromise;
 }
 
+/**
+ * Return true when the dashboard is in open/anonymous mode — i.e. the operator
+ * has explicitly disabled login (requireLogin=false) or this is a fresh
+ * single-user install with no password configured running on the default
+ * loopback interface. Mirrors the semantics of isAuthRequired() from
+ * shared/utils/apiAuth.ts without importing Next.js-only modules.
+ */
+async function isLiveWsAuthRequired(): Promise<boolean> {
+  try {
+    const { getSettings } = await import("@/lib/db/settings");
+    const settings = await getSettings();
+
+    // Operator explicitly disabled login.
+    if (settings.requireLogin === false) return false;
+
+    // Fresh install: no password, no OIDC, no INITIAL_PASSWORD, and the server
+    // is loopback-bound (default) → allow unauthenticated dashboard access just
+    // like the Next.js routes do in this mode.
+    const hasPassword = typeof settings.password === "string" && settings.password.length > 0;
+    const hasOidc =
+      settings.oidcEnabled === true &&
+      typeof settings.oidcIssuer === "string" &&
+      settings.oidcIssuer.trim().length > 0;
+    if (!hasPassword && !hasOidc && !process.env.INITIAL_PASSWORD) {
+      const host = process.env.LIVE_WS_HOST || DEFAULT_HOST;
+      const isLoopback = host === "127.0.0.1" || host === "::1" || host === "localhost";
+      if (isLoopback && settings.setupComplete !== true) return false;
+    }
+
+    return true;
+  } catch {
+    // Fail-closed: if we cannot read settings, require auth.
+    return true;
+  }
+}
+
 async function authorizeConnection(request: import("http").IncomingMessage): Promise<WsAuthResult> {
   const sessionId = randomUUID().slice(0, 8);
+
+  // Skip all credential checks when the dashboard is running in open/anonymous
+  // mode (requireLogin=false or a fresh loopback-bound install without a
+  // password). Every other authenticated surface in the app grants anonymous
+  // access in this mode; the WebSocket must behave consistently. Without this
+  // bypass, a no-password deployment can never establish a Live Dashboard
+  // connection because no auth_token cookie is ever issued (there is no login
+  // flow to mint one). See issue #14256.
+  if (!(await isLiveWsAuthRequired())) {
+    return { authorized: true, sessionId };
+  }
 
   // Token MUST come from the Authorization header (or X-Live-WS-Token).
   // Query-string tokens leak into access logs, browser history, and Referer
