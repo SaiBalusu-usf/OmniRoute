@@ -14068,7 +14068,12 @@
     "hour": "ساعت",
     "day": "روز",
     "unknownModel": "ناشناخته",
-    "pending": "در حال انتظار"
+    "pending": "در حال انتظار",
+    "allApiKeys": "All API keys",
+    "mcp": "MCP",
+    "mcpTool": "MCP tool",
+    "scope": "Scope",
+    "apiKey": "API key"
   },
   "metadata": {
     "compressionTitle": "فشرده‌سازی",
