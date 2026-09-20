@@ -729,3 +729,47 @@ test("upstream error code/type survive into the error outcome", async () => {
     assert.equal(outcome.result.status, 422);
   }
 });
+
+test("CodeBuddy 400 request illegal with no fresh sibling fails fast (no same-account re-send)", async () => {
+  const { runProviderExecutionPipeline } =
+    await import("../../open-sse/handlers/chatCore/providerExecutionPipeline.ts");
+  let sendCount = 0;
+  let resolverCallCount = 0;
+  const input = makeInput({
+    policy: { allowAccountRotation: true, allowModelFallback: true, burstDrainageDelayMs: 0 },
+    provider: "codebuddy",
+    connectionId: "cb-a",
+    send: async () => {
+      sendCount += 1;
+      return makeAttempt(
+        {
+          code: 11128,
+          msg: "request illegal",
+          displayMsg: "The request was blocked by security policy. Please retry later.",
+        },
+        400
+      );
+    },
+    getProviderCredentials: (async () => {
+      resolverCallCount += 1;
+      // Production single-account behavior: the exclude-filtered call reports
+      // allRateLimited, then the allowRateLimitedConnections fallback returns
+      // the SAME cooling connection without the flag.
+      return resolverCallCount === 1
+        ? { connectionId: "cb-a", allRateLimited: true }
+        : { connectionId: "cb-a", allRateLimited: false };
+    }) as PipelineConnectionContext["getProviderCredentials"],
+  });
+
+  const outcome = await runProviderExecutionPipeline(input);
+  assert.equal(resolverCallCount >= 1, true, "resolver must run on CodeBuddy 400 request illegal");
+  assert.equal(
+    sendCount,
+    1,
+    "no fresh sibling means re-sending on the known-cooling account only feeds the upstream burst throttle — fail fast instead"
+  );
+  assert.equal(outcome.kind, "error");
+  if (outcome.kind === "error") {
+    assert.equal(outcome.result.status, 429, "400 request illegal is restated to 429");
+  }
+});

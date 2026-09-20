@@ -479,23 +479,17 @@ export async function runProviderExecutionPipeline(
           await state.setConnectionRateLimitedUntil(failedId, Date.now() + retryAfterMs);
           await state.onClearSessionAffinity?.({ failedConnectionId: failedId });
         }
-        const drainageDelayMs = policy.burstDrainageDelayMs ?? 1500;
-        if (drainageDelayMs > 0) {
-          await new Promise((resolve) => setTimeout(resolve, drainageDelayMs));
-        }
-        let nextCreds = await connection
+        const nextCreds = await connection
           .getProviderCredentials(target.provider, null, null, wire.currentModel, {
             excludeConnectionIds: [...excludedIds],
           })
           .catch(() => null);
-        if ((!nextCreds || nextCreds.allRateLimited) && attempts < maxAttempts - 1) {
-          nextCreds = await connection
-            .getProviderCredentials(target.provider, null, null, wire.currentModel, {
-              allowRateLimitedConnections: true,
-            })
-            .catch(() => null);
-        }
-        if (nextCreds && !nextCreds.allRateLimited && nextCreds.connectionId) {
+        const nextId = nextCreds?.connectionId ? String(nextCreds.connectionId) : null;
+        if (nextCreds && !nextCreds.allRateLimited && nextId && !excludedIds.includes(nextId)) {
+          const drainageDelayMs = policy.burstDrainageDelayMs ?? 1500;
+          if (drainageDelayMs > 0) {
+            await new Promise((resolve) => setTimeout(resolve, drainageDelayMs));
+          }
           await state.onAuditAccountRotation?.({
             action: "codebuddy.account_rotation",
             failedConnectionId: failedId,
@@ -508,6 +502,17 @@ export async function runProviderExecutionPipeline(
           attempts += 1;
           continue;
         }
+        // No fresh sibling: the 11128 burst throttle is time-based, so
+        // re-sending on a known-cooling account (via
+        // allowRateLimitedConnections) cannot succeed — it only feeds the
+        // upstream throttle and triples per-request latency. Fail fast so the
+        // client's spaced retry is the next attempt.
+        return toOutcome(
+          attempt,
+          wire.currentModel,
+          currentConnectionId(connection),
+          target.provider
+        );
       }
     }
 
