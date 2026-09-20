@@ -160,3 +160,19 @@ test("disconnect removes the subscription connection", async () => {
   const rows = await providersDb.getProviderConnections({ provider: "muse-code" });
   assert.equal(rows.length, 0);
 });
+
+test("credential survives a storage reopen (restart) without the device token", async () => {
+  const created = (await persistOAuthConnection(
+    "muse-code",
+    await completeLogin("user-123", FAKE_API_KEY)
+  )) as { id: string };
+  // Simulate an application restart: drop all handles, reopen the same files.
+  core.resetDbInstance();
+  const rows = (await providersDb.getProviderConnections({ provider: "muse-code" })) as Array<
+    Record<string, unknown>
+  >;
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].id, created.id);
+  assert.equal(rows[0].accessToken, FAKE_API_KEY);
+  assert.ok(!JSON.stringify(rows[0]).includes(FAKE_ACCOUNT_TOKEN));
+});

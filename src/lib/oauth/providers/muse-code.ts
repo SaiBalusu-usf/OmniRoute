@@ -131,10 +131,27 @@ export const museCode = {
       }
       return { ok: response.ok, data };
     }
+    // Only recognized OAuth error codes pass through with their description;
+    // anything else becomes a fixed error so malformed or hostile payloads
+    // cannot inject arbitrary text (or credential-like strings) into UI
+    // error paths.
+    const KNOWN_POLL_ERRORS = new Set([
+      "authorization_pending",
+      "slow_down",
+      "access_denied",
+      "expired_token",
+      "invalid_grant",
+    ]);
     const error =
-      typeof parsed.error === "string" && parsed.error.trim() ? parsed.error : "invalid_response";
+      typeof parsed.error === "string" && KNOWN_POLL_ERRORS.has(parsed.error)
+        ? parsed.error
+        : "invalid_response";
     const data: Record<string, unknown> = { error };
-    if (typeof parsed.error_description === "string" && parsed.error_description.trim()) {
+    if (
+      error !== "invalid_response" &&
+      typeof parsed.error_description === "string" &&
+      parsed.error_description.trim()
+    ) {
       data.error_description = parsed.error_description;
     }
     return { ok: response.ok, data };

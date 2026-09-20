@@ -121,6 +121,15 @@ test("pollToken returns ok/data shapes for success and pending", async () => {
   assert.equal(slow.data.error, "slow_down");
 });
 
+test("pollToken maps unknown errors to a fixed response", async () => {
+  useFetch(async () =>
+    jsonResponse({ error: "weird_upstream_code", error_description: "secret api_key=abc123" })
+  );
+  const result = await museCode.pollToken(MUSE_CODE_CONFIG, "dev-code-1");
+  assert.equal(result.data.error, "invalid_response");
+  assert.ok(!("error_description" in result.data));
+});
+
 test("pollToken maps transport failure to network_error", async () => {
   useFetch(async () => {
     throw new Error("boom");
