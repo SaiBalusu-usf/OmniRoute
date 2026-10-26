@@ -40,6 +40,7 @@ jobs:
           tests/unit/hard-session-lease-bypass-inventory.test.ts
           tests/unit/openapi-coverage.test.ts
           tests/unit/pack-artifact-entrypoint-closures.test.ts
+          tests/unit/pack-artifact-policy.test.ts
           tests/unit/provider-limits-recovery.test.ts
           tests/unit/providers-constants-split.test.ts
           tests/unit/repro-glm-iso-reset-24h-cap.test.ts
