@@ -459,7 +459,7 @@
       "undici": "^6.28.0"
     },
     "concurrently": {
-      "shell-quote": "^1.9.0"
+      "shell-quote": "^1.11.0"
     },
     "adm-zip": "^0.6.0",
     "promptfoo": {
