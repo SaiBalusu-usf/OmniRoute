@@ -1,0 +1,32 @@
+name: Security full validation
+
+on:
+  push:
+    branches: [fix/security-migration-20261026]
+  pull_request:
+    branches: [fix/security-audit-20261026]
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    name: Full unit coverage gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      DISABLE_SQLITE_AUTO_BACKUP: "true"
+      OMNIROUTE_SKIP_SYSTEM_TRUST: "1"
+      OMNIROUTE_SKIP_DNS_WRITE: "1"
+      APP_LOG_TO_FILE: "false"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:coverage
