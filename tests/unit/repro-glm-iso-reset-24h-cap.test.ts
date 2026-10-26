@@ -102,7 +102,8 @@ describe("Z.AI GLM weekly quota — absolute ISO reset", () => {
     assert.equal(parseDayGranularityResetMs("quota will reset in 3 days", MAX_MS, NOW), 3 * DAY_MS);
   });
 
-  it("buildWeeklyQuotaFallback uses the parsed ISO reset, not the 24h default", () => {
+  it("buildWeeklyQuotaFallback uses the parsed ISO reset, not the 24h default", (t) => {
+    t.mock.timers.enable({ apis: ["Date"], now: NOW });
     const result = buildWeeklyQuotaFallback(GLM_BODY);
     assert.ok(result);
     assert.equal(result!.reason, RateLimitReason.QUOTA_EXHAUSTED);
@@ -112,13 +113,16 @@ describe("Z.AI GLM weekly quota — absolute ISO reset", () => {
       `expected a multi-day cooldown, got ${result!.cooldownMs}`
     );
     assert.ok(result!.cooldownMs <= MAX_MS);
-    assert.ok(result!.cooldownMs !== DAY_MS, "must not fall back to WEEKLY_QUOTA_COOLDOWN_MS (24h)");
+    assert.ok(
+      result!.cooldownMs !== DAY_MS,
+      "must not fall back to WEEKLY_QUOTA_COOLDOWN_MS (24h)"
+    );
   });
 
-  it("checkFallbackError classifies the GLM 429 as QUOTA_EXHAUSTED with the real wait", async () => {
-    const { checkFallbackError, parseRetryFromErrorText } = await import(
-      "../../open-sse/services/accountFallback.ts"
-    );
+  it("checkFallbackError classifies the GLM 429 as QUOTA_EXHAUSTED with the real wait", async (t) => {
+    t.mock.timers.enable({ apis: ["Date"], now: NOW });
+    const { checkFallbackError, parseRetryFromErrorText } =
+      await import("../../open-sse/services/accountFallback.ts");
 
     const parsed = parseRetryFromErrorText(GLM_BODY);
     assert.ok(parsed && parsed > 5 * DAY_MS, `parsed reset was ${parsed}`);

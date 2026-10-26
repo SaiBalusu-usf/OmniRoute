@@ -307,12 +307,9 @@ test("partial quota refresh does not clear a quota cooldown before its reset", a
   assert.equal(after.rateLimitedUntil, resetAt);
 });
 
-test("Claude subscription quota recovery clears synthetic cooldown once the real window resets", async () => {
-  // Reproduces the reported deadlock: a Claude subscription 429 persists a synthetic
-  // 1h rateLimitedUntil (SUBSCRIPTION_QUOTA_COOLDOWN_MS, no parseable upstream reset).
-  // The scheduled poller later fetches the REAL quota windows and finds the session
-  // window has already reset with quota available — the connection must clear even
-  // though the synthetic rateLimitedUntil is still in the future.
+test("Claude subscription quota recovery clears an elapsed cooldown with available quota", async () => {
+  // A stored cooldown has no provenance proving it was synthetic. It remains
+  // authoritative until elapsed; an unrelated usable quota must not clear it.
   const syntheticRateLimitedUntil = new Date(Date.now() + 60 * 60 * 1000).toISOString();
   const created = await providersDb.createProviderConnection({
     provider: "claude",
@@ -331,13 +328,28 @@ test("Claude subscription quota recovery clears synthetic cooldown once the real
   const connection = await providersDb.getProviderConnectionById(connectionId);
 
   const realResetInThePast = new Date(Date.now() - 60 * 1000).toISOString();
-  const result = await providerLimits.maybeClearRecoveredQuotaState(connection, {
+  const recoveredUsage = {
     quotas: {
       "session (5h)": { remaining: 87, remainingPercentage: 87, resetAt: realResetInThePast },
       "weekly (7d)": { remaining: 62, remainingPercentage: 62, resetAt: realResetInThePast },
     },
-  });
+  };
+  const beforeReset = await providerLimits.maybeClearRecoveredQuotaState(
+    connection,
+    recoveredUsage
+  );
+  assert.equal(
+    beforeReset.testStatus,
+    "unavailable",
+    "usable quota cannot prove a future cooldown is synthetic"
+  );
+  assert.equal(beforeReset.rateLimitedUntil, syntheticRateLimitedUntil);
 
+  await providersDb.updateProviderConnection(connectionId, {
+    rateLimitedUntil: realResetInThePast,
+  });
+  const elapsed = await providersDb.getProviderConnectionById(connectionId);
+  const result = await providerLimits.maybeClearRecoveredQuotaState(elapsed, recoveredUsage);
   assert.equal(result.testStatus, "active", "returned snapshot should be cleared");
   assert.equal(result.rateLimitedUntil, null, "returned snapshot should drop rateLimitedUntil");
   assert.equal(result.lastErrorType, null, "returned snapshot should drop lastErrorType");

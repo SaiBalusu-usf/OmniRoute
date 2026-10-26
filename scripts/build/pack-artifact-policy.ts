@@ -179,6 +179,7 @@ export const PACK_ARTIFACT_ROOT_ALLOWED_PATH_PREFIXES: string[] = [
 ];
 
 export const PACK_ARTIFACT_REQUIRED_PATHS: string[] = [
+  "bin/cli/utils/volatileEnvPath.mjs",
   "dist/open-sse/services/compression/engines/rtk/filters/generic-output.json",
   "dist/src/lib/usage/callLogArtifactWorker.js",
   "dist/open-sse/vendor/codex-chatgpt-web/adapters/chatgpt-web/mcp-server.js",

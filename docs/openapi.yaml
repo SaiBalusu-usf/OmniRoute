@@ -1989,6 +1989,101 @@ paths:
         "201":
           description: Created provider connection
 
+  /api/providers/volcengine-plan/connect:
+    post:
+      tags: [Providers]
+      summary: Start a Volcano console login
+      description: Management authentication follows requireLogin. No phone selects the manual browser flow on the start endpoint.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone: { type: string, maxLength: 64 }
+                timeout: { type: integer, minimum: 1, maximum: 600000 }
+      responses:
+        "200":
+          description: Login session or completed account binding (inspect success and session phase)
+        "400":
+          description: Invalid request or unsuccessful login start
+        "401":
+          description: Authentication required
+        "403":
+          description: Invalid or insufficient management credentials
+        "500":
+          description: Login operation failed
+
+  /api/providers/volcengine-plan/connect/{sessionId}/code:
+    post:
+      tags: [Providers]
+      summary: Submit a Volcano login SMS code
+      description: Management authentication follows requireLogin. No phone selects the manual browser flow on the start endpoint.
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [code]
+              properties:
+                code: { type: string, minLength: 1, maxLength: 32 }
+                captcha: { type: string, maxLength: 128 }
+                timeout: { type: integer, minimum: 1, maximum: 600000 }
+      responses:
+        "200":
+          description: Login session or completed account binding (inspect success and session phase)
+        "400":
+          description: Invalid request or unsuccessful login start
+        "401":
+          description: Authentication required
+        "403":
+          description: Invalid or insufficient management credentials
+        "404":
+          description: Unknown or expired login session
+        "500":
+          description: Login operation failed
+
+  /api/providers/volcengine-plan/connect/{sessionId}/identity:
+    post:
+      tags: [Providers]
+      summary: Select a Volcano console identity
+      description: Management authentication follows requireLogin. No phone selects the manual browser flow on the start endpoint.
+      parameters:
+        - in: path
+          name: sessionId
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [index]
+              properties:
+                index: { type: integer, minimum: 0, maximum: 9007199254740991 }
+                timeout: { type: integer, minimum: 1, maximum: 600000 }
+      responses:
+        "200":
+          description: Login session or completed account binding (inspect success and session phase)
+        "400":
+          description: Invalid request or unsuccessful login start
+        "401":
+          description: Authentication required
+        "403":
+          description: Invalid or insufficient management credentials
+        "404":
+          description: Unknown or expired login session
+        "500":
+          description: Login operation failed
+
   /api/providers/{id}:
     get:
       tags: [Providers]
