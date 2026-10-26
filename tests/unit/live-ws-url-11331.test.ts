@@ -23,7 +23,24 @@ describe("sanitizeLiveWsPort", () => {
   });
 
   it("rejects anything that is not a usable port", () => {
-    for (const value of [0, -1, 65536, 1.5, "", "abc", null, undefined, {}, NaN]) {
+    for (const value of [
+      0,
+      -1,
+      65536,
+      1.5,
+      "",
+      "abc",
+      null,
+      undefined,
+      {},
+      NaN,
+      true,
+      false,
+      " 80",
+      "80 ",
+      "0x50",
+      "8e1",
+    ]) {
       assert.equal(sanitizeLiveWsPort(value), null, `expected null for ${String(value)}`);
     }
   });
@@ -94,4 +111,17 @@ describe("resolveLiveWsUrl", () => {
     assert.equal(deriveLiveWsPath("wss://host:20132/"), "/live-ws");
     assert.equal(deriveLiveWsPath(undefined), "/live-ws");
   });
+});
+
+it("never interprets a handshake path as a different authority", () => {
+  const url = new URL(
+    resolveLiveWsUrl({
+      handshakePath: "//unexpected.example/socket",
+      handshakePort: 9443,
+      defaultUrl: DEFAULT_URL,
+    })
+  );
+  assert.equal(url.hostname, "omniroute.example.tld");
+  assert.equal(url.port, "9443");
+  assert.equal(url.pathname, "/live-ws");
 });
