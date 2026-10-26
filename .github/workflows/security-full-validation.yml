@@ -1,8 +1,6 @@
 name: Security full validation
 
 on:
-  push:
-    branches: [fix/security-migration-20261026]
   pull_request:
     branches: [fix/security-audit-20261026]
 
@@ -13,7 +11,9 @@ jobs:
   coverage:
     name: Full unit coverage gate
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    # The 34k Node tests alone take about 31 minutes. Allow the unchanged
+    # coverage reports, dashboard tests and serial suites to finish as well.
+    timeout-minutes: 90
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       DISABLE_SQLITE_AUTO_BACKUP: "true"

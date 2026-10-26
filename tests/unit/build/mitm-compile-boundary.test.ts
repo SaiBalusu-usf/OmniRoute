@@ -13,6 +13,7 @@ test("MITM packaging must not report success after copying uncompiled sources", 
     new URL("../../../scripts/build/prepublish.ts", import.meta.url),
     "utf8"
   );
+  assert.match(script, /await buildMitm\(ROOT, mitmDest\)/);
   assert.doesNotMatch(script, /MITM compile warning \(non-fatal\)/);
   assert.doesNotMatch(script, /cpSync\(mitmSrc, mitmDest, \{ recursive: true \}\)/);
 });
