@@ -49,7 +49,9 @@ export function goldenSnapshot(name: string, value: unknown, dir = DEFAULT_DIR):
     return;
   }
 
-  const expected = fs.readFileSync(file, "utf8").trimEnd();
+  // Git may check text fixtures out with CRLF on Windows. Normalize only the
+  // file's line separators; escaped newlines inside JSON values stay intact.
+  const expected = fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n").trimEnd();
   if (serialized !== expected) {
     throw new GoldenMismatchError(name, expected, serialized);
   }
