@@ -71,6 +71,8 @@ const EXPECTED: Record<InventoryKind, Record<string, number>> = {
     "open-sse/handlers/cursorCliProxy.ts": 1,
     "open-sse/services/alibabaFreeTier.ts": 1,
     "open-sse/services/alibabaFreeTierQuotaFetcher.ts": 1,
+    // Reads fresh cooldown state only; dispatch still passes through credential/lease gates.
+    "open-sse/services/combo.ts": 1,
     "open-sse/services/combo/providerWildcard.ts": 1,
     "open-sse/services/tokenRefresh.ts": 1,
     "src/app/(dashboard)/dashboard/tools/agent-bridge/page.tsx": 1,
@@ -128,6 +130,9 @@ const EXPECTED: Record<InventoryKind, Record<string, number>> = {
     "src/lib/oauth/utils/codexAuthImport.ts": 1,
     "src/lib/providerModels/managedModelImport.ts": 1,
     "src/lib/providers/codexConnectionDefaults.ts": 1,
+    // Metadata backfill and authenticated management binding; neither dispatches inference.
+    "src/lib/providers/volcPlanAutoSyncBackfill.ts": 1,
+    "src/lib/providers/volcenginePlanBinding.ts": 1,
     "src/lib/proxyEgress.ts": 1,
     "src/lib/quota/connectionRecovery.ts": 2,
     "src/lib/sync/bundle.ts": 1,
@@ -179,6 +184,7 @@ const CLASSIFICATION: Record<InventoryKind, Record<string, BypassClass>> = {
         "open-sse/handlers/chatCore.ts",
         "open-sse/services/alibabaFreeTier.ts",
         "open-sse/services/alibabaFreeTierQuotaFetcher.ts",
+        "open-sse/services/combo.ts",
         "open-sse/services/combo/providerWildcard.ts",
         "open-sse/services/tokenRefresh.ts",
         "src/app/api/translator/send/route.ts",
@@ -200,7 +206,7 @@ const CLASSIFICATION: Record<InventoryKind, Record<string, BypassClass>> = {
 function sourceFiles(directory: string): string[] {
   const absolute = path.join(REPO_ROOT, directory);
   return fs.readdirSync(absolute, { withFileTypes: true }).flatMap((entry) => {
-    const relative = path.join(directory, entry.name);
+    const relative = path.posix.join(directory, entry.name);
     if (entry.isDirectory()) return sourceFiles(relative);
     return /\.(?:cjs|js|mjs|ts|tsx)$/.test(entry.name) ? [relative] : [];
   });

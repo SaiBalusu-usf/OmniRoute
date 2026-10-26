@@ -55,12 +55,12 @@ test("barrel still exports every catalog + key helpers", () => {
   }
 });
 
-test("APIKEY_PROVIDERS merges the 6 family files into 231 entries (no loss / no dup)", async () => {
+test("APIKEY_PROVIDERS merges the 6 family files into 233 entries (no loss / no dup)", async () => {
   const keys = Object.keys((P as Record<string, object>).APIKEY_PROVIDERS);
-  assert.equal(keys.length, 231);
-  assert.equal(new Set(keys).size, 231, "duplicate keys after spread-merge");
+  assert.equal(keys.length, 233);
+  assert.equal(new Set(keys).size, 233, "duplicate keys after spread-merge");
   // the merged object's entry-count equals the sum of the 6 semantic family files; families are a
-  // strict partition (every provider in exactly one), so the sum must be exactly 231.
+  // strict partition (every provider in exactly one), so the sum must be exactly 233.
   const families: [string, string][] = [
     ["gateways", "APIKEY_PROVIDERS_GATEWAYS"],
     ["frontier-labs", "APIKEY_PROVIDERS_FRONTIER"],
@@ -69,6 +69,9 @@ test("APIKEY_PROVIDERS merges the 6 family files into 231 entries (no loss / no 
     ["regional", "APIKEY_PROVIDERS_REGIONAL"],
     ["specialty-media", "APIKEY_PROVIDERS_SPECIALTY"],
   ];
+  // The two plan catalogs were added alongside the existing Volcengine API provider.
+  assert.ok(keys.includes("volcengine-agent-plan"));
+  assert.ok(keys.includes("volcengine-coding-plan"));
   let famTotal = 0;
   const seen = new Set<string>();
   for (const [file, exportName] of families) {
@@ -80,7 +83,7 @@ test("APIKEY_PROVIDERS merges the 6 family files into 231 entries (no loss / no 
       seen.add(k);
     }
   }
-  assert.equal(famTotal, 231, "families must partition all 231 providers");
+  assert.equal(famTotal, 233, "families must partition all 233 providers");
 });
 
 test("AI_PROVIDERS Proxy aggregates all sections; lookups resolve", () => {

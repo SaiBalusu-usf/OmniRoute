@@ -1,3 +1,4 @@
+import { volcengineCodeSchema } from "@/shared/validation/schemas/volcengineLogin";
 import { NextResponse } from "next/server";
 import { requireManagementAuth } from "@/lib/api/requireManagementAuth";
 import { bindVolcenginePlansFromConsoleCredentials } from "@/lib/providers/volcenginePlanBinding";
@@ -17,7 +18,11 @@ export async function POST(
   if (auth) return auth;
 
   const { sessionId } = await params;
-  const body = await request.json().catch(() => ({}));
+  const parsed = volcengineCodeSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ success: false, error: "Invalid request body" }, { status: 400 });
+  }
+  const body = parsed.data;
 
   try {
     const { volcengineConsoleAutoLoginService } =
@@ -30,11 +35,11 @@ export async function POST(
       );
     }
 
-    const timeout = typeof body.timeout === "number" ? body.timeout : undefined;
+    const timeout = body.timeout;
     const session = await volcengineConsoleAutoLoginService.submitCode(
       sessionId,
-      String(body.code ?? ""),
-      typeof body.captcha === "string" ? body.captcha : undefined,
+      body.code,
+      body.captcha,
       { timeout }
     );
     if (!session) {
