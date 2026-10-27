@@ -258,7 +258,8 @@
     "release:uncovered": "node scripts/release/list-uncovered-commits.mjs",
     "test:coverage:runner": "node --max-old-space-size=8192 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=8 tests/unit/*.test.ts \"tests/unit/{api,auth,authz,build,cli,cli-helper,combo,compression,correctness,cors,db,db-adapters,docs,gamification,guardrails,lib,mcp,memory,runtime,security,services,settings,shared,ui,usage}/**/*.test.ts\" \"tests/unit/**/*.test.mjs\" && node --max-old-space-size=8192 --import tsx --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=8 \"tests/unit/dashboard/**/*.test.ts\" && npm run test:unit:serial",
     "test:unit:serial": "cross-env DISABLE_SQLITE_AUTO_BACKUP=true node --max-old-space-size=4096 --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit --test-concurrency=1 \"tests/unit/serial/**/*.test.ts\"",
-    "alibaba:sync-allowlist": "node --import tsx/esm scripts/ops/sync-alibaba-allowlist.mjs"
+    "alibaba:sync-allowlist": "node --import tsx/esm scripts/ops/sync-alibaba-allowlist.mjs",
+    "test:coverage:pipeline": "cross-env DISABLE_SQLITE_AUTO_BACKUP=true NODE_OPTIONS=--max-old-space-size=8192 c8 --merge-async --temp-directory .build/coverage-pipeline/tmp --reports-dir .build/coverage-pipeline --exclude=tests/** --exclude=**/*.test.* --reporter=json-summary node --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit tests/unit/build/coverage-runner.test.ts tests/unit/build/glob-dependency-compatibility.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-bedrock-runtime": "^3.1112.0",
@@ -469,17 +470,16 @@
     "socket.io-parser": "^4.2.7",
     "tar": "^7.5.21",
     "brace-expansion": "^5.0.9",
-    "minimatch": {
+    "minimatch@^3.0.0": {
       "brace-expansion": "^1.1.18"
     },
-    "libxmljs2": {
-      "minimatch": {
-        "brace-expansion": "^2.1.4"
-      }
+    "minimatch@^9.0.0": {
+      "brace-expansion": "^2.1.4"
     },
-    "rimraf": {
+    "type-coverage-core": {
       "minimatch": {
-        "brace-expansion": "^2.1.4"
+        ".": "^10.2.6",
+        "brace-expansion": "^5.0.9"
       }
     },
     "@apidevtools/json-schema-ref-parser": {
