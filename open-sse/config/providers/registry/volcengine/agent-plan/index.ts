@@ -78,6 +78,9 @@ export const VOLCENGINE_AGENT_PLAN_MODELS: RegistryModel[] = [
     name: "MiniMax M3 (Agent Plan)",
     contextLength: 1048576,
     toolCalling: true,
+    // Ark documents MiniMax M3 multimodal visual input in its Coding Plan catalog:
+    // https://www.volcengine.com/docs/ark/coding-plan-personal-plan-overview
+    supportsVision: true,
     supportsReasoning: true,
   },
   {

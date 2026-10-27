@@ -1,3 +1,4 @@
+import { volcengineLoginSchema } from "@/shared/validation/schemas/volcengineLogin";
 import { NextResponse } from "next/server";
 import { requireManagementAuth } from "@/lib/api/requireManagementAuth";
 import { bindVolcenginePlansFromConsoleCredentials } from "@/lib/providers/volcenginePlanBinding";
@@ -7,8 +8,12 @@ export async function POST(request: Request): Promise<NextResponse> {
   const auth = await requireManagementAuth(request);
   if (auth) return auth;
 
-  const body = await request.json().catch(() => ({}));
-  const timeout = typeof body.timeout === "number" ? body.timeout : undefined;
+  const parsed = volcengineLoginSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ success: false, error: "Invalid request body" }, { status: 400 });
+  }
+  const body = parsed.data;
+  const timeout = body.timeout;
 
   // Auto flow: phone present → start a session-based headless phone/SMS login.
   if (typeof body.phone === "string" && body.phone.trim()) {

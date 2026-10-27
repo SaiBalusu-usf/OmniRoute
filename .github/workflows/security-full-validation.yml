@@ -1,0 +1,62 @@
+name: Security full validation
+
+on:
+  pull_request:
+    branches: [fix/security-audit-20261026]
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    name: Full unit coverage gate
+    runs-on: ubuntu-latest
+    # The 34k Node tests alone take about 31 minutes. Allow the unchanged
+    # coverage reports, dashboard tests and serial suites to finish as well.
+    timeout-minutes: 90
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      DISABLE_SQLITE_AUTO_BACKUP: "true"
+      OMNIROUTE_SKIP_SYSTEM_TRUST: "1"
+      OMNIROUTE_SKIP_DNS_WRITE: "1"
+      APP_LOG_TO_FILE: "false"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:coverage
+      - name: Preserve existing global and critical-module coverage baselines
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { CRITICAL_MODULE_PATHS, extractModuleCoverage } from './scripts/quality/collect-metrics.mjs';
+          const summary = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+          const baseline = JSON.parse(fs.readFileSync('config/quality/quality-baseline.json', 'utf8'));
+          const metrics = extractModuleCoverage(summary, CRITICAL_MODULE_PATHS, process.cwd());
+          for (const metric of ['statements', 'lines', 'functions', 'branches']) {
+            metrics[`coverage.${metric}`] = summary.total[metric].pct;
+          }
+          const frozen = Object.fromEntries(Object.entries(baseline.metrics).filter(([key]) => key.startsWith('coverage.')));
+          fs.writeFileSync('coverage/security-baseline.json', JSON.stringify({ metrics: frozen }));
+          fs.writeFileSync('coverage/security-metrics.json', JSON.stringify(metrics));
+          NODE
+          node scripts/quality/check-quality-ratchet.mjs \
+            --baseline coverage/security-baseline.json \
+            --metrics coverage/security-metrics.json
+      - name: Retain coverage evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: security-coverage-summary
+          path: |
+            coverage/coverage-summary.json
+            coverage/security-baseline.json
+            coverage/security-metrics.json
+          if-no-files-found: error
+          retention-days: 7

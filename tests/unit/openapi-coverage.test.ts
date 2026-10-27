@@ -21,6 +21,8 @@ function collectRouteFiles(dir: string): { apiPath: string; file: string }[] {
       const apiPath = path
         .dirname(fullPath)
         .replace(API_ROOT, "")
+        .split(path.sep)
+        .join("/")
         .replace(/\[([^\]]+)\]/g, "{$1}");
       routes.push({ apiPath: `/api${apiPath}`, file: fullPath });
     }
@@ -71,7 +73,9 @@ const OPENAPI_COVERAGE_FLOOR_PERCENT = 35.9;
 
 test("openapi.yaml does not regress documented-route coverage below the agreed floor", () => {
   const implementedPaths = collectRoutePaths(API_ROOT).map(normalizePath).sort();
-  const raw: any = yaml.load(fs.readFileSync(OPENAPI_PATH, "utf-8"));
+  const raw = yaml.load(fs.readFileSync(OPENAPI_PATH, "utf-8")) as {
+    paths?: Record<string, unknown>;
+  };
   const documentedPaths = new Set(Object.keys(raw.paths || {}));
 
   let covered = 0;

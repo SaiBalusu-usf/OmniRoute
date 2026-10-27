@@ -1,0 +1,31 @@
+name: Security migration regressions
+on:
+  pull_request:
+  push:
+    branches: [fix/security-migration-20261026]
+permissions:
+  contents: read
+jobs:
+  compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run test:coverage:pipeline
+      - run: npm run typecheck:core
+      - run: npm run test:vitest
+      - run: node --import tsx/esm --test tests/unit/check-deps.test.ts tests/unit/onnxruntime-single-copy.test.ts tests/unit/source-scanner-guards.test.ts tests/unit/build/onnx-runtime-compatibility.test.ts tests/unit/build/optional-transformers-dependency.test.ts tests/unit/pack-artifact-policy.test.ts
+      - run: node --import tsx/esm --test tests/unit/mitm-sanitize-headers.test.ts tests/unit/mitm-masksecrets.test.ts tests/unit/build/mitm-compile-boundary.test.ts tests/unit/build/browser-runtime-dependency.test.ts tests/unit/compression/rtk-toml-compatibility.test.ts
+      - run: npm audit --audit-level=low
+      - run: npm ci --ignore-scripts && npm run build && npm test && npm audit --audit-level=low
+        working-directory: "@omniroute/opencode-plugin"
+      - run: npm ci --ignore-scripts && npm audit --audit-level=low
+        working-directory: electron
+      - run: node --import tsx/esm --test tests/unit/electron-main.test.ts tests/unit/electron-preload.test.ts tests/unit/electron-packaging.test.ts tests/unit/electron-remote-server.test.ts tests/unit/electron-server-readiness.test.ts tests/unit/electron-window-close-policy.test.ts tests/unit/electron-resolve-server-entry.test.ts tests/unit/electron-login-header-capture.test.ts

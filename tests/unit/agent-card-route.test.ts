@@ -7,6 +7,7 @@
  */
 
 import test from "node:test";
+import { NextRequest } from "next/server";
 import assert from "node:assert/strict";
 
 const { GET } = await import("../../src/app/.well-known/agent.json/route.js");
@@ -26,7 +27,7 @@ interface AgentCard {
 }
 
 test("GET /.well-known/agent.json returns 6 skills", async () => {
-  const response = await GET();
+  const response = await GET(new NextRequest("http://localhost/.well-known/agent.json"));
   assert.equal(response.status, 200, "Expected HTTP 200");
 
   const body = (await response.json()) as AgentCard;
@@ -35,7 +36,7 @@ test("GET /.well-known/agent.json returns 6 skills", async () => {
 });
 
 test("Agent Card includes list-capabilities skill entry", async () => {
-  const response = await GET();
+  const response = await GET(new NextRequest("http://localhost/.well-known/agent.json"));
   const body = (await response.json()) as AgentCard;
 
   const skill = body.skills.find((s) => s.id === "list-capabilities");
@@ -43,7 +44,7 @@ test("Agent Card includes list-capabilities skill entry", async () => {
 });
 
 test("list-capabilities entry has required tags [discovery, capabilities]", async () => {
-  const response = await GET();
+  const response = await GET(new NextRequest("http://localhost/.well-known/agent.json"));
   const body = (await response.json()) as AgentCard;
 
   const skill = body.skills.find((s) => s.id === "list-capabilities");
@@ -54,7 +55,7 @@ test("list-capabilities entry has required tags [discovery, capabilities]", asyn
 });
 
 test("list-capabilities entry has at least one example question", async () => {
-  const response = await GET();
+  const response = await GET(new NextRequest("http://localhost/.well-known/agent.json"));
   const body = (await response.json()) as AgentCard;
 
   const skill = body.skills.find((s) => s.id === "list-capabilities");
@@ -64,7 +65,7 @@ test("list-capabilities entry has at least one example question", async () => {
 });
 
 test("Agent Card includes all 5 original skills", async () => {
-  const response = await GET();
+  const response = await GET(new NextRequest("http://localhost/.well-known/agent.json"));
   const body = (await response.json()) as AgentCard;
 
   const originalIds = [
@@ -78,7 +79,7 @@ test("Agent Card includes all 5 original skills", async () => {
   for (const id of originalIds) {
     assert.ok(
       body.skills.some((s) => s.id === id),
-      `Original skill '${id}' must be present in Agent Card`,
+      `Original skill '${id}' must be present in Agent Card`
     );
   }
 });

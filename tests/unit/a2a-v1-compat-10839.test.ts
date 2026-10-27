@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import type { NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 
 const TEST_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "omniroute-a2a-v1-compat-"));
 process.env.DATA_DIR = TEST_DATA_DIR;
@@ -48,7 +48,13 @@ test("#10839: v1.0 SendMessage is aliased to message/send and reshapes the respo
   );
   assert.equal(res.status, 200);
   const body = (await res.json()) as {
-    result?: { task?: { id: string; status?: { message?: { parts?: { text?: string }[] } }; artifacts?: unknown } };
+    result?: {
+      task?: {
+        id: string;
+        status?: { message?: { parts?: { text?: string }[] } };
+        artifacts?: unknown;
+      };
+    };
     error?: unknown;
   };
   assert.equal(body.error, undefined, JSON.stringify(body));
@@ -102,7 +108,7 @@ test("#10839: SendStreamingMessage no longer 404s (aliased to message/stream)", 
 });
 
 test("#10839: GET /.well-known/agent-card.json serves a v1.0 card declaring both interfaces", async () => {
-  const res = await agentCardRoute.GET();
+  const res = await agentCardRoute.GET(new NextRequest("http://localhost/.well-known/agent.json"));
   assert.equal(res.status, 200);
   const card = (await res.json()) as { supportedInterfaces?: { protocolVersion?: string }[] };
   assert.ok(Array.isArray(card.supportedInterfaces));

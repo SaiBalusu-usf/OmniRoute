@@ -1,6 +1,5 @@
 import type { IncomingHttpHeaders } from "node:http";
 import { isForbiddenUpstreamHeaderName } from "@/shared/constants/upstreamHeaders";
-import { maskSecret } from "./maskSecrets";
 
 /**
  * Header names whose values must be masked (case-insensitive).
@@ -26,12 +25,12 @@ function isSecretHeader(name: string): boolean {
  * Sanitize HTTP headers for safe logging/broadcasting.
  *
  * - Removes headers in the upstream denylist (hop-by-hop, Host, etc.)
- * - Applies maskSecret() to values of authorization/cookie/key headers
+ * - Fully redacts authorization/cookie/key headers regardless of value syntax
  * - Coerces array values to comma-joined strings
  * - Returns a plain Record<string, string> (never undefined values)
  */
 export function sanitizeHeaders(
-  headers: IncomingHttpHeaders | Record<string, string | string[] | undefined>,
+  headers: IncomingHttpHeaders | Record<string, string | string[] | undefined>
 ): Record<string, string> {
   const result: Record<string, string> = {};
 
@@ -48,10 +47,9 @@ export function sanitizeHeaders(
 
     // Mask secret header values
     if (isSecretHeader(lowerKey)) {
-      // `set-cookie` carries an entire session/CSRF cookie value that maskSecret's
-      // format heuristics (Bearer / sk- / ≥40-char) do NOT catch, so it would leak
-      // verbatim into inspector JSON — fully redact it (SECURITY_AUDIT M6).
-      result[lowerKey] = lowerKey === "set-cookie" ? "[REDACTED]" : maskSecret(strValue);
+      // Header semantics establish sensitivity; short opaque credentials and
+      // arbitrary cookie formats must not depend on token-format heuristics.
+      result[lowerKey] = "[REDACTED]";
     } else {
       result[lowerKey] = strValue;
     }

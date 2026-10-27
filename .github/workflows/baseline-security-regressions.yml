@@ -1,0 +1,51 @@
+name: Baseline security regressions
+on:
+  push:
+    branches: [fix/baseline-repair-20261026]
+  pull_request:
+    branches: [chore/recover-fix-11146-items]
+permissions:
+  contents: read
+jobs:
+  regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DISABLE_SQLITE_AUTO_BACKUP: "true"
+      OMNIROUTE_SKIP_SYSTEM_TRUST: "1"
+      OMNIROUTE_SKIP_DNS_WRITE: "1"
+      APP_LOG_TO_FILE: "false"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run test:coverage:pipeline
+      - run: npm run typecheck:core
+      - run: npm run check:docs-all
+      - run: >-
+          node --import tsx/esm --import ./open-sse/utils/setupPolyfill.ts
+          --import ./tests/_setup/isolateDataDir.ts --test --test-force-exit
+          --test-timeout=90000 --test-concurrency=4
+          tests/unit/a2a-v1-compat-10839.test.ts
+          tests/unit/agent-card-route.test.ts
+          tests/unit/alibaba-free-tier-allowlist.test.ts
+          tests/unit/antigravity-oauth-postexchange-nonblocking.test.ts
+          tests/unit/cc-compatible-provider.test.ts
+          tests/unit/check-docs-counts-sync.test.ts
+          tests/unit/conductor-agent-card.test.ts
+          tests/unit/hard-session-lease-bypass-inventory.test.ts
+          tests/unit/openapi-coverage.test.ts
+          tests/unit/pack-artifact-entrypoint-closures.test.ts
+          tests/unit/pack-artifact-policy.test.ts
+          tests/unit/provider-limits-recovery.test.ts
+          tests/unit/providers-constants-split.test.ts
+          tests/unit/repro-glm-iso-reset-24h-cap.test.ts
+          tests/unit/route-body-validation-t06.test.ts
+          tests/unit/volcengine-login-validation.test.ts
+          tests/unit/provider-translate-path-golden.test.ts
+          tests/unit/review-reviews-v3814-fixes.test.ts

@@ -28,11 +28,24 @@ test("sanitizeHeaders — Set-Cookie header name is matched case-insensitively",
 
 test("sanitizeHeaders — authorization bearer token is still masked, not leaked", () => {
   const out = sanitizeHeaders({ authorization: "Bearer sk-proj-abcdefghijklmnop" });
-  assert.ok(!out["authorization"].includes("sk-proj-abcdefghijklmnop"), "bearer token must be masked");
+  assert.ok(
+    !out["authorization"].includes("sk-proj-abcdefghijklmnop"),
+    "bearer token must be masked"
+  );
 });
 
 test("sanitizeHeaders — non-secret headers pass through unchanged", () => {
   const out = sanitizeHeaders({ "content-type": "application/json", "x-request-id": "req-42" });
   assert.equal(out["content-type"], "application/json");
   assert.equal(out["x-request-id"], "req-42");
+});
+
+test("sanitizeHeaders - opaque credentials are redacted regardless of syntax or length", () => {
+  for (const name of ["cookie", "authorization", "x-api-key", "api-key", "bearer"]) {
+    assert.equal(sanitizeHeaders({ [name]: "short-fixture" })[name], "[REDACTED]");
+  }
+  assert.equal(
+    sanitizeHeaders({ "proxy-authorization": "short-fixture" })["proxy-authorization"],
+    undefined
+  );
 });
