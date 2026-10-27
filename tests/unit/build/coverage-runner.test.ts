@@ -8,7 +8,9 @@ const repoRoot = process.cwd();
 const scripts = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")).scripts;
 
 function exerciseCoverage(uncovered: boolean) {
-  const temporaryRoot = join(repoRoot, ".build", "coverage-runner-tests");
+  // Keep synthetic projects outside shared build output and inside the existing
+  // test exclusion, including when this test runs under the full collector.
+  const temporaryRoot = join(repoRoot, "tests", ".tmp", "coverage-runner");
   mkdirSync(temporaryRoot, { recursive: true });
   const fixture = mkdtempSync(join(temporaryRoot, "case-"));
   const write = (name: string, source: string) => {
@@ -68,6 +70,11 @@ function exerciseCoverage(uncovered: boolean) {
     const environment = { ...process.env };
     delete environment.NODE_V8_COVERAGE;
     delete environment.NODE_TEST_CONTEXT;
+    // An enclosing npm lifecycle must not redirect the synthetic project's
+    // package selection or carry its configuration into the nested invocation.
+    for (const key of Object.keys(environment)) {
+      if (/^npm_/i.test(key)) delete environment[key];
+    }
     const run = spawnSync("npm run test:coverage", {
       cwd: fixture,
       shell: true,
@@ -77,6 +84,10 @@ function exerciseCoverage(uncovered: boolean) {
       maxBuffer: 2 * 1024 * 1024,
     });
     assert.ifError(run.error);
+    assert.ok(
+      existsSync(join(fixture, "coverage", "coverage-summary.json")),
+      `fixture coverage report missing (exit ${run.status}):\n${run.stdout}${run.stderr}`
+    );
     const summary = JSON.parse(
       readFileSync(join(fixture, "coverage", "coverage-summary.json"), "utf8")
     );

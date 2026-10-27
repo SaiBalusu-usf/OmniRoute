@@ -18,7 +18,7 @@ jobs:
           node-version: "24"
           cache: npm
       - run: npm ci --ignore-scripts
-      - run: node --import tsx/esm --test tests/unit/build/coverage-runner.test.ts
+      - run: npm run test:coverage:pipeline
       - run: npm run typecheck:core
       - run: npm run test:vitest
       - run: node --import tsx/esm --test tests/unit/check-deps.test.ts tests/unit/onnxruntime-single-copy.test.ts tests/unit/source-scanner-guards.test.ts tests/unit/build/onnx-runtime-compatibility.test.ts tests/unit/build/optional-transformers-dependency.test.ts tests/unit/pack-artifact-policy.test.ts
