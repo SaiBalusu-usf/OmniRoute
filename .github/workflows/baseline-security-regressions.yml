@@ -24,6 +24,7 @@ jobs:
           node-version: "24"
           cache: npm
       - run: npm ci --no-audit --no-fund
+      - run: node --import tsx/esm --test tests/unit/build/coverage-runner.test.ts
       - run: npm run typecheck:core
       - run: npm run check:docs-all
       - run: >-
