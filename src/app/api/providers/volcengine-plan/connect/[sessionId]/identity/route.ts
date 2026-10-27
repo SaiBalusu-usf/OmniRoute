@@ -1,3 +1,4 @@
+import { volcengineIdentitySchema } from "@/shared/validation/schemas/volcengineLogin";
 import { NextResponse } from "next/server";
 import { requireManagementAuth } from "@/lib/api/requireManagementAuth";
 import { bindVolcenginePlansFromConsoleCredentials } from "@/lib/providers/volcenginePlanBinding";
@@ -16,7 +17,11 @@ export async function POST(
   if (auth) return auth;
 
   const { sessionId } = await params;
-  const body = await request.json().catch(() => ({}));
+  const parsed = volcengineIdentitySchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ success: false, error: "Invalid request body" }, { status: 400 });
+  }
+  const body = parsed.data;
 
   try {
     const { volcengineConsoleAutoLoginService } =
@@ -29,15 +34,9 @@ export async function POST(
       );
     }
 
-    const index = Number(body.index);
-    if (!Number.isInteger(index) || index < 0) {
-      return NextResponse.json(
-        { success: false, error: "Invalid identity index" },
-        { status: 400 }
-      );
-    }
+    const index = body.index;
 
-    const timeout = typeof body.timeout === "number" ? body.timeout : undefined;
+    const timeout = body.timeout;
     const session = await volcengineConsoleAutoLoginService.selectIdentity(sessionId, index, {
       timeout,
     });

@@ -2372,16 +2372,6 @@
       "count": 2
     }
   },
-  "src/lib/guardrails/videoBridgeContactSheet.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/lib/guardrails/videoBridgeRuntime.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "src/lib/guardrails/visionBridgeHelpers.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
@@ -4599,11 +4589,6 @@
       "count": 2
     }
   },
-  "tests/unit/conductor-agent-card.test.ts": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
   "tests/unit/conductor-ask-route.test.ts": {
     "@typescript-eslint/no-unused-vars": {
       "count": 1
@@ -5381,11 +5366,6 @@
   "tests/unit/openai-tool-opaque-object-schema.test.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 4
-    }
-  },
-  "tests/unit/openapi-coverage.test.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
     }
   },
   "tests/unit/openapi-security-tiers.test.ts": {

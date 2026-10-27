@@ -53,3 +53,40 @@ export function resolveLiveWsPublicUrl(env: NodeJS.ProcessEnv = process.env): st
 export function getLiveWsPath(): string {
   return deriveLiveWsPath(resolveLiveWsPublicUrl() ?? undefined);
 }
+
+/** Accept only integer TCP ports reported by the runtime handshake. */
+export function sanitizeLiveWsPort(value: unknown): number | null {
+  if (typeof value !== "number" && typeof value !== "string") return null;
+  if (typeof value === "string" && !/^\d+$/.test(value)) return null;
+  const port = Number(value);
+  return Number.isInteger(port) && port > 0 && port <= 65535 ? port : null;
+}
+
+/** Prefer explicit/public URLs; otherwise update the default endpoint in place. */
+export function resolveLiveWsUrl({
+  explicit,
+  handshakeUrl,
+  handshakePort,
+  handshakePath,
+  defaultUrl,
+}: {
+  explicit?: string | null;
+  handshakeUrl?: string | null;
+  handshakePort?: unknown;
+  handshakePath?: string | null;
+  defaultUrl: string;
+}): string {
+  if (explicit) return explicit;
+  if (handshakeUrl) return handshakeUrl;
+  try {
+    const url = new URL(defaultUrl);
+    const port = sanitizeLiveWsPort(handshakePort);
+    if (port !== null) url.port = String(port);
+    if (handshakePath?.startsWith("/") && !handshakePath.startsWith("//")) {
+      url.pathname = handshakePath;
+    }
+    return url.toString();
+  } catch {
+    return defaultUrl;
+  }
+}

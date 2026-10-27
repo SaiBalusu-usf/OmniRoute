@@ -27,7 +27,9 @@ test("built-in allowlist includes operator free models and excludes paid blockli
   assert.equal(isAlibabaBuiltinFreeTierTextModel("qwen3.7-max"), false);
 });
 
-test("allowlist JSON pack overrides embedded lists when valid", () => {
+test("allowlist JSON pack overrides embedded lists when valid", (t) => {
+  // Test the recorded pack within its validity interval, without extending production pricing assumptions.
+  t.mock.timers.enable({ apis: ["Date"], now: Date.UTC(2026, 7, 1) });
   const previousPath = process.env.ALIBABA_FREE_TIER_ALLOWLIST_PATH;
   const packPath = `${process.cwd()}/config/alibaba-free-tier-allowlist.json`;
   process.env.ALIBABA_FREE_TIER_ALLOWLIST_PATH = packPath;
